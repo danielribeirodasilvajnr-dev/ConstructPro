@@ -58,7 +58,16 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
 
   const handleNew = () => {
     setEditingProject(null);
-    setFormData({ status: 'Planejamento', area: 0 });
+    setFormData({ 
+      status: 'Planejamento', 
+      area: 0,
+      start_date: new Date().toISOString().split('T')[0],
+      name: '',
+      client: '',
+      location: '',
+      deadline: '',
+      description: ''
+    });
     setIsModalOpen(true);
   };
 
@@ -67,9 +76,9 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
       await saveProject(formData);
       setIsModalOpen(false);
       refreshProjects();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Erro ao salvar projeto');
+      alert('Erro ao salvar projeto: ' + (err.message || 'Erro desconhecido'));
     }
   };
 
@@ -293,14 +302,20 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                   </select>
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Localização</label>
-                <input type="text" placeholder="Endereço da obra" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none" />
-              </div>
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Área Total (m²)</label>
                   <input type="number" placeholder="0.00" value={formData.area || 0} onChange={e => setFormData({ ...formData, area: Number(e.target.value) })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Localização</label>
+                  <input type="text" placeholder="Endereço da obra" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Data de Início</label>
+                  <input type="date" value={formData.start_date || ''} onChange={e => setFormData({ ...formData, start_date: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Previsão Entrega</label>
