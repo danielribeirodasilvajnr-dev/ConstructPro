@@ -17,7 +17,7 @@ export function useProjectData(projectId: string | null) {
     if (!projectId) return;
     setLoading(true);
     try {
-      const [budget, schedule, finance, logs, collab] = await Promise.all([
+      const [budget, schedule, finance, logs, docs, collab] = await Promise.all([
         supabase.from('budget_items').select('*').eq('project_id', projectId),
         supabase.from('schedule_items').select('*').eq('project_id', projectId).order('start_date', { ascending: true }),
         supabase.from('financial_items').select('*').eq('project_id', projectId).order('date', { ascending: false }),
@@ -30,7 +30,7 @@ export function useProjectData(projectId: string | null) {
       setScheduleItems(schedule.data || []);
       setFinancialItems(finance.data || []);
       setDailyLogs(logs.data || []);
-      setDocuments(documents.data || []);
+      setDocuments(docs.data || []);
       
       // Determine user role
       const { data: project } = await supabase.from('projects').select('user_id').eq('id', projectId).single();
