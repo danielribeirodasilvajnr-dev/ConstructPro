@@ -26,14 +26,14 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   ];
 
   return (
-    <aside className="fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-[#13171f] border-r border-[#1e2430] shadow-2xl shadow-black/50">
+    <aside className="fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-[#181C21] border-r border-slate-800 shadow-2xl">
       <div className="flex items-center gap-3 p-6 mb-2">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white">
           <span className="text-xl font-black">CP</span>
         </div>
         <div>
           <h2 className="text-sm font-bold tracking-tight text-white">ConstructPro</h2>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#94a3b8]">Project Alpha</p>
+          <p className="text-[10px] font-bold uppercase tracking-[2px] text-[#4170FF] opacity-80 mt-0.5">Gestão de Obras</p>
         </div>
       </div>
 
@@ -55,10 +55,10 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="p-4 mt-auto border-t border-[#1e2430]">
-        <button className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-bold text-white transition-opacity hover:opacity-90">
+      <div className="p-6 mt-auto border-t border-slate-800 bg-slate-900/10">
+        <button className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#4170FF] py-3.5 text-xs font-bold text-white transition-all hover:bg-blue-600 shadow-lg shadow-blue-500/10 uppercase tracking-widest active:scale-95">
           <PlusCircle className="h-4 w-4" />
-          Novo Registro
+          Novo Lançamento
         </button>
         <div className="flex flex-col gap-1">
           <button className="flex items-center gap-3 px-4 py-2 text-sm text-slate-400 hover:text-primary">

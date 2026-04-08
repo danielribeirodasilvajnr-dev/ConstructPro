@@ -118,19 +118,75 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh }: ScheduleTab
 
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-[#13171f] rounded-xl border border-[#1e293b] w-full max-w-lg p-6">
-            <h3 className="text-xl font-bold text-white mb-6">Nova Etapa</h3>
-            <div className="space-y-4">
-              <input type="text" placeholder="Nome" value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-[#0b0f19] border border-[#1e293b] rounded-lg p-2.5 text-white" />
-              <div className="grid grid-cols-2 gap-4">
-                <input type="date" value={formData.start_date || ''} onChange={e => setFormData({ ...formData, start_date: e.target.value })} className="w-full bg-[#0b0f19] border border-[#1e293b] rounded-lg p-2.5 text-white" />
-                <input type="date" value={formData.end_date || ''} onChange={e => setFormData({ ...formData, end_date: e.target.value })} className="w-full bg-[#0b0f19] border border-[#1e293b] rounded-lg p-2.5 text-white" />
+          <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
+          <div className="relative bg-[#181C21] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 pb-4 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-100 tracking-tight">Etapa do Cronograma</h3>
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-slate-800 rounded-full"
+              >
+                <Plus className="h-5 w-5 rotate-45" />
+              </button>
+            </div>
+            <div className="px-8 pb-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Nome da Tarefa/Etapa</label>
+                <input 
+                  type="text" 
+                  placeholder="Ex: Fundação e Baldrames..." 
+                  value={formData.name || ''} 
+                  onChange={e => setFormData({ ...formData, name: e.target.value })} 
+                  className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none transition-all" 
+                />
               </div>
-              <input type="number" placeholder="Progresso %" value={formData.progress || 0} onChange={e => setFormData({ ...formData, progress: Number(e.target.value) })} className="w-full bg-[#0b0f19] border border-[#1e293b] rounded-lg p-2.5 text-white" />
-              <div className="flex justify-end gap-3 mt-6">
-                <button onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-white border border-[#1e293b] rounded-lg">Cancelar</button>
-                <button onClick={handleSave} className="px-5 py-2 bg-blue-600 text-white rounded-lg">Salvar</button>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Data Início</label>
+                  <input 
+                    type="date" 
+                    value={formData.start_date || ''} 
+                    onChange={e => setFormData({ ...formData, start_date: e.target.value })} 
+                    className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Previsão Término</label>
+                  <input 
+                    type="date" 
+                    value={formData.end_date || ''} 
+                    onChange={e => setFormData({ ...formData, end_date: e.target.value })} 
+                    className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none" 
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center ml-1">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Avanço Físico</label>
+                  <span className="text-xs font-bold text-[#4170FF]">{formData.progress || 0}%</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="100" 
+                  value={formData.progress || 0} 
+                  onChange={e => setFormData({ ...formData, progress: Number(e.target.value) })} 
+                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#4170FF]" 
+                />
+              </div>
+              <div className="pt-6 flex items-center justify-end gap-3">
+                <button 
+                  onClick={() => setIsModalOpen(false)} 
+                  className="px-6 py-2.5 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-white transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleSave} 
+                  className="px-8 py-3 bg-[#4170FF] text-white text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 active:scale-[0.98]"
+                >
+                  Salvar Etapa
+                </button>
               </div>
             </div>
           </div>

@@ -13,7 +13,7 @@ interface HeaderProps {
 
 export function Header({ title }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-[#1e2430] bg-[#0b0f15]/85 px-8 backdrop-blur-md">
+    <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-800 bg-[#181C21]/85 px-8 backdrop-blur-md">
       <div className="flex items-center gap-8">
         {title && (
           <div className="flex items-center gap-4">
@@ -29,8 +29,8 @@ export function Header({ title }: HeaderProps) {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input 
             type="text" 
-            placeholder="Pesquisar no projeto..." 
-            className="w-80 rounded-full border border-white/5 bg-[#13171f] py-2 pl-10 pr-4 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+            placeholder="Pesquisar no ConstructPro..." 
+            className="w-96 rounded-xl border border-slate-800 bg-[#0B0F15] py-2.5 pl-10 pr-4 text-sm text-slate-100 focus:border-[#4170FF] outline-none transition-all placeholder:text-slate-600"
           />
         </div>
       </div>
@@ -48,7 +48,7 @@ export function Header({ title }: HeaderProps) {
             <Settings className="h-5 w-5" />
           </button>
         </div>
-        <div className="h-8 w-8 overflow-hidden rounded-full bg-slate-200 border-2 border-white shadow-sm">
+        <div className="h-10 w-10 overflow-hidden rounded-full bg-slate-800 border-2 border-slate-700 shadow-xl cursor-pointer hover:border-[#4170FF] transition-colors">
           <img 
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuDr2KBEM3IfNuLeYQzBV2epZtmQRHo705P26eLsIJNDiEclnujrH-W8yGNhysNXXqjOiVzILkQhCDIwxjR0PGIerPvj8eqJTY7Oc8UEQKKnhaSsupnlPqauvvqKk3HoJNEcvL1Kyc0iwjG1Z-tQN2YkiFoDh5SO8ALfjcgKp8FuaK6v3Tsp4RQcn2s7yE3k14OYP1RI8jfXjJ8uHoczokjDD4vwOK4TciQdENZTm185x4zIDC_1ElKSlJ8kQxS_R-2KzY0iRSGLhg" 
             alt="Profile" 

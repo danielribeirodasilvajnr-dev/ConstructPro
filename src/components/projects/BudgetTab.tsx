@@ -124,19 +124,51 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh }:
                         const lineTotal = Number(item.unit_cost) * Number(item.quantity);
                         const lineSpent = financialItems?.filter((f: any) => f.budget_item_linked_id === item.id).reduce((acc: number, cur: any) => acc + Number(cur.amount), 0) || 0;
                         const lineBalance = lineTotal - lineSpent;
+                        const linePercent = lineTotal > 0 ? (lineSpent / lineTotal) * 100 : 0;
+                        
                         return (
                           <tr key={item.id} className="border-b border-white/5 hover:bg-white/5 transition-colors group relative">
-                            <td className="py-3.5 px-6 text-slate-500 font-medium">{item.code}</td>
-                            <td className="py-3.5 px-6 text-white">{item.description}</td>
-                            <td className="py-3.5 px-6 text-slate-400 text-center">{item.unit}</td>
-                            <td className="py-3.5 px-6 text-slate-300 text-right font-medium">{Number(item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            <td className="py-3.5 px-6 text-slate-300 text-right font-medium whitespace-nowrap">R$ {Number(item.unit_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            <td className="py-3.5 px-6 text-white text-right font-bold w-32 whitespace-nowrap">R$ {lineTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            <td className="py-3.5 px-6 text-[#F97316] text-right font-bold w-32 whitespace-nowrap">- R$ {lineSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            <td className={`py-3.5 px-6 text-right font-black w-32 pr-8 whitespace-nowrap ${lineBalance < 0 ? 'text-red-500' : 'text-[#10B981]'}`}>R$ {lineBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            <td className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-[#0b0f19] px-2 py-1 rounded shadow-lg border border-white/10">
-                              <button onClick={() => { setEditingItem(item); setFormData({ ...item }); setIsItemModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-white transition-colors"><Edit className="h-3.5 w-3.5" /></button>
-                              <button onClick={() => setDeletingItem(item)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
+                            <td className="py-4 px-6 text-slate-500 font-bold text-[11px]">{item.code}</td>
+                            <td className="py-4 px-6 min-w-[300px]">
+                              <div className="flex flex-col gap-2">
+                                <span className="text-white font-medium">{item.description}</span>
+                                {lineTotal > 0 && (
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                      <div 
+                                        className={cn(
+                                          "h-full rounded-full transition-all duration-500",
+                                          linePercent > 100 ? "bg-red-500" : linePercent > 80 ? "bg-amber-500" : "bg-[#4170FF]"
+                                        )}
+                                        style={{ width: `${Math.min(linePercent, 100)}%` }}
+                                      />
+                                    </div>
+                                    <span className={cn(
+                                      "text-[10px] font-bold",
+                                      linePercent > 100 ? "text-red-500" : "text-slate-500"
+                                    )}>
+                                      {linePercent.toFixed(0)}%
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-4 px-6 text-slate-400 text-center text-xs font-bold">{item.unit}</td>
+                            <td className="py-4 px-6 text-slate-300 text-right font-medium">{Number(item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            <td className="py-4 px-6 text-slate-300 text-right font-medium whitespace-nowrap">R$ {Number(item.unit_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            <td className="py-4 px-6 text-white text-right font-bold w-32 whitespace-nowrap">R$ {lineTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            <td className="py-4 px-6 text-[#F97316] text-right font-bold w-32 whitespace-nowrap bg-[#F97316]/5">- R$ {lineSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            <td className={cn(
+                              "py-4 px-6 text-right font-black w-32 pr-8 whitespace-nowrap transition-colors",
+                              lineBalance < 0 ? 'text-red-500 bg-red-500/5' : 'text-[#10B981] bg-[#10B981]/5'
+                            )}>
+                              R$ {lineBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-100 scale-95 z-20">
+                              <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-2xl">
+                                <button onClick={() => { setEditingItem(item); setFormData({ ...item }); setIsItemModalOpen(true); }} className="p-2 text-slate-400 hover:text-white transition-colors hover:bg-slate-800 rounded-md"><Edit className="h-4 w-4" /></button>
+                                <button onClick={() => setDeletingItem(item)} className="p-2 text-slate-400 hover:text-red-500 transition-colors hover:bg-red-500/10 rounded-md"><Trash2 className="h-4 w-4" /></button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -153,46 +185,74 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh }:
       {/* Item Modal */}
       {isItemModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsItemModalOpen(false)}></div>
-          <div className="relative bg-[#13171f] rounded-xl shadow-2xl border border-[#1e293b] w-full max-w-lg overflow-hidden">
-            <div className="p-5 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-white">{editingItem ? 'Editar Item' : 'Novo Item'}</h3>
-              <button onClick={() => setIsItemModalOpen(false)} className="text-slate-400 hover:text-white"><Plus className="h-5 w-5 rotate-45" /></button>
+          <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={() => setIsItemModalOpen(false)}></div>
+          <div className="relative bg-[#181C21] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 pb-4 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-100 tracking-tight">{editingItem ? 'Editar Item' : 'Novo Item'}</h3>
+              <button onClick={() => setIsItemModalOpen(false)} className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-slate-800 rounded-full">
+                <Plus className="h-5 w-5 rotate-45" />
+              </button>
             </div>
-            <div className="px-6 pb-6 space-y-5">
+            <div className="px-8 pb-8 space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-bold text-white">Descrição do Serviço</label>
-                <input type="text" value={formData.description || ''} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full bg-[#13171f] border border-[#1e293b] rounded-lg px-3 py-2.5 text-sm text-white focus:border-[#3B82F6] outline-none" />
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Descrição do Serviço</label>
+                <input 
+                  type="text" 
+                  value={formData.description || ''} 
+                  onChange={e => setFormData({ ...formData, description: e.target.value })} 
+                  className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] focus:ring-1 focus:ring-[#4170FF] outline-none transition-all placeholder:text-slate-600"
+                  placeholder="Ex: Alvenaria de vedação..."
+                />
               </div>
               <div className="grid grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-white">Categoria</label>
-                  <select value={formData.category || 'Outros'} onChange={e => setFormData({ ...formData, category: e.target.value })} className="w-full bg-[#13171f] border border-[#1e293b] rounded-lg px-3 py-2.5 text-sm text-white focus:border-[#3B82F6] outline-none">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Categoria</label>
+                  <select 
+                    value={formData.category || 'Outros'} 
+                    onChange={e => setFormData({ ...formData, category: e.target.value })} 
+                    className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none appearance-none cursor-pointer"
+                  >
                     {['Serviços Preliminares', 'Infraestrutura', 'Alvenaria', 'Inst. Elétricas', 'Inst. Hidráulicas', 'Revestimento', 'Piso', 'Pintura', 'Complementos', 'Louças e Metais', 'Acabamentos', 'Outros'].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-white">Código</label>
-                  <input type="text" value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} className="w-full bg-[#13171f] border border-[#1e293b] rounded-lg px-3 py-2.5 text-sm text-white" />
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Código</label>
+                  <input 
+                    type="text" 
+                    value={formData.code || ''} 
+                    onChange={e => setFormData({ ...formData, code: e.target.value })} 
+                    className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none transition-all" 
+                    placeholder="01.01"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-white">Unidade</label>
-                  <input type="text" value={formData.unit || ''} onChange={e => setFormData({ ...formData, unit: e.target.value })} className="w-full bg-[#13171f] border border-[#1e293b] rounded-lg px-3 py-2.5 text-sm text-white" />
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Unidade</label>
+                  <input type="text" value={formData.unit || ''} onChange={e => setFormData({ ...formData, unit: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none" placeholder="m2" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-white">Qtd</label>
-                  <input type="number" value={formData.quantity || 0} onChange={e => setFormData({ ...formData, quantity: Number(e.target.value) })} className="w-full bg-[#13171f] border border-[#1e293b] rounded-lg px-3 py-2.5 text-sm text-white" />
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Qtd</label>
+                  <input type="number" value={formData.quantity || 0} onChange={e => setFormData({ ...formData, quantity: Number(e.target.value) })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-white">Custo Unit.</label>
-                  <input type="number" value={formData.unit_cost || 0} onChange={e => setFormData({ ...formData, unit_cost: Number(e.target.value) })} className="w-full bg-[#13171f] border border-[#1e293b] rounded-lg px-3 py-2.5 text-sm text-white" />
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Custo Unit.</label>
+                  <input type="number" value={formData.unit_cost || 0} onChange={e => setFormData({ ...formData, unit_cost: Number(e.target.value) })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none" />
                 </div>
               </div>
-              <div className="pt-4 flex items-center justify-end gap-3">
-                <button onClick={() => setIsItemModalOpen(false)} className="px-5 py-2 text-sm font-bold text-white border border-[#1e293b] rounded-lg hover:bg-white/5">Cancelar</button>
-                <button onClick={handleSave} className="px-5 py-2 bg-[#3B82F6] text-white text-sm font-bold rounded-lg hover:bg-[#2563EB]">Salvar</button>
+              <div className="pt-6 flex items-center justify-end gap-3">
+                <button 
+                  onClick={() => setIsItemModalOpen(false)} 
+                  className="px-6 py-2.5 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-white transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleSave} 
+                  className="px-8 py-3 bg-[#4170FF] text-white text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 active:scale-[0.98]"
+                >
+                  Salvar Item
+                </button>
               </div>
             </div>
           </div>
