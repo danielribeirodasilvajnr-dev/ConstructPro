@@ -12,6 +12,7 @@ import { useAuth } from './contexts/AuthContext';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const { user } = useAuth();
 
   if (!user) {
@@ -24,17 +25,17 @@ export default function App() {
       case 'dashboard':
         return <DashboardView />;
       case 'projects':
-        return <ProjectsView />;
+        return <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'schedule':
-        return <ScheduleView />;
+        return <ScheduleView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'financials':
-        return <FinancialsView />;
+        return <FinancialsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'logs':
-        return <LogsView />;
+        return <LogsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'resources':
-        return <BudgetView />;
+        return <BudgetView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'safety':
-        return <ProprietorView />;
+        return <ProprietorView selectedProjectId={selectedProjectId} />;
       default:
         return <DashboardView />;
     }

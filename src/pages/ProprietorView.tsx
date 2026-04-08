@@ -51,8 +51,21 @@ import {
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
+interface ProprietorViewProps {
+  selectedProjectId: string | null;
+}
+
 // --- Proprietor View ---
-export function ProprietorView() {
+export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
+  if (!selectedProjectId) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 bg-[#13171f] rounded-2xl border border-white/5">
+        <h2 className="text-2xl font-bold text-white mb-2">Acesso do Proprietário</h2>
+        <p className="text-slate-500">Selecione uma de suas obras para acompanhar o progresso em tempo real.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 max-w-[1400px] mx-auto pb-24">
       {/* Hero Section */}
