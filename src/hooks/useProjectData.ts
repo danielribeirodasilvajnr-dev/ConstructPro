@@ -8,6 +8,7 @@ export function useProjectData(projectId: string | null) {
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [financialItems, setFinancialItems] = useState<FinancialItem[]>([]);
   const [dailyLogs, setDailyLogs] = useState<DailyLog[]>([]);
+  const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [userRole, setUserRole] = useState<'owner' | 'editor' | 'viewer' | null>(null);
   const { user } = useAuth();
@@ -21,6 +22,7 @@ export function useProjectData(projectId: string | null) {
         supabase.from('schedule_items').select('*').eq('project_id', projectId).order('start_date', { ascending: true }),
         supabase.from('financial_items').select('*').eq('project_id', projectId).order('date', { ascending: false }),
         supabase.from('daily_logs').select('*, daily_log_photos(*)').eq('project_id', projectId).order('date', { ascending: false }),
+        supabase.from('project_documents').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
         supabase.from('project_collaborators').select('role').eq('project_id', projectId).eq('user_id', user?.id).maybeSingle()
       ]);
 
@@ -28,6 +30,7 @@ export function useProjectData(projectId: string | null) {
       setScheduleItems(schedule.data || []);
       setFinancialItems(finance.data || []);
       setDailyLogs(logs.data || []);
+      setDocuments(documents.data || []);
       
       // Determine user role
       const { data: project } = await supabase.from('projects').select('user_id').eq('id', projectId).single();
@@ -54,6 +57,7 @@ export function useProjectData(projectId: string | null) {
     scheduleItems,
     financialItems,
     dailyLogs,
+    documents,
     loading,
     userRole,
     isEditor: userRole === 'owner' || userRole === 'editor',

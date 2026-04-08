@@ -81,7 +81,17 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
     : 0;
 
   const totalInvested = financialItems.reduce((acc, item) => acc + Number(item.amount), 0);
-  const nextPayment = financialItems[0]?.amount || 0;
+  const totalBudget = budgetItems.reduce((acc, item) => acc + (Number(item.quantity) * Number(item.unit_cost)), 0);
+  const financialProgress = totalBudget > 0 ? Math.round((totalInvested / totalBudget) * 100) : 0;
+  
+  // Extract real photos from daily logs
+  const allPhotos = dailyLogs.flatMap(log => 
+    (log.daily_log_photos || []).map((photo: any) => ({
+      url: photo.image_url,
+      desc: photo.description || log.activities || 'Foto da obra',
+      date: log.date
+    }))
+  ).slice(0, 6); // Take latest 6
 
   return (
     <div className="space-y-8 max-w-[1400px] mx-auto pb-24">
@@ -101,7 +111,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
         </div>
         <div className="relative z-10">
           <h1 className="text-4xl font-extrabold tracking-tight mb-2">
-            Bem-vindo de volta, {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Sr. Ricardo'}
+            Bem-vindo de volta, {project.client || 'Proprietário'}
           </h1>
           <div className="flex flex-wrap gap-6 mb-6 opacity-80">
             <div className="flex items-center gap-2">
@@ -138,39 +148,45 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
               <button className="text-secondary font-semibold text-sm hover:underline">Ver álbum completo</button>
             </div>
             <div className="grid grid-cols-3 gap-4 h-[400px]">
-              <div className="col-span-2 rounded-xl overflow-hidden group cursor-pointer relative">
-                <img
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuACOW9VJpcpE2yXaSuzg_Aj8tmDEQW5zFZcTSNBgCk2jUYT2UdvVUlT1kSlJuTw-JczyXBV3R6xzpQjOv8nltYlcJ7X_GtDqXVCYlzkB8026SY9Y8iteO9SPHEV_q9r_YxoYpLb46pFs8mSwdNTKRkPD8GBmQ_sGB6CF4jHmISaxhokjMoUjMXt8Uivlr_8wK3s0NQgq2wnjVAYf4yXO7s3nhDBfWouMQ0r0PIutvzvoGHFQh6_-yjZm3jhEEtDzFCLqlUgRmAp0A"
-                  alt="Progress"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-6 flex flex-col justify-end">
-                  <p className="text-white font-medium">Instalação Hidráulica - Setor B</p>
-                  <p className="text-white/70 text-sm">Atualizado há 2 dias</p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-4">
-                <div className="h-1/2 rounded-xl overflow-hidden group cursor-pointer">
-                  <img
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAewzwvJZ1OvO_PkwrMcfqeGEZ9VpHG7NPYze47OSADD5ApqL0n0cCkkpsjB58NymaesQhqeGyoEtvjt6vNcWdfZ1RlEwskZ-b1LbT9StEEi-Y82Dsd8k1i0RY1rmjm56dd9mcmqmJ2qcQG9f12AlC0vEt5dRWmGru0djphBcBl3rGhGcee4FV5xiPrkgxm7J0B44c4nhzxYmpwYOvTxyJVwtaKqqE5JDRSfLmjsyT4XltrjIBcRDmbCA6K6y2_qduZJpxq_HOKPg"
-                    alt="Detail"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-                <div className="h-1/2 rounded-xl overflow-hidden relative group cursor-pointer">
-                  <img
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGb-Y6so1gnLYVHXbQP18g4YDGEP7XRBmDa2uUMhUIP3vwlnLkkwm3DU-J5q5MS7UqViyNjBojorhy6qLs6ZAgBCBor04JHKdbAq_AXzqvqGV2OJ9PW1JTxK88Fa5VpW8iIff5EQle2R1mqIXqlQMTEb-HsIqf7Dson1Li663-_8WKWtF-XSXFo7maX49VUBlsX1eWt32_yGDiPzj50I-O8qp5zgwLxeDy4Gal1jdO4SdNMxrKbbtE26r-8mb-GrsZ7a8_n5kGmw"
-                    alt="More"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <span className="text-white font-bold text-xl">+14 fotos</span>
+              {allPhotos.length > 0 ? (
+                <>
+                  <div className="col-span-2 rounded-xl overflow-hidden group cursor-pointer relative">
+                    <img
+                      src={allPhotos[0].url}
+                      alt="Progress"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-6 flex flex-col justify-end">
+                      <p className="text-white font-medium">{allPhotos[0].desc}</p>
+                      <p className="text-white/70 text-sm">Atualizado em {new Date(allPhotos[0].date).toLocaleDateString()}</p>
+                    </div>
                   </div>
+                  <div className="flex flex-col gap-4">
+                    {allPhotos.slice(1, 3).map((photo, k) => (
+                      <div key={k} className="h-1/2 rounded-xl overflow-hidden group cursor-pointer relative">
+                        <img
+                          src={photo.url}
+                          alt="Detail"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </div>
+                    ))}
+                    {allPhotos.length > 3 && (
+                       <div className="h-1/2 rounded-xl overflow-hidden relative group cursor-pointer">
+                        <img src={allPhotos[3].url} className="w-full h-full object-cover opacity-50" alt="more" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-white font-bold text-xl">+{allPhotos.length - 3} fotos</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="col-span-3 bg-slate-900/50 rounded-xl border border-dashed border-slate-800 flex flex-col items-center justify-center text-slate-500 gap-3">
+                  <Camera className="h-8 w-8 opacity-20" />
+                  <p className="text-sm">Nenhuma foto cadastrada no diário de obra.</p>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -217,50 +233,82 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
         </div>
 
         <div className="col-span-12 lg:col-span-4 space-y-6">
-          {/* Financial Summary */}
-          <div className="bg-[#13171f] rounded-xl p-6 border border-white/5 shadow-sm border-t-4 border-t-secondary">
+          {/* Financial Progress Bar */}
+          <div className="bg-[#13171f] rounded-xl p-6 border border-white/5 shadow-sm border-t-4 border-t-primary">
             <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-              <TrendingUp className="text-secondary h-5 w-5" />
-              Resumo Financeiro
+              <Wallet className="text-primary h-5 w-5" />
+              Execução Financeira
             </h3>
             <div className="space-y-6">
               <div>
-                <p className="text-sm text-on-surface-variant mb-1 font-medium">Total Investido</p>
-                <p className="text-3xl font-extrabold tracking-tight text-primary">{formatCurrency(485200)}</p>
-              </div>
-              <div className="p-4 bg-[#181c21] rounded-lg">
-                <div className="flex justify-between items-center mb-1">
-                  <p className="text-xs font-bold uppercase text-on-surface-variant tracking-wider">Próxima Parcela</p>
-                  <span className="text-xs font-bold text-secondary">Vence em 5 dias</span>
+                <div className="flex justify-between items-end mb-2">
+                  <p className="text-sm text-slate-400 font-medium tracking-tight">Investimento Total</p>
+                  <span className="text-lg font-bold text-white tracking-tight">{financialProgress}%</span>
                 </div>
-                <p className="text-xl font-bold">{formatCurrency(12450)}</p>
-                <button className="w-full mt-4 bg-primary text-white py-3 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity">
-                  Pagar Agora
-                </button>
+                <div className="w-full bg-slate-800 rounded-full h-2.5 mb-2 overflow-hidden">
+                  <div className="bg-primary h-full rounded-full transition-all duration-1000" style={{ width: `${financialProgress}%` }}></div>
+                </div>
+                <div className="flex justify-between text-[10px] uppercase font-bold tracking-widest text-slate-500">
+                  <span>Início</span>
+                  <span>100%</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="p-3 bg-slate-900/50 rounded-lg border border-slate-800">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Total Gasto</p>
+                  <p className="text-sm font-bold text-white">{formatCurrency(totalInvested)}</p>
+                </div>
+                <div className="p-3 bg-slate-900/50 rounded-lg border border-slate-800">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Orcamento</p>
+                  <p className="text-sm font-bold text-slate-300">{formatCurrency(totalBudget)}</p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Documents */}
-          <div className="bg-surface-container rounded-xl p-6">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <FileText className="text-primary h-5 w-5" />
-              Documentação
-            </h3>
-            <div className="space-y-3">
-              {[
-                { name: 'Contrato.pdf' },
-                { name: 'Planta_Baixa_RevA.dwg' },
-                { name: 'Memorial.pdf' }
-              ].map((doc, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-[#13171f] rounded-lg group cursor-pointer hover:bg-primary-container hover:text-white transition-colors">
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-4 w-4 opacity-60" />
-                    <span className="text-sm font-medium">{doc.name}</span>
-                  </div>
-                  <Download className="h-4 w-4 opacity-0 group-hover:opacity-100" />
+          <div className="bg-[#13171f] rounded-xl p-6 border border-white/5 shadow-sm">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <FileText className="text-primary h-5 w-5" />
+                Documentação
+              </h3>
+              <label className="cursor-pointer group">
+                <input type="file" className="hidden" onChange={(e) => {
+                  // In a real app, this would upload to Supabase Storage
+                  alert('Funcionalidade de upload sendo integrada ao banco de dados...');
+                }} />
+                <div className="p-1.5 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                  <Plus className="h-4 w-4 text-primary" />
                 </div>
-              ))}
+              </label>
+            </div>
+            
+            <div className="space-y-3">
+              {budgetItems.length > 0 ? (
+                // Using a few relevant documents if they exist, or just placeholder UI for now
+                [
+                  { name: 'Contrato de Prestação.pdf', size: '1.2MB' },
+                  { name: 'Projeto_Arquitetonico.dwg', size: '15MB' },
+                  { name: 'Memorial_Descritivo.pdf', size: '0.8MB' }
+                ].map((doc, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg group cursor-pointer hover:bg-slate-800 transition-colors border border-slate-800/50">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-slate-800 rounded-lg">
+                        <FileText className="h-4 w-4 text-slate-400" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-100 block">{doc.name}</span>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase">{doc.size}</span>
+                      </div>
+                    </div>
+                    <Download className="h-4 w-4 text-slate-500 group-hover:text-white transition-colors" />
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-slate-500 text-center py-4 italic">Nenhum documento anexado.</p>
+              )}
             </div>
           </div>
 

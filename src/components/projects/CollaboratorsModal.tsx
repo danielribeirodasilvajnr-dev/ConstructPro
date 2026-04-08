@@ -178,11 +178,11 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                     {project.client?.charAt(0) || 'D'}
                   </div>
                   <div>
-                    <span className="text-sm font-bold text-slate-100 block">Proprietário</span>
+                    <span className="text-sm font-bold text-slate-100 block">Administrador</span>
                     <span className="text-[10px] text-slate-500 font-medium">Controle Total</span>
                   </div>
                 </div>
-                <div className="px-2 py-1 bg-slate-800 rounded-md text-[9px] font-black text-slate-400 uppercase">Dono</div>
+                <div className="px-2 py-1 bg-[#4170FF]/20 rounded-md text-[9px] font-black text-[#4170FF] uppercase tracking-wider">Gestor</div>
               </div>
 
               {/* Collaborators */}
