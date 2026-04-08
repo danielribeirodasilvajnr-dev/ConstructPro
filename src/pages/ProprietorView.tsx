@@ -58,12 +58,21 @@ interface ProprietorViewProps {
   selectedProjectId: string | null;
 }
 
+interface NewDocument {
+  name: string;
+  file: File | null;
+}
+
 // --- Proprietor View ---
 export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
   const { user } = useAuth();
   const { projects } = useProjects();
   const project = projects.find(p => p.id === selectedProjectId);
-  const { financialItems, budgetItems, scheduleItems, dailyLogs } = useProjectData(selectedProjectId);
+  const { financialItems, budgetItems, scheduleItems, dailyLogs, documents, refresh, loading: dataLoading } = useProjectData(selectedProjectId);
+
+  const [isAddingDoc, setIsAddingDoc] = useState(false);
+  const [newDoc, setNewDoc] = useState<NewDocument>({ name: '', file: null });
+  const [isSaving, setIsSaving] = useState(false);
 
   if (!selectedProjectId || !project) {
     return (
@@ -83,6 +92,41 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
   const totalInvested = financialItems.reduce((acc, item) => acc + Number(item.amount), 0);
   const totalBudget = budgetItems.reduce((acc, item) => acc + (Number(item.quantity) * Number(item.unit_cost)), 0);
   const financialProgress = totalBudget > 0 ? Math.round((totalInvested / totalBudget) * 100) : 0;
+  
+  const handleSaveDocument = async () => {
+    if (!newDoc.name || !selectedProjectId) return;
+    setIsSaving(true);
+    try {
+      const { error } = await supabase.from('project_documents').insert({
+        project_id: selectedProjectId,
+        name: newDoc.name,
+        url: '#', // In a production app, upload to storage first
+        file_type: newDoc.file?.type || 'application/pdf',
+        file_size: newDoc.file?.size || 0,
+        uploaded_by: user?.id
+      });
+      if (error) throw error;
+      setNewDoc({ name: '', file: null });
+      setIsAddingDoc(false);
+      refresh();
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao salvar documento');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteDocument = async (id: string) => {
+    if (!confirm('Excluir este documento?')) return;
+    try {
+      const { error } = await supabase.from('project_documents').delete().eq('id', id);
+      if (error) throw error;
+      refresh();
+    } catch (e) {
+      console.error(e);
+    }
+  };
   
   // Extract real photos from daily logs
   const allPhotos = dailyLogs.flatMap(log => 
@@ -190,83 +234,43 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
             </div>
           </div>
 
-          {/* Timeline */}
+          {/* Timeline - Last 3 Daily Logs */}
           <div className="bg-[#181c21] rounded-xl p-8 border border-white/5 shadow-sm">
-            <h3 className="text-xl font-bold mb-8">Etapas da Obra</h3>
+            <h3 className="text-xl font-bold mb-8">Etapas da Obra (Diário)</h3>
             <div className="relative space-y-8">
-              <div className="absolute left-3 top-2 bottom-2 w-px bg-outline-variant opacity-30"></div>
-
-              <div className="relative flex gap-6 items-start">
-                <div className="z-10 bg-primary w-6 h-6 rounded-full flex items-center justify-center ring-4 ring-surface-container-low">
-                  <CheckCircle2 className="text-white h-3 w-3" />
+              {dailyLogs.length > 0 ? (
+                <>
+                  <div className="absolute left-3 top-2 bottom-2 w-px bg-outline-variant opacity-30"></div>
+                  {dailyLogs.slice(0, 3).map((log, i) => (
+                    <div key={log.id} className="relative flex gap-6 items-start">
+                      <div className="z-10 bg-primary w-6 h-6 rounded-full flex items-center justify-center ring-4 ring-surface-container-low shadow-[0_0_10px_rgba(65,112,255,0.3)]">
+                        <Check className="text-white h-3 w-3" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-bold text-slate-100">{new Date(log.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}</h4>
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{log.weather}</span>
+                        </div>
+                        <p className="text-sm text-slate-400 mt-1 line-clamp-2 italic">{log.activities || 'Nenhuma atividade registrada.'}</p>
+                        {log.workers > 0 && (
+                          <div className="flex items-center gap-2 mt-2">
+                             <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-800 text-slate-400 rounded uppercase">Equipe: {log.workers}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div className="text-center py-8 text-slate-500 italic text-sm">
+                  Nenhum diário registrado nos últimos dias.
                 </div>
-                <div>
-                  <h4 className="font-bold">Estrutura finalizada</h4>
-                  <p className="text-sm text-on-surface-variant">Lajes, vigas e pilares concluídos.</p>
-                  <span className="inline-block mt-2 text-xs font-semibold px-2 py-1 bg-surface-container-highest text-on-surface-variant rounded">12 Out, 2023</span>
-                </div>
-              </div>
-
-              <div className="relative flex gap-6 items-start">
-                <div className="z-10 bg-secondary-container w-6 h-6 rounded-full flex items-center justify-center ring-4 ring-surface-container-low shadow-[0_0_8px_rgba(254,122,52,0.4)]">
-                  <div className="w-2 h-2 bg-[#13171f] rounded-full"></div>
-                </div>
-                <div>
-                  <h4 className="font-bold">Instalações em andamento</h4>
-                  <p className="text-sm text-on-surface-variant">Execução de pontos elétricos.</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-secondary text-xs font-bold px-2 py-1 bg-orange-100 rounded uppercase">Em Execução</span>
-                    <span className="text-xs text-on-surface-variant italic">Previsão: 20 Nov</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative flex gap-6 items-start opacity-50">
-                <div className="z-10 bg-outline-variant w-6 h-6 rounded-full flex items-center justify-center ring-4 ring-surface-container-low"></div>
-                <div>
-                  <h4 className="font-bold">Revestimentos e Pintura</h4>
-                  <p className="text-sm text-on-surface-variant">Próxima etapa programada.</p>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="col-span-12 lg:col-span-4 space-y-6">
-          {/* Financial Progress Bar */}
-          <div className="bg-[#13171f] rounded-xl p-6 border border-white/5 shadow-sm border-t-4 border-t-primary">
-            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-              <Wallet className="text-primary h-5 w-5" />
-              Execução Financeira
-            </h3>
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between items-end mb-2">
-                  <p className="text-sm text-slate-400 font-medium tracking-tight">Investimento Total</p>
-                  <span className="text-lg font-bold text-white tracking-tight">{financialProgress}%</span>
-                </div>
-                <div className="w-full bg-slate-800 rounded-full h-2.5 mb-2 overflow-hidden">
-                  <div className="bg-primary h-full rounded-full transition-all duration-1000" style={{ width: `${financialProgress}%` }}></div>
-                </div>
-                <div className="flex justify-between text-[10px] uppercase font-bold tracking-widest text-slate-500">
-                  <span>Início</span>
-                  <span>100%</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="p-3 bg-slate-900/50 rounded-lg border border-slate-800">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Total Gasto</p>
-                  <p className="text-sm font-bold text-white">{formatCurrency(totalInvested)}</p>
-                </div>
-                <div className="p-3 bg-slate-900/50 rounded-lg border border-slate-800">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Orcamento</p>
-                  <p className="text-sm font-bold text-slate-300">{formatCurrency(totalBudget)}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
+        <div className="col-span-12 lg:col-span-4 space-y-8">
           {/* Documents */}
           <div className="bg-[#13171f] rounded-xl p-6 border border-white/5 shadow-sm">
             <div className="flex justify-between items-center mb-6">
@@ -274,40 +278,45 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                 <FileText className="text-primary h-5 w-5" />
                 Documentação
               </h3>
-              <label className="cursor-pointer group">
-                <input type="file" className="hidden" onChange={(e) => {
-                  // In a real app, this would upload to Supabase Storage
-                  alert('Funcionalidade de upload sendo integrada ao banco de dados...');
-                }} />
-                <div className="p-1.5 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                  <Plus className="h-4 w-4 text-primary" />
-                </div>
-              </label>
+              <button 
+                onClick={() => setIsAddingDoc(true)}
+                className="p-1.5 bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+                title="Cadastrar Documento"
+              >
+                <Plus className="h-4 w-4 text-primary" />
+              </button>
             </div>
             
             <div className="space-y-3">
-              {budgetItems.length > 0 ? (
-                // Using a few relevant documents if they exist, or just placeholder UI for now
-                [
-                  { name: 'Contrato de Prestação.pdf', size: '1.2MB' },
-                  { name: 'Projeto_Arquitetonico.dwg', size: '15MB' },
-                  { name: 'Memorial_Descritivo.pdf', size: '0.8MB' }
-                ].map((doc, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg group cursor-pointer hover:bg-slate-800 transition-colors border border-slate-800/50">
+              {documents.length > 0 ? (
+                documents.map((doc, i) => (
+                  <div key={doc.id} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg group cursor-pointer hover:bg-slate-800 transition-colors border border-slate-800/50">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-slate-800 rounded-lg">
                         <FileText className="h-4 w-4 text-slate-400" />
                       </div>
                       <div>
                         <span className="text-xs font-bold text-slate-100 block">{doc.name}</span>
-                        <span className="text-[9px] text-slate-500 font-bold uppercase">{doc.size}</span>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase">
+                          {doc.file_type?.split('/')[1] || 'DOC'} • {(Number(doc.file_size) / 1024 / 1024).toFixed(1)}MB
+                        </span>
                       </div>
                     </div>
-                    <Download className="h-4 w-4 text-slate-500 group-hover:text-white transition-colors" />
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc.id); }}
+                        className="p-1.5 hover:bg-red-500/10 rounded-md text-red-500"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                      <Download className="h-4 w-4 text-slate-500" />
+                    </div>
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-slate-500 text-center py-4 italic">Nenhum documento anexado.</p>
+                <div className="text-center py-6 px-4 bg-slate-900/20 rounded-xl border border-dashed border-slate-800/50">
+                  <p className="text-xs text-slate-500 italic">Nenhum documento cadastrado.</p>
+                </div>
               )}
             </div>
           </div>
@@ -326,6 +335,80 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
           </div>
         </div>
       </div>
+
+      {/* Document Upload Modal */}
+      {isAddingDoc && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#181C21] border border-slate-800 rounded-[28px] w-full max-w-md shadow-2xl p-8"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Cadastrar Documento
+              </h3>
+              <button 
+                onClick={() => setIsAddingDoc(false)}
+                className="p-2 hover:bg-white/5 rounded-full transition-colors"
+              >
+                <X className="h-5 w-5 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Nome do Documento</label>
+                <input 
+                  type="text"
+                  value={newDoc.name}
+                  onChange={(e) => setNewDoc({ ...newDoc, name: e.target.value })}
+                  placeholder="Ex: Projeto_Arquitetonico_Rev01.pdf"
+                  className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Anexo (Arquivo)</label>
+                <div className="relative group">
+                  <input 
+                    type="file" 
+                    onChange={(e) => setNewDoc({ ...newDoc, file: e.target.files?.[0] || null })}
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                  />
+                  <div className="bg-[#13171f] border border-slate-800 border-dashed rounded-xl px-4 py-6 text-center group-hover:border-primary transition-colors">
+                    <Cloud className="h-6 w-6 text-slate-500 mx-auto mb-2 group-hover:text-primary" />
+                    <p className="text-xs text-slate-400 font-medium">
+                      {newDoc.file ? newDoc.file.name : 'Clique para selecionar ou arraste o arquivo'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-2">
+                <button 
+                  onClick={() => setIsAddingDoc(false)}
+                  className="flex-1 py-3.5 text-xs font-bold text-slate-400 hover:bg-white/5 rounded-xl transition-colors border border-transparent"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleSaveDocument}
+                  disabled={!newDoc.name || isSaving}
+                  className="flex-1 bg-primary py-3.5 text-xs font-bold text-white rounded-xl transition-all hover:bg-blue-600 shadow-lg shadow-blue-500/10 disabled:opacity-50 disabled:scale-100 active:scale-95 flex items-center justify-center gap-2"
+                >
+                  {isSaving ? (
+                    <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>Confirmar</>
+                  )}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
