@@ -17,7 +17,7 @@ import {
   Line
 } from 'recharts';
 import { useDashboardData } from '../hooks/useDashboardData';
-import { cn } from '../lib/utils';
+import { cn, formatCurrency } from '../lib/utils';
 
 export function DashboardView() {
   const { data: dashboardProjects, loading } = useDashboardData();
@@ -66,21 +66,21 @@ export function DashboardView() {
                         <Wallet className="h-[14px] w-[14px]" />
                         <span className="text-[11px] font-medium">Orçado</span>
                       </div>
-                      <p className="text-sm font-bold text-slate-100">R$ {project.ordained.toLocaleString('pt-BR')}</p>
+                      <p className="text-sm font-bold text-slate-100">{formatCurrency(project.ordained)}</p>
                     </div>
                     <div>
                       <div className="flex items-center gap-2 text-slate-500 mb-1.5">
                         <TrendingUp className="h-[14px] w-[14px]" />
                         <span className="text-[11px] font-medium">Gasto</span>
                       </div>
-                      <p className="text-sm font-bold text-[#FF8A00]">R$ {project.spent.toLocaleString('pt-BR')}</p>
+                      <p className="text-sm font-bold text-[#FF8A00]">{formatCurrency(project.spent)}</p>
                     </div>
                     <div>
                       <div className="flex items-center gap-2 text-slate-500 mb-1.5">
                         <AlertCircle className="h-[14px] w-[14px]" />
                         <span className="text-[11px] font-medium">Saldo</span>
                       </div>
-                      <p className="text-sm font-bold text-[#00E57A]">R$ {project.balance.toLocaleString('pt-BR')}</p>
+                      <p className="text-sm font-bold text-[#00E57A]">{formatCurrency(project.balance)}</p>
                     </div>
                   </div>
 

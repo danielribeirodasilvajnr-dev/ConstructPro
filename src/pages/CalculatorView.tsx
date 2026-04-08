@@ -12,6 +12,7 @@ import {
   Instagram,
   MessageCircle
 } from 'lucide-react';
+import { cn, formatCurrency } from '../lib/utils';
 
 export function CalculatorView() {
   const [responsavel, setResponsavel] = useState('pessoa física');
@@ -27,14 +28,14 @@ export function CalculatorView() {
   const [areaPisc, setAreaPisc] = useState(0); // Piscina
 
   const [showResults, setShowResults] = useState(false);
-  const [showFatorAjuste, setShowFatorAjuste] = useState(false);
+  const [showFatorAjuste, setShowFatorAjuste] = useState(false); // Controls the section on results page
   const [fatorCalculado, setFatorCalculado] = useState(false);
 
   // Fator de Ajuste Inputs
   const [fatorInicioMes, setFatorInicioMes] = useState('10');
-  const [fatorInicioAno, setFatorInicioAno] = useState('2025');
+  const [fatorInicioAno, setFatorInicioAno] = useState('2024');
   const [fatorFimMes, setFatorFimMes] = useState('08');
-  const [fatorFimAno, setFatorFimAno] = useState('2026');
+  const [fatorFimAno, setFatorFimAno] = useState('2025');
 
   const totalArea = areaCon + areaRef + areaDem + areaPisc;
 
@@ -48,8 +49,6 @@ export function CalculatorView() {
 
   const calcRMT = totalArea * getCUB();
   const inssInicial = calcRMT * 0.20; // Estimativa padrão sem fator
-
-  const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   if (showResults) {
     const reducao = inssInicial * 0.67;
@@ -69,15 +68,15 @@ export function CalculatorView() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-[#181c21] p-6 rounded-2xl border border-white/5 shadow-xl">
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Custo Estimado da Obra</p>
-            <h3 className="text-2xl font-black text-white">R$ {fmt(calcRMT)}</h3>
+            <h3 className="text-2xl font-black text-white">{formatCurrency(calcRMT)}</h3>
           </div>
           <div className="bg-[#181c21] p-6 rounded-2xl border border-white/5 shadow-xl">
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">INSS Sem Redução</p>
-            <h3 className="text-2xl font-black text-red-500">R$ {fmt(inssInicial)}</h3>
+            <h3 className="text-2xl font-black text-red-500">{formatCurrency(inssInicial)}</h3>
           </div>
           <div className="bg-[#10B981]/10 p-6 rounded-2xl border border-[#10B981]/20 shadow-xl relative overflow-hidden">
             <p className="text-[10px] font-bold text-[#10B981] uppercase tracking-widest mb-1">Com Fator de Ajuste</p>
-            <h3 className="text-2xl font-black text-[#10B981]">R$ {fmt(inssFinal)}</h3>
+            <h3 className="text-2xl font-black text-[#10B981]">{formatCurrency(inssFinal)}</h3>
             <TrendingDown className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 text-[#10B981]/10" />
           </div>
         </div>
@@ -103,7 +102,7 @@ export function CalculatorView() {
                   <ShieldCheck className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h4 className="text-lg font-bold text-white mb-2">Potencial de Economia: R$ {fmt(reducao)}</h4>
+                  <h4 className="text-lg font-bold text-white mb-2">Potencial de Economia: {formatCurrency(reducao)}</h4>
                   <p className="text-slate-400 text-sm leading-relaxed">
                     Aplicando o Fator de Ajuste, sua obra pode ter uma redução de até <b>{percReducao}%</b> nos débitos de INSS.
                     Esta economia é garantida por lei para obras que cumprem os requisitos de remuneração mínima.
@@ -332,22 +331,22 @@ export function CalculatorView() {
                             {rows.map((r, i) => (
                               <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                                 <td className="py-2.5 px-2 font-bold text-slate-800">{r.mesStr}</td>
-                                <td className="py-2.5 px-2">R$ {fmt(r.rem)}</td>
-                                <td className="py-2.5 px-2">{r.jurosPerc > 0 ? `${fmt(r.jurosPerc)}%` : '-'}</td>
-                                <td className="py-2.5 px-2">R$ {fmt(r.inss)}</td>
-                                <td className="py-2.5 px-2">{r.multa > 0 ? `R$ ${fmt(r.multa)}` : '-'}</td>
-                                <td className="py-2.5 px-2">{r.juros > 0 ? `R$ ${fmt(r.juros)}` : '-'}</td>
-                                <td className="py-2.5 px-2">{r.maed > 0 ? `R$ ${fmt(r.maed)}` : '-'}</td>
+                                <td className="py-2.5 px-2">{formatCurrency(r.rem)}</td>
+                                <td className="py-2.5 px-2">{r.jurosPerc > 0 ? `${r.jurosPerc.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}%` : '-'}</td>
+                                <td className="py-2.5 px-2">{formatCurrency(r.inss)}</td>
+                                <td className="py-2.5 px-2">{r.multa > 0 ? formatCurrency(r.multa) : '-'}</td>
+                                <td className="py-2.5 px-2">{r.juros > 0 ? formatCurrency(r.juros) : '-'}</td>
+                                <td className="py-2.5 px-2">{r.maed > 0 ? formatCurrency(r.maed) : '-'}</td>
                               </tr>
                             ))}
                             <tr className="bg-slate-100 font-bold border-y border-slate-300 text-slate-800">
                               <td className="py-3 px-2">TOTAIS</td>
-                              <td className="py-3 px-2">R$ {fmt(totalRem)}</td>
+                              <td className="py-3 px-2">{formatCurrency(totalRem)}</td>
                               <td className="py-3 px-2">-</td>
-                              <td className="py-3 px-2">R$ {fmt(totalInss)}</td>
-                              <td className="py-3 px-2">R$ {fmt(totalMulta)}</td>
-                              <td className="py-3 px-2">R$ {fmt(totalJuros)}</td>
-                              <td className="py-3 px-2">R$ {fmt(totalMaed)}</td>
+                              <td className="py-3 px-2">{formatCurrency(totalInss)}</td>
+                              <td className="py-3 px-2">{formatCurrency(totalMulta)}</td>
+                              <td className="py-3 px-2">{formatCurrency(totalJuros)}</td>
+                              <td className="py-3 px-2">{formatCurrency(totalMaed)}</td>
                             </tr>
                           </tbody>
                         </table>
@@ -365,12 +364,12 @@ export function CalculatorView() {
                           </thead>
                           <tbody>
                             <tr className="border-b-2 border-slate-800">
-                              <td className="py-4 px-2 font-bold">R$ {fmt(totalRem + totalRem * 0.01079)}</td>
+                              <td className="py-4 px-2 font-bold">{formatCurrency(totalRem + totalRem * 0.01079)}</td>
                               <td className="py-2 px-2 font-bold">
-                                R$ {fmt(valorAtrasoReal)}<br />
-                                <span className="font-normal text-slate-600">{numParcelasAtraso} x R$ {fmt((valorAtrasoReal * multiplicadorJurosSelic) / numParcelasAtraso)}</span>
+                                {formatCurrency(valorAtrasoReal)}<br />
+                                <span className="font-normal text-slate-600">{numParcelasAtraso} x {formatCurrency((valorAtrasoReal * multiplicadorJurosSelic) / numParcelasAtraso)}</span>
                               </td>
-                              <td className="py-4 px-2 font-bold">{mesesFuturo} x R$ {fmt(inssMes)}</td>
+                              <td className="py-4 px-2 font-bold">{mesesFuturo} x {formatCurrency(inssMes)}</td>
                             </tr>
                           </tbody>
                         </table>
@@ -389,9 +388,9 @@ export function CalculatorView() {
                             </thead>
                             <tbody>
                               <tr className="border-b-2 border-slate-800 hover:bg-slate-50 transition-colors">
-                                <td className="py-3 px-2 font-bold bg-slate-100">R$ {fmt(inssInicial)}</td>
-                                <td className="py-3 px-2 font-bold bg-green-100/50 text-green-800">R$ {fmt(reducao)} ({percReducao}%)</td>
-                                <td className="py-3 px-2 font-bold bg-[#FDF1D6]">R$ {fmt(inssFinal)}</td>
+                                <td className="py-3 px-2 font-bold bg-slate-100">{formatCurrency(inssInicial)}</td>
+                                <td className="py-3 px-2 font-bold bg-green-100/50 text-green-800">{formatCurrency(reducao)} ({percReducao}%)</td>
+                                <td className="py-3 px-2 font-bold bg-[#FDF1D6]">{formatCurrency(inssFinal)}</td>
                               </tr>
                             </tbody>
                           </table>
@@ -400,24 +399,24 @@ export function CalculatorView() {
                         <div className="text-[13px] text-slate-600 mt-6 space-y-4 leading-relaxed">
                           <p><b>OBS:</b> Esta simulação apresenta uma estimativa dos valores mínimos de remuneração, para obtenção do maior desconto possível, o valor real deve ser verificado no SERO. Ao fazer os recolhimentos no e-Social deve-se usar os valores reais das remunerações dos profissionais contratados.</p>
                           <p className="font-bold"> *Resumo* </p>
-                          <p>Para sua obra {`( `}<b>*<span className="font-semibold text-slate-800">{destinacao}, local: '{uf}'</span>*</b>{` )`} com <b>*<span className="font-semibold text-slate-800">{totalArea.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²</span>*</b>, o valor do INSS normal, pagando por m² (aferição indireta) é de <b>*<span className="font-semibold text-slate-800">R$ {fmt(inssInicial)}</span>*</b> (se parcelar vai para R$ {fmt(inssInicial * 1.2)}).</p>
-                          <p>Através <b>*do Fator de Ajuste*</b>, é possível reduzir seu INSS para <b>*<span className="font-semibold text-slate-800">R$ {fmt(inssFinal)}</span>*</b> (pode ser parcelado) ou seja, uma redução de <b>*<span className="font-semibold text-slate-800">R$ {fmt(reducao)}</span>*</b> {`(${percReducao}%)`}.</p>
-                          <p>Para que sua obra se enquadrar <b>*no Fator de Ajuste*</b>, é preciso prestar contas no eSocial de uma remuneração mínima de <b>*<span className="font-semibold text-slate-800">R$ {fmt(totalRem)}</span>*</b>, referente ao período de <b>*<span className="font-semibold text-slate-800">{dMes.toString().padStart(2, '0')}-{dAno} a {fMes.toString().padStart(2, '0')}-{fAno}</span>*</b> (R$ {fmt(remMes)} / mês).</p>
+                          <p>Para sua obra {`( `}<b>*<span className="font-semibold text-slate-800">{destinacao}, local: '{uf}'</span>*</b>{` )`} com <b>*<span className="font-semibold text-slate-800">{totalArea.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²</span>*</b>, o valor do INSS normal, pagando por m² (aferição indireta) é de <b>*<span className="font-semibold text-slate-800">{formatCurrency(inssInicial)}</span>*</b> (se parcelar vai para {formatCurrency(inssInicial * 1.2)}).</p>
+                          <p>Através <b>*do Fator de Ajuste*</b>, é possível reduzir seu INSS para <b>*<span className="font-semibold text-slate-800">{formatCurrency(inssFinal)}</span>*</b> (pode ser parcelado) ou seja, uma redução de <b>*<span className="font-semibold text-slate-800">{formatCurrency(reducao)}</span>*</b> {`(${percReducao}%)`}.</p>
+                          <p>Para que sua obra se enquadrar <b>*no Fator de Ajuste*</b>, é preciso prestar contas no eSocial de uma remuneração mínima de <b>*<span className="font-semibold text-slate-800">{formatCurrency(totalRem)}</span>*</b>, referente ao período de <b>*<span className="font-semibold text-slate-800">{dMes.toString().padStart(2, '0')}-{dAno} a {fMes.toString().padStart(2, '0')}-{fAno}</span>*</b> ({formatCurrency(remMes)} / mês).</p>
                         </div>
                       </div>
 
                       <div className="text-[13px] text-slate-600 space-y-4 leading-relaxed mt-4 no-print">
                         <p className="font-bold pt-2"> *Como será feito o pagamento do INSS da minha obra?* </p>
-                        <p><b> *Valores em atraso:* </b> R$ {fmt(valorAtrasoReal)} ou {numParcelasAtraso} x R$ {fmt((valorAtrasoReal * multiplicadorJurosSelic) / numParcelasAtraso)} (+ Juros SELIC)</p>
-                        <p><b> *INSS futuro:* </b> {mesesFuturo} x R$ {fmt(inssMes)} (pagar até o dia 20 de cada mês)</p>
+                        <p><b> *Valores em atraso:* </b> {formatCurrency(valorAtrasoReal)} ou {numParcelasAtraso} x {formatCurrency((valorAtrasoReal * multiplicadorJurosSelic) / numParcelasAtraso)} (+ Juros SELIC)</p>
+                        <p><b> *INSS futuro:* </b> {mesesFuturo} x {formatCurrency(inssMes)} (pagar até o dia 20 de cada mês)</p>
 
                         <div className="pt-4 border-t border-slate-100">
                           <p className="font-bold text-slate-800 mb-4">Tabela | Para cálculo de honorários</p>
                           <div className="space-y-2 text-slate-700 font-medium">
-                            <p>10% -{'>'} R$ {fmt(reducao * 0.10)}</p>
-                            <p>15% -{'>'} R$ {fmt(reducao * 0.15)}</p>
-                            <p>20% -{'>'} R$ {fmt(reducao * 0.20)}</p>
-                            <p>25% -{'>'} R$ {fmt(reducao * 0.25)}</p>
+                            <p>10% -{'>'} {formatCurrency(reducao * 0.10)}</p>
+                            <p>15% -{'>'} {formatCurrency(reducao * 0.15)}</p>
+                            <p>20% -{'>'} {formatCurrency(reducao * 0.20)}</p>
+                            <p>25% -{'>'} {formatCurrency(reducao * 0.25)}</p>
                           </div>
                         </div>
                       </div>

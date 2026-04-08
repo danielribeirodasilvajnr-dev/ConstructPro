@@ -49,7 +49,7 @@ import {
   Line
 } from 'recharts';
 import { motion } from 'motion/react';
-import { cn } from '../lib/utils';
+import { cn, formatCurrency } from '../lib/utils';
 
 interface ProprietorViewProps {
   selectedProjectId: string | null;
@@ -192,14 +192,14 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
             <div className="space-y-6">
               <div>
                 <p className="text-sm text-on-surface-variant mb-1 font-medium">Total Investido</p>
-                <p className="text-3xl font-extrabold tracking-tight text-primary">R$ 485.200,00</p>
+                <p className="text-3xl font-extrabold tracking-tight text-primary">{formatCurrency(485200)}</p>
               </div>
               <div className="p-4 bg-[#181c21] rounded-lg">
                 <div className="flex justify-between items-center mb-1">
                   <p className="text-xs font-bold uppercase text-on-surface-variant tracking-wider">Próxima Parcela</p>
                   <span className="text-xs font-bold text-secondary">Vence em 5 dias</span>
                 </div>
-                <p className="text-xl font-bold">R$ 12.450,00</p>
+                <p className="text-xl font-bold">{formatCurrency(12450)}</p>
                 <button className="w-full mt-4 bg-primary text-white py-3 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity">
                   Pagar Agora
                 </button>

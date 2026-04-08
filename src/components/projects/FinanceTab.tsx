@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Search, Paperclip, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { FinancialItem, BudgetItem } from '../../lib/types';
+import { formatCurrency } from '../../lib/utils';
 
 interface FinanceTabProps {
   projectId: string;
@@ -131,7 +132,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                   </div>
                 </td>
                 <td className="p-4"><span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">{item.category}</span></td>
-                <td className="p-4 text-white font-bold">R$ {Number(item.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                <td className="p-4 text-white font-bold">{formatCurrency(Number(item.amount))}</td>
                 {!readOnly && (
                   <td className="p-4 flex gap-2">
                     <button onClick={() => { setEditingItem(item); setFormData(item); setIsModalOpen(true); }} className="p-1 hover:text-blue-500"><Edit className="h-4 w-4" /></button>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Calculator as CalculatorIcon, Wallet, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { BudgetItem, FinancialItem } from '../../lib/types';
-import { cn } from '../../lib/utils';
+import { cn, formatCurrency } from '../../lib/utils';
 
 interface BudgetTabProps {
   projectId: string;
@@ -72,13 +72,13 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-[#13171f] p-6 rounded-2xl border border-[#3B82F6]/30 relative overflow-hidden">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Custo da obra</p>
-          <h3 className="text-3xl font-black text-white">R$ {totalBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+          <h3 className="text-3xl font-black text-white">{formatCurrency(totalBudget)}</h3>
           <CalculatorIcon className="absolute right-6 top-1/2 -translate-y-1/2 h-8 w-8 text-[#3B82F6]/20" />
         </div>
 
         <div className="bg-[#13171f] p-6 rounded-2xl border border-white/5 relative overflow-hidden">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Realizado</p>
-          <h3 className="text-3xl font-black text-white">R$ {totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+          <h3 className="text-3xl font-black text-white">{formatCurrency(totalSpent)}</h3>
           <p className={`text-xs font-medium mt-1 ${realizedPercent > 100 ? 'text-red-500' : 'text-emerald-500'}`}>
             {realizedPercent.toFixed(1)}% do orçamento
           </p>
@@ -120,7 +120,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                     <React.Fragment key={category}>
                       <tr className="bg-[#13171f]/50 border-y border-white/5">
                         <td colSpan={5} className="py-3 px-6 text-xs font-bold text-[#3B82F6] uppercase tracking-wider">{category}</td>
-                        <td className="py-3 px-6 text-xs font-bold text-white text-right">R$ {catTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td className="py-3 px-6 text-xs font-bold text-white text-right">{formatCurrency(catTotal)}</td>
                         <td colSpan={2}></td>
                       </tr>
                       {items.map((item: BudgetItem) => {
@@ -158,14 +158,14 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                             </td>
                             <td className="py-4 px-6 text-slate-400 text-center text-xs font-bold">{item.unit}</td>
                             <td className="py-4 px-6 text-slate-300 text-right font-medium">{Number(item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            <td className="py-4 px-6 text-slate-300 text-right font-medium whitespace-nowrap">R$ {Number(item.unit_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            <td className="py-4 px-6 text-white text-right font-bold w-32 whitespace-nowrap">R$ {lineTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            <td className="py-4 px-6 text-[#F97316] text-right font-bold w-32 whitespace-nowrap bg-[#F97316]/5">- R$ {lineSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            <td className="py-4 px-6 text-slate-300 text-right font-medium whitespace-nowrap">{formatCurrency(Number(item.unit_cost))}</td>
+                            <td className="py-4 px-6 text-white text-right font-bold w-32 whitespace-nowrap">{formatCurrency(lineTotal)}</td>
+                            <td className="py-4 px-6 text-[#F97316] text-right font-bold w-32 whitespace-nowrap bg-[#F97316]/5">- {formatCurrency(lineSpent)}</td>
                             <td className={cn(
                               "py-4 px-6 text-right font-black w-32 pr-8 whitespace-nowrap transition-colors",
                               lineBalance < 0 ? 'text-red-500 bg-red-500/5' : 'text-[#10B981] bg-[#10B981]/5'
                             )}>
-                              R$ {lineBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              {formatCurrency(lineBalance)}
                             </td>
                             {!readOnly && (
                               <td className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-100 scale-95 z-20">
