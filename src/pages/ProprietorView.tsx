@@ -1,53 +1,18 @@
-import React, { useState } from 'react';
 import {
-  TrendingUp,
   Check,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
   Download,
-  Filter,
   Plus,
   Camera,
   FileText,
   HardHat,
   MessageSquare,
-  ArrowRight,
   Calendar as CalendarIcon,
-  Search,
-  MoreVertical,
   Cloud,
-  Sun,
-  Verified,
-  Map as MapIcon,
-  ClipboardList,
-  ChevronLeft,
   Wallet,
-  Edit,
   Trash2,
-  X,
-  Save,
-  Paperclip,
-  Calculator as CalculatorIcon,
-  RefreshCw,
-  ArrowLeft,
-  Printer,
-  MessageCircle,
-  Settings,
-  Instagram
+  X
 } from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  LineChart,
-  Line
-} from 'recharts';
+import { supabase } from '../lib/supabase';
 import { motion } from 'motion/react';
 import { cn, formatCurrency } from '../lib/utils';
 import { useProjects } from '../hooks/useProjects';
@@ -68,7 +33,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
   const { user } = useAuth();
   const { projects } = useProjects();
   const project = projects.find(p => p.id === selectedProjectId);
-  const { financialItems, budgetItems, scheduleItems, dailyLogs, documents, refresh, loading: dataLoading } = useProjectData(selectedProjectId);
+  const { financialItems, budgetItems, scheduleItems, dailyLogs, documents, refresh } = useProjectData(selectedProjectId);
 
   const [isAddingDoc, setIsAddingDoc] = useState(false);
   const [newDoc, setNewDoc] = useState<NewDocument>({ name: '', file: null });
