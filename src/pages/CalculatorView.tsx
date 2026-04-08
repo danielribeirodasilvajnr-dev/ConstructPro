@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Calculator as CalculatorIcon,
   ArrowLeft,
@@ -6,7 +6,8 @@ import {
   Clock,
   ShieldCheck,
   Instagram,
-  MessageCircle
+  MessageCircle,
+  Printer
 } from 'lucide-react';
 import { cn, formatCurrency } from '../lib/utils';
 
@@ -195,6 +196,76 @@ export function CalculatorView() {
     };
   }, [fatorInicioMes, fatorInicioAno, fatorFimMes, fatorFimAno, totalArea, calcRMT, inssInicial, aliquotaINSS]);
 
+  const summaryRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = (elementRef: React.RefObject<HTMLDivElement | null>) => {
+    const content = elementRef.current;
+    if (!content) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Por favor, permita pop-ups para imprimir.');
+      return;
+    }
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Resumo INSS - ConstructPro</title>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+            body { 
+              font-family: 'Inter', sans-serif; 
+              background: white; 
+              color: #1e293b; 
+              padding: 60px;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 80vh;
+            }
+            @media print {
+              body { padding: 0; min-height: 0; }
+              .no-print { display: none !important; }
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            #printable-area { width: 100%; max-width: 800px; }
+            .bg-[#FDF1D6] { background-color: #fffbeb !important; border: 1px solid #fde68a !important; }
+            .bg-white\\/50 { background-color: white !important; }
+            .bg-green-500\\/10 { background-color: #f0fdf4 !important; border: 1px solid #bbf7d0 !important; }
+            .text-green-700 { color: #15803d !important; }
+            .text-slate-800 { color: #1e293b !important; }
+            .text-slate-500 { color: #64748b !important; }
+            h4, p { margin: 0; }
+            .rounded-xl { border-radius: 12px !important; }
+            .rounded-lg { border-radius: 8px !important; }
+            .p-6 { padding: 24px !important; }
+            .p-4 { padding: 16px !important; }
+            .grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 24px !important; }
+            .shadow-sm { box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important; }
+          </style>
+        </head>
+        <body>
+          <div id="printable-area">
+            ${content.innerHTML}
+          </div>
+          <script>
+            setTimeout(() => {
+              window.print();
+              setTimeout(() => window.close(), 500);
+            }, 800);
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   // =====================================================
   // TELA DE RESULTADOS (Relatório SERO)
   // =====================================================
@@ -214,7 +285,9 @@ export function CalculatorView() {
     ].filter(Boolean).join(', ');
 
     return (
-      <div className="max-w-[900px] mx-auto w-full pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div 
+        className="max-w-[900px] mx-auto w-full pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500 printable-content"
+      >
 
         {/* Botão Voltar */}
         <div className="flex flex-wrap gap-3 mb-8">
@@ -374,11 +447,13 @@ export function CalculatorView() {
               {/* Conteúdo do Fator de Ajuste */}
               <div className="p-8 space-y-8">
                 {/* Economia */}
-                <div className="bg-[#10B981]/5 rounded-xl p-6 border border-[#10B981]/10">
+                <div className="bg-[#10B981]/5 rounded-xl p-6 border border-[#10B981]/10 relative group">
                   <div className="flex items-start gap-4">
                     <div className="p-3 bg-[#10B981] rounded-lg"><ShieldCheck className="h-6 w-6 text-white" /></div>
-                    <div>
-                      <h4 className="text-lg font-bold text-white mb-2">Potencial de Economia: {formatCurrency(reducao)}</h4>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <h4 className="text-lg font-bold text-white mb-2">Potencial de Economia: {formatCurrency(reducao)}</h4>
+                      </div>
                       <p className="text-slate-400 text-sm leading-relaxed">
                         Aplicando o Fator de Ajuste para o período de <b>{dMes.toString().padStart(2, '0')}/{dAno}</b> a <b>{fMes.toString().padStart(2, '0')}/{fAno}</b>, sua obra tem uma redução de <b>{percReducao}%</b> nos débitos de INSS.
                       </p>
@@ -462,10 +537,20 @@ export function CalculatorView() {
                   </div>
 
                   {/* Resumo do Fator */}
-                  <div className="mt-8 bg-[#FDF1D6] p-6 rounded-xl border border-[#F3C062]/30">
-                    <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4 text-orange-600" /> Resumo
-                    </h4>
+                  <div ref={summaryRef} className="mt-8 bg-[#FDF1D6] p-6 rounded-xl border border-[#F3C062]/30">
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-orange-600" /> Resumo
+                      </h4>
+                      <button 
+                        onClick={() => handlePrint(summaryRef)}
+                        className="no-print p-2 bg-slate-800/10 hover:bg-slate-800/20 text-slate-800 rounded-lg transition-colors flex items-center gap-2 text-xs font-bold"
+                        title="Imprimir Resumo"
+                      >
+                        <Printer className="h-4 w-4" /> 
+                        <span>Imprimir Resumo</span>
+                      </button>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                       <div className="p-4 bg-white/50 rounded-lg shadow-sm border border-white/20">
                         <p className="text-slate-500 text-[10px] uppercase font-bold mb-1 tracking-wider">INSS (inicial)</p>

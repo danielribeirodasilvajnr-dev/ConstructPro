@@ -143,7 +143,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                   onChange={e => setInviteRole(e.target.value as any)}
                   className="bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none appearance-none cursor-pointer"
                 >
-                  <option value="editor text-slate-300">Editor</option>
+                  <option value="editor">Editor</option>
                   <option value="viewer">Leitor</option>
                 </select>
               </div>
@@ -196,7 +196,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                       {c.profile?.avatar_url ? (
                         <img src={c.profile.avatar_url} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        c.profile?.email?.charAt(0).toUpperCase()
+                        (c.profile?.email || 'U').charAt(0).toUpperCase()
                       )}
                     </div>
                     <div>

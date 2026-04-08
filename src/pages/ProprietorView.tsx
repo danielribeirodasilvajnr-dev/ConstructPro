@@ -50,6 +50,8 @@ import {
 } from 'recharts';
 import { motion } from 'motion/react';
 import { cn, formatCurrency } from '../lib/utils';
+import { useProjects } from '../hooks/useProjects';
+import { useProjectData } from '../hooks/useProjectData';
 
 interface ProprietorViewProps {
   selectedProjectId: string | null;
@@ -57,14 +59,27 @@ interface ProprietorViewProps {
 
 // --- Proprietor View ---
 export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
-  if (!selectedProjectId) {
+  const { projects } = useProjects();
+  const project = projects.find(p => p.id === selectedProjectId);
+  const { financialItems, budgetItems, scheduleItems, dailyLogs } = useProjectData(selectedProjectId);
+
+  if (!selectedProjectId || !project) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 bg-[#13171f] rounded-2xl border border-white/5">
-        <h2 className="text-2xl font-bold text-white mb-2">Acesso do Proprietário</h2>
-        <p className="text-slate-500">Selecione uma de suas obras para acompanhar o progresso em tempo real.</p>
+      <div className="flex flex-col items-center justify-center py-20 bg-[#181c21] rounded-2xl border border-white/5 mx-auto max-w-4xl">
+        <HardHat className="h-12 w-12 text-slate-700 mb-4" />
+        <h2 className="text-xl font-bold text-white mb-2">Acesso do Proprietário</h2>
+        <p className="text-slate-500 text-center max-w-xs">Selecione uma obra na lista de projetos para visualizar o painel exclusivo do cliente.</p>
       </div>
     );
   }
+
+  // Calculate real progress
+  const physicalProgress = scheduleItems.length > 0 
+    ? Math.round(scheduleItems.reduce((acc, item) => acc + Number(item.progress || 0), 0) / scheduleItems.length) 
+    : 0;
+
+  const totalInvested = financialItems.reduce((acc, item) => acc + Number(item.amount), 0);
+  const nextPayment = financialItems[0]?.amount || 0;
 
   return (
     <div className="space-y-8 max-w-[1400px] mx-auto pb-24">
@@ -84,13 +99,28 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
         </div>
         <div className="relative z-10">
           <h1 className="text-4xl font-extrabold tracking-tight mb-2">Bem-vindo de volta, Sr. Ricardo</h1>
-          <p className="text-slate-300 font-medium text-lg mb-6">Sua obra está 65% concluída</p>
-          <div className="w-full max-w-md bg-[#13171f]/10 rounded-full h-3 mb-2">
-            <div className="bg-secondary-container h-3 rounded-full shadow-[0_0_12px_rgba(254,122,52,0.5)]" style={{ width: '65%' }}></div>
+          <div className="flex flex-wrap gap-6 mb-6 opacity-80">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-black uppercase tracking-widest text-slate-300">Local:</span>
+              <span className="text-sm font-bold text-white">{project.location || 'N/D'}</span>
+            </div>
+            <div className="flex items-center gap-2 border-l border-white/20 pl-6">
+              <span className="text-[11px] font-black uppercase tracking-widest text-slate-300">Área:</span>
+              <span className="text-sm font-bold text-white">{project.area || '0'},00 m²</span>
+            </div>
+            <div className="flex items-center gap-2 border-l border-white/20 pl-6">
+              <span className="text-[11px] font-black uppercase tracking-widest text-slate-300">Prazo:</span>
+              <span className="text-sm font-bold text-white">{project.deadline || 'N/D'}</span>
+            </div>
+          </div>
+          
+          <p className="text-slate-200 font-medium text-lg mb-6">Sua obra está <span className="text-white font-bold">{physicalProgress}%</span> concluída</p>
+          <div className="w-full max-w-md bg-white/10 rounded-full h-3 mb-2">
+            <div className="bg-white h-3 rounded-full shadow-[0_0_15px_rgba(255,255,255,0.4)] transition-all duration-1000" style={{ width: `${physicalProgress}%` }}></div>
           </div>
           <div className="flex justify-between text-xs font-bold tracking-widest uppercase opacity-70">
-            <span>Fundação</span>
-            <span>Acabamento</span>
+            <span>Início</span>
+            <span>Entrega</span>
           </div>
         </div>
       </motion.section>

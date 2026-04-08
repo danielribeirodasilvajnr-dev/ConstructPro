@@ -248,15 +248,15 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                 <div className="mt-6 space-y-4">
                   <div className="flex items-center gap-3 text-slate-500">
                     <MapIcon className="h-4 w-4 text-slate-600" />
-                    <span className="text-xs font-medium">{project.location || 'Local não definido'}</span>
+                    <span className="text-xs font-medium">Local: {project.location || 'Local não definido'}</span>
                   </div>
                   <div className="flex items-center gap-3 text-slate-500">
                     <div className="w-4 h-4 flex items-center justify-center font-bold text-[9px] border border-slate-700 rounded-sm">m²</div>
-                    <span className="text-xs font-medium">{project.area || '0'},00 m²</span>
+                    <span className="text-xs font-medium">Área: {project.area || '0'},00 m²</span>
                   </div>
                   <div className="flex items-center gap-3 text-slate-500">
                     <CalendarIcon className="h-4 w-4 text-slate-600" />
-                    <span className="text-xs font-medium">{project.deadline || 'Sem prazo'}</span>
+                    <span className="text-xs font-medium">Prazo: {project.deadline || 'Sem prazo'}</span>
                   </div>
                 </div>
               </div>

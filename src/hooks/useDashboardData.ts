@@ -23,6 +23,10 @@ export function useDashboardData() {
         `);
 
       if (projectsError) throw projectsError;
+      if (!projects) {
+        setData([]);
+        return;
+      }
 
       const mapped = projects.map((p: any) => {
         const ordained = (p.budget_items || []).reduce((acc: number, item: any) => acc + (Number(item.quantity) * Number(item.unit_cost)), 0);

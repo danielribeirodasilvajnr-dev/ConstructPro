@@ -46,7 +46,17 @@ export function DashboardView() {
               <div className="p-8 pb-6 border-b border-slate-800 flex flex-col md:flex-row md:items-start justify-between gap-6">
                 <div>
                   <h4 className="text-[22px] font-bold text-slate-100 tracking-tight">{project.name}</h4>
-                  <p className="text-slate-500 text-[13px] font-medium mt-1">{project.location}</p>
+                  <div className="flex flex-wrap gap-4 mt-2">
+                    <p className="text-slate-500 text-[13px] font-medium flex items-center gap-1.5">
+                      <span className="text-slate-600">Local:</span> {project.location || 'N/D'}
+                    </p>
+                    <p className="text-slate-500 text-[13px] font-medium flex items-center gap-1.5 border-l border-slate-800 pl-4">
+                      <span className="text-slate-600">Área:</span> {project.area || '0'},00 m²
+                    </p>
+                    <p className="text-slate-500 text-[13px] font-medium flex items-center gap-1.5 border-l border-slate-800 pl-4">
+                      <span className="text-slate-600">Prazo:</span> {project.deadline || 'N/D'}
+                    </p>
+                  </div>
                 </div>
                 <span className={cn(
                   "px-4 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap",
