@@ -54,6 +54,7 @@ export interface DailyLog {
   workers: number;
   activities: string;
   restrictions: string;
+  daily_log_photos?: DailyLogPhoto[];
 }
 
 export interface DailyLogPhoto {
@@ -74,7 +75,7 @@ export interface ProjectCollaborator {
   id: string;
   project_id: string;
   user_id: string;
-  role: 'editor' | 'viewer';
+  role: 'editor' | 'viewer' | 'proprietor';
   created_at: string;
   profile?: Profile;
 }
