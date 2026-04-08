@@ -52,6 +52,7 @@ import { motion } from 'motion/react';
 import { cn, formatCurrency } from '../lib/utils';
 import { useProjects } from '../hooks/useProjects';
 import { useProjectData } from '../hooks/useProjectData';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ProprietorViewProps {
   selectedProjectId: string | null;
@@ -59,6 +60,7 @@ interface ProprietorViewProps {
 
 // --- Proprietor View ---
 export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
+  const { user } = useAuth();
   const { projects } = useProjects();
   const project = projects.find(p => p.id === selectedProjectId);
   const { financialItems, budgetItems, scheduleItems, dailyLogs } = useProjectData(selectedProjectId);
@@ -98,7 +100,9 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
           />
         </div>
         <div className="relative z-10">
-          <h1 className="text-4xl font-extrabold tracking-tight mb-2">Bem-vindo de volta, Sr. Ricardo</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight mb-2">
+            Bem-vindo de volta, {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Sr. Ricardo'}
+          </h1>
           <div className="flex flex-wrap gap-6 mb-6 opacity-80">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-black uppercase tracking-widest text-slate-300">Local:</span>

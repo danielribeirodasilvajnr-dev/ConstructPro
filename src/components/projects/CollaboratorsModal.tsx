@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Trash2, Shield, Eye, Mail, Loader2, AlertCircle } from 'lucide-react';
+import { X, UserPlus, Trash2, Shield, Eye, Mail, Loader2, AlertCircle, Verified } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Project, Profile, ProjectCollaborator } from '../../lib/types';
 import { cn } from '../../lib/utils';
@@ -144,7 +144,8 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                   className="bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none appearance-none cursor-pointer"
                 >
                   <option value="editor">Editor</option>
-                  <option value="viewer">Leitor</option>
+                  <option value="viewer">Leitor/Cliente</option>
+                  <option value="proprietor">Proprietário (Cliente)</option>
                 </select>
               </div>
             </div>
@@ -202,7 +203,9 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                     <div>
                       <span className="text-sm font-bold text-slate-100 block truncate max-w-[150px]">{c.profile?.email}</span>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        {c.role === 'editor' ? (
+                        {c.role === 'proprietor' ? (
+                          <><Verified className="h-3 w-3 text-[#FF8A00]" /><span className="text-[10px] text-[#FF8A00] font-bold uppercase tracking-wider">Proprietário</span></>
+                        ) : c.role === 'editor' ? (
                           <><Shield className="h-3 w-3 text-[#4170FF]" /><span className="text-[10px] text-[#4170FF] font-bold uppercase tracking-wider">Editor</span></>
                         ) : (
                           <><Eye className="h-3 w-3 text-slate-500" /><span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Leitor</span></>

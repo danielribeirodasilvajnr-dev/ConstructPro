@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Layout from './components/Layout';
 import { DashboardView } from './pages/DashboardView';
+import { supabase } from './lib/supabase';
 import { ScheduleView } from './pages/ScheduleView';
 import { FinancialsView } from './pages/FinancialsView';
 import { LogsView } from './pages/LogsView';
@@ -14,7 +15,38 @@ import { useAuth } from './contexts/AuthContext';
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
   const { user } = useAuth();
+
+  React.useEffect(() => {
+    async function checkRole() {
+      if (!user) return;
+      
+      // Check if user is proprietor in any project
+      const { data: collaborations } = await supabase
+        .from('project_collaborators')
+        .select('project_id, role')
+        .eq('user_id', user.id);
+      
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('user_id', user.id);
+
+      const roles = collaborations || [];
+      const ownsProjects = (projects || []).length > 0;
+      const isProprietorOf = roles.find(c => c.role === 'proprietor');
+      
+      if (isProprietorOf && !ownsProjects) {
+        setIsClient(true);
+        setActiveTab('safety');
+        setSelectedProjectId(isProprietorOf.project_id);
+      } else {
+        setIsClient(false);
+      }
+    }
+    checkRole();
+  }, [user]);
 
   if (!user) {
     return <AuthView />;
@@ -56,7 +88,12 @@ export default function App() {
   };
 
   return (
-    <Layout activeTab={activeTab} setActiveTab={setActiveTab} title={getTitle()}>
+    <Layout 
+      activeTab={activeTab} 
+      setActiveTab={setActiveTab} 
+      title={getTitle()}
+      isClient={isClient}
+    >
       {renderView()}
     </Layout>
   );

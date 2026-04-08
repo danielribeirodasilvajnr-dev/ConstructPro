@@ -14,16 +14,21 @@ import { useAuth } from '../contexts/AuthContext';
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  isClient?: boolean;
 }
 
-export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
+export function Sidebar({ activeTab, setActiveTab, isClient }: SidebarProps) {
   const { signOut } = useAuth();
-  const navItems = [
+  const allNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'projects', label: 'Projetos', icon: ClipboardList },
     { id: 'resources', label: 'Calculadora INSS', icon: Users },
     { id: 'safety', label: 'Painel do Proprietário', icon: ShieldCheck },
   ];
+
+  const navItems = isClient 
+    ? allNavItems.filter(item => item.id === 'safety')
+    : allNavItems;
 
   return (
     <aside className="fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-[#181C21] border-r border-slate-800 shadow-2xl">
@@ -56,10 +61,12 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       </nav>
 
       <div className="p-6 mt-auto border-t border-slate-800 bg-slate-900/10">
-        <button className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#4170FF] py-3.5 text-xs font-bold text-white transition-all hover:bg-blue-600 shadow-lg shadow-blue-500/10 uppercase tracking-widest active:scale-95">
-          <PlusCircle className="h-4 w-4" />
-          Novo Lançamento
-        </button>
+        {!isClient && (
+          <button className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#4170FF] py-3.5 text-xs font-bold text-white transition-all hover:bg-blue-600 shadow-lg shadow-blue-500/10 uppercase tracking-widest active:scale-95">
+            <PlusCircle className="h-4 w-4" />
+            Novo Lançamento
+          </button>
+        )}
         <div className="flex flex-col gap-1">
           <button className="flex items-center gap-3 px-4 py-2 text-sm text-slate-400 hover:text-primary">
             <CircleHelp className="h-4 w-4" />

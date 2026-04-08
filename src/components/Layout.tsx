@@ -7,12 +7,13 @@ interface LayoutProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   title?: string;
+  isClient?: boolean;
 }
 
-export default function Layout({ children, activeTab, setActiveTab, title }: LayoutProps) {
+export default function Layout({ children, activeTab, setActiveTab, title, isClient }: LayoutProps) {
   return (
     <div className="flex min-h-screen bg-surface">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isClient={isClient} />
       
       {/* Main Content */}
       <main className="ml-72 flex flex-1 flex-col">
