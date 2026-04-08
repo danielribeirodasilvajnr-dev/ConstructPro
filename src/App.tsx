@@ -7,6 +7,7 @@ import { LogsView } from './pages/LogsView';
 import { BudgetView } from './pages/BudgetView';
 import { ProjectsView } from './pages/ProjectsView';
 import { ProprietorView } from './pages/ProprietorView';
+import { CalculatorView } from './pages/CalculatorView';
 import { AuthView } from './pages/AuthView';
 import { useAuth } from './contexts/AuthContext';
 
@@ -33,7 +34,7 @@ export default function App() {
       case 'logs':
         return <LogsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'resources':
-        return <BudgetView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
+        return <CalculatorView />;
       case 'safety':
         return <ProprietorView selectedProjectId={selectedProjectId} />;
       default:
@@ -48,7 +49,7 @@ export default function App() {
       case 'schedule': return 'Cronograma de Obra';
       case 'financials': return 'Financeiro da Obra';
       case 'logs': return 'Diário de Obra';
-      case 'resources': return 'Orçamento Executivo';
+      case 'resources': return 'Calculadora INSS';
       case 'safety': return 'Painel do Proprietário';
       default: return 'ConstructPro';
     }

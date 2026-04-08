@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Map as MapIcon, 
-  Calendar as CalendarIcon, 
-  Edit, 
-  Trash2, 
+import {
+  Plus,
+  Search,
+  Map as MapIcon,
+  Calendar as CalendarIcon,
+  Edit,
+  Trash2,
   ChevronLeft,
   AlertCircle,
   X,
@@ -29,7 +29,7 @@ interface ProjectsViewProps {
 export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsViewProps) {
   const { projects, loading: loadingProjects, saveProject, deleteProject, refresh: refreshProjects } = useProjects();
   const [activeTab, setActiveTab] = useState<'orcamento' | 'cronograma' | 'financeiro' | 'diario'>('orcamento');
-  
+
   // Modals for Projects
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -38,15 +38,15 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
   const [isCollaboratorsModalOpen, setIsCollaboratorsModalOpen] = useState(false);
 
   // Hook for project specific data
-  const { 
-    budgetItems, 
-    scheduleItems, 
-    financialItems, 
-    dailyLogs, 
-    loading: loadingData, 
+  const {
+    budgetItems,
+    scheduleItems,
+    financialItems,
+    dailyLogs,
+    loading: loadingData,
     userRole,
     isEditor,
-    refresh: refreshData 
+    refresh: refreshData
   } = useProjectData(selectedProjectId);
 
   const handleEdit = (e: React.MouseEvent, project: Project) => {
@@ -58,8 +58,8 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
 
   const handleNew = () => {
     setEditingProject(null);
-    setFormData({ 
-      status: 'Planejamento', 
+    setFormData({
+      status: 'Planejamento',
       area: 0,
       start_date: new Date().toISOString().split('T')[0],
       name: '',
@@ -111,7 +111,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             </div>
           </div>
           {userRole === 'owner' && (
-            <button 
+            <button
               onClick={() => setIsCollaboratorsModalOpen(true)}
               className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-colors border border-slate-700"
             >
@@ -143,44 +143,44 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         </div>
 
         {activeTab === 'orcamento' && (
-          <BudgetTab 
-            projectId={selectedProjectId} 
-            budgetItems={budgetItems} 
-            financialItems={financialItems} 
+          <BudgetTab
+            projectId={selectedProjectId}
+            budgetItems={budgetItems}
+            financialItems={financialItems}
             onRefresh={refreshData}
-            readOnly={!isEditor} 
+            readOnly={!isEditor}
           />
         )}
         {activeTab === 'cronograma' && (
-          <ScheduleTab 
-            projectId={selectedProjectId} 
-            scheduleItems={scheduleItems} 
+          <ScheduleTab
+            projectId={selectedProjectId}
+            scheduleItems={scheduleItems}
             onRefresh={refreshData}
-            readOnly={!isEditor} 
+            readOnly={!isEditor}
           />
         )}
         {activeTab === 'financeiro' && (
-          <FinanceTab 
-            projectId={selectedProjectId} 
-            financialItems={financialItems} 
-            budgetItems={budgetItems} 
+          <FinanceTab
+            projectId={selectedProjectId}
+            financialItems={financialItems}
+            budgetItems={budgetItems}
             onRefresh={refreshData}
-            readOnly={!isEditor} 
+            readOnly={!isEditor}
           />
         )}
         {activeTab === 'diario' && (
-          <DailyLogTab 
-            projectId={selectedProjectId} 
-            dailyLogs={dailyLogs} 
+          <DailyLogTab
+            projectId={selectedProjectId}
+            dailyLogs={dailyLogs}
             onRefresh={refreshData}
-            readOnly={!isEditor} 
+            readOnly={!isEditor}
           />
         )}
 
         {isCollaboratorsModalOpen && selectedProject && (
-          <CollaboratorsModal 
-            project={selectedProject} 
-            onClose={() => setIsCollaboratorsModalOpen(false)} 
+          <CollaboratorsModal
+            project={selectedProject}
+            onClose={() => setIsCollaboratorsModalOpen(false)}
           />
         )}
       </div>
@@ -194,8 +194,8 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           <h2 className="text-3xl font-extrabold tracking-tight text-white">Projetos</h2>
           <p className="text-slate-500 text-sm mt-1">{projects.length} obra(s) no portfólio ConstructPro</p>
         </div>
-        <button 
-          onClick={handleNew} 
+        <button
+          onClick={handleNew}
           className="px-6 py-3 bg-[#4170FF] text-white text-xs font-bold rounded-xl flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 uppercase tracking-widest active:scale-95"
         >
           <Plus className="h-4 w-4" /> Novo Projeto
@@ -207,22 +207,22 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {projects.map((project) => (
-            <div 
-              key={project.id} 
-              onClick={() => onSelectProject(project.id)} 
+            <div
+              key={project.id}
+              onClick={() => onSelectProject(project.id)}
               className="bg-[#181C21] rounded-[24px] border border-slate-800 overflow-hidden flex flex-col group hover:shadow-2xl hover:border-[#4170FF]/50 cursor-pointer transition-all relative animate-in fade-in duration-500"
             >
               <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 z-10">
                 {project.user_id === projects.find(p => p.id === project.id)?.user_id && (
                   <>
-                    <button 
-                      onClick={(e) => handleEdit(e, project)} 
+                    <button
+                      onClick={(e) => handleEdit(e, project)}
                       className="p-2 bg-slate-900/90 text-slate-400 hover:text-white border border-slate-800 rounded-lg backdrop-blur-md transition-all shadow-xl"
                     >
                       <Edit className="h-4 w-4" />
                     </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setDeletingProject(project); }} 
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDeletingProject(project); }}
                       className="p-2 bg-slate-900/90 text-slate-400 hover:text-red-500 border border-slate-800 rounded-lg backdrop-blur-md transition-all shadow-xl"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -230,21 +230,21 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                   </>
                 )}
               </div>
-              
+
               <div className="p-8 flex-1">
                 <div className="flex items-start justify-between mb-6">
                   <span className={cn(
                     "px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider",
-                    project.status === 'Em andamento' ? 'bg-[#FFF3D6] text-[#C48C00]' : 
-                    project.status === 'Finalizada' ? 'bg-emerald-500/10 text-emerald-500' :
-                    'bg-slate-800 text-slate-400'
+                    project.status === 'Em andamento' ? 'bg-[#FFF3D6] text-[#C48C00]' :
+                      project.status === 'Finalizada' ? 'bg-emerald-500/10 text-emerald-500' :
+                        'bg-slate-800 text-slate-400'
                   )}>
                     {project.status}
                   </span>
                 </div>
 
                 <h3 className="text-xl font-bold text-slate-100 tracking-tight group-hover:text-[#4170FF] transition-colors line-clamp-2 min-h-[56px]">{project.name}</h3>
-                
+
                 <div className="mt-6 space-y-4">
                   <div className="flex items-center gap-3 text-slate-500">
                     <MapIcon className="h-4 w-4 text-slate-600" />
@@ -276,8 +276,8 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           <div className="relative bg-[#181C21] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-8 pb-4 flex items-center justify-between">
               <h3 className="text-xl font-bold text-slate-100 tracking-tight">{editingProject ? 'Editar Projeto' : 'Novo Projeto'}</h3>
-              <button 
-                onClick={() => setIsModalOpen(false)} 
+              <button
+                onClick={() => setIsModalOpen(false)}
                 className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-slate-800 rounded-full"
               >
                 <X className="h-5 w-5" />
@@ -296,9 +296,9 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Status</label>
                   <select value={formData.status || 'Planejamento'} onChange={e => setFormData({ ...formData, status: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none appearance-none">
-                     <option value="Planejamento">Planejamento</option>
-                     <option value="Em andamento">Em andamento</option>
-                     <option value="Finalizada">Finalizada</option>
+                    <option value="Planejamento">Planejamento</option>
+                    <option value="Em andamento">Em andamento</option>
+                    <option value="Finalizada">Finalizada</option>
                   </select>
                 </div>
               </div>
@@ -324,14 +324,14 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
               </div>
               <textarea placeholder="Observações adicionais sobre o projeto..." rows={3} value={formData.description || ''} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none resize-none" />
               <div className="pt-4 flex items-center justify-end gap-3">
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
+                <button
+                  onClick={() => setIsModalOpen(false)}
                   className="px-6 py-2.5 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-white transition-colors"
                 >
                   Cancelar
                 </button>
-                <button 
-                  onClick={handleSaveProject} 
+                <button
+                  onClick={handleSaveProject}
                   className="px-8 py-3 bg-[#4170FF] text-white text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 active:scale-[0.98]"
                 >
                   Salvar Projeto
@@ -342,7 +342,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         </div>
       )}
 
-       {deletingProject && (
+      {deletingProject && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDeletingProject(null)}></div>
           <div className="relative bg-[#13171f] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
