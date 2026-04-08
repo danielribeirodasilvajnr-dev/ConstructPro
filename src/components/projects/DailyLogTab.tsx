@@ -1,11 +1,18 @@
 import React, { useState, useRef } from 'react';
-import { Plus, Edit, Trash2, Camera, Sun, Cloud, HardHat, X, Image as ImageIcon, UploadCloud } from 'lucide-react';
+import { Plus, Edit, Trash2, Camera, Sun, Cloud, HardHat, X, Image as ImageIcon, UploadCloud, PlusCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { DailyLog, DailyLogPhoto } from '../../lib/types';
 import { cn } from '../../lib/utils';
 
 interface DailyLogWithPhotos extends DailyLog {
   daily_log_photos?: DailyLogPhoto[];
+}
+
+interface PhotoUploadItem {
+  file: File | null;
+  description: string;
+  previewUrl: string | null;
+  id: string;
 }
 
 interface DailyLogTabProps {
@@ -21,18 +28,42 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
   const [formData, setFormData] = useState<Partial<DailyLog>>({});
   const [uploading, setUploading] = useState(false);
 
-  // New Photo State
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [photoDescription, setPhotoDescription] = useState('');
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Multi-photo state
+  const [photosToUpload, setPhotosToUpload] = useState<PhotoUploadItem[]>([
+    { file: null, description: '', previewUrl: null, id: Math.random().toString(36).slice(2) }
+  ]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddPhotoSlot = () => {
+    setPhotosToUpload(prev => [
+      ...prev, 
+      { file: null, description: '', previewUrl: null, id: Math.random().toString(36).slice(2) }
+    ]);
+  };
+
+  const handleUpdatePhoto = (index: number, updates: Partial<PhotoUploadItem>) => {
+    setPhotosToUpload(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], ...updates };
+      return next;
+    });
+  };
+
+  const handleRemovePhotoSlot = (index: number) => {
+    if (photosToUpload.length > 1) {
+      setPhotosToUpload(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setPhotosToUpload([{ file: null, description: '', previewUrl: null, id: Math.random().toString(36).slice(2) }]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-      if (!photoDescription) setPhotoDescription(file.name);
+      handleUpdatePhoto(index, {
+        file,
+        previewUrl: URL.createObjectURL(file),
+        description: formData.activities ? formData.activities.slice(0, 50) : file.name
+      });
     }
   };
 
@@ -49,28 +80,30 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
         .select();
 
       if (logError) throw logError;
-
       const logId = savedLog?.[0]?.id;
 
-      if (selectedFile && logId) {
-        const fileName = `${projectId}/${logId}/${Date.now()}-${selectedFile.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from('daily_logs')
-          .upload(fileName, selectedFile);
+      if (logId) {
+        // Upload each valid photo slot
+        for (const item of photosToUpload) {
+          if (item.file) {
+            const fileName = `${projectId}/${logId}/${Date.now()}-${item.file.name}`;
+            const { error: uploadError } = await supabase.storage
+              .from('daily_logs')
+              .upload(fileName, item.file);
 
-        if (uploadError) throw uploadError;
+            if (!uploadError) {
+              const { data: { publicUrl } } = supabase.storage
+                .from('daily_logs')
+                .getPublicUrl(fileName);
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('daily_logs')
-          .getPublicUrl(fileName);
-
-        const { error: photoError } = await supabase.from('daily_log_photos').insert({
-          log_id: logId,
-          image_url: publicUrl,
-          description: photoDescription || selectedFile.name
-        });
-
-        if (photoError) throw photoError;
+              await supabase.from('daily_log_photos').insert({
+                log_id: logId,
+                image_url: publicUrl,
+                description: item.description || item.file.name
+              });
+            }
+          }
+        }
       }
 
       setIsModalOpen(false);
@@ -87,9 +120,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
   const resetModal = () => {
     setEditingLog(null);
     setFormData({});
-    setSelectedFile(null);
-    setPhotoDescription('');
-    setPreviewUrl(null);
+    setPhotosToUpload([{ file: null, description: '', previewUrl: null, id: Math.random().toString(36).slice(2) }]);
   };
 
   const handleDelete = async (id: string) => {
@@ -102,18 +133,18 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
     }
   };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, logId: string) => {
+  const handleQuickPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, logId: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
     try {
       const fileName = `${projectId}/${logId}/${Date.now()}-${file.name}`;
-      const { data, error } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('daily_logs')
         .upload(fileName, file);
 
-      if (error) throw error;
+      if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
         .from('daily_logs')
@@ -130,6 +161,15 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
       console.error(err);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const getWeatherIcon = (weather: string) => {
+    switch (weather?.toLowerCase()) {
+      case 'ensolarado': return <Sun className="h-4 w-4 text-yellow-500" />;
+      case 'nublado': return <Cloud className="h-4 w-4 text-slate-400" />;
+      case 'chuva': return <Cloud className="h-4 w-4 text-blue-400" />;
+      default: return <Sun className="h-4 w-4 text-yellow-500" />;
     }
   };
 
@@ -154,7 +194,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
           </div>
         ) : (
           dailyLogs.map(log => (
-            <div key={log.id} className="bg-[#1e293b]/50 p-6 rounded-xl border border-white/5 group relative">
+            <div key={log.id} className="bg-[#1e293b]/50 p-6 rounded-xl border border-white/5 group relative shadow-xl">
               <div className="flex justify-between items-start mb-4">
                 <div>
                    <h4 className="text-lg font-bold text-white capitalize">{new Date(log.date + 'T12:00:00Z').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}</h4>
@@ -172,10 +212,12 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
               </div>
               <div className="mt-4">
                 <p className="text-xs font-bold text-slate-500 uppercase mb-2">Atividades</p>
-                <p className="text-slate-300 text-sm whitespace-pre-wrap">{log.activities}</p>
+                <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                  <p className="text-slate-300 text-sm whitespace-pre-wrap">{log.activities}</p>
+                </div>
                 {log.restrictions && (
                   <div className="mt-4 p-3 bg-red-500/5 rounded-lg border border-red-500/10">
-                    <p className="text-[10px] font-bold text-red-400 uppercase mb-1">Restrições / Ocorrências</p>
+                    <p className="text-[10px] font-bold text-red-300 uppercase mb-1">Restrições / Ocorrências</p>
                     <p className="text-red-300/80 text-xs">{log.restrictions}</p>
                   </div>
                 )}
@@ -184,17 +226,17 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                 <p className="text-xs font-bold text-slate-500 uppercase mb-3">Evidências Fotográficas</p>
                 <div className="flex flex-wrap gap-4">
                   {log.daily_log_photos?.map(photo => (
-                    <div key={photo.id} className="group/photo relative w-32 aspect-square rounded-xl overflow-hidden border border-white/10 shadow-lg transition-transform hover:scale-105">
+                    <div key={photo.id} className="group/photo relative w-40 aspect-square rounded-xl overflow-hidden border border-white/10 shadow-lg transition-transform hover:scale-105">
                         <img src={photo.image_url} alt={photo.description} className="w-full h-full object-cover" />
-                        <div className="absolute inset-x-0 bottom-0 bg-black/60 p-2 opacity-0 group-hover/photo:opacity-100 transition-opacity">
-                          <p className="text-[9px] text-white font-medium truncate">{photo.description}</p>
+                        <div className="absolute inset-0 bg-black/60 p-2 opacity-0 group-hover/photo:opacity-100 transition-opacity flex flex-col justify-end">
+                          <p className="text-[10px] text-white font-medium line-clamp-2">{photo.description}</p>
                         </div>
                     </div>
                   ))}
                   {!readOnly && (
-                    <label className="w-32 aspect-square flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-[#4170FF]/50 hover:bg-[#4170FF]/5 transition-all">
-                        <Camera className="h-6 w-6 text-slate-500 group-hover:text-[#4170FF]" />
-                        <span className="text-[10px] text-slate-500 mt-1 font-bold">Adicionar Foto</span>
+                    <label className="w-40 aspect-square flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-[#4170FF]/50 hover:bg-[#4170FF]/5 transition-all text-slate-500 hover:text-[#4170FF]">
+                        <Camera className="h-6 w-6" />
+                        <span className="text-[10px] mt-1 font-bold">Adicionar Foto</span>
                         <input type="file" className="hidden" onChange={(e) => handleQuickPhotoUpload(e, log.id)} disabled={uploading} />
                     </label>
                   )}
@@ -207,35 +249,38 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
 
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-[#181C21] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-8 pb-4 flex items-center justify-between border-b border-white/5">
+          <div className="absolute inset-0 bg-[#0B0F19]/95 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
+          <div className="relative bg-[#181C21] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+            <div className="p-8 pb-6 flex items-center justify-between border-b border-white/5">
               <div>
-                <h3 className="text-xl font-bold text-white tracking-tight">Registro de Diário de Obra</h3>
-                <p className="text-xs text-slate-500 font-medium">Preencha os detalhes do dia e anexe evidências.</p>
+                <h3 className="text-2xl font-bold text-white tracking-tight">Registro de Diário de Obra</h3>
+                <p className="text-sm text-slate-400">Preencha os detalhes do dia e anexe evidências.</p>
               </div>
               <button 
                 onClick={() => setIsModalOpen(false)} 
                 className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-full"
               >
-                <X className="h-5 w-5" />
+                <X className="h-6 w-6" />
               </button>
             </div>
-            <div className="px-8 pb-8 space-y-6">
+
+            <div className="px-8 py-8 space-y-8 overflow-y-auto scrollbar-hide">
               <div className="grid grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Data</label>
-                  <input type="date" value={formData.date || ''} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none" />
+                  <input type="date" value={formData.date || ''} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none transition-all" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Clima</label>
-                  <select value={formData.weather || 'Ensolarado'} onChange={e => setFormData({ ...formData, weather: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none appearance-none">
-                     {['Ensolarado', 'Nublado', 'Chuvoso', 'Tempestade'].map(w => <option key={w} value={w}>{w}</option>)}
-                  </select>
+                  <div className="relative">
+                    <select value={formData.weather || 'Ensolarado'} onChange={e => setFormData({ ...formData, weather: e.target.value })} className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none appearance-none transition-all">
+                      {['Ensolarado', 'Nublado', 'Chuvoso', 'Tempestade'].map(w => <option key={w} value={w}>{w}</option>)}
+                    </select>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Efetivo</label>
-                  <input type="number" placeholder="Qtd. trabalhadores" value={formData.workers || 0} onChange={e => setFormData({ ...formData, workers: Number(e.target.value) })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none" />
+                  <input type="number" placeholder="Trabalhadores" value={formData.workers || 0} onChange={e => setFormData({ ...formData, workers: Number(e.target.value) })} className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none transition-all" />
                 </div>
               </div>
               
@@ -246,74 +291,85 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                   rows={4} 
                   value={formData.activities || ''} 
                   onChange={e => setFormData({ ...formData, activities: e.target.value })} 
-                  className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none resize-none" 
+                  className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none resize-none transition-all" 
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1 text-red-400">Restrições / Ocorrências</label>
+                <label className="text-[11px] font-bold text-red-300 uppercase tracking-widest ml-1">Restrições / Ocorrências</label>
                 <textarea 
                   placeholder="Houve algum problema ou impedimento? (opcional)" 
                   rows={2} 
                   value={formData.restrictions || ''} 
                   onChange={e => setFormData({ ...formData, restrictions: e.target.value })} 
-                  className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-red-300 focus:border-red-500 outline-none resize-none" 
+                  className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-3 text-sm text-red-300/80 placeholder:text-red-900/30 focus:border-red-500/50 outline-none resize-none transition-all" 
                 />
               </div>
-              {/* Photo Section */}
-              <div className="space-y-3 pt-4 border-t border-white/5">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Anexar Evidência Fotográfica</label>
-                <div className="grid grid-cols-2 gap-6">
-                  <div 
-                    onClick={() => fileInputRef.current?.click()}
-                    className={cn(
-                      "aspect-video rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative",
-                      previewUrl ? "border-[#4170FF]" : "border-white/10 hover:border-[#4170FF]/50 hover:bg-[#4170FF]/5"
-                    )}
-                  >
-                    {previewUrl ? (
-                      <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
-                    ) : (
-                      <>
-                        <UploadCloud className="h-8 w-8 text-slate-500 mb-2" />
-                        <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Selecionar Foto</span>
-                      </>
-                    )}
-                    <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} accept="image/*" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Descrição da Foto</label>
-                    <textarea 
-                      placeholder="Ex: Armação da laje L1..." 
-                      rows={4}
-                      value={photoDescription}
-                      onChange={e => setPhotoDescription(e.target.value)}
-                      className="w-full bg-[#13171f] border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:border-[#4170FF] outline-none resize-none h-full"
-                    />
-                  </div>
+
+              <div className="space-y-6 pt-4 border-t border-white/5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Evidências Fotográficas</label>
+                  <button onClick={handleAddPhotoSlot} className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest flex items-center gap-1.5 hover:text-white transition-colors">
+                    <PlusCircle className="h-4 w-4" /> Adicionar Mais
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {photosToUpload.map((item, index) => (
+                    <div key={item.id} className="relative bg-black/20 p-6 rounded-3xl border border-white/5 group/slot animate-in slide-in-from-bottom-2 duration-300">
+                      {photosToUpload.length > 1 && (
+                        <button onClick={() => handleRemovePhotoSlot(index)} className="absolute -top-2 -right-2 h-8 w-8 bg-[#181C21] border border-white/10 rounded-full flex items-center justify-center text-slate-500 hover:text-red-500 transition-colors shadow-xl z-10">
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr,1.5fr] gap-6">
+                        <div className="space-y-2 flex flex-col h-full">
+                          <label className="text-[9px] font-bold text-slate-600 uppercase tracking-widest ml-1">Anexo {index + 1}</label>
+                          <label className={cn(
+                            "flex-1 min-h-[160px] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative",
+                            item.previewUrl ? "border-[#4170FF] bg-black/40" : "border-white/5 hover:border-[#4170FF]/50 bg-[#13171f]"
+                          )}>
+                            {item.previewUrl ? (
+                              <img src={item.previewUrl} className="w-full h-full object-cover" alt="Preview" />
+                            ) : (
+                              <>
+                                <UploadCloud className="h-6 w-6 text-slate-500 mb-2" />
+                                <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Selecionar Foto</span>
+                              </>
+                            )}
+                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, index)} />
+                          </label>
+                        </div>
+                        <div className="space-y-2 flex flex-col h-full">
+                          <label className="text-[9px] font-bold text-slate-600 uppercase tracking-widest ml-1">Descrição do Anexo</label>
+                          <textarea 
+                            placeholder="Legenda para esta evidência..." 
+                            value={item.description}
+                            onChange={(e) => handleUpdatePhoto(index, { description: e.target.value })}
+                            className="flex-1 min-h-[160px] w-full bg-[#13171f] border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:border-[#4170FF] outline-none resize-none transition-all placeholder:text-slate-700"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
+            </div>
 
-              <div className="pt-8 flex items-center justify-end gap-4 border-t border-white/5">
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
-                  className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  onClick={handleSave} 
-                  disabled={uploading}
-                  className="px-10 py-4 bg-[#4170FF] text-white text-[11px] font-black rounded-2xl uppercase tracking-[2px] hover:bg-blue-600 transition-all shadow-xl shadow-blue-500/20 active:scale-[0.98] disabled:opacity-50 flex items-center gap-2"
-                >
-                  {uploading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Salvando...
-                    </>
-                  ) : 'Salvar RDO'}
-                </button>
-              </div>
+            <div className="p-8 bg-[#13171f]/50 border-t border-white/5 flex items-center justify-end gap-6">
+              <button onClick={() => setIsModalOpen(false)} className="text-[11px] font-black text-slate-600 uppercase tracking-widest hover:text-white transition-colors">Cancelar</button>
+              <button 
+                onClick={handleSave} 
+                disabled={uploading || !formData.date || !formData.activities}
+                className="px-12 py-4 bg-[#4170FF] text-white text-[11px] font-black rounded-2xl uppercase tracking-[2px] hover:bg-blue-600 transition-all shadow-2xl shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 flex items-center gap-3"
+              >
+                {uploading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    Salvando...
+                  </>
+                ) : 'Salvar Diário'}
+              </button>
             </div>
           </div>
         </div>
