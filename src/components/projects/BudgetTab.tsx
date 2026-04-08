@@ -9,9 +9,10 @@ interface BudgetTabProps {
   budgetItems: BudgetItem[];
   financialItems: FinancialItem[];
   onRefresh: () => void;
+  readOnly?: boolean;
 }
 
-export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh }: BudgetTabProps) {
+export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, readOnly }: BudgetTabProps) {
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<BudgetItem | null>(null);
   const [deletingItem, setDeletingItem] = useState<BudgetItem | null>(null);
@@ -88,9 +89,11 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh }:
       <div className="bg-[#0b0f19] rounded-2xl border border-white/5 shadow-2xl overflow-hidden mt-8">
         <div className="p-6 flex items-center justify-between border-b border-white/5 bg-[#13171f]">
           <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Levantamento Quantitativo / Orçamento</h3>
-          <button onClick={() => { setEditingItem(null); setFormData({ category: 'Outros', unit: 'vb', quantity: 1, unit_cost: 0 }); setIsItemModalOpen(true); }} className="px-4 py-2 bg-[#3B82F6] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-[#2563EB] transition-colors shadow-lg shadow-[#3B82F6]/20">
-            <Plus className="h-4 w-4" /> Adicionar Item
-          </button>
+          {!readOnly && (
+            <button onClick={() => { setEditingItem(null); setFormData({ category: 'Outros', unit: 'vb', quantity: 1, unit_cost: 0 }); setIsItemModalOpen(true); }} className="px-4 py-2 bg-[#3B82F6] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-[#2563EB] transition-colors shadow-lg shadow-[#3B82F6]/20">
+              <Plus className="h-4 w-4" /> Adicionar Item
+            </button>
+          )}
         </div>
 
         <div className="w-full overflow-x-auto">
@@ -164,12 +167,14 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh }:
                             )}>
                               R$ {lineBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
-                            <td className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-100 scale-95 z-20">
-                              <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-2xl">
-                                <button onClick={() => { setEditingItem(item); setFormData({ ...item }); setIsItemModalOpen(true); }} className="p-2 text-slate-400 hover:text-white transition-colors hover:bg-slate-800 rounded-md"><Edit className="h-4 w-4" /></button>
-                                <button onClick={() => setDeletingItem(item)} className="p-2 text-slate-400 hover:text-red-500 transition-colors hover:bg-red-500/10 rounded-md"><Trash2 className="h-4 w-4" /></button>
-                              </div>
-                            </td>
+                            {!readOnly && (
+                              <td className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-100 scale-95 z-20">
+                                <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-2xl">
+                                  <button onClick={() => { setEditingItem(item); setFormData({ ...item }); setIsItemModalOpen(true); }} className="p-2 text-slate-400 hover:text-white transition-colors hover:bg-slate-800 rounded-md"><Edit className="h-4 w-4" /></button>
+                                  <button onClick={() => setDeletingItem(item)} className="p-2 text-slate-400 hover:text-red-500 transition-colors hover:bg-red-500/10 rounded-md"><Trash2 className="h-4 w-4" /></button>
+                                </div>
+                              </td>
+                            )}
                           </tr>
                         );
                       })}

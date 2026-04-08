@@ -62,3 +62,19 @@ export interface DailyLogPhoto {
   image_url: string;
   description: string;
 }
+
+export interface Profile {
+  id: string;
+  email: string;
+  full_name?: string;
+  avatar_url?: string;
+}
+
+export interface ProjectCollaborator {
+  id: string;
+  project_id: string;
+  user_id: string;
+  role: 'editor' | 'viewer';
+  created_at: string;
+  profile?: Profile;
+}

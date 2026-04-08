@@ -8,9 +8,10 @@ interface FinanceTabProps {
   financialItems: FinancialItem[];
   budgetItems: BudgetItem[];
   onRefresh: () => void;
+  readOnly?: boolean;
 }
 
-export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh }: FinanceTabProps) {
+export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, readOnly }: FinanceTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FinancialItem | null>(null);
   const [formData, setFormData] = useState<Partial<FinancialItem>>({});
@@ -86,9 +87,11 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh }
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
       <div className="flex items-start justify-between">
         <h2 className="text-3xl font-black text-white">Controle de Custos</h2>
-        <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], category: 'Material' }); setIsModalOpen(true); }} className="px-5 py-2.5 bg-[#3B82F6] text-white text-sm font-bold rounded-lg flex items-center gap-2">
-          <Plus className="h-4 w-4" /> Novo Lançamento
-        </button>
+        {!readOnly && (
+          <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], category: 'Material' }); setIsModalOpen(true); }} className="px-5 py-2.5 bg-[#4170FF] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 active:scale-95">
+            <Plus className="h-4 w-4" /> Novo Lançamento
+          </button>
+        )}
       </div>
 
       <div className="flex gap-4">
@@ -129,10 +132,12 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh }
                 </td>
                 <td className="p-4"><span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">{item.category}</span></td>
                 <td className="p-4 text-white font-bold">R$ {Number(item.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                <td className="p-4 flex gap-2">
-                  <button onClick={() => { setEditingItem(item); setFormData(item); setIsModalOpen(true); }} className="p-1 hover:text-blue-500"><Edit className="h-4 w-4" /></button>
-                  <button onClick={() => handleDelete(item.id)} className="p-1 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
-                </td>
+                {!readOnly && (
+                  <td className="p-4 flex gap-2">
+                    <button onClick={() => { setEditingItem(item); setFormData(item); setIsModalOpen(true); }} className="p-1 hover:text-blue-500"><Edit className="h-4 w-4" /></button>
+                    <button onClick={() => handleDelete(item.id)} className="p-1 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

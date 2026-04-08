@@ -8,9 +8,10 @@ interface ScheduleTabProps {
   projectId: string;
   scheduleItems: ScheduleItem[];
   onRefresh: () => void;
+  readOnly?: boolean;
 }
 
-export function ScheduleTab({ projectId, scheduleItems, onRefresh }: ScheduleTabProps) {
+export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: ScheduleTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ScheduleItem | null>(null);
   const [formData, setFormData] = useState<Partial<ScheduleItem>>({});
@@ -69,9 +70,11 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh }: ScheduleTab
       <div className="flex items-start justify-between">
         <h2 className="text-3xl font-black text-[#3B82F6]">Planejamento Estrutural</h2>
         <div className="flex gap-3">
-          <button onClick={() => { setEditingItem(null); setFormData({ progress: 0 }); setIsModalOpen(true); }} className="px-4 py-2 bg-[#10B981] text-white text-sm font-bold rounded-lg flex items-center gap-2">
-            <Plus className="h-4 w-4" /> Nova Etapa
-          </button>
+          {!readOnly && (
+            <button onClick={() => { setEditingItem(null); setFormData({ progress: 0 }); setIsModalOpen(true); }} className="px-4 py-2 bg-[#4170FF] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 active:scale-95">
+              <Plus className="h-4 w-4" /> Nova Etapa
+            </button>
+          )}
         </div>
       </div>
 
@@ -111,7 +114,9 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh }: ScheduleTab
                 <div className="h-full bg-blue-500" style={{ width: `${item.progress}%` }}></div>
               </div>
             </div>
-            <button onClick={() => handleDelete(item.id)} className="p-2 text-slate-500 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+            {!readOnly && (
+              <button onClick={() => handleDelete(item.id)} className="p-2 text-slate-500 hover:text-red-500 transition-colors"><Trash2 className="h-4 w-4" /></button>
+            )}
           </div>
         ))}
       </div>

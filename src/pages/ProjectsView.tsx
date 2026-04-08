@@ -8,7 +8,8 @@ import {
   Trash2, 
   ChevronLeft,
   AlertCircle,
-  X
+  X,
+  Users
 } from 'lucide-react';
 import { useProjects } from '../hooks/useProjects';
 import { useProjectData } from '../hooks/useProjectData';
@@ -16,6 +17,7 @@ import { BudgetTab } from '../components/projects/BudgetTab';
 import { ScheduleTab } from '../components/projects/ScheduleTab';
 import { FinanceTab } from '../components/projects/FinanceTab';
 import { DailyLogTab } from '../components/projects/DailyLogTab';
+import { CollaboratorsModal } from '../components/projects/CollaboratorsModal';
 import { cn } from '../lib/utils';
 import { Project } from '../lib/types';
 
@@ -33,6 +35,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
   const [formData, setFormData] = useState<Partial<Project>>({});
+  const [isCollaboratorsModalOpen, setIsCollaboratorsModalOpen] = useState(false);
 
   // Hook for project specific data
   const { 
@@ -41,6 +44,8 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
     financialItems, 
     dailyLogs, 
     loading: loadingData, 
+    userRole,
+    isEditor,
     refresh: refreshData 
   } = useProjectData(selectedProjectId);
 
@@ -96,6 +101,14 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
               <p className="text-slate-400 text-sm mt-1">{selectedProject.location} • Início: {selectedProject.start_date || 'N/D'}</p>
             </div>
           </div>
+          {userRole === 'owner' && (
+            <button 
+              onClick={() => setIsCollaboratorsModalOpen(true)}
+              className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-colors border border-slate-700"
+            >
+              <Users className="h-4 w-4" /> Colaboradores
+            </button>
+          )}
         </div>
 
         <div className="flex border-b border-slate-800 mb-10 overflow-x-auto scrollbar-hide">
@@ -125,14 +138,16 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             projectId={selectedProjectId} 
             budgetItems={budgetItems} 
             financialItems={financialItems} 
-            onRefresh={refreshData} 
+            onRefresh={refreshData}
+            readOnly={!isEditor} 
           />
         )}
         {activeTab === 'cronograma' && (
           <ScheduleTab 
             projectId={selectedProjectId} 
             scheduleItems={scheduleItems} 
-            onRefresh={refreshData} 
+            onRefresh={refreshData}
+            readOnly={!isEditor} 
           />
         )}
         {activeTab === 'financeiro' && (
@@ -140,14 +155,23 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             projectId={selectedProjectId} 
             financialItems={financialItems} 
             budgetItems={budgetItems} 
-            onRefresh={refreshData} 
+            onRefresh={refreshData}
+            readOnly={!isEditor} 
           />
         )}
         {activeTab === 'diario' && (
           <DailyLogTab 
             projectId={selectedProjectId} 
             dailyLogs={dailyLogs} 
-            onRefresh={refreshData} 
+            onRefresh={refreshData}
+            readOnly={!isEditor} 
+          />
+        )}
+
+        {isCollaboratorsModalOpen && selectedProject && (
+          <CollaboratorsModal 
+            project={selectedProject} 
+            onClose={() => setIsCollaboratorsModalOpen(false)} 
           />
         )}
       </div>
@@ -180,18 +204,22 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
               className="bg-[#181C21] rounded-[24px] border border-slate-800 overflow-hidden flex flex-col group hover:shadow-2xl hover:border-[#4170FF]/50 cursor-pointer transition-all relative animate-in fade-in duration-500"
             >
               <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 z-10">
-                <button 
-                  onClick={(e) => handleEdit(e, project)} 
-                  className="p-2 bg-slate-900/90 text-slate-400 hover:text-white border border-slate-800 rounded-lg backdrop-blur-md transition-all shadow-xl"
-                >
-                  <Edit className="h-4 w-4" />
-                </button>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setDeletingProject(project); }} 
-                  className="p-2 bg-slate-900/90 text-slate-400 hover:text-red-500 border border-slate-800 rounded-lg backdrop-blur-md transition-all shadow-xl"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                {project.user_id === projects.find(p => p.id === project.id)?.user_id && (
+                  <>
+                    <button 
+                      onClick={(e) => handleEdit(e, project)} 
+                      className="p-2 bg-slate-900/90 text-slate-400 hover:text-white border border-slate-800 rounded-lg backdrop-blur-md transition-all shadow-xl"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setDeletingProject(project); }} 
+                      className="p-2 bg-slate-900/90 text-slate-400 hover:text-red-500 border border-slate-800 rounded-lg backdrop-blur-md transition-all shadow-xl"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </>
+                )}
               </div>
               
               <div className="p-8 flex-1">
