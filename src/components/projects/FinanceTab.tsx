@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Search, Paperclip, X, ChevronUp, ChevronDown, Filter as FilterIcon, FilterX } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Paperclip, X, ChevronUp, ChevronDown, Filter as FilterIcon, FilterX, Calendar } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 import { FinancialItem, BudgetItem } from '../../lib/types';
 import { cn, formatCurrency, formatDate, sanitizeFileName } from '../../lib/utils';
@@ -114,8 +115,10 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
   };
 
   const filteredItems = (financialItems || []).filter(i => {
-    const matchesSearch = i.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (i.supplier && i.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = 
+      i.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (i.supplier && i.supplier.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      i.category.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesDate = (!filters.dateStart || i.date >= filters.dateStart) &&
                         (!filters.dateEnd || i.date <= filters.dateEnd);
@@ -127,6 +130,14 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
     
     return matchesSearch && matchesDate && matchesCategory && matchesAmount;
   });
+
+  const activeFiltersCount = [
+    filters.dateStart,
+    filters.dateEnd,
+    filters.category !== 'Todas',
+    filters.minAmount,
+    filters.maxAmount
+  ].filter(Boolean).length;
 
   const sortedItems = [...filteredItems].sort((a, b) => {
     let valA: any = a[sortConfig.key as keyof FinancialItem];
@@ -179,85 +190,136 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
 
       <div className="space-y-4">
         <div className="flex gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
-            <input type="text" placeholder="Buscar por descrição ou fornecedor..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-4 bg-[#13171f] border border-white/5 text-white rounded-2xl focus:border-[#4170FF]/50 outline-none transition-all placeholder:text-slate-600" />
+          <div className="relative flex-1 group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-[#4170FF] transition-colors" />
+            <input 
+              type="text" 
+              placeholder="Buscar por descrição, fornecedor ou categoria..." 
+              value={searchTerm} 
+              onChange={e => setSearchTerm(e.target.value)} 
+              className="w-full pl-12 pr-4 py-4 bg-[#13171f] border border-white/5 text-white rounded-2xl focus:border-[#4170FF]/50 outline-none transition-all placeholder:text-slate-600 focus:bg-[#181c21]" 
+            />
           </div>
           <button 
             onClick={() => setIsFilterExpanded(!isFilterExpanded)} 
             className={cn(
-              "px-6 rounded-2xl border border-white/5 flex items-center gap-2 font-bold text-xs uppercase tracking-widest transition-all",
-              isFilterExpanded ? "bg-[#4170FF] text-white" : "bg-[#13171f] text-slate-400 hover:text-white"
+              "px-6 rounded-2xl border border-white/5 flex items-center gap-2 font-bold text-xs uppercase tracking-widest transition-all relative",
+              isFilterExpanded || activeFiltersCount > 0 ? "bg-[#4170FF]/10 border-[#4170FF]/30 text-[#4170FF]" : "bg-[#13171f] text-slate-400 hover:text-white"
             )}
           >
-            {isFilterExpanded ? <FilterX className="h-4 w-4" /> : <FilterIcon className="h-4 w-4" />}
-            Filtros {isFilterExpanded && '(Ativos)'}
+            {isFilterExpanded ? <X className="h-4 w-4" /> : <FilterIcon className="h-4 w-4" />}
+            Filtros
+            {activeFiltersCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-blue-600 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center border-2 border-[#0B0F19]">
+                {activeFiltersCount}
+              </span>
+            )}
           </button>
         </div>
 
-        {isFilterExpanded && (
-          <div className="p-6 bg-[#181c21] rounded-2xl border border-white/5 grid grid-cols-1 md:grid-cols-4 gap-6 animate-in slide-in-from-top-2 duration-300">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Período</label>
-              <div className="flex items-center gap-2">
-                <input 
-                  type="date" 
-                  value={filters.dateStart} 
-                  onChange={e => setFilters({ ...filters, dateStart: e.target.value })} 
-                  className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-4 py-2 text-xs text-white focus:outline-none" 
-                />
-                <span className="text-slate-600">à</span>
-                <input 
-                  type="date" 
-                  value={filters.dateEnd} 
-                  onChange={e => setFilters({ ...filters, dateEnd: e.target.value })} 
-                  className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-4 py-2 text-xs text-white focus:outline-none" 
-                />
+        <AnimatePresence>
+          {isFilterExpanded && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="p-6 bg-[#181c21] rounded-2xl border border-white/5 grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest flex items-center gap-2">
+                    <Calendar className="h-3 w-3" /> Período
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="date" 
+                      value={filters.dateStart} 
+                      onChange={e => setFilters({ ...filters, dateStart: e.target.value })} 
+                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-4 py-2 text-xs text-white focus:border-[#4170FF]/50 outline-none transition-all" 
+                    />
+                    <span className="text-slate-600 font-bold">à</span>
+                    <input 
+                      type="date" 
+                      value={filters.dateEnd} 
+                      onChange={e => setFilters({ ...filters, dateEnd: e.target.value })} 
+                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-4 py-2 text-xs text-white focus:border-[#4170FF]/50 outline-none transition-all" 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest flex items-center gap-2">
+                    <FilterIcon className="h-3 w-3" /> Categoria
+                  </label>
+                  <select 
+                    value={filters.category} 
+                    onChange={e => setFilters({ ...filters, category: e.target.value })} 
+                    className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#4170FF]/50 outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="Todas">Todas as Categorias</option>
+                    {VALID_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest flex items-center gap-2">
+                    <span className="text-[8px] border border-current rounded px-1">R$</span> Faixa de Valor
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="number" 
+                      placeholder="Min" 
+                      value={filters.minAmount} 
+                      onChange={e => setFilters({ ...filters, minAmount: e.target.value })} 
+                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-4 py-2 text-xs text-white focus:border-[#4170FF]/50 outline-none placeholder:text-slate-700 transition-all" 
+                    />
+                    <input 
+                      type="number" 
+                      placeholder="Max" 
+                      value={filters.maxAmount} 
+                      onChange={e => setFilters({ ...filters, maxAmount: e.target.value })} 
+                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-4 py-2 text-xs text-white focus:border-[#4170FF]/50 outline-none placeholder:text-slate-700 transition-all" 
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-end gap-2">
+                  <button 
+                    onClick={() => setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '' })}
+                    className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all h-[42px] border border-white/5"
+                  >
+                    Limpar
+                  </button>
+                </div>
               </div>
-            </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Categoria</label>
-              <select 
-                value={filters.category} 
-                onChange={e => setFilters({ ...filters, category: e.target.value })} 
-                className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-2 text-xs text-white focus:outline-none appearance-none cursor-pointer"
-              >
-                <option value="Todas">Todas as Categorias</option>
-                {categories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Faixa de Valor</label>
-              <div className="flex items-center gap-2">
-                <input 
-                  type="number" 
-                  placeholder="Min" 
-                  value={filters.minAmount} 
-                  onChange={e => setFilters({ ...filters, minAmount: e.target.value })} 
-                  className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-4 py-2 text-xs text-white focus:outline-none placeholder:text-slate-700" 
-                />
-                <input 
-                  type="number" 
-                  placeholder="Max" 
-                  value={filters.maxAmount} 
-                  onChange={e => setFilters({ ...filters, maxAmount: e.target.value })} 
-                  className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-4 py-2 text-xs text-white focus:outline-none placeholder:text-slate-700" 
-                />
-              </div>
-            </div>
-
-            <div className="flex items-end">
-              <button 
-                onClick={() => setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '' })}
-                className="w-full py-2 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all h-[36px]"
-              >
-                Limpar Tudo
-              </button>
-            </div>
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {VALID_CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setFilters({ ...filters, category: filters.category === cat ? 'Todas' : cat })}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all active:scale-95",
+                filters.category === cat 
+                  ? "bg-[#4170FF] border-[#4170FF] text-white shadow-lg shadow-blue-500/20" 
+                  : "bg-white/5 border-white/5 text-slate-500 hover:text-slate-300 hover:bg-white/10"
+              )}
+            >
+              {cat}
+            </button>
+          ))}
+          {activeFiltersCount > 0 && (
+            <button 
+              onClick={() => setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '' })}
+              className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#4170FF] flex items-center gap-1 hover:bg-[#4170FF]/5 transition-all"
+            >
+              <X className="h-3 w-3" /> Limpar Filtros
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="bg-[#13171f] rounded-2xl border border-white/5 overflow-hidden">
