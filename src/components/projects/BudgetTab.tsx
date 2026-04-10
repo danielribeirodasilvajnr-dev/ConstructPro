@@ -217,7 +217,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                     onChange={e => setFormData({ ...formData, category: e.target.value })} 
                     className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none appearance-none cursor-pointer"
                   >
-                    {['Serviços Preliminares', 'Infraestrutura', 'Alvenaria', 'Inst. Elétricas', 'Inst. Hidráulicas', 'Revestimento', 'Piso', 'Pintura', 'Complementos', 'Louças e Metais', 'Acabamentos', 'Outros'].map(c => <option key={c} value={c}>{c}</option>)}
+                    {['Serviços Preliminares', 'Infraestrutura', 'Superestrutura', 'Alvenaria', 'Esquadrias', 'Cobertura', 'Impermeabilização', 'Forros', 'Inst. Elétricas', 'Inst. Hidráulicas', 'Revestimento', 'Piso', 'Pintura', 'Complementos', 'Louças e Metais', 'Acabamentos', 'Outros'].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">

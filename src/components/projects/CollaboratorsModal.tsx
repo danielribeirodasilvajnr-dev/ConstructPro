@@ -114,8 +114,8 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
             <h3 className="text-xl font-bold text-slate-100 tracking-tight">Colaboradores</h3>
             <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">{project.name}</p>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-slate-800 rounded-full"
           >
             <X className="h-5 w-5" />
@@ -130,15 +130,15 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                  <input 
-                    type="email" 
-                    placeholder="exemplo@email.com" 
+                  <input
+                    type="email"
+                    placeholder="exemplo@email.com"
                     value={inviteEmail}
                     onChange={e => setInviteEmail(e.target.value)}
                     className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-11 py-3 text-sm text-white focus:border-[#4170FF] outline-none transition-all"
                   />
                 </div>
-                <select 
+                <select
                   value={inviteRole}
                   onChange={e => setInviteRole(e.target.value as any)}
                   className="bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none appearance-none cursor-pointer"
@@ -149,7 +149,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                 </select>
               </div>
             </div>
-            
+
             {error && (
               <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-xs">
                 <AlertCircle className="h-4 w-4 shrink-0" />
@@ -157,7 +157,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
               </div>
             )}
 
-            <button 
+            <button
               type="submit"
               disabled={inviting || !inviteEmail}
               className="w-full py-3.5 bg-[#4170FF] text-white text-xs font-bold rounded-xl uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
@@ -213,7 +213,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                       </div>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => removeCollaborator(c.id)}
                     className="p-2 text-slate-600 hover:text-red-500 hover:bg-red-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                   >
