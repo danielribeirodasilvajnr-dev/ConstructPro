@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { formatDate } from '../lib/utils';
 
 export function useDashboardData() {
   const { user } = useAuth();
@@ -42,8 +43,7 @@ export function useDashboardData() {
         const logs = sortedLogs.map((log: any) => {
           let desc = log.activities || '';
           if (desc.length > 70) desc = desc.substring(0, 70) + '...';
-          const dateObj = new Date(log.date + 'T12:00:00Z');
-          return { date: dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), desc };
+          return { date: formatDate(log.date, { day: '2-digit', month: 'short' }), desc };
         });
 
         const categoriesRaw = [...new Set([

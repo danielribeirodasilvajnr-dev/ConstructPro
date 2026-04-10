@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'motion/react';
-import { cn, formatCurrency } from '../lib/utils';
+import { cn, formatCurrency, formatDate } from '../lib/utils';
 import { useProjects } from '../hooks/useProjects';
 import { useProjectData } from '../hooks/useProjectData';
 import { useAuth } from '../contexts/AuthContext';
@@ -168,7 +168,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-6 flex flex-col justify-end">
                       <p className="text-white font-medium">{allPhotos[0].desc}</p>
-                      <p className="text-white/70 text-sm">Atualizado em {new Date(allPhotos[0].date).toLocaleDateString()}</p>
+                      <p className="text-white/70 text-sm">Atualizado em {formatDate(allPhotos[0].date)}</p>
                     </div>
                   </div>
                   <div className="flex flex-col gap-4">
@@ -214,7 +214,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                       </div>
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
-                          <h4 className="font-bold text-slate-100">{new Date(log.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}</h4>
+                          <h4 className="font-bold text-slate-100">{formatDate(log.date, { day: '2-digit', month: 'long' })}</h4>
                           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{log.weather}</span>
                         </div>
                         <p className="text-sm text-slate-400 mt-1 line-clamp-2 italic">{log.activities || 'Nenhuma atividade registrada.'}</p>

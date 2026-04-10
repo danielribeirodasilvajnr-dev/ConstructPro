@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Plus, Edit, Trash2, Camera, Sun, Cloud, HardHat, X, Image as ImageIcon, UploadCloud, PlusCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { DailyLog, DailyLogPhoto } from '../../lib/types';
-import { cn } from '../../lib/utils';
+import { cn, formatDate } from '../../lib/utils';
 
 interface DailyLogWithPhotos extends DailyLog {
   daily_log_photos?: DailyLogPhoto[];
@@ -197,7 +197,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
             <div key={log.id} className="bg-[#1e293b]/50 p-6 rounded-xl border border-white/5 group relative shadow-xl">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                   <h4 className="text-lg font-bold text-white capitalize">{new Date(log.date + 'T12:00:00Z').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}</h4>
+                   <h4 className="text-lg font-bold text-white capitalize">{formatDate(log.date, { weekday: 'long', day: '2-digit', month: 'long' })}</h4>
                    <div className="flex gap-4 text-sm mt-1">
                       <span className="flex items-center gap-1.5 text-slate-400"><Sun className="h-4 w-4" /> {log.weather}</span>
                       <span className="flex items-center gap-1.5 text-slate-400"><HardHat className="h-4 w-4" /> {log.workers} trabalhadores</span>

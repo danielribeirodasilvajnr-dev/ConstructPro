@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Search, Paperclip, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Paperclip, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { FinancialItem, BudgetItem } from '../../lib/types';
-import { formatCurrency } from '../../lib/utils';
+import { formatCurrency, formatDate } from '../../lib/utils';
 
 interface FinanceTabProps {
   projectId: string;
@@ -18,6 +18,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
   const [formData, setFormData] = useState<Partial<FinancialItem>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'date', direction: 'desc' });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -82,14 +83,50 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
     (i.supplier && i.supplier.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const sortedItems = [...filteredItems].sort((a, b) => {
+    let valA: any = a[sortConfig.key as keyof FinancialItem];
+    let valB: any = b[sortConfig.key as keyof FinancialItem];
+    
+    if (sortConfig.key === 'amount') {
+      valA = Number(valA);
+      valB = Number(valB);
+    }
+    
+    if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const requestSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
   const totalFiltered = filteredItems.reduce((acc, i) => acc + Number(i.amount), 0);
+
+  const getSortIcon = (key: string) => {
+    if (sortConfig.key !== key) return null;
+    return sortConfig.direction === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />;
+  };
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
       <div className="flex items-start justify-between">
-        <h2 className="text-3xl font-black text-white">Controle de Custos</h2>
+        <h2 className="text-3xl font-black text-white flex items-center gap-3">
+          Controle de Custos
+          <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-600 font-mono">v2.1</span>
+        </h2>
         {!readOnly && (
-          <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], category: 'Material' }); setIsModalOpen(true); }} className="px-5 py-2.5 bg-[#4170FF] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 active:scale-95">
+          <button onClick={() => { 
+            setEditingItem(null); 
+            const now = new Date();
+            const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            setFormData({ date: localDate, category: 'Material' }); 
+            setIsModalOpen(true); 
+          }} className="px-5 py-2.5 bg-[#4170FF] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 active:scale-95">
             <Plus className="h-4 w-4" /> Novo Lançamento
           </button>
         )}
@@ -106,17 +143,23 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-white/5">
-              <th className="p-4 text-xs font-bold text-slate-500 uppercase">Data</th>
-              <th className="p-4 text-xs font-bold text-slate-500 uppercase">Descrição</th>
+              <th className="p-4 text-xs font-bold text-slate-500 uppercase cursor-pointer hover:text-white transition-colors" onClick={() => requestSort('date')}>
+                <div className="flex items-center gap-2">Data {getSortIcon('date')}</div>
+              </th>
+              <th className="p-4 text-xs font-bold text-slate-500 uppercase cursor-pointer hover:text-white transition-colors" onClick={() => requestSort('description')}>
+                <div className="flex items-center gap-2">Descrição {getSortIcon('description')}</div>
+              </th>
               <th className="p-4 text-xs font-bold text-slate-500 uppercase">Categoria</th>
-              <th className="p-4 text-xs font-bold text-slate-500 uppercase">Valor</th>
+              <th className="p-4 text-xs font-bold text-slate-500 uppercase cursor-pointer hover:text-white transition-colors" onClick={() => requestSort('amount')}>
+                <div className="flex items-center gap-2">Valor {getSortIcon('amount')}</div>
+              </th>
               <th className="p-4 text-xs font-bold text-slate-500 uppercase">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {filteredItems.map(item => (
+            {sortedItems.map(item => (
               <tr key={item.id} className="border-b border-white/5 hover:bg-white/5">
-                <td className="p-4 text-slate-400">{new Date(item.date).toLocaleDateString()}</td>
+                <td className="p-4 text-slate-400">{formatDate(item.date)}</td>
                 <td className="p-4 text-white">
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2 font-medium">

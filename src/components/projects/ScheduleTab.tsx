@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Plus, Trash2, Filter, Download, Maximize, Share2, PlusCircle, MinusCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { ScheduleItem } from '../../lib/types';
-import { cn } from '../../lib/utils';
+import { cn, formatDate } from '../../lib/utils';
 
 interface ScheduleTabProps {
   projectId: string;
@@ -39,16 +39,30 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
 
   const getPosition = (dateStr: string) => {
     if (!dateStr) return 0;
-    const date = new Date(dateStr);
-    const pos = ((date.getTime() - timelineConfig.start.getTime()) / timelineConfig.duration) * 100;
+    const pureDate = dateStr.split('T')[0];
+    const [year, month, day] = pureDate.split('-').map(Number);
+    const date = new Date(year, month - 1, day, 12, 0, 0);
+    
+    const timelineStart = new Date(timelineConfig.start);
+    timelineStart.setHours(12, 0, 0, 0);
+    
+    const pos = ((date.getTime() - timelineStart.getTime()) / timelineConfig.duration) * 100;
     return Math.max(0, Math.min(100, pos));
   };
 
   const getStatus = (item: ScheduleItem) => {
     if (Number(item.progress) >= 100) return 'Concluído';
     const today = new Date();
-    const end = new Date(item.end_date);
-    const start = new Date(item.start_date);
+    today.setHours(0, 0, 0, 0);
+    
+    const pureEnd = item.end_date.split('T')[0];
+    const [ey, em, ed] = pureEnd.split('-').map(Number);
+    const end = new Date(ey, em - 1, ed, 23, 59, 59);
+    
+    const pureStart = item.start_date.split('T')[0];
+    const [sy, sm, sd] = pureStart.split('-').map(Number);
+    const start = new Date(sy, sm - 1, sd, 0, 0, 0);
+    
     if (today > end) return 'Atrasado';
     if (today < start) return 'Pendente';
     return 'No Prazo';
@@ -135,8 +149,8 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
         <div className="bg-[#181c21] p-5 rounded-xl border border-white/5">
           <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Próxima Entrega</p>
           <span className="text-2xl font-black text-white">
-            {scheduleItems.filter(i => getStatus(i) === 'Pendente').sort((a,b) => new Date(a.end_date).getTime() - new Date(b.end_date).getTime())[0]?.end_date 
-             ? new Date(scheduleItems.filter(i => getStatus(i) === 'Pendente').sort((a,b) => new Date(a.end_date).getTime() - new Date(b.end_date).getTime())[0].end_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+            {scheduleItems.filter(i => getStatus(i) === 'Pendente').sort((a,b) => a.end_date.localeCompare(b.end_date))[0]?.end_date 
+             ? formatDate(scheduleItems.filter(i => getStatus(i) === 'Pendente').sort((a,b) => a.end_date.localeCompare(b.end_date))[0].end_date, { day: '2-digit', month: 'short' })
              : '--'}
           </span>
         </div>
@@ -170,7 +184,7 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
                   </div>
                 </div>
                 <div className="w-1/4 px-2">
-                  <p className="text-[11px] font-bold text-slate-200">{new Date(item.start_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - {new Date(item.end_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</p>
+                  <p className="text-[11px] font-bold text-slate-200">{formatDate(item.start_date, { day: '2-digit', month: 'short' })} - {formatDate(item.end_date, { day: '2-digit', month: 'short' })}</p>
                   <p className="text-[10px] text-slate-500 font-medium">{(new Date(item.end_date).getTime() - new Date(item.start_date).getTime()) / (1000 * 3600 * 24)} dias</p>
                 </div>
                 <div className="w-1/4 flex flex-col items-center gap-2">

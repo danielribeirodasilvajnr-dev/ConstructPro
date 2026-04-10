@@ -13,3 +13,24 @@ export function formatCurrency(value: number): string {
     maximumFractionDigits: 2,
   }).format(value);
 }
+export function formatDate(dateStr: string, options?: Intl.DateTimeFormatOptions): string {
+  if (!dateStr) return '';
+  
+  // Handle ISO strings (strip time)
+  const pureDate = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+  const parts = pureDate.split('-');
+  
+  if (parts.length !== 3) return dateStr;
+  
+  const [year, month, day] = parts.map(Number);
+  if (isNaN(year) || isNaN(month) || isNaN(day)) return dateStr;
+
+  // Default format "DD/MM/YYYY" - 100% string based to avoid any timezone/Date object issues
+  if (!options || Object.keys(options).length === 0) {
+    return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+  }
+
+  // Complex formats (e.g. month: 'long') - use Midday to avoid boundary shifts
+  const date = new Date(year, month - 1, day, 12, 0, 0);
+  return date.toLocaleDateString('pt-BR', options);
+}
