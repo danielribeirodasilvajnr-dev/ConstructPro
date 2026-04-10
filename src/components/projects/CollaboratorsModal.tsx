@@ -237,7 +237,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
         </div>
       </div>
 
-      <AlertModal 
+      <AlertModal
         isOpen={alertConfig.isOpen}
         onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
         title={alertConfig.title}
