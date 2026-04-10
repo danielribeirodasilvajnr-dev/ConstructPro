@@ -34,3 +34,12 @@ export function formatDate(dateStr: string, options?: Intl.DateTimeFormatOptions
   const date = new Date(year, month - 1, day, 12, 0, 0);
   return date.toLocaleDateString('pt-BR', options);
 }
+
+export function sanitizeFileName(fileName: string): string {
+  return fileName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove accents
+    .replace(/[^\w.-]/g, '_')        // Replace special characters and spaces with underscores
+    .replace(/_{2,}/g, '_');         // Replace multiple underscores with a single one
+}
+

@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Plus, Edit, Trash2, Camera, Sun, Cloud, HardHat, X, Image as ImageIcon, UploadCloud, PlusCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { DailyLog, DailyLogPhoto } from '../../lib/types';
-import { cn, formatDate } from '../../lib/utils';
+import { cn, formatDate, sanitizeFileName } from '../../lib/utils';
 
 interface DailyLogWithPhotos extends DailyLog {
   daily_log_photos?: DailyLogPhoto[];
@@ -86,7 +86,8 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
         // Upload each valid photo slot
         for (const item of photosToUpload) {
           if (item.file) {
-            const fileName = `${projectId}/${logId}/${Date.now()}-${item.file.name}`;
+            const sanitizedName = sanitizeFileName(item.file.name);
+            const fileName = `${projectId}/${logId}/${Date.now()}-${sanitizedName}`;
             const { error: uploadError } = await supabase.storage
               .from('daily_logs')
               .upload(fileName, item.file);
@@ -139,7 +140,8 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
 
     setUploading(true);
     try {
-      const fileName = `${projectId}/${logId}/${Date.now()}-${file.name}`;
+      const sanitizedName = sanitizeFileName(file.name);
+      const fileName = `${projectId}/${logId}/${Date.now()}-${sanitizedName}`;
       const { error: uploadError } = await supabase.storage
         .from('daily_logs')
         .upload(fileName, file);

@@ -152,9 +152,6 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
             <span className={cn("w-3 h-3 rounded-full animate-pulse", scheduleAtrasadas > 0 ? "bg-orange-500" : "bg-emerald-500")}></span>
             <span className="text-2xl font-black text-white">{scheduleAtrasadas > 0 ? 'Atrasado' : 'No Prazo'}</span>
           </div>
-          <div className="absolute -right-2 -bottom-2 opacity-5 transform group-hover:scale-110 transition-transform">
-            <Maximize className="h-16 w-16 text-white" />
-          </div>
         </div>
         <div className="bg-[#181c21] p-5 rounded-xl border border-white/5">
           <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Conclusão</p>

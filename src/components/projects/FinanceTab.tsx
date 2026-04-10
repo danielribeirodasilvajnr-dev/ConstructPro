@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Search, Paperclip, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { FinancialItem, BudgetItem } from '../../lib/types';
-import { formatCurrency, formatDate } from '../../lib/utils';
+import { formatCurrency, formatDate, sanitizeFileName } from '../../lib/utils';
 
 interface FinanceTabProps {
   projectId: string;
@@ -26,7 +26,8 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
 
     setUploading(true);
     try {
-      const fileName = `${projectId}/${Date.now()}-${file.name}`;
+      const sanitizedName = sanitizeFileName(file.name);
+      const fileName = `${projectId}/${Date.now()}-${sanitizedName}`;
       const { data, error } = await supabase.storage
         .from('receipts')
         .upload(fileName, file);
@@ -38,9 +39,9 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
         .getPublicUrl(fileName);
 
       setFormData({ ...formData, receipt_url: publicUrl });
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Erro ao enviar arquivo');
+      alert('Erro ao enviar arquivo: ' + (err.message || 'Erro desconhecido'));
     } finally {
       setUploading(false);
     }
