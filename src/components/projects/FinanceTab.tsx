@@ -229,17 +229,17 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="p-6 bg-[#181c21] rounded-2xl border border-white/5 grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-                <div className="space-y-3">
+              <div className="p-6 bg-[#181c21] rounded-2xl border border-white/5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                <div className="space-y-3 min-w-0">
                   <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest ml-1 flex items-center gap-2">
                     <Calendar className="h-3 w-3" /> Período
                   </label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <input 
                       type="date" 
                       value={filters.dateStart} 
                       onChange={e => setFilters({ ...filters, dateStart: e.target.value })} 
-                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-3 py-2 text-[10px] text-white focus:border-[#4170FF]/50 outline-none transition-all" 
+                      className="flex-1 min-w-0 bg-[#13171f] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#4170FF]/50 outline-none transition-all" 
                     />
                     <span className="text-slate-600 font-bold text-[10px]">à</span>
                     <input 
@@ -251,61 +251,61 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 min-w-0">
                   <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest ml-1 flex items-center gap-2">
                     <FilterIcon className="h-3 w-3" /> Categoria
                   </label>
                   <select 
                     value={filters.category} 
                     onChange={e => setFilters({ ...filters, category: e.target.value })} 
-                    className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#4170FF]/50 outline-none appearance-none cursor-pointer"
+                    className="w-full bg-[#13171f] border border-white/5 rounded-xl px-3 py-2.5 text-[10px] text-white focus:border-[#4170FF]/50 outline-none appearance-none cursor-pointer truncate"
                   >
                     <option value="Todas">Todas</option>
                     {VALID_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 min-w-0">
                   <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest ml-1 flex items-center gap-2">
                     <Paperclip className="h-3 w-3" /> Vínculo
                   </label>
                   <select 
                     value={filters.budgetItemId} 
                     onChange={e => setFilters({ ...filters, budgetItemId: e.target.value })} 
-                    className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#4170FF]/50 outline-none appearance-none cursor-pointer"
+                    className="w-full bg-[#13171f] border border-white/5 rounded-xl px-3 py-2.5 text-[10px] text-white focus:border-[#4170FF]/50 outline-none appearance-none cursor-pointer truncate"
                   >
                     <option value="">Todos os itens</option>
                     {budgetItems.map(item => (
                       <option key={item.id} value={item.id}>
-                        {item.description.length > 30 ? item.description.substring(0, 30) + '...' : item.description}
+                        {item.description}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 min-w-0">
                   <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest ml-1 flex items-center gap-2">
                     <span className="text-[8px] border border-current rounded px-1">R$</span> Valor
                   </label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
                     <input 
                       type="number" 
                       placeholder="Min" 
                       value={filters.minAmount} 
                       onChange={e => setFilters({ ...filters, minAmount: e.target.value })} 
-                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-3 py-2 text-xs text-white focus:border-[#4170FF]/50 outline-none placeholder:text-slate-700 transition-all" 
+                      className="w-full min-w-0 bg-[#13171f] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#4170FF]/50 outline-none placeholder:text-slate-700 transition-all" 
                     />
                     <input 
                       type="number" 
                       placeholder="Max" 
                       value={filters.maxAmount} 
                       onChange={e => setFilters({ ...filters, maxAmount: e.target.value })} 
-                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-3 py-2 text-xs text-white focus:border-[#4170FF]/50 outline-none placeholder:text-slate-700 transition-all" 
+                      className="w-full min-w-0 bg-[#13171f] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#4170FF]/50 outline-none placeholder:text-slate-700 transition-all" 
                     />
                   </div>
                 </div>
 
-                <div className="flex items-end">
+                <div className="flex items-end min-w-0">
                   <button 
                     onClick={() => {
                       setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '', budgetItemId: '' });
