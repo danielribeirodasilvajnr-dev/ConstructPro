@@ -3,6 +3,7 @@ import { Plus, Edit, Trash2, Search, Paperclip, X, ChevronUp, ChevronDown } from
 import { supabase } from '../../lib/supabase';
 import { FinancialItem, BudgetItem } from '../../lib/types';
 import { formatCurrency, formatDate, sanitizeFileName } from '../../lib/utils';
+import { AlertModal } from '../ui/AlertModal';
 
 interface FinanceTabProps {
   projectId: string;
@@ -19,6 +20,11 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
   const [searchTerm, setSearchTerm] = useState('');
   const [uploading, setUploading] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'date', direction: 'desc' });
+  const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean, title: string, message: string, type?: 'error' | 'success' }>({
+    isOpen: false,
+    title: '',
+    message: ''
+  });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -41,7 +47,12 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
       setFormData({ ...formData, receipt_url: publicUrl });
     } catch (err: any) {
       console.error(err);
-      alert('Erro ao enviar arquivo: ' + (err.message || 'Erro desconhecido'));
+      setAlertConfig({
+        isOpen: true,
+        title: 'Erro no Upload',
+        message: err.message || 'Não foi possível enviar o arquivo.',
+        type: 'error'
+      });
     } finally {
       setUploading(false);
     }
@@ -49,7 +60,12 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
 
   const handleSave = async () => {
     if (!formData.budget_item_linked_id) {
-      alert('Por favor, selecione um item do orçamento para vincular este lançamento.');
+      setAlertConfig({
+        isOpen: true,
+        title: 'Atenção',
+        message: 'Por favor, selecione um item do orçamento para vincular este lançamento.',
+        type: 'warning' as any
+      });
       return;
     }
     try {
@@ -315,6 +331,14 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
           </div>
         </div>
       )}
+
+      <AlertModal 
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type as any}
+      />
     </div>
   );
 }

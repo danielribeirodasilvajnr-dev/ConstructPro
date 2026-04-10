@@ -3,6 +3,7 @@ import { Plus, Edit, Trash2, Calculator as CalculatorIcon, Wallet, AlertCircle }
 import { supabase } from '../../lib/supabase';
 import { BudgetItem, FinancialItem } from '../../lib/types';
 import { cn, formatCurrency } from '../../lib/utils';
+import { AlertModal } from '../ui/AlertModal';
 
 interface BudgetTabProps {
   projectId: string;
@@ -17,6 +18,11 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
   const [editingItem, setEditingItem] = useState<BudgetItem | null>(null);
   const [deletingItem, setDeletingItem] = useState<BudgetItem | null>(null);
   const [formData, setFormData] = useState<Partial<BudgetItem>>({});
+  const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean, title: string, message: string, type?: 'error' | 'success' | 'warning' }>({
+    isOpen: false,
+    title: '',
+    message: ''
+  });
 
   const calculateTotalBudget = (items: BudgetItem[]) => {
     return (items || []).reduce((acc, item) => acc + (Number(item.unit_cost) * Number(item.quantity)), 0);
@@ -45,9 +51,14 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
       if (error) throw error;
       setIsItemModalOpen(false);
       onRefresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Erro ao salvar item');
+      setAlertConfig({
+        isOpen: true,
+        title: 'Erro ao Salvar',
+        message: 'Não foi possível salvar o item do orçamento.',
+        type: 'error'
+      });
     }
   };
 
@@ -279,6 +290,14 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
           </div>
         </div>
       )}
+
+      <AlertModal 
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type as any}
+      />
     </div>
   );
 }

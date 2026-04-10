@@ -19,6 +19,7 @@ import { cn, formatCurrency, formatDate } from '../lib/utils';
 import { useProjects } from '../hooks/useProjects';
 import { useProjectData } from '../hooks/useProjectData';
 import { useAuth } from '../contexts/AuthContext';
+import { AlertModal } from '../components/ui/AlertModal';
 
 interface ProprietorViewProps {
   selectedProjectId: string | null;
@@ -39,6 +40,11 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
   const [isAddingDoc, setIsAddingDoc] = useState(false);
   const [newDoc, setNewDoc] = useState<NewDocument>({ name: '', file: null });
   const [isSaving, setIsSaving] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean, title: string, message: string, type?: 'error' | 'success' }>({
+    isOpen: false,
+    title: '',
+    message: ''
+  });
 
   if (!selectedProjectId || !project) {
     return (
@@ -75,9 +81,14 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
       setNewDoc({ name: '', file: null });
       setIsAddingDoc(false);
       refresh();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert('Erro ao salvar documento');
+      setAlertConfig({
+        isOpen: true,
+        title: 'Erro',
+        message: 'Não foi possível salvar o documento.',
+        type: 'error'
+      });
     } finally {
       setIsSaving(false);
     }
@@ -376,6 +387,14 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
           </motion.div>
         </div>
       )}
+
+      <AlertModal 
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type as any}
+      />
     </div>
   );
 }

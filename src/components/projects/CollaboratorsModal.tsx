@@ -3,6 +3,7 @@ import { X, UserPlus, Trash2, Shield, Eye, Mail, Loader2, AlertCircle, Verified 
 import { supabase } from '../../lib/supabase';
 import { Project, Profile, ProjectCollaborator } from '../../lib/types';
 import { cn } from '../../lib/utils';
+import { AlertModal } from '../ui/AlertModal';
 
 interface CollaboratorsModalProps {
   project: Project;
@@ -16,6 +17,11 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
   const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor');
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean, title: string, message: string, type?: 'error' | 'success' | 'warning' }>({
+    isOpen: false,
+    title: '',
+    message: ''
+  });
 
   const fetchCollaborators = async () => {
     try {
@@ -99,9 +105,14 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
 
       if (error) throw error;
       setCollaborators(collaborators.filter(c => c.id !== id));
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Erro ao remover colaborador');
+      setAlertConfig({
+        isOpen: true,
+        title: 'Erro!',
+        message: 'Não foi possível remover o colaborador.',
+        type: 'error'
+      });
     }
   };
 
@@ -225,6 +236,14 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
           </div>
         </div>
       </div>
+
+      <AlertModal 
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type as any}
+      />
     </div>
   );
 }

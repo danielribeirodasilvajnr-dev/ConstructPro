@@ -3,6 +3,7 @@ import { Plus, Edit, Trash2, Camera, Sun, Cloud, HardHat, X, Image as ImageIcon,
 import { supabase } from '../../lib/supabase';
 import { DailyLog, DailyLogPhoto } from '../../lib/types';
 import { cn, formatDate, sanitizeFileName } from '../../lib/utils';
+import { AlertModal } from '../ui/AlertModal';
 
 interface DailyLogWithPhotos extends DailyLog {
   daily_log_photos?: DailyLogPhoto[];
@@ -27,6 +28,11 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
   const [editingLog, setEditingLog] = useState<DailyLogWithPhotos | null>(null);
   const [formData, setFormData] = useState<Partial<DailyLog>>({});
   const [uploading, setUploading] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean, title: string, message: string, type?: 'error' | 'success' | 'warning' }>({
+    isOpen: false,
+    title: '',
+    message: ''
+  });
 
   // Multi-photo state
   const [photosToUpload, setPhotosToUpload] = useState<PhotoUploadItem[]>([
@@ -110,9 +116,14 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
       setIsModalOpen(false);
       resetModal();
       onRefresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Erro ao salvar o Diário de Obra.');
+      setAlertConfig({
+        isOpen: true,
+        title: 'Erro ao Salvar',
+        message: 'Não foi possível salvar o Diário de Obra. Verifique sua conexão.',
+        type: 'error'
+      });
     } finally {
       setUploading(false);
     }
@@ -159,8 +170,14 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
       });
 
       onRefresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setAlertConfig({
+        isOpen: true,
+        title: 'Erro no Upload',
+        message: 'Falha ao enviar foto rápida.',
+        type: 'error'
+      });
     } finally {
       setUploading(false);
     }
@@ -376,6 +393,14 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
           </div>
         </div>
       )}
+
+      <AlertModal 
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type as any}
+      />
     </div>
   );
 }

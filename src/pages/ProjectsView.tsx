@@ -20,6 +20,8 @@ import { DailyLogTab } from '../components/projects/DailyLogTab';
 import { CollaboratorsModal } from '../components/projects/CollaboratorsModal';
 import { cn } from '../lib/utils';
 import { Project } from '../lib/types';
+import { AlertModal } from '../components/ui/AlertModal';
+
 
 interface ProjectsViewProps {
   selectedProjectId: string | null;
@@ -36,6 +38,11 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
   const [formData, setFormData] = useState<Partial<Project>>({});
   const [isCollaboratorsModalOpen, setIsCollaboratorsModalOpen] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean, title: string, message: string, type?: 'error' | 'success' | 'warning' }>({
+    isOpen: false,
+    title: '',
+    message: ''
+  });
 
   // Hook for project specific data
   const {
@@ -78,7 +85,12 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
       refreshProjects();
     } catch (err: any) {
       console.error(err);
-      alert('Erro ao salvar projeto: ' + (err.message || 'Erro desconhecido'));
+      setAlertConfig({
+        isOpen: true,
+        title: 'Erro ao Salvar',
+        message: err.message || 'Não foi possível salvar o projeto.',
+        type: 'error'
+      });
     }
   };
 
@@ -356,6 +368,14 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           </div>
         </div>
       )}
+
+      <AlertModal 
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type as any}
+      />
     </div>
   );
 }
