@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Search, Paperclip, X, ChevronUp, ChevronDown, Filter as FilterIcon, FilterX, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Paperclip, X, ChevronUp, ChevronDown, Filter as FilterIcon, FilterX, Calendar, FileDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 import { FinancialItem, BudgetItem } from '../../lib/types';
@@ -115,6 +115,31 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
     }
   };
 
+  const handleExportExcel = () => {
+    const headers = ['Data', 'Descricao', 'Categoria', 'Vinculo', 'Valor'];
+    const rows = sortedItems.map(item => [
+      formatDate(item.date),
+      item.description.replace(/;/g, ','), // Evitar quebra do CSV
+      item.category,
+      (budgetItems.find(bi => bi.id === item.budget_item_linked_id)?.description || '').replace(/;/g, ','),
+      Number(item.amount).toFixed(2).replace('.', ',')
+    ]);
+
+    const csvContent = [
+      headers.join(';'),
+      ...rows.map(r => r.join(';'))
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Financeiro_EquipePro_${new Date().toLocaleDateString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const filteredItems = (financialItems || []).filter(i => {
     const matchesSearch = 
       i.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -179,17 +204,26 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
           Controle de Custos
           <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-600 font-mono">v2.1</span>
         </h2>
-        {!readOnly && (
-          <button onClick={() => {
-            setEditingItem(null);
-            const now = new Date();
-            const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-            setFormData({ date: localDate, category: 'Material' }); 
-            setIsModalOpen(true); 
-          }} className="px-5 py-2.5 bg-[#4170FF] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 active:scale-95">
-            <Plus className="h-4 w-4" /> Novo Lançamento
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={handleExportExcel}
+            title="Exportar para Excel"
+            className="p-2.5 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500/20 transition-all border border-emerald-500/20 group"
+          >
+            <FileDown className="h-5 w-5 group-hover:scale-110 transition-transform" />
           </button>
-        )}
+          {!readOnly && (
+            <button onClick={() => {
+              setEditingItem(null);
+              const now = new Date();
+              const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+              setFormData({ date: localDate, category: 'Material' }); 
+              setIsModalOpen(true); 
+            }} className="px-5 py-2.5 bg-[#4170FF] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 active:scale-95">
+              <Plus className="h-4 w-4" /> Novo Lançamento
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-4">
