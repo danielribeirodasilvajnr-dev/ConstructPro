@@ -15,27 +15,49 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ScheduleItem | null>(null);
   const [formData, setFormData] = useState<Partial<ScheduleItem>>({});
+  const [zoom, setZoom] = useState(1); // 1: Compact, 2: Regular, 3: Detailed
 
   // Timeline Logic
   const timelineConfig = useMemo(() => {
     const today = new Date();
-    // Default window: current month +/- 1.5 months
-    const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    const end = new Date(today.getFullYear(), today.getMonth() + 3, 0);
+    today.setHours(12, 0, 0, 0);
+
+    // Find boundaries from data or fallback to current window
+    let minDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    let maxDate = new Date(today.getFullYear(), today.getMonth() + 4, 0);
+
+    if (scheduleItems.length > 0) {
+      const dates = scheduleItems.flatMap(i => [
+        new Date(i.start_date.split('T')[0] + 'T12:00:00'),
+        new Date(i.end_date.split('T')[0] + 'T12:00:00')
+      ]);
+      const earliest = new Date(Math.min(...dates.map(d => d.getTime())));
+      const latest = new Date(Math.max(...dates.map(d => d.getTime())));
+      
+      // Start of the earliest month - 1 month padding
+      minDate = new Date(earliest.getFullYear(), earliest.getMonth() - 1, 1);
+      // End of the latest month + 1 month padding
+      maxDate = new Date(latest.getFullYear(), latest.getMonth() + 2, 0);
+    }
+
+    const start = minDate;
+    const end = maxDate;
     const duration = end.getTime() - start.getTime();
 
     const months = [];
     let current = new Date(start);
     while (current <= end) {
       months.push({
-        name: current.toLocaleString('pt-BR', { month: 'long' }),
+        date: new Date(current),
+        name: current.toLocaleString('pt-BR', { month: 'short' }),
+        year: current.getFullYear(),
         isCurrent: current.getMonth() === today.getMonth() && current.getFullYear() === today.getFullYear()
       });
       current.setMonth(current.getMonth() + 1);
     }
 
     return { start, end, duration, months, today };
-  }, []);
+  }, [scheduleItems]);
 
   const getPosition = (dateStr: string) => {
     if (!dateStr) return 0;
@@ -172,7 +194,7 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
               </div>
             )}
             {scheduleItems.map((item) => (
-              <div key={item.id} className="group flex items-center px-6 py-4 hover:bg-white/5 transition-colors cursor-pointer border-b border-white/5">
+              <div key={item.id} className="group flex items-center px-6 h-[80px] hover:bg-white/5 transition-colors cursor-pointer border-b border-white/5">
                 <div className="w-1/2">
                   <p className="text-sm font-bold text-white group-hover:text-[#4170FF] transition-colors">{item.name}</p>
                   <p className="text-[10px] text-slate-500 uppercase font-medium">Dep: {item.dependency || 'NENHUMA'}</p>
@@ -209,43 +231,41 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
 
         {/* Right Pane: Timeline */}
         <div className="flex-1 overflow-x-auto bg-[#13171f] flex flex-col group/timeline relative">
-          <div className="h-12 flex items-center bg-[#0b0f15] border-b border-white/5 whitespace-nowrap min-w-full">
+          <div className="h-12 flex items-center bg-[#0b0f15] border-b border-white/5 whitespace-nowrap min-w-full sticky top-0 z-40">
             <div className="flex-1 flex h-full items-center text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
               {timelineConfig.months.map((month, i) => (
-                <div key={i} className={cn(
-                  "flex-1 text-center border-r border-white/5 h-full flex items-center justify-center min-w-[150px]",
-                  month.isCurrent && "bg-[#4170FF]/20 text-[#4170FF]"
-                )}>
-                  {month.name} {month.isCurrent && "(Atual)"}
+                <div key={i} 
+                  className={cn(
+                    "flex-1 text-center border-r border-white/5 h-full flex flex-col items-center justify-center",
+                    month.isCurrent && "bg-[#4170FF]/20 text-[#4170FF]"
+                  )}
+                  style={{ minWidth: `${80 * zoom}px` }}
+                >
+                  <span className="leading-none">{month.name}</span>
+                  <span className="text-[8px] opacity-40 mt-0.5">{month.year}</span>
                 </div>
               ))}
             </div>
           </div>
           <div className="flex-1 relative min-w-full">
-            {/* Horizontal Grid Lines */}
-            <div className="absolute inset-0 flex flex-col pointer-events-none">
-              {scheduleItems.map((_, i) => (
-                <div key={i} className="h-[73px] border-b border-white/5"></div>
-              ))}
-            </div>
+            {/* Horizontal Grid Lines - Removed separate layer to use row borders */}
             {/* Vertical Grid Lines */}
             <div className="absolute inset-0 flex pointer-events-none">
               {timelineConfig.months.map((_, i) => (
-                <div key={i} className="flex-1 border-r border-white/5"></div>
+                <div key={i} className="flex-1 border-r border-white/5" style={{ minWidth: `${80 * zoom}px` }}></div>
               ))}
             </div>
 
-            <div className="relative z-10 flex flex-col h-full overflow-hidden">
               {scheduleItems.map((item) => {
                 const startPos = getPosition(item.start_date);
                 const endPos = getPosition(item.end_date);
-                const width = Math.max(2, endPos - startPos); // Min width for visibility
+                const width = Math.max(2, endPos - startPos);
 
                 return (
-                  <div key={item.id} className="h-[73px] flex items-center px-4">
+                  <div key={item.id} className="h-[80px] flex items-center border-b border-white/5 relative group/row transition-colors hover:bg-white/5">
                     <div 
                       className={cn(
-                        "h-6 rounded-md flex items-center overflow-hidden transition-all duration-300 shadow-lg",
+                        "h-6 rounded-md flex items-center overflow-hidden transition-all duration-300 shadow-lg relative z-30",
                         getStatus(item) === 'Concluído' ? "bg-emerald-500/20 border-l-4 border-emerald-500 shadow-emerald-500/5" :
                         getStatus(item) === 'Atrasado' ? "bg-orange-500/20 border-l-4 border-orange-500 shadow-orange-500/5" :
                         "bg-[#4170FF]/20 border-l-4 border-[#4170FF] shadow-blue-500/5"
@@ -266,7 +286,6 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
                   </div>
                 );
               })}
-            </div>
 
             {/* Today Marker */}
             <div 
@@ -281,8 +300,18 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
           {/* Floating Controls */}
           <div className="absolute bottom-6 right-6 flex items-center gap-2 z-30">
             <div className="flex bg-[#181C21] border border-white/10 rounded-xl p-1 shadow-2xl backdrop-blur-md">
-              <button className="p-2 text-slate-400 hover:text-white transition-colors"><MinusCircle className="h-4 w-4" /></button>
-              <button className="p-2 text-slate-400 hover:text-white transition-colors"><PlusCircle className="h-4 w-4" /></button>
+              <button 
+                onClick={() => setZoom(Math.max(1, zoom - 1))}
+                className="p-2 text-slate-400 hover:text-white transition-colors"
+              >
+                <MinusCircle className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={() => setZoom(Math.min(5, zoom + 1))}
+                className="p-2 text-slate-400 hover:text-white transition-colors"
+              >
+                <PlusCircle className="h-4 w-4" />
+              </button>
             </div>
             <button className="p-3 bg-[#181C21] border border-white/10 text-slate-400 hover:text-white transition-colors rounded-xl shadow-2xl backdrop-blur-md">
               <Share2 className="h-4 w-4" />
