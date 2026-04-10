@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { cn } from '../lib/utils';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,12 +12,30 @@ interface LayoutProps {
 }
 
 export default function Layout({ children, activeTab, setActiveTab, title, isClient }: LayoutProps) {
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebar-collapsed');
+    return saved === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sidebar-collapsed', String(isCollapsed));
+  }, [isCollapsed]);
+
   return (
     <div className="flex min-h-screen bg-surface">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isClient={isClient} />
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        isClient={isClient} 
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
+      />
       
       {/* Main Content */}
-      <main className="ml-72 flex flex-1 flex-col">
+      <main className={cn(
+        "flex flex-1 flex-col transition-all duration-300",
+        isCollapsed ? "ml-20" : "ml-72"
+      )}>
         <Header title={title} />
 
         {/* Content Area */}
@@ -27,3 +46,4 @@ export default function Layout({ children, activeTab, setActiveTab, title, isCli
     </div>
   );
 }
+
