@@ -34,7 +34,8 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
     dateEnd: '',
     category: 'Todas',
     minAmount: '',
-    maxAmount: ''
+    maxAmount: '',
+    budgetItemId: ''
   });
 
   const categories = VALID_CATEGORIES;
@@ -127,8 +128,10 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
     
     const matchesAmount = (!filters.minAmount || Number(i.amount) >= Number(filters.minAmount)) &&
                           (!filters.maxAmount || Number(i.amount) <= Number(filters.maxAmount));
+
+    const matchesBudgetItem = !filters.budgetItemId || i.budget_item_linked_id === filters.budgetItemId;
     
-    return matchesSearch && matchesDate && matchesCategory && matchesAmount;
+    return matchesSearch && matchesDate && matchesCategory && matchesAmount && matchesBudgetItem;
   });
 
   const activeFiltersCount = [
@@ -136,7 +139,8 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
     filters.dateEnd,
     filters.category !== 'Todas',
     filters.minAmount,
-    filters.maxAmount
+    filters.maxAmount,
+    filters.budgetItemId
   ].filter(Boolean).length;
 
   const sortedItems = [...filteredItems].sort((a, b) => {
@@ -225,9 +229,9 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="p-6 bg-[#181c21] rounded-2xl border border-white/5 grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              <div className="p-6 bg-[#181c21] rounded-2xl border border-white/5 grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest flex items-center gap-2">
+                  <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest ml-1 flex items-center gap-2">
                     <Calendar className="h-3 w-3" /> Período
                   </label>
                   <div className="flex items-center gap-2">
@@ -235,20 +239,20 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                       type="date" 
                       value={filters.dateStart} 
                       onChange={e => setFilters({ ...filters, dateStart: e.target.value })} 
-                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-4 py-2 text-xs text-white focus:border-[#4170FF]/50 outline-none transition-all" 
+                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-3 py-2 text-[10px] text-white focus:border-[#4170FF]/50 outline-none transition-all" 
                     />
-                    <span className="text-slate-600 font-bold">à</span>
+                    <span className="text-slate-600 font-bold text-[10px]">à</span>
                     <input 
                       type="date" 
                       value={filters.dateEnd} 
                       onChange={e => setFilters({ ...filters, dateEnd: e.target.value })} 
-                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-4 py-2 text-xs text-white focus:border-[#4170FF]/50 outline-none transition-all" 
+                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-3 py-2 text-[10px] text-white focus:border-[#4170FF]/50 outline-none transition-all" 
                     />
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest flex items-center gap-2">
+                  <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest ml-1 flex items-center gap-2">
                     <FilterIcon className="h-3 w-3" /> Categoria
                   </label>
                   <select 
@@ -256,14 +260,32 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                     onChange={e => setFilters({ ...filters, category: e.target.value })} 
                     className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#4170FF]/50 outline-none appearance-none cursor-pointer"
                   >
-                    <option value="Todas">Todas as Categorias</option>
+                    <option value="Todas">Todas</option>
                     {VALID_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest flex items-center gap-2">
-                    <span className="text-[8px] border border-current rounded px-1">R$</span> Faixa de Valor
+                  <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest ml-1 flex items-center gap-2">
+                    <Paperclip className="h-3 w-3" /> Vínculo
+                  </label>
+                  <select 
+                    value={filters.budgetItemId} 
+                    onChange={e => setFilters({ ...filters, budgetItemId: e.target.value })} 
+                    className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#4170FF]/50 outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="">Todos os itens</option>
+                    {budgetItems.map(item => (
+                      <option key={item.id} value={item.id}>
+                        {item.description.length > 30 ? item.description.substring(0, 30) + '...' : item.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest ml-1 flex items-center gap-2">
+                    <span className="text-[8px] border border-current rounded px-1">R$</span> Valor
                   </label>
                   <div className="flex items-center gap-2">
                     <input 
@@ -271,24 +293,30 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                       placeholder="Min" 
                       value={filters.minAmount} 
                       onChange={e => setFilters({ ...filters, minAmount: e.target.value })} 
-                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-4 py-2 text-xs text-white focus:border-[#4170FF]/50 outline-none placeholder:text-slate-700 transition-all" 
+                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-3 py-2 text-xs text-white focus:border-[#4170FF]/50 outline-none placeholder:text-slate-700 transition-all" 
                     />
                     <input 
                       type="number" 
                       placeholder="Max" 
                       value={filters.maxAmount} 
                       onChange={e => setFilters({ ...filters, maxAmount: e.target.value })} 
-                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-4 py-2 text-xs text-white focus:border-[#4170FF]/50 outline-none placeholder:text-slate-700 transition-all" 
+                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-3 py-2 text-xs text-white focus:border-[#4170FF]/50 outline-none placeholder:text-slate-700 transition-all" 
                     />
                   </div>
                 </div>
 
-                <div className="flex items-end gap-2">
+                <div className="flex items-end">
                   <button 
-                    onClick={() => setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '' })}
-                    className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all h-[42px] border border-white/5"
+                    onClick={() => {
+                      setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '', budgetItemId: '' });
+                      setSearchTerm('');
+                    }}
+                    className="w-full h-[38px] bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-red-500/20 shadow-lg shadow-red-500/5 group"
                   >
-                    Limpar
+                    <div className="flex items-center justify-center gap-2">
+                      <X className="h-3 w-3 group-hover:rotate-90 transition-transform" />
+                      Limpar
+                    </div>
                   </button>
                 </div>
               </div>
@@ -313,7 +341,10 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
           ))}
           {activeFiltersCount > 0 && (
             <button 
-              onClick={() => setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '' })}
+              onClick={() => {
+                setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '', budgetItemId: '' });
+                setSearchTerm('');
+              }}
               className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#4170FF] flex items-center gap-1 hover:bg-[#4170FF]/5 transition-all"
             >
               <X className="h-3 w-3" /> Limpar Filtros
