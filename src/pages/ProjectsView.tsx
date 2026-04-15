@@ -126,8 +126,13 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           </div>
           {userRole === 'owner' && (
             <button
-              onClick={() => setIsCollaboratorsModalOpen(true)}
-              className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-colors border border-slate-700"
+              onClick={() => setActiveTab('colaboradores')}
+              className={cn(
+                "px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-colors border",
+                activeTab === 'colaboradores'
+                  ? "bg-[#4170FF] text-white border-[#4170FF]"
+                  : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+              )}
             >
               <Users className="h-4 w-4" /> Colaboradores
             </button>
@@ -140,7 +145,6 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             { id: 'cronograma', label: 'Cronograma' },
             { id: 'financeiro', label: 'Financeiro' },
             { id: 'diario', label: 'Diário de Obra' },
-            { id: 'colaboradores', label: 'Colaboradores' },
           ].map((tab) => (
             <button
               key={tab.id}
