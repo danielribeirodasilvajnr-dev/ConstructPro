@@ -37,7 +37,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
   const { user } = useAuth();
   const { projects } = useProjects();
   const project = projects.find(p => p.id === selectedProjectId);
-  const { financialItems, budgetItems, scheduleItems, dailyLogs, documents, refresh } = useProjectData(selectedProjectId);
+  const { financialItems, budgetItems, scheduleItems, dailyLogs, documents, collaborators, refresh } = useProjectData(selectedProjectId);
 
   const [isAddingDoc, setIsAddingDoc] = useState(false);
   const [newDoc, setNewDoc] = useState<NewDocument>({ name: '', file: null });
@@ -162,6 +162,12 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
       weather: log.weather
     }))
   ).slice(0, 6); // Take latest 6
+
+  // Find dynamic support contact (First Editor/Gestor with a phone number)
+  const supportContact = collaborators.find(c => c.role === 'editor' && c.profile?.phone) || collaborators.find(c => c.role === 'editor');
+  const supportPhone = supportContact?.profile?.phone || '5511977386241';
+  const supportName = supportContact?.profile?.full_name || supportContact?.profile?.email || 'Daniel Ribeiro';
+  const supportJob = supportContact?.profile?.job_title || 'Gerente de Obras';
 
   return (
     <div className="space-y-8 max-w-[1400px] mx-auto pb-24">
@@ -338,11 +344,18 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
               <HardHat className="text-primary h-6 w-6" />
             </div>
             <h4 className="font-bold">Dúvidas?</h4>
-            <p className="text-sm text-on-surface-variant mt-1 mb-4">Fale com seu engenheiro.</p>
-            <button className="bg-secondary-container text-white px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 hover:scale-105 transition-transform">
+            <p className="text-sm text-on-surface-variant mt-1 mb-4">
+              Fale com {supportName}{supportJob ? ` - ${supportJob}` : ''}
+            </p>
+            <a 
+              href={`https://wa.me/${supportPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${supportName.split(' ')[0]}, sou o proprietário da obra ${project.name} e tenho uma dúvida.`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-secondary-container text-white px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 hover:scale-105 transition-transform"
+            >
               <MessageSquare className="h-4 w-4" />
               Abrir Chamado
-            </button>
+            </a>
           </div>
         </div>
       </div>

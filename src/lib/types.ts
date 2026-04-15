@@ -69,6 +69,8 @@ export interface Profile {
   email: string;
   full_name?: string;
   avatar_url?: string;
+  phone?: string;
+  job_title?: string;
 }
 
 export interface ProjectCollaborator {

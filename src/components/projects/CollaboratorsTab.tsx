@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Trash2, Shield, Eye, Mail, Loader2, AlertCircle, Verified, Phone, Briefcase, Check, PenLine } from 'lucide-react';
+import { UserPlus, Trash2, Shield, Eye, Mail, Loader2, AlertCircle, Verified, Phone, Briefcase, Check, PenLine } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import { Project, Profile, ProjectCollaborator } from '../../lib/types';
 import { cn } from '../../lib/utils';
 import { AlertModal } from '../ui/AlertModal';
 
-interface CollaboratorsModalProps {
+interface CollaboratorsTabProps {
   project: Project;
-  onClose: () => void;
+  onRefresh?: () => void;
 }
 
-export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps) {
+export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) {
   const [collaborators, setCollaborators] = useState<ProjectCollaborator[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor');
+  const [inviteRole, setInviteRole] = useState<'editor' | 'viewer' | 'proprietor'>('editor');
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -60,7 +60,6 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
     setError(null);
 
     try {
-      // 1. Find user by email in profiles
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
@@ -75,7 +74,6 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
         throw new Error('Você já é o proprietário desta obra.');
       }
 
-      // 2. Add as collaborator
       const { error: inviteError } = await supabase
         .from('project_collaborators')
         .insert({
@@ -93,6 +91,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
 
       setInviteEmail('');
       await fetchCollaborators();
+      onRefresh?.();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -109,6 +108,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
 
       if (error) throw error;
       setCollaborators(collaborators.filter(c => c.id !== id));
+      onRefresh?.();
     } catch (err: any) {
       console.error(err);
       setAlertConfig({
@@ -164,95 +164,97 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={onClose}></div>
-      <div className="relative bg-[#181C21] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-8 pb-4 flex items-center justify-between border-b border-slate-800/50">
-          <div>
-            <h3 className="text-xl font-bold text-slate-100 tracking-tight">Colaboradores</h3>
-            <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">{project.name}</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-slate-800 rounded-full"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Invite Form */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-[#13171f] p-6 rounded-2xl border border-white/5 space-y-6">
+            <div>
+              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Convidar Equipe</h3>
+              <p className="text-xs text-slate-500">Adicione novos colaboradores por e-mail.</p>
+            </div>
 
-        <div className="p-8 space-y-8">
-          {/* Invite Section */}
-          <form onSubmit={handleInvite} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Convidar por E-mail</label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
+            <form onSubmit={handleInvite} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">E-mail</label>
+                <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                   <input
                     type="email"
                     placeholder="exemplo@email.com"
                     value={inviteEmail}
                     onChange={e => setInviteEmail(e.target.value)}
-                    className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-11 py-3 text-sm text-white focus:border-[#4170FF] outline-none transition-all"
+                    className="w-full bg-black/20 border border-slate-800 rounded-xl px-11 py-3 text-sm text-white focus:border-[#4170FF] outline-none transition-all"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Permissão</label>
                 <select
                   value={inviteRole}
                   onChange={e => setInviteRole(e.target.value as any)}
-                  className="bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none appearance-none cursor-pointer"
+                  className="w-full bg-black/20 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none appearance-none cursor-pointer"
                 >
-                  <option value="editor">Editor</option>
-                  <option value="viewer">Leitor/Cliente</option>
+                  <option value="editor">Editor / Gestor</option>
+                  <option value="viewer">Apenas Leitura</option>
                   <option value="proprietor">Proprietário (Cliente)</option>
                 </select>
               </div>
+
+              {error && (
+                <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[10px] font-bold">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={inviting || !inviteEmail}
+                className="w-full py-3.5 bg-[#4170FF] text-white text-[10px] font-bold rounded-xl uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+                Enviar Convite
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* List Section */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-[#13171f] rounded-2xl border border-white/5 overflow-hidden">
+            <div className="p-6 border-b border-white/5">
+              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Nossa Equipe</h3>
             </div>
-
-            {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-xs">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={inviting || !inviteEmail}
-              className="w-full py-3.5 bg-[#4170FF] text-white text-xs font-bold rounded-xl uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-              Enviar Convite
-            </button>
-          </form>
-
-          {/* List Section */}
-          <div className="space-y-4">
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Pessoas com acesso</label>
-            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+            
+            <div className="divide-y divide-white/5">
               {/* Owner */}
-              <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-2xl border border-slate-800/50">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#4170FF]/10 flex items-center justify-center text-[#4170FF] font-bold text-sm">
+              <div className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-[#4170FF]/10 flex items-center justify-center text-[#4170FF] font-black text-lg border border-[#4170FF]/20">
                     {project.client?.charAt(0) || 'D'}
                   </div>
                   <div>
-                    <span className="text-sm font-bold text-slate-100 block">Administrador</span>
-                    <span className="text-[10px] text-slate-500 font-medium">Controle Total</span>
+                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      Administrador
+                      <span className="px-2 py-0.5 bg-[#4170FF]/10 text-[#4170FF] text-[8px] font-black uppercase tracking-wider rounded">Gestor</span>
+                    </h4>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Criador do Projeto</p>
                   </div>
                 </div>
-                <div className="px-2 py-1 bg-[#4170FF]/20 rounded-md text-[9px] font-black text-[#4170FF] uppercase tracking-wider">Gestor</div>
               </div>
 
               {/* Collaborators */}
               {loading ? (
-                <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-slate-600" /></div>
+                <div className="p-12 text-center"><Loader2 className="h-8 w-8 animate-spin text-slate-700 mx-auto" /></div>
               ) : collaborators.length === 0 ? (
-                <p className="text-center py-4 text-xs text-slate-600 italic">Nenhum colaborador convidado ainda.</p>
+                <div className="p-12 text-center text-slate-500 text-xs italic">Ainda não há outros colaboradores nesta obra.</div>
               ) : collaborators.map((c) => (
-                <div key={c.id} className="group flex flex-col p-4 bg-[#13171f] rounded-2xl border border-slate-800/50 hover:border-[#4170FF]/30 transition-all gap-4">
+                <div key={c.id} className="p-6 space-y-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-sm overflow-hidden border border-slate-700">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-lg overflow-hidden border border-slate-700 shadow-inner">
                         {c.profile?.avatar_url ? (
                           <img src={c.profile.avatar_url} alt="" className="w-full h-full object-cover" />
                         ) : (
@@ -260,32 +262,35 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                         )}
                       </div>
                       <div>
-                        <span className="text-sm font-bold text-slate-100 block truncate max-w-[150px]">{c.profile?.email}</span>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          {c.role === 'proprietor' ? (
-                            <><Verified className="h-3 w-3 text-[#FF8A00]" /><span className="text-[10px] text-[#FF8A00] font-bold uppercase tracking-wider">Proprietário</span></>
-                          ) : c.role === 'editor' ? (
-                            <><Shield className="h-3 w-3 text-[#4170FF]" /><span className="text-[10px] text-[#4170FF] font-bold uppercase tracking-wider">Editor</span></>
-                          ) : (
-                            <><Eye className="h-3 w-3 text-slate-500" /><span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Leitor</span></>
-                          )}
+                        <h4 className="text-sm font-bold text-white truncate max-w-[200px]">{c.profile?.email}</h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <div className={cn(
+                            "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider",
+                            c.role === 'proprietor' ? 'bg-[#FF8A00]/10 text-[#FF8A00]' :
+                            c.role === 'editor' ? 'bg-[#4170FF]/10 text-[#4170FF]' :
+                            'bg-slate-800 text-slate-500'
+                          )}>
+                            {c.role === 'proprietor' ? 'Proprietário' : c.role === 'editor' ? 'Editor' : 'Leitor'}
+                          </div>
                           {c.profile?.job_title && (
-                            <span className="text-[9px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400 font-bold ml-1">{c.profile.job_title}</span>
+                            <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold uppercase tracking-widest border-l border-white/10 pl-2">
+                              {c.profile.job_title}
+                            </div>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => c.profile && startEditing(c.profile)}
-                        className="p-2 text-slate-600 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                        className="p-2.5 text-slate-500 hover:text-white hover:bg-white/5 rounded-xl transition-all"
                         title="Editar Perfil"
                       >
                         <PenLine className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => removeCollaborator(c.id)}
-                        className="p-2 text-slate-600 hover:text-red-500 hover:bg-red-500/5 rounded-lg transition-all"
+                        className="p-2.5 text-slate-500 hover:text-red-500 hover:bg-red-500/5 rounded-xl transition-all"
                         title="Remover"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -293,36 +298,46 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                     </div>
                   </div>
 
-                  {/* Inline Edit Form */}
+                  {/* Inline Contact Info */}
+                  {!editingId && c.profile?.phone && (
+                    <div className="flex items-center gap-4 pl-16">
+                      <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+                        <Phone className="h-3 w-3 text-[#10B981]" />
+                        {c.profile.phone}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Inline Editor */}
                   {editingId === c.profile?.id && (
                     <motion.div 
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="space-y-4 pt-2 border-t border-white/5"
+                      className="pl-16 space-y-4 pt-4 border-t border-white/5"
                     >
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                            <Phone className="h-2.5 w-2.5" /> Telefone
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            <Phone className="h-3 w-3" /> Telefone para Contato
                           </label>
                           <input 
                             type="text"
-                            placeholder="Ex: 55119..."
+                            placeholder="55119..."
                             value={editForm.phone}
                             onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                            className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#4170FF] outline-none"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#4170FF] outline-none transition-all"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                            <Briefcase className="h-2.5 w-2.5" /> Cargo
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            <Briefcase className="h-3 w-3" /> Cargo / Função
                           </label>
                           <select
                             value={editForm.job_title}
                             onChange={e => setEditForm(prev => ({ ...prev, job_title: e.target.value }))}
-                            className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#4170FF] outline-none"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#4170FF] outline-none cursor-pointer"
                           >
-                            <option value="">Nenhum</option>
+                            <option value="">Não definido</option>
                             <option value="Gerente de obras">Gerente de obras</option>
                             <option value="Assistente de engenharia">Assistente de engenharia</option>
                             <option value="Estagiário">Estagiário</option>
@@ -332,17 +347,17 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                       <div className="flex gap-2">
                         <button 
                           onClick={() => setEditingId(null)}
-                          className="flex-1 py-2 text-[10px] font-bold text-slate-500 uppercase bg-white/5 rounded-lg hover:bg-white/10"
+                          className="flex-1 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
                         >
                           Cancelar
                         </button>
                         <button 
                           onClick={() => c.profile && handleUpdateProfile(c.profile.id)}
                           disabled={isUpdating}
-                          className="flex-1 py-2 text-[10px] font-bold text-white uppercase bg-[#4170FF] rounded-lg hover:bg-blue-600 flex items-center justify-center gap-2"
+                          className="flex-1 py-2.5 text-[9px] font-black text-white uppercase tracking-widest bg-[#4170FF] rounded-xl hover:bg-blue-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
                         >
                           {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                          Salvar
+                          Salvar Alterações
                         </button>
                       </div>
                     </motion.div>

@@ -18,6 +18,7 @@ import { ScheduleTab } from '../components/projects/ScheduleTab';
 import { FinanceTab } from '../components/projects/FinanceTab';
 import { DailyLogTab } from '../components/projects/DailyLogTab';
 import { CollaboratorsModal } from '../components/projects/CollaboratorsModal';
+import { CollaboratorsTab } from '../components/projects/CollaboratorsTab';
 import { cn } from '../lib/utils';
 import { Project } from '../lib/types';
 import { AlertModal } from '../components/ui/AlertModal';
@@ -31,7 +32,7 @@ interface ProjectsViewProps {
 
 export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsViewProps) {
   const { projects, loading: loadingProjects, saveProject, deleteProject, refresh: refreshProjects } = useProjects();
-  const [activeTab, setActiveTab] = useState<'orcamento' | 'cronograma' | 'financeiro' | 'diario'>('orcamento');
+  const [activeTab, setActiveTab] = useState<'orcamento' | 'cronograma' | 'financeiro' | 'diario' | 'colaboradores'>('orcamento');
 
   // Modals for Projects
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -139,6 +140,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             { id: 'cronograma', label: 'Cronograma' },
             { id: 'financeiro', label: 'Financeiro' },
             { id: 'diario', label: 'Diário de Obra' },
+            { id: 'colaboradores', label: 'Colaboradores' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -187,6 +189,12 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             dailyLogs={dailyLogs}
             onRefresh={refreshData}
             readOnly={!isEditor}
+          />
+        )}
+        {activeTab === 'colaboradores' && (
+          <CollaboratorsTab
+            project={selectedProject}
+            onRefresh={refreshData}
           />
         )}
 
