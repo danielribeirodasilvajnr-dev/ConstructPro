@@ -2,13 +2,10 @@ import React, { useState } from 'react';
 import { 
   X, 
   Settings, 
-  Moon, 
-  Sun, 
   Bell, 
   Mail, 
   Globe, 
   Check, 
-  Monitor,
   MousePointer2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,7 +17,6 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const [theme, setTheme] = useState<'dark' | 'light' | 'system'>('dark');
   const [notifications, setNotifications] = useState({
     email: true,
     system: true,
@@ -65,37 +61,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
 
             <div className="p-8 space-y-10 max-h-[80vh] overflow-y-auto pr-4 custom-scrollbar">
-              {/* Theme Section */}
-              <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Aparência Visual</h3>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Escolha o tema que mais lhe agrada</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  {[
-                    { id: 'dark', label: 'Escuro', icon: Moon },
-                    { id: 'light', label: 'Claro', icon: Sun },
-                    { id: 'system', label: 'Sistema', icon: Monitor },
-                  ].map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setTheme(t.id as any)}
-                      className={cn(
-                        "flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all active:scale-95 group",
-                        theme === t.id 
-                          ? "bg-[#4170FF]/10 border-[#4170FF] text-[#4170FF]" 
-                          : "bg-black/20 border-white/5 text-slate-500 hover:border-white/10"
-                      )}
-                    >
-                      <t.icon className={cn("h-6 w-6 transition-transform group-hover:scale-110", theme === t.id && "scale-110")} />
-                      <span className="text-[10px] font-black uppercase tracking-widest">{t.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-
               {/* Notifications Section */}
               <section className="space-y-4">
                 <div className="flex items-center justify-between">
