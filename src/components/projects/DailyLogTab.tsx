@@ -14,6 +14,7 @@ interface PhotoUploadItem {
   description: string;
   previewUrl: string | null;
   id: string;
+  existingId?: string;
 }
 
 interface DailyLogTabProps {
@@ -76,39 +77,81 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
   const handleSave = async () => {
     try {
       setUploading(true);
+      // Sanitize formData to only include valid daily_logs columns
+      const { daily_log_photos, ...cleanFormData } = formData;
+
       const { data: savedLog, error: logError } = await supabase
         .from('daily_logs')
         .upsert({
-          ...formData,
+          ...cleanFormData,
           project_id: projectId,
           id: editingLog?.id || undefined
         })
         .select();
 
-      if (logError) throw logError;
+      if (logError) {
+        console.error('Error saving daily log:', logError);
+        throw new Error('Falha ao salvar os dados básicos do diário.');
+      }
+
       const logId = savedLog?.[0]?.id;
 
       if (logId) {
-        // Upload each valid photo slot
+        // 1. Handle Deletions: find photos that were in editingLog but are not in photosToUpload
+        if (editingLog?.daily_log_photos) {
+          const currentExistingIds = photosToUpload
+            .filter(p => p.existingId)
+            .map(p => p.existingId);
+          
+          const photosToDelete = editingLog.daily_log_photos.filter(
+            p => !currentExistingIds.includes(p.id)
+          );
+
+          if (photosToDelete.length > 0) {
+            const { error: deleteError } = await supabase
+              .from('daily_log_photos')
+              .delete()
+              .in('id', photosToDelete.map(p => p.id));
+            
+            if (deleteError) console.error('Error deleting photos:', deleteError);
+          }
+        }
+
+        // 2. Handle Uploads and Updates
         for (const item of photosToUpload) {
           if (item.file) {
+            // New photo: upload and insert
             const sanitizedName = sanitizeFileName(item.file.name);
             const fileName = `${projectId}/${logId}/${Date.now()}-${sanitizedName}`;
+            
             const { error: uploadError } = await supabase.storage
               .from('daily_logs')
               .upload(fileName, item.file);
 
-            if (!uploadError) {
-              const { data: { publicUrl } } = supabase.storage
-                .from('daily_logs')
-                .getPublicUrl(fileName);
-
-              await supabase.from('daily_log_photos').insert({
-                log_id: logId,
-                image_url: publicUrl,
-                description: item.description || item.file.name
-              });
+            if (uploadError) {
+              console.error('Error uploading photo:', uploadError);
+              continue;
             }
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('daily_logs')
+              .getPublicUrl(fileName);
+
+            const { error: photoLogError } = await supabase.from('daily_log_photos').insert({
+              log_id: logId,
+              image_url: publicUrl,
+              description: item.description || item.file.name
+            });
+
+            if (photoLogError) console.error('Error linking photo to log:', photoLogError);
+          } else if (item.existingId) {
+            // Existing photo: update description if it might have changed
+            const { error: updateError } = await supabase
+              .from('daily_log_photos')
+              .update({ description: item.description })
+              .eq('id', item.existingId);
+            
+            if (updateError) console.error('Error updating photo description:', updateError);
           }
         }
       }
@@ -117,11 +160,11 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
       resetModal();
       onRefresh();
     } catch (err: any) {
-      console.error(err);
+      console.error('Detailed save error:', err);
       setAlertConfig({
         isOpen: true,
         title: 'Erro ao Salvar',
-        message: 'Não foi possível salvar o Diário de Obra. Verifique sua conexão.',
+        message: err.message || 'Não foi possível salvar o Diário de Obra. Verifique sua conexão ou permissões.',
         type: 'error'
       });
     } finally {
@@ -157,25 +200,33 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
         .from('daily_logs')
         .upload(fileName, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Quick upload storage error:', uploadError);
+        throw new Error('Falha ao enviar o arquivo para o servidor.');
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('daily_logs')
         .getPublicUrl(fileName);
 
-      await supabase.from('daily_log_photos').insert({
+      const { error: insertError } = await supabase.from('daily_log_photos').insert({
         log_id: logId,
         image_url: publicUrl,
         description: file.name
       });
 
+      if (insertError) {
+        console.error('Quick upload database error:', insertError);
+        throw new Error('Falha ao registrar a foto no diário.');
+      }
+
       onRefresh();
     } catch (err: any) {
-      console.error(err);
+      console.error('Detailed quick upload error:', err);
       setAlertConfig({
         isOpen: true,
         title: 'Erro no Upload',
-        message: 'Falha ao enviar foto rápida.',
+        message: err.message || 'Falha ao enviar foto rápida.',
         type: 'error'
       });
     } finally {
@@ -224,7 +275,26 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                 </div>
                 {!readOnly && (
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => { setEditingLog(log); setFormData(log); setIsModalOpen(true); }} className="p-1 hover:text-white transition-colors"><Edit className="h-4 w-4" /></button>
+                    <button onClick={() => { 
+                      const { daily_log_photos, ...logData } = log;
+                      setEditingLog(log); 
+                      setFormData(logData); 
+                      
+                      // Initialize photos to upload with existing photos if any
+                      if (daily_log_photos && daily_log_photos.length > 0) {
+                        setPhotosToUpload(daily_log_photos.map(p => ({
+                          file: null,
+                          description: p.description || '',
+                          previewUrl: p.image_url,
+                          id: p.id,
+                          existingId: p.id
+                        })));
+                      } else {
+                        setPhotosToUpload([{ file: null, description: '', previewUrl: null, id: Math.random().toString(36).slice(2) }]);
+                      }
+                      
+                      setIsModalOpen(true); 
+                    }} className="p-1 hover:text-white transition-colors"><Edit className="h-4 w-4" /></button>
                     <button onClick={() => handleDelete(log.id)} className="p-1 hover:text-red-500 transition-colors"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 )}

@@ -105,12 +105,14 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
     }
   };
 
-  // Extract real photos from daily logs
+  // Extract real photos from daily logs with enriched data
   const allPhotos = dailyLogs.flatMap(log =>
     (log.daily_log_photos || []).map((photo: any) => ({
       url: photo.image_url,
       desc: photo.description || log.activities || 'Foto da obra',
-      date: log.date
+      date: log.date,
+      workers: log.workers,
+      weather: log.weather
     }))
   ).slice(0, 6); // Take latest 6
 
@@ -162,76 +164,53 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
 
       <div className="grid grid-cols-12 gap-8">
         <div className="col-span-12 lg:col-span-8 space-y-8">
-          {/* Visual Progress */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-end">
-              <h2 className="text-2xl font-bold tracking-tight">Progresso Visual</h2>
-              <button className="text-secondary font-semibold text-sm hover:underline">Ver álbum completo</button>
-            </div>
-            <div className="grid grid-cols-3 gap-4 h-[400px]">
-              {allPhotos.length > 0 ? (
-                <>
-                  <div className="col-span-2 rounded-xl overflow-hidden group cursor-pointer relative">
-                    <img
-                      src={allPhotos[0].url}
-                      alt="Progress"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-6 flex flex-col justify-end">
-                      <p className="text-white font-medium">{allPhotos[0].desc}</p>
-                      <p className="text-white/70 text-sm">Atualizado em {formatDate(allPhotos[0].date)}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-4">
-                    {allPhotos.slice(1, 3).map((photo, k) => (
-                      <div key={k} className="h-1/2 rounded-xl overflow-hidden group cursor-pointer relative">
-                        <img
-                          src={photo.url}
-                          alt="Detail"
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </div>
-                    ))}
-                    {allPhotos.length > 3 && (
-                      <div className="h-1/2 rounded-xl overflow-hidden relative group cursor-pointer">
-                        <img src={allPhotos[3].url} className="w-full h-full object-cover opacity-50" alt="more" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-white font-bold text-xl">+{allPhotos.length - 3} fotos</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="col-span-3 bg-slate-900/50 rounded-xl border border-dashed border-slate-800 flex flex-col items-center justify-center text-slate-500 gap-3">
-                  <Camera className="h-8 w-8 opacity-20" />
-                  <p className="text-sm">Nenhuma foto cadastrada no diário de obra.</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Timeline - Last 3 Daily Logs */}
-          <div className="bg-[#181c21] rounded-xl p-8 border border-white/5 shadow-sm">
-            <h3 className="text-xl font-bold mb-8">Etapas da Obra (Diário)</h3>
-            <div className="relative space-y-8">
+          {/* Timeline - Last Daily Logs with Photos */}
+          <div className="bg-[#181c21] rounded-2xl p-8 border border-white/5 shadow-sm">
+            <h3 className="text-xl font-bold mb-8 flex items-center gap-2">
+              <Camera className="h-5 w-5 text-primary" />
+              Progresso Diário
+            </h3>
+            <div className="relative space-y-12">
               {dailyLogs.length > 0 ? (
                 <>
-                  <div className="absolute left-3 top-2 bottom-2 w-px bg-outline-variant opacity-30"></div>
-                  {dailyLogs.slice(0, 3).map((log, i) => (
-                    <div key={log.id} className="relative flex gap-6 items-start">
-                      <div className="z-10 bg-primary w-6 h-6 rounded-full flex items-center justify-center ring-4 ring-surface-container-low shadow-[0_0_10px_rgba(65,112,255,0.3)]">
+                  <div className="absolute left-3 top-2 bottom-2 w-px bg-white/5"></div>
+                  {dailyLogs.slice(0, 5).map((log, i) => (
+                    <div key={log.id} className="relative flex gap-8 items-start group">
+                      <div className="z-10 bg-primary w-6 h-6 rounded-full flex items-center justify-center shrink-0 ring-4 ring-[#181c21] shadow-lg shadow-primary/20 transition-transform group-hover:scale-110">
                         <Check className="text-white h-3 w-3" />
                       </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <h4 className="font-bold text-slate-100">{formatDate(log.date, { day: '2-digit', month: 'long' })}</h4>
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{log.weather}</span>
+                      <div className="flex-1 space-y-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div>
+                            <h4 className="text-lg font-bold text-white capitalize">{formatDate(log.date, { day: '2-digit', month: 'long', weekday: 'long' })}</h4>
+                            <div className="flex items-center gap-3 mt-1">
+                               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5"><Cloud className="h-3 w-3" /> {log.weather}</span>
+                               <span className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-1.5"><HardHat className="h-3 w-3" /> Equipe: {log.workers}</span>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-slate-400 mt-1 line-clamp-2 italic">{log.activities || 'Nenhuma atividade registrada.'}</p>
-                        {log.workers > 0 && (
-                          <div className="flex items-center gap-2 mt-2">
-                             <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-800 text-slate-400 rounded uppercase">Equipe: {log.workers}</span>
+                        
+                        <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                           <p className="text-slate-300 text-sm leading-relaxed italic">"{log.activities || 'Nenhuma atividade registrada.'}"</p>
+                        </div>
+
+                        {/* Photos for this log */}
+                        {log.daily_log_photos && log.daily_log_photos.length > 0 && (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {log.daily_log_photos.map((photo: any) => (
+                              <div key={photo.id} className="aspect-square rounded-xl overflow-hidden border border-white/10 group/photo cursor-pointer relative bg-black/20">
+                                <img 
+                                  src={photo.image_url} 
+                                  alt="Daily" 
+                                  className="w-full h-full object-cover transition-transform duration-500 group-hover/photo:scale-110" 
+                                />
+                                {photo.description && (
+                                  <div className="absolute inset-x-0 bottom-0 p-2 bg-black/60 opacity-0 group-hover/photo:opacity-100 transition-opacity">
+                                    <p className="text-[9px] text-white line-clamp-1">{photo.description}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
