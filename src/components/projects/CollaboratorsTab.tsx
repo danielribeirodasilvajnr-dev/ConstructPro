@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Trash2, Shield, Eye, Mail, Loader2, AlertCircle, Verified, Phone, Briefcase, Check, PenLine } from 'lucide-react';
+import { UserPlus, Trash2, Shield, Eye, Mail, Loader2, AlertCircle, Verified, Phone, Briefcase, Check, PenLine, Camera } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import { Project, Profile, ProjectCollaborator } from '../../lib/types';
@@ -165,6 +165,48 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!file || !user) return;
+
+    try {
+      setIsUpdating(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Refresh data
+      await fetchCollaborators();
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Error uploading avatar:', err);
+      alert('Erro ao enviar foto de perfil');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const startEditing = (p: Profile) => {
     setEditingId(p.id);
     setEditForm({
@@ -241,9 +283,29 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
             <div className="divide-y divide-white/5">
               {/* Owner */}
               <div className="p-6 space-y-4">
+                <input 
+                  type="file"
+                  id="admin-avatar-upload"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-[#4170FF]/10 flex items-center justify-center text-[#4170FF] font-black text-lg border border-[#4170FF]/20 overflow-hidden">
+                    <div 
+                      onClick={() => document.getElementById('admin-avatar-upload')?.click()}
+                      className="w-14 h-14 rounded-2xl bg-[#4170FF]/10 flex items-center justify-center text-[#4170FF] font-black text-xl border border-[#4170FF]/20 overflow-hidden relative cursor-pointer group shadow-lg shadow-blue-500/5 transition-all hover:scale-105 active:scale-95"
+                    >
+                      {isUpdating ? (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
+                          <Loader2 className="h-5 w-5 text-white animate-spin" />
+                        </div>
+                      ) : (
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10">
+                          <Camera className="h-5 w-5 text-white" />
+                        </div>
+                      )}
+                      
                       {ownerProfile?.avatar_url ? (
                         <img src={ownerProfile.avatar_url} alt="" className="w-full h-full object-cover" />
                       ) : (
