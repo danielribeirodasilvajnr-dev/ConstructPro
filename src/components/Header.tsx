@@ -52,44 +52,6 @@ export function Header({ title }: HeaderProps) {
     window.location.href = '/login';
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    try {
-      setIsUploading(true);
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      // Update profile
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
-
-      await fetchUser();
-    } catch (err) {
-      console.error('Error uploading avatar:', err);
-      alert('Erro ao enviar foto de perfil');
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   return (
     <>
@@ -226,19 +188,6 @@ export function Header({ title }: HeaderProps) {
                     </div>
                     
                     <div className="p-2">
-                      <input 
-                        type="file" 
-                        id="avatar-upload" 
-                        className="hidden" 
-                        accept="image/*" 
-                        onChange={handleAvatarUpload}
-                      />
-                      <button 
-                        onClick={() => { document.getElementById('avatar-upload')?.click(); setIsProfileOpen(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group"
-                      >
-                        <Camera className="h-4 w-4 group-hover:text-[#4170FF]" /> Alterar Foto de Perfil
-                      </button>
                       <button 
                         onClick={() => { setIsProfileModalOpen(true); setIsProfileOpen(false); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group"
