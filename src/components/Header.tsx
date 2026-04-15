@@ -137,10 +137,6 @@ export function Header({ title }: HeaderProps) {
             <CircleHelp className="h-5 w-5" />
           </button>
           
-          <button className="p-2.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all">
-            <Settings className="h-5 w-5" />
-          </button>
-
           <div className="h-8 w-px bg-white/5 mx-2" />
 
           <div className="relative">
