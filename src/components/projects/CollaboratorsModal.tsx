@@ -13,6 +13,7 @@ interface CollaboratorsModalProps {
 
 export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps) {
   const [collaborators, setCollaborators] = useState<ProjectCollaborator[]>([]);
+  const [ownerProfile, setOwnerProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor');
@@ -40,6 +41,15 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
 
       if (error) throw error;
       setCollaborators(data || []);
+
+      // Fetch owner profile
+      const { data: ownerData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', project.user_id)
+        .single();
+      
+      if (ownerData) setOwnerProfile(ownerData);
     } catch (err: any) {
       console.error(err);
       setError('Erro ao carregar colaboradores');
@@ -230,17 +240,102 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Pessoas com acesso</label>
             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
               {/* Owner */}
-              <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-2xl border border-slate-800/50">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#4170FF]/10 flex items-center justify-center text-[#4170FF] font-bold text-sm">
-                    {project.client?.charAt(0) || 'D'}
+              <div className="flex flex-col p-4 bg-slate-900/50 rounded-2xl border border-slate-800/50 gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#4170FF]/10 flex items-center justify-center text-[#4170FF] font-bold text-sm overflow-hidden">
+                      {ownerProfile?.avatar_url ? (
+                        <img src={ownerProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        (ownerProfile?.email || 'A').charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-sm font-bold text-slate-100 block truncate max-w-[150px]">{ownerProfile?.email || 'Administrador'}</span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-slate-500 font-medium">Controle Total</span>
+                        <div className="px-1.5 py-0.5 bg-[#4170FF]/20 rounded text-[8px] font-black text-[#4170FF] uppercase tracking-wider">Gestor</div>
+                        {ownerProfile?.job_title && (
+                          <span className="text-[9px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400 font-bold">{ownerProfile.job_title}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-sm font-bold text-slate-100 block">Administrador</span>
-                    <span className="text-[10px] text-slate-500 font-medium">Controle Total</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => ownerProfile && startEditing(ownerProfile)}
+                      className="p-2 text-slate-600 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                      title="Editar Perfil"
+                    >
+                      <PenLine className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
-                <div className="px-2 py-1 bg-[#4170FF]/20 rounded-md text-[9px] font-black text-[#4170FF] uppercase tracking-wider">Gestor</div>
+
+                {/* Inline Contact Info */}
+                {!editingId && ownerProfile?.phone && (
+                  <div className="flex items-center gap-4 pl-12">
+                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+                      <Phone className="h-2.5 w-2.5 text-[#10B981]" />
+                      {ownerProfile.phone}
+                    </div>
+                  </div>
+                )}
+
+                {/* Inline Editor for Owner */}
+                {editingId === ownerProfile?.id && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="space-y-4 pt-2 border-t border-white/5"
+                  >
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                          <Phone className="h-2.5 w-2.5" /> Telefone
+                        </label>
+                        <input 
+                          type="text"
+                          placeholder="Ex: 55119..."
+                          value={editForm.phone}
+                          onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#4170FF] outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                          <Briefcase className="h-2.5 w-2.5" /> Cargo
+                        </label>
+                        <select
+                          value={editForm.job_title}
+                          onChange={e => setEditForm(prev => ({ ...prev, job_title: e.target.value }))}
+                          className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#4170FF] outline-none"
+                        >
+                          <option value="">Nenhum</option>
+                          <option value="Gerente de obras">Gerente de obras</option>
+                          <option value="Assistente de engenharia">Assistente de engenharia</option>
+                          <option value="Estagiário">Estagiário</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => setEditingId(null)}
+                        className="flex-1 py-2 text-[10px] font-bold text-slate-500 uppercase bg-white/5 rounded-lg hover:bg-white/10"
+                      >
+                        Cancelar
+                      </button>
+                      <button 
+                        onClick={() => ownerProfile && handleUpdateProfile(ownerProfile.id)}
+                        disabled={isUpdating}
+                        className="flex-1 py-2 text-[10px] font-bold text-white uppercase bg-[#4170FF] rounded-lg hover:bg-blue-600 flex items-center justify-center gap-2"
+                      >
+                        {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                        Salvar
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
               </div>
 
               {/* Collaborators */}

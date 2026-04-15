@@ -13,6 +13,7 @@ interface CollaboratorsTabProps {
 
 export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) {
   const [collaborators, setCollaborators] = useState<ProjectCollaborator[]>([]);
+  const [ownerProfile, setOwnerProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'editor' | 'viewer' | 'proprietor'>('editor');
@@ -40,6 +41,15 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
 
       if (error) throw error;
       setCollaborators(data || []);
+
+      // Fetch owner profile
+      const { data: ownerData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', project.user_id)
+        .single();
+      
+      if (ownerData) setOwnerProfile(ownerData);
     } catch (err: any) {
       console.error(err);
       setError('Erro ao carregar colaboradores');
@@ -230,19 +240,106 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
             
             <div className="divide-y divide-white/5">
               {/* Owner */}
-              <div className="p-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[#4170FF]/10 flex items-center justify-center text-[#4170FF] font-black text-lg border border-[#4170FF]/20">
-                    {project.client?.charAt(0) || 'D'}
+              <div className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-[#4170FF]/10 flex items-center justify-center text-[#4170FF] font-black text-lg border border-[#4170FF]/20 overflow-hidden">
+                      {ownerProfile?.avatar_url ? (
+                        <img src={ownerProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        (ownerProfile?.email || 'A').charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                        {ownerProfile?.email || 'Administrador'}
+                        <span className="px-2 py-0.5 bg-[#4170FF]/10 text-[#4170FF] text-[8px] font-black uppercase tracking-wider rounded">Gestor</span>
+                      </h4>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Criador do Projeto</p>
+                        {ownerProfile?.job_title && (
+                          <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold uppercase tracking-widest border-l border-white/10 pl-2">
+                            {ownerProfile.job_title}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                      Administrador
-                      <span className="px-2 py-0.5 bg-[#4170FF]/10 text-[#4170FF] text-[8px] font-black uppercase tracking-wider rounded">Gestor</span>
-                    </h4>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Criador do Projeto</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => ownerProfile && startEditing(ownerProfile)}
+                      className="p-2.5 text-slate-500 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                      title="Editar Perfil"
+                    >
+                      <PenLine className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
+
+                {/* Inline Contact Info */}
+                {!editingId && ownerProfile?.phone && (
+                  <div className="flex items-center gap-4 pl-16">
+                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+                      <Phone className="h-3 w-3 text-[#10B981]" />
+                      {ownerProfile.phone}
+                    </div>
+                  </div>
+                )}
+
+                {/* Inline Editor for Owner */}
+                {editingId === ownerProfile?.id && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="pl-16 space-y-4 pt-4 border-t border-white/5"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                          <Phone className="h-3 w-3" /> Telefone para Contato
+                        </label>
+                        <input 
+                          type="text"
+                          placeholder="55119..."
+                          value={editForm.phone}
+                          onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#4170FF] outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                          <Briefcase className="h-3 w-3" /> Cargo / Função
+                        </label>
+                        <select
+                          value={editForm.job_title}
+                          onChange={e => setEditForm(prev => ({ ...prev, job_title: e.target.value }))}
+                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#4170FF] outline-none cursor-pointer"
+                        >
+                          <option value="">Não definido</option>
+                          <option value="Gerente de obras">Gerente de obras</option>
+                          <option value="Assistente de engenharia">Assistente de engenharia</option>
+                          <option value="Estagiário">Estagiário</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => setEditingId(null)}
+                        className="flex-1 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button 
+                        onClick={() => ownerProfile && handleUpdateProfile(ownerProfile.id)}
+                        disabled={isUpdating}
+                        className="flex-1 py-2.5 text-[9px] font-black text-white uppercase tracking-widest bg-[#4170FF] rounded-xl hover:bg-blue-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
+                      >
+                        {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                        Salvar Alterações
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
               </div>
 
               {/* Collaborators */}
