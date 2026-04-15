@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'motion/react';
-import { cn, formatCurrency, formatDate } from '../lib/utils';
+import { cn, formatCurrency, formatDate, sanitizeFileName } from '../lib/utils';
 import { useProjects } from '../hooks/useProjects';
 import { useProjectData } from '../hooks/useProjectData';
 import { useAuth } from '../contexts/AuthContext';
@@ -69,27 +69,52 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
   const financialProgress = totalBudget > 0 ? Math.round((totalInvested / totalBudget) * 100) : 0;
   
   const handleSaveDocument = async () => {
-    if (!newDoc.name || !selectedProjectId) return;
+    if (!newDoc.name || !selectedProjectId || !newDoc.file) return;
     setIsSaving(true);
     try {
-      const { error } = await supabase.from('project_documents').insert({
+      // 1. Upload to Storage
+      const fileExt = newDoc.file.name.split('.').pop();
+      const fileName = `${selectedProjectId}/${Date.now()}_${sanitizeFileName(newDoc.file.name)}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('project-documents')
+        .upload(fileName, newDoc.file);
+
+      if (uploadError) throw uploadError;
+
+      // 2. Get Public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('project-documents')
+        .getPublicUrl(fileName);
+
+      // 3. Save to Database
+      const { error: dbError } = await supabase.from('project_documents').insert({
         project_id: selectedProjectId,
         name: newDoc.name,
-        url: '#', // In a production app, upload to storage first
-        file_type: newDoc.file?.type || 'application/pdf',
-        file_size: newDoc.file?.size || 0,
+        url: publicUrl,
+        file_type: newDoc.file.type || 'application/pdf',
+        file_size: newDoc.file.size || 0,
         uploaded_by: user?.id
       });
-      if (error) throw error;
+
+      if (dbError) throw dbError;
+
       setNewDoc({ name: '', file: null });
       setIsAddingDoc(false);
       refresh();
+
+      setAlertConfig({
+        isOpen: true,
+        title: 'Sucesso',
+        message: 'Documento enviado com sucesso!',
+        type: 'success'
+      });
     } catch (e: any) {
       console.error(e);
       setAlertConfig({
         isOpen: true,
         title: 'Erro',
-        message: 'Não foi possível salvar o documento.',
+        message: e.message || 'Não foi possível salvar o documento.',
         type: 'error'
       });
     } finally {
