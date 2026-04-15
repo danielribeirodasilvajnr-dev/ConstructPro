@@ -21,13 +21,13 @@ export default function App() {
   React.useEffect(() => {
     async function checkRole() {
       if (!user) return;
-      
+
       // Check if user is proprietor in any project
       const { data: collaborations } = await supabase
         .from('project_collaborators')
         .select('project_id, role')
         .eq('user_id', user.id);
-      
+
       const { data: projects } = await supabase
         .from('projects')
         .select('id')
@@ -36,7 +36,7 @@ export default function App() {
       const roles = collaborations || [];
       const ownsProjects = (projects || []).length > 0;
       const isProprietorOf = roles.find(c => c.role === 'proprietor');
-      
+
       if (isProprietorOf && !ownsProjects) {
         setIsClient(true);
         setActiveTab('safety');
@@ -88,9 +88,9 @@ export default function App() {
   };
 
   return (
-    <Layout 
-      activeTab={activeTab} 
-      setActiveTab={setActiveTab} 
+    <Layout
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
       title={getTitle()}
       isClient={isClient}
     >
