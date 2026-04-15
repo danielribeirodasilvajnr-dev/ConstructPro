@@ -21,6 +21,7 @@ import { CollaboratorsModal } from '../components/projects/CollaboratorsModal';
 import { cn } from '../lib/utils';
 import { Project } from '../lib/types';
 import { AlertModal } from '../components/ui/AlertModal';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 
 
 interface ProjectsViewProps {
@@ -354,20 +355,13 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         </div>
       )}
 
-      {deletingProject && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDeletingProject(null)}></div>
-          <div className="relative bg-[#13171f] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">Excluir Projeto?</h3>
-            <p className="text-sm text-slate-400 mb-6">Esta ação não pode ser desfeita.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setDeletingProject(null)} className="flex-1 py-2.5 text-sm font-bold text-slate-300 border border-[#1e293b] rounded-xl">Cancelar</button>
-              <button onClick={confirmDelete} className="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-xl">Excluir</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal 
+        isOpen={!!deletingProject}
+        onClose={() => setDeletingProject(null)}
+        onConfirm={confirmDelete}
+        title="Excluir Projeto?"
+        message={`Tem certeza que deseja excluir o projeto "${deletingProject?.name}"? Esta ação não pode ser desfeita.`}
+      />
 
       <AlertModal 
         isOpen={alertConfig.isOpen}

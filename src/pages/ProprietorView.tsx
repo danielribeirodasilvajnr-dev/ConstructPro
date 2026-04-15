@@ -20,6 +20,8 @@ import { useProjects } from '../hooks/useProjects';
 import { useProjectData } from '../hooks/useProjectData';
 import { useAuth } from '../contexts/AuthContext';
 import { AlertModal } from '../components/ui/AlertModal';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ProjectDocument } from '../lib/types';
 
 interface ProprietorViewProps {
   selectedProjectId: string | null;
@@ -40,7 +42,8 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
   const [isAddingDoc, setIsAddingDoc] = useState(false);
   const [newDoc, setNewDoc] = useState<NewDocument>({ name: '', file: null });
   const [isSaving, setIsSaving] = useState(false);
-  const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean, title: string, message: string, type?: 'error' | 'success' }>({
+  const [deletingDoc, setDeletingDoc] = useState<ProjectDocument | null>(null);
+  const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean, title: string, message: string, type?: 'error' | 'success' | 'warning' }>({
     isOpen: false,
     title: '',
     message: ''
@@ -95,14 +98,33 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
   };
 
   const handleDeleteDocument = async (id: string) => {
-    if (!confirm('Excluir este documento?')) return;
     try {
       const { error } = await supabase.from('project_documents').delete().eq('id', id);
       if (error) throw error;
+      setDeletingDoc(null);
       refresh();
     } catch (e) {
       console.error(e);
+      setAlertConfig({
+        isOpen: true,
+        title: 'Erro',
+        message: 'Não foi possível excluir o documento.',
+        type: 'error'
+      });
     }
+  };
+
+  const handleDownloadDocument = (doc: ProjectDocument) => {
+    if (!doc.url || doc.url === '#') {
+      setAlertConfig({
+        isOpen: true,
+        title: 'Arquivo não disponível',
+        message: 'Este documento é apenas um registro e não possui um arquivo anexo para download.',
+        type: 'warning'
+      });
+      return;
+    }
+    window.open(doc.url, '_blank');
   };
 
   // Extract real photos from daily logs with enriched data
@@ -261,12 +283,19 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                     </div>
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
-                        onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc.id); }}
-                        className="p-1.5 hover:bg-red-500/10 rounded-md text-red-500"
+                        onClick={(e) => { e.stopPropagation(); setDeletingDoc(doc); }}
+                        className="p-1.5 hover:bg-red-500/10 rounded-lg text-slate-500 hover:text-red-500 transition-colors"
+                        title="Excluir"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
-                      <Download className="h-4 w-4 text-slate-500" />
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDownloadDocument(doc); }}
+                        className="p-1.5 hover:bg-primary/10 rounded-lg text-slate-500 hover:text-primary transition-colors"
+                        title="Baixar Arquivo"
+                      >
+                        <Download className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 ))
@@ -366,6 +395,14 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
           </motion.div>
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={!!deletingDoc}
+        onClose={() => setDeletingDoc(null)}
+        onConfirm={() => deletingDoc && handleDeleteDocument(deletingDoc.id)}
+        title="Excluir Documento?"
+        message={`Tem certeza que deseja excluir o documento "${deletingDoc?.name}"? Esta ação não pode ser desfeita.`}
+      />
 
       <AlertModal 
         isOpen={alertConfig.isOpen}
