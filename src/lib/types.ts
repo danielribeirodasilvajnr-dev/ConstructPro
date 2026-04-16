@@ -44,6 +44,7 @@ export interface FinancialItem {
   budget_item_linked_id?: string;
   receipt_url?: string;
   observations: string;
+  created_at?: string;
 }
 
 export interface DailyLog {
@@ -54,6 +55,7 @@ export interface DailyLog {
   workers: number;
   activities: string;
   restrictions: string;
+  created_at?: string;
   daily_log_photos?: DailyLogPhoto[];
 }
 

@@ -40,7 +40,15 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
         .eq('project_id', project.id);
 
       if (error) throw error;
-      setCollaborators(data || []);
+      
+      // Filter out the owner/administrator from the bottom list since they are shown separately
+      const others = (data || []).filter(c => c.user_id !== project.user_id);
+      
+      // Sort by role hierarchy: proprietor -> editor -> viewer
+      const roleOrder = { 'proprietor': 0, 'editor': 1, 'viewer': 2 };
+      others.sort((a, b) => (roleOrder[a.role as keyof typeof roleOrder] || 10) - (roleOrder[b.role as keyof typeof roleOrder] || 10));
+      
+      setCollaborators(others);
 
       // Fetch owner profile
       const { data: ownerData } = await supabase

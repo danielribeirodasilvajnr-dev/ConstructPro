@@ -21,8 +21,8 @@ export function useProjectData(projectId: string | null) {
       const [budget, schedule, finance, logs, docs, collab, collabList] = await Promise.all([
         supabase.from('budget_items').select('*').eq('project_id', projectId),
         supabase.from('schedule_items').select('*').eq('project_id', projectId).order('start_date', { ascending: true }),
-        supabase.from('financial_items').select('*').eq('project_id', projectId).order('date', { ascending: false }),
-        supabase.from('daily_logs').select('*, daily_log_photos(*)').eq('project_id', projectId).order('date', { ascending: false }),
+        supabase.from('financial_items').select('*').eq('project_id', projectId).order('date', { ascending: false }).order('created_at', { ascending: false }),
+        supabase.from('daily_logs').select('*, daily_log_photos(*)').eq('project_id', projectId).order('date', { ascending: false }).order('created_at', { ascending: false }),
         supabase.from('project_documents').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
         supabase.from('project_collaborators').select('role').eq('project_id', projectId).eq('user_id', user?.id).maybeSingle(),
         supabase.from('project_collaborators').select('*, profile:profiles(*)').eq('project_id', projectId)

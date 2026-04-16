@@ -21,7 +21,8 @@ export function useDashboardData() {
           schedule_items(*),
           financial_items(*),
           daily_logs(*)
-        `);
+        `)
+        .order('created_at', { ascending: false });
 
       if (projectsError) throw projectsError;
       if (!projects) {
@@ -39,7 +40,11 @@ export function useDashboardData() {
         const totalPhysical = scheduleItems.reduce((acc: number, item: any) => acc + Number(item.progress || 0), 0);
         const physicalProgress = scheduleItems.length > 0 ? totalPhysical / scheduleItems.length : 0;
 
-        const sortedLogs = [...(p.daily_logs || [])].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3);
+        const sortedLogs = [...(p.daily_logs || [])].sort((a: any, b: any) => {
+          const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+          if (dateDiff !== 0) return dateDiff;
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+        }).slice(0, 3);
         const logs = sortedLogs.map((log: any) => {
           let desc = log.activities || '';
           if (desc.length > 70) desc = desc.substring(0, 70) + '...';
