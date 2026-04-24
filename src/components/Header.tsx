@@ -49,6 +49,13 @@ export function Header({ title, onMenuClick }: HeaderProps) {
     }
   };
 
+  const formatDisplayName = (name: string) => {
+    if (!name) return 'Usuário';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length <= 1) return name;
+    return `${parts[0]} ${parts[parts.length - 1]}`;
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = '/login';
@@ -143,8 +150,8 @@ export function Header({ title, onMenuClick }: HeaderProps) {
               className="flex items-center gap-3 p-1.5 md:pl-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all group active:scale-95"
             >
               <div className="flex-col items-end hidden md:flex">
-                <span className="text-xs font-black text-white tracking-tight group-hover:text-[#BCB5AC] transition-colors line-clamp-1 max-w-[120px]">
-                  {user?.profile?.full_name || user?.email?.split('@')[0] || 'Usuário'}
+                <span className="text-xs font-black text-white tracking-tight group-hover:text-[#BCB5AC] transition-colors line-clamp-1 max-w-[150px]">
+                  {formatDisplayName(user?.profile?.full_name || user?.email?.split('@')[0])}
                 </span>
                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-[1px]">Administrador</span>
               </div>
