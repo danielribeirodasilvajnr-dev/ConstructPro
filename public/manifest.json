@@ -3,19 +3,33 @@
   "name": "AevumPro | Gestão de Obras",
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/logo.png?v=2",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/logo.png?v=2",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png?v=2",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/logo.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#1C232E",
-  "background_color": "#1C232E"
+  "background_color": "#1C232E",
+  "orientation": "portrait"
 }
