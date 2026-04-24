@@ -219,7 +219,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
               const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
               setFormData({ date: localDate, category: 'Material' }); 
               setIsModalOpen(true); 
-            }} className="px-5 py-2.5 bg-[#BCB5AC] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-95">
+            }} className="px-5 py-2.5 bg-[#BCB5AC] text-[#1C232E] text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-95">
               <Plus className="h-4 w-4" /> Novo Lançamento
             </button>
           )}
@@ -242,7 +242,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
             onClick={() => setIsFilterExpanded(!isFilterExpanded)} 
             className={cn(
               "px-6 rounded-2xl border border-white/5 flex items-center gap-2 font-bold text-xs uppercase tracking-widest transition-all relative",
-              isFilterExpanded || activeFiltersCount > 0 ? "bg-[#BCB5AC]/10 border-[#BCB5AC]/30 text-[#BCB5AC]" : "bg-[#1C232E] text-slate-400 hover:text-white"
+              isFilterExpanded || activeFiltersCount > 0 ? "bg-[#BCB5AC]/10 border-[#BCB5AC]/30 text-[#BCB5AC]" : "bg-[#1C232E] text-slate-400 hover:text-[#1C232E]"
             )}
           >
             {isFilterExpanded ? <X className="h-4 w-4" /> : <FilterIcon className="h-4 w-4" />}
@@ -366,7 +366,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
               className={cn(
                 "px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all active:scale-95",
                 filters.category === cat 
-                  ? "bg-[#BCB5AC] border-[#BCB5AC] text-white shadow-lg shadow-black/30" 
+                  ? "bg-[#BCB5AC] border-[#BCB5AC] text-[#1C232E] shadow-lg shadow-black/30" 
                   : "bg-white/5 border-white/5 text-slate-500 hover:text-slate-300 hover:bg-white/10"
               )}
             >
@@ -558,7 +558,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                 </button>
                 <button
                   onClick={handleSave}
-                  className="px-8 py-3 bg-[#BCB5AC] text-white text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-[0.98]"
+                  className="px-8 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-[0.98]"
                 >
                   Confirmar Lançamento
                 </button>

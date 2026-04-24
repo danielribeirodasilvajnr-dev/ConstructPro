@@ -42,7 +42,7 @@ export function Sidebar({ activeTab, setActiveTab, isClient, isCollapsed, setIsC
       {/* Sidebar Toggle */}
       <button 
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-10 flex h-6 w-6 items-center justify-center rounded-full bg-[#BCB5AC] text-white shadow-lg hover:bg-slate-700 transition-transform active:scale-90 z-[60]"
+        className="absolute -right-3 top-10 flex h-6 w-6 items-center justify-center rounded-full bg-[#BCB5AC] text-[#1C232E] shadow-lg hover:bg-slate-700 transition-transform active:scale-90 z-[60]"
       >
         {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </button>
@@ -76,7 +76,7 @@ export function Sidebar({ activeTab, setActiveTab, isClient, isCollapsed, setIsC
               "flex items-center gap-3 rounded-lg transition-all duration-150 relative",
               isCollapsed ? "justify-center w-12 h-12 p-0" : "px-4 py-3",
               activeTab === item.id 
-                ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105 border border-white/10" 
+                ? "bg-primary text-on-primary shadow-lg shadow-primary/20 scale-105 border border-white/10" 
                 : "text-slate-400 hover:bg-white/5"
             )}
           >
@@ -96,7 +96,7 @@ export function Sidebar({ activeTab, setActiveTab, isClient, isCollapsed, setIsC
           <button 
             title={isCollapsed ? "Novo Lançamento" : undefined}
             className={cn(
-              "mb-6 flex items-center justify-center rounded-xl bg-[#BCB5AC] text-white transition-all hover:bg-slate-700 shadow-lg shadow-black/20 active:scale-95",
+              "mb-6 flex items-center justify-center rounded-xl bg-[#BCB5AC] text-[#1C232E] transition-all hover:bg-slate-700 shadow-lg shadow-black/20 active:scale-95",
               isCollapsed ? "h-12 w-12 p-0" : "w-full py-3.5 gap-2 text-xs font-bold uppercase tracking-widest"
             )}
           >

@@ -378,7 +378,7 @@ export function CalculatorView() {
           {/* Botões de ação */}
           <div className="p-8 bg-[#1C232E]/30 border-t border-white/5">
             <div className="flex flex-wrap gap-3">
-              <button className="px-5 py-2.5 bg-[#BCB5AC] text-white text-sm font-bold rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2">
+              <button className="px-5 py-2.5 bg-[#BCB5AC] text-[#1C232E] text-sm font-bold rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2">
                 <CalculatorIcon className="inline h-4 w-4" /> Calcular Decadência
               </button>
               <button

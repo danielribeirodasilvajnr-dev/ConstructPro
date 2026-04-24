@@ -251,7 +251,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
           <p className="text-slate-500 mt-1">Registros diários do canteiro</p>
         </div>
         {!readOnly && (
-          <button onClick={() => { resetModal(); setFormData({ date: new Date().toISOString().split('T')[0], weather: 'Ensolarado', workers: 0 }); setIsModalOpen(true); }} className="px-5 py-2.5 bg-[#BCB5AC] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-95">
+          <button onClick={() => { resetModal(); setFormData({ date: new Date().toISOString().split('T')[0], weather: 'Ensolarado', workers: 0 }); setIsModalOpen(true); }} className="px-5 py-2.5 bg-[#BCB5AC] text-[#1C232E] text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-95">
             <Plus className="h-4 w-4" /> Novo Registro
           </button>
         )}
@@ -450,7 +450,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
               <button 
                 onClick={handleSave} 
                 disabled={uploading || !formData.date || !formData.activities}
-                className="px-12 py-4 bg-[#BCB5AC] text-white text-[11px] font-black rounded-2xl uppercase tracking-[2px] hover:bg-slate-700 transition-all shadow-2xl shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 flex items-center gap-3"
+                className="px-12 py-4 bg-[#BCB5AC] text-[#1C232E] text-[11px] font-black rounded-2xl uppercase tracking-[2px] hover:bg-slate-700 transition-all shadow-2xl shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 flex items-center gap-3"
               >
                 {uploading ? (
                   <>

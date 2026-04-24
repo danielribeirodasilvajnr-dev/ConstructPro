@@ -124,7 +124,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <div className="flex gap-4 pt-6 border-t border-white/5">
                 <button 
                   onClick={onClose}
-                  className="w-full py-4 bg-[#BCB5AC] text-white text-xs font-black uppercase tracking-[2px] rounded-2xl hover:bg-slate-700 transition-all flex items-center justify-center gap-3 shadow-xl shadow-black/30"
+                  className="w-full py-4 bg-[#BCB5AC] text-[#1C232E] text-xs font-black uppercase tracking-[2px] rounded-2xl hover:bg-slate-700 transition-all flex items-center justify-center gap-3 shadow-xl shadow-black/30"
                 >
                   <Check className="h-4 w-4" /> Finalizar Ajustes
                 </button>

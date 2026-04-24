@@ -5,8 +5,10 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   
   --color-primary: #BCB5AC;
+  --color-on-primary: #1C232E;
   --color-primary-container: #8C8479;
   --color-secondary: #FFFAF0;
+  --color-on-secondary: #1C232E;
   --color-secondary-container: #E5E0D6;
   --color-surface: #2B3647;
   --color-surface-container-low: #1C232E;

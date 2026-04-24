@@ -170,7 +170,7 @@ export function Header({ title }: HeaderProps) {
                     className="absolute right-0 mt-3 w-64 bg-[#1C232E] rounded-2xl border border-white/5 shadow-2xl overflow-hidden z-20"
                   >
                     <div className="p-4 bg-gradient-to-br from-[#BCB5AC]/20 via-[#BCB5AC]/5 to-transparent border-b border-white/5 flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-xl bg-[#BCB5AC] flex items-center justify-center text-white font-black text-xl shadow-lg border border-white/20 overflow-hidden">
+                      <div className="h-12 w-12 rounded-xl bg-[#BCB5AC] flex items-center justify-center text-[#1C232E] font-black text-xl shadow-lg border border-white/20 overflow-hidden">
                         {user?.profile?.avatar_url ? (
                           <img src={user.profile.avatar_url} alt="" className="w-full h-full object-cover" />
                         ) : (

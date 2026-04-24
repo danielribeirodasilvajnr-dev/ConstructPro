@@ -131,7 +131,7 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
         </div>
         <div className="flex gap-3">
           {!readOnly && (
-            <button onClick={() => { setEditingItem(null); setFormData({ progress: 0 }); setIsModalOpen(true); }} className="px-5 py-2.5 rounded-lg bg-[#BCB5AC] text-white text-sm font-bold flex items-center gap-2 shadow-lg shadow-black/20 hover:bg-slate-700 transition-all active:scale-95">
+            <button onClick={() => { setEditingItem(null); setFormData({ progress: 0 }); setIsModalOpen(true); }} className="px-5 py-2.5 rounded-lg bg-[#BCB5AC] text-[#1C232E] text-sm font-bold flex items-center gap-2 shadow-lg shadow-black/20 hover:bg-slate-700 transition-all active:scale-95">
               <Plus className="h-4 w-4" /> Nova Etapa
             </button>
           )}
@@ -313,7 +313,7 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
             <button className="p-3 bg-[#1C232E] border border-white/10 text-slate-400 hover:text-white transition-colors rounded-xl shadow-2xl backdrop-blur-md">
               <Share2 className="h-4 w-4" />
             </button>
-            <button className="p-3 bg-primary text-white transition-colors rounded-xl shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95">
+            <button className="p-3 bg-primary text-on-primary transition-colors rounded-xl shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95">
               <Maximize className="h-4 w-4" />
             </button>
           </div>
@@ -393,7 +393,7 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
                 </button>
                 <button 
                   onClick={handleSave} 
-                  className="px-10 py-4 bg-[#BCB5AC] text-white text-[11px] font-black rounded-2xl uppercase tracking-[2px] hover:bg-slate-700 transition-all shadow-xl shadow-black/30 active:scale-[0.98]"
+                  className="px-10 py-4 bg-[#BCB5AC] text-[#1C232E] text-[11px] font-black rounded-2xl uppercase tracking-[2px] hover:bg-slate-700 transition-all shadow-xl shadow-black/30 active:scale-[0.98]"
                 >
                   Salvar Tarefa
                 </button>

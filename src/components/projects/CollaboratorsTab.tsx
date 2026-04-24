@@ -272,7 +272,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
               <button
                 type="submit"
                 disabled={inviting || !inviteEmail}
-                className="w-full py-3.5 bg-[#BCB5AC] text-white text-[10px] font-bold rounded-xl uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3.5 bg-[#BCB5AC] text-[#1C232E] text-[10px] font-bold rounded-xl uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
                 Enviar Convite

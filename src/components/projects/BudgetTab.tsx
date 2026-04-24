@@ -265,7 +265,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                 </button>
                 <button 
                   onClick={handleSave} 
-                  className="px-8 py-3 bg-[#BCB5AC] text-white text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-[0.98]"
+                  className="px-8 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-[0.98]"
                 >
                   Salvar Item
                 </button>

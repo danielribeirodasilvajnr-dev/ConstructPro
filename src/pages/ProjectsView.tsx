@@ -130,7 +130,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
               className={cn(
                 "px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-colors border",
                 activeTab === 'colaboradores'
-                  ? "bg-[#BCB5AC] text-white border-[#BCB5AC]"
+                  ? "bg-[#BCB5AC] text-[#1C232E] border-[#BCB5AC]"
                   : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
               )}
             >
@@ -221,7 +221,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         </div>
         <button
           onClick={handleNew}
-          className="px-6 py-3 bg-[#BCB5AC] text-white text-xs font-bold rounded-xl flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 uppercase tracking-widest active:scale-95"
+          className="px-6 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-bold rounded-xl flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 uppercase tracking-widest active:scale-95"
         >
           <Plus className="h-4 w-4" /> Novo Projeto
         </button>
@@ -357,7 +357,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                 </button>
                 <button
                   onClick={handleSaveProject}
-                  className="px-8 py-3 bg-[#BCB5AC] text-white text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-[0.98]"
+                  className="px-8 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-[0.98]"
                 >
                   Salvar Projeto
                 </button>

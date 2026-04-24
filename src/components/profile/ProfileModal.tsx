@@ -303,7 +303,7 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
                     <button 
                       type="submit"
                       disabled={isUpdating}
-                      className="flex-[2] py-4 bg-[#BCB5AC] text-white text-xs font-black uppercase tracking-[2px] rounded-2xl hover:bg-slate-700 transition-all flex items-center justify-center gap-3 shadow-xl shadow-black/30 disabled:opacity-50"
+                      className="flex-[2] py-4 bg-[#BCB5AC] text-[#1C232E] text-xs font-black uppercase tracking-[2px] rounded-2xl hover:bg-slate-700 transition-all flex items-center justify-center gap-3 shadow-xl shadow-black/30 disabled:opacity-50"
                     >
                       {isUpdating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
                       Salvar Alterações
