@@ -52,7 +52,7 @@ export function Sidebar({ activeTab, setActiveTab, isClient, isCollapsed, setIsC
         "flex items-center gap-3 p-6 mb-2 overflow-hidden",
         isCollapsed && "justify-center p-4"
       )}>
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-white overflow-hidden p-1.5">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 text-white shadow-lg border border-white/10 overflow-hidden p-1.5">
           <img src="/logo.png" alt="AevumPro" className="w-full h-full object-contain" />
         </div>
         {!isCollapsed && (
