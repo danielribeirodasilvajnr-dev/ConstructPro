@@ -56,31 +56,23 @@ export function Sidebar({
 
       <aside className={cn(
         "fixed left-0 top-0 z-50 h-screen flex-col bg-[#1C232E] border-r border-slate-800 shadow-2xl transition-all duration-300 overflow-hidden",
-        // Desktop/Tablet: Controlled by isCollapsed. If collapsed, it hides completely.
-        isCollapsed ? "w-0 -translate-x-full hidden md:hidden" : "w-72 translate-x-0 flex md:flex",
-        // Mobile: Controlled by isMobileOpen.
+        // Desktop/Tablet: Either full width (w-72) or completely hidden (w-0)
+        isCollapsed ? "w-0 -translate-x-full hidden" : "w-72 translate-x-0 flex",
+        // Mobile: Controlled by isMobileOpen, always full width when open
         isMobileOpen ? "flex w-72 translate-x-0 !inline-flex" : "max-md:hidden max-md:w-0 max-md:-translate-x-full"
       )}>
       {/* Brand Section */}
-      <div className={cn(
-        "flex items-center gap-3 p-6 mb-2 overflow-hidden",
-        isCollapsed && "justify-center p-4"
-      )}>
+      <div className="flex items-center gap-3 p-6 mb-2 overflow-hidden">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#BCB5AC]">
           <img src="/logo.png" alt="AevumPro" className="w-full h-full object-cover" />
         </div>
-        {!isCollapsed && (
-          <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-            <h2 className="text-sm font-bold tracking-tight text-white">AevumPro</h2>
-            <p className="text-[10px] font-bold uppercase tracking-[2px] text-[#BCB5AC] opacity-80 mt-0.5 whitespace-nowrap">Gestão de Obras</p>
-          </div>
-        )}
+        <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+          <h2 className="text-sm font-bold tracking-tight text-white">AevumPro</h2>
+          <p className="text-[10px] font-bold uppercase tracking-[2px] text-[#BCB5AC] opacity-80 mt-0.5 whitespace-nowrap">Gestão de Obras</p>
+        </div>
       </div>
 
-      <nav className={cn(
-        "flex flex-1 flex-col gap-1 p-4",
-        isCollapsed && "items-center px-2"
-      )}>
+      <nav className="flex flex-1 flex-col gap-1 p-4">
         {navItems.map((item) => (
           <button
             key={item.id}
@@ -97,51 +89,34 @@ export function Sidebar({
                 : "text-slate-400 hover:bg-white/5"
             )}
           >
-            <item.icon className={cn("h-5 w-5", isCollapsed ? "h-6 w-6" : "h-5 w-5")} />
-            {!isCollapsed && (
-              <span className="text-sm font-medium animate-in fade-in slide-in-from-left-1 duration-200">{item.label}</span>
-            )}
+            <item.icon className="h-5 w-5" />
+            <span className="text-sm font-medium animate-in fade-in slide-in-from-left-1 duration-200">{item.label}</span>
           </button>
         ))}
       </nav>
 
-      <div className={cn(
-        "p-6 mt-auto border-t border-slate-800 bg-slate-900/10",
-        isCollapsed && "p-4 flex flex-col items-center"
-      )}>
+      <div className="p-6 mt-auto border-t border-slate-800 bg-slate-900/10">
         {!isClient && (
           <button 
-            title={isCollapsed ? "Novo Lançamento" : undefined}
-            className={cn(
-              "mb-6 flex items-center justify-center rounded-xl bg-[#BCB5AC] text-[#1C232E] transition-all hover:bg-slate-700 shadow-lg shadow-black/20 active:scale-95",
-              isCollapsed ? "h-12 w-12 p-0" : "w-full py-3.5 gap-2 text-xs font-bold uppercase tracking-widest"
-            )}
+            className="mb-6 flex items-center justify-center rounded-xl bg-[#BCB5AC] text-[#1C232E] transition-all hover:bg-slate-700 shadow-lg shadow-black/20 active:scale-95 w-full py-3.5 gap-2 text-xs font-bold uppercase tracking-widest"
           >
             <PlusCircle className="h-5 w-5" />
-            {!isCollapsed && <span>Novo Lançamento</span>}
+            <span>Novo Lançamento</span>
           </button>
         )}
-        <div className={cn("flex flex-col gap-1 w-full", isCollapsed && "items-center")}>
+        <div className="flex flex-col gap-1 w-full">
           <button 
-            title={isCollapsed ? "Suporte" : undefined}
-            className={cn(
-              "flex items-center gap-3 text-sm text-slate-400 hover:text-primary transition-colors",
-              isCollapsed ? "justify-center h-10 w-10 p-0" : "px-4 py-2"
-            )}
+            className="flex items-center gap-3 text-sm text-slate-400 hover:text-primary transition-colors px-4 py-2"
           >
-            <CircleHelp className="h-4 w-4" />
-            {!isCollapsed && <span>Suporte</span>}
+            <CircleHelp className="h-5 w-5" />
+            <span>Suporte</span>
           </button>
           <button 
             onClick={signOut}
-            title={isCollapsed ? "Sair" : undefined}
-            className={cn(
-              "flex items-center gap-3 text-sm text-slate-400 hover:text-error transition-colors",
-              isCollapsed ? "justify-center h-10 w-10 p-0" : "px-4 py-2"
-            )}
+            className="flex items-center gap-3 text-sm text-slate-400 hover:text-error transition-colors px-4 py-2"
           >
-            <LogOut className="h-4 w-4" />
-            {!isCollapsed && <span>Sair</span>}
+            <LogOut className="h-5 w-5" />
+            <span>Sair</span>
           </button>
         </div>
       </div>
@@ -149,4 +124,3 @@ export function Sidebar({
     </>
   );
 }
-
