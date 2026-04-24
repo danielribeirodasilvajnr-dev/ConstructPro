@@ -30,7 +30,7 @@ export function DashboardView() {
     <div className="space-y-6 max-w-[1400px] mx-auto pb-24">
       <div className="mb-8">
         <h2 className="text-3xl font-extrabold tracking-tight text-white">Dashboard</h2>
-        <p className="text-slate-500 text-sm mt-1">Visão geral dos seus projetos e custos (Supabase Cloud)</p>
+        <p className="text-slate-500 text-sm mt-1">Visão geral dos seus projetos e custos</p>
       </div>
 
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Resumo por Obra</h3>
