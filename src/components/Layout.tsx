@@ -42,13 +42,7 @@ export default function Layout({ children, activeTab, setActiveTab, title, isCli
       )}>
         <Header 
           title={title} 
-          onMenuClick={() => {
-            if (window.innerWidth < 768) {
-              setIsMobileSidebarOpen(true);
-            } else {
-              setIsCollapsed(!isCollapsed);
-            }
-          }}
+          onMenuClick={() => setIsMobileSidebarOpen(true)}
         />
 
         {/* Content Area */}

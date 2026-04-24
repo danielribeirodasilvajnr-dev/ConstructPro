@@ -61,7 +61,7 @@ export function Header({ title, onMenuClick }: HeaderProps) {
         <div className="flex items-center gap-4 md:gap-8">
           <button 
             onClick={onMenuClick}
-            className="p-2 -ml-2 text-slate-400 hover:text-white"
+            className="p-2 -ml-2 text-slate-400 hover:text-white md:hidden"
           >
             <Menu className="h-6 w-6" />
           </button>
