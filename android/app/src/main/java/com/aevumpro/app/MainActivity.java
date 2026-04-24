@@ -1,4 +1,4 @@
-package com.aevum.maonaobra;
+package com.aevumpro.app;
 
 import com.getcapacitor.BridgeActivity;
 

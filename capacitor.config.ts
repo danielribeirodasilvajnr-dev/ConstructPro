@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.aevum.maonaobra',
-  appName: 'ConstructPro',
+  appId: 'com.aevumpro.app',
+  appName: 'AevumPro',
   webDir: 'dist'
 };
 
