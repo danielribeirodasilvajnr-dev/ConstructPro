@@ -351,7 +351,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
               href={`https://wa.me/${supportPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${supportName.split(' ')[0]}, sou o proprietário da obra ${project.name} e tenho uma dúvida.`)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-secondary-container text-white px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 hover:scale-105 transition-transform"
+              className="bg-primary text-on-primary px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 hover:scale-105 transition-transform"
             >
               <MessageSquare className="h-4 w-4" />
               Abrir Chamado
