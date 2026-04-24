@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ConstructPro</string>
+    <string name="title_activity_main">ConstructPro</string>
+    <string name="package_name">com.aevum.maonaobra</string>
+    <string name="custom_url_scheme">com.aevum.maonaobra</string>
+</resources>
