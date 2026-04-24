@@ -55,14 +55,12 @@ export function Sidebar({
       )}
 
       <aside className={cn(
-        "fixed left-0 top-0 z-50 h-screen flex-col bg-[#1C232E] border-r border-slate-800 shadow-2xl transition-all duration-300",
-        // Base state: Hidden on mobile, flex on desktop
-        "hidden md:flex",
-        // Desktop width
-        isCollapsed ? "md:w-20" : "md:w-72",
-        // Mobile state: Show only if isMobileOpen
-        isMobileOpen && "flex w-72 translate-x-0 !inline-flex",
-        !isMobileOpen && "md:translate-x-0"
+        "fixed left-0 top-0 z-50 h-screen flex-col bg-[#1C232E] border-r border-slate-800 shadow-2xl transition-all duration-300 flex",
+        // Desktop: Controlled by isCollapsed. If collapsed, it hides completely.
+        isCollapsed ? "w-0 -translate-x-full md:hidden" : "w-72 translate-x-0 md:flex",
+        // Mobile: Controlled by isMobileOpen. If not open, it's hidden.
+        !isMobileOpen && "max-md:hidden max-md:w-0 max-md:-translate-x-full",
+        isMobileOpen && "max-md:flex max-md:w-72 max-md:translate-x-0 !inline-flex"
       )}>
       {/* Sidebar Toggle */}
       <button 

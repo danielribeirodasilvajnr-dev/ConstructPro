@@ -37,12 +37,18 @@ export default function Layout({ children, activeTab, setActiveTab, title, isCli
       {/* Main Content */}
       <main className={cn(
         "flex flex-1 flex-col transition-all duration-300 w-full min-w-0",
-        isCollapsed ? "md:ml-20" : "md:ml-72",
+        isCollapsed ? "ml-0" : "md:ml-72",
         "ml-0"
       )}>
         <Header 
           title={title} 
-          onMenuClick={() => setIsMobileSidebarOpen(true)}
+          onMenuClick={() => {
+            if (window.innerWidth < 768) {
+              setIsMobileSidebarOpen(true);
+            } else {
+              setIsCollapsed(!isCollapsed);
+            }
+          }}
         />
 
         {/* Content Area */}
