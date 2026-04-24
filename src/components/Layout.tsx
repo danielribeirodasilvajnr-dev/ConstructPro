@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import { MobileNav } from './MobileNav';
 import { cn } from '../lib/utils';
 
 interface LayoutProps {
@@ -17,6 +16,7 @@ export default function Layout({ children, activeTab, setActiveTab, title, isCli
     const saved = localStorage.getItem('sidebar-collapsed');
     return saved === 'true';
   });
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('sidebar-collapsed', String(isCollapsed));
@@ -30,23 +30,26 @@ export default function Layout({ children, activeTab, setActiveTab, title, isCli
         isClient={isClient} 
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
+        isMobileOpen={isMobileSidebarOpen}
+        setIsMobileOpen={setIsMobileSidebarOpen}
       />
       
       {/* Main Content */}
       <main className={cn(
         "flex flex-1 flex-col transition-all duration-300 w-full min-w-0",
         isCollapsed ? "md:ml-20" : "md:ml-72",
-        "ml-0" // Always 0 margin on mobile
+        "ml-0"
       )}>
-        <Header title={title} />
+        <Header 
+          title={title} 
+          onMenuClick={() => setIsMobileSidebarOpen(true)}
+        />
 
         {/* Content Area */}
         <div className="flex-1 p-4 md:p-8 overflow-auto">
           {children}
         </div>
       </main>
-
-      <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} isClient={isClient} />
     </div>
   );
 }

@@ -19,9 +19,19 @@ interface SidebarProps {
   isClient?: boolean;
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
+  isMobileOpen: boolean;
+  setIsMobileOpen: (open: boolean) => void;
 }
 
-export function Sidebar({ activeTab, setActiveTab, isClient, isCollapsed, setIsCollapsed }: SidebarProps) {
+export function Sidebar({ 
+  activeTab, 
+  setActiveTab, 
+  isClient, 
+  isCollapsed, 
+  setIsCollapsed,
+  isMobileOpen,
+  setIsMobileOpen
+}: SidebarProps) {
   const { signOut } = useAuth();
   const allNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -35,10 +45,25 @@ export function Sidebar({ activeTab, setActiveTab, isClient, isCollapsed, setIsC
     : allNavItems;
 
   return (
-    <aside className={cn(
-      "fixed left-0 top-0 z-50 hidden md:flex h-screen flex-col bg-[#1C232E] border-r border-slate-800 shadow-2xl transition-all duration-300",
-      isCollapsed ? "w-20" : "w-72"
-    )}>
+    <>
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 z-[45] bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      <aside className={cn(
+        "fixed left-0 top-0 z-50 flex h-screen flex-col bg-[#1C232E] border-r border-slate-800 shadow-2xl transition-all duration-300",
+        // Desktop sizing
+        isCollapsed ? "md:w-20" : "md:w-72",
+        // Mobile sizing and positioning
+        "w-72 md:translate-x-0",
+        isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        // Hide completely on mobile if not open to avoid ghost elements
+        !isMobileOpen && "pointer-events-none md:pointer-events-auto"
+      )}>
       {/* Sidebar Toggle */}
       <button 
         onClick={() => setIsCollapsed(!isCollapsed)}
@@ -70,7 +95,10 @@ export function Sidebar({ activeTab, setActiveTab, isClient, isCollapsed, setIsC
         {navItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => setActiveTab(item.id)}
+            onClick={() => {
+              setActiveTab(item.id);
+              setIsMobileOpen(false);
+            }}
             title={isCollapsed ? item.label : undefined}
             className={cn(
               "flex items-center gap-3 rounded-lg transition-all duration-150 relative",

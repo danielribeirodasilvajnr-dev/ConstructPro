@@ -10,7 +10,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Camera,
-  Loader2
+  Loader2,
+  Menu
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -57,11 +58,18 @@ export function Header({ title }: HeaderProps) {
     <>
       <header className="sticky top-0 z-40 flex h-16 md:h-20 items-center justify-between border-b border-slate-800 bg-[#1C232E]/85 px-4 md:px-8 backdrop-blur-md">
         <div className="flex items-center gap-4 md:gap-8">
+          <button 
+            onClick={onMenuClick}
+            className="p-2 -ml-2 text-slate-400 hover:text-white md:hidden"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+
           {title && (
             <div className="flex items-center gap-2 md:gap-4">
               <button 
                 onClick={() => window.history.back()}
-                className="text-slate-500 hover:text-white transition-colors"
+                className="text-slate-500 hover:text-white transition-colors hidden md:block"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
