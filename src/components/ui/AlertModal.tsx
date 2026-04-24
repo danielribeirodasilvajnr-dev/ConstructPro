@@ -28,7 +28,7 @@ export function AlertModal({ isOpen, onClose, title, message, type = 'error' }: 
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative bg-[#181C21] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-sm overflow-hidden"
+            className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-sm overflow-hidden"
           >
             <div className="p-8 text-center">
               <div className={cn(

@@ -251,7 +251,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
           <p className="text-slate-500 mt-1">Registros diários do canteiro</p>
         </div>
         {!readOnly && (
-          <button onClick={() => { resetModal(); setFormData({ date: new Date().toISOString().split('T')[0], weather: 'Ensolarado', workers: 0 }); setIsModalOpen(true); }} className="px-5 py-2.5 bg-[#4170FF] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 active:scale-95">
+          <button onClick={() => { resetModal(); setFormData({ date: new Date().toISOString().split('T')[0], weather: 'Ensolarado', workers: 0 }); setIsModalOpen(true); }} className="px-5 py-2.5 bg-[#BCB5AC] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-95">
             <Plus className="h-4 w-4" /> Novo Registro
           </button>
         )}
@@ -259,7 +259,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
 
       <div className="space-y-6">
         {dailyLogs.length === 0 ? (
-          <div className="bg-[#13171f] p-12 text-center rounded-2xl border border-white/5 text-slate-500">
+          <div className="bg-[#1C232E] p-12 text-center rounded-2xl border border-white/5 text-slate-500">
             Nenhum diário de obra registrado.
           </div>
         ) : (
@@ -323,7 +323,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                     </div>
                   ))}
                   {!readOnly && (
-                    <label className="w-40 aspect-square flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-[#4170FF]/50 hover:bg-[#4170FF]/5 transition-all text-slate-500 hover:text-[#4170FF]">
+                    <label className="w-40 aspect-square flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-[#BCB5AC]/50 hover:bg-[#BCB5AC]/5 transition-all text-slate-500 hover:text-[#BCB5AC]">
                         <Camera className="h-6 w-6" />
                         <span className="text-[10px] mt-1 font-bold">Adicionar Foto</span>
                         <input type="file" className="hidden" onChange={(e) => handleQuickPhotoUpload(e, log.id)} disabled={uploading} />
@@ -339,7 +339,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-[#0B0F19]/95 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-[#181C21] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+          <div className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
             <div className="p-8 pb-6 flex items-center justify-between border-b border-white/5">
               <div>
                 <h3 className="text-2xl font-bold text-white tracking-tight">Registro de Diário de Obra</h3>
@@ -357,19 +357,19 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
               <div className="grid grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Data</label>
-                  <input type="date" value={formData.date || ''} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none transition-all" />
+                  <input type="date" value={formData.date || ''} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full bg-[#1C232E] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none transition-all" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Clima</label>
                   <div className="relative">
-                    <select value={formData.weather || 'Ensolarado'} onChange={e => setFormData({ ...formData, weather: e.target.value })} className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none appearance-none transition-all">
+                    <select value={formData.weather || 'Ensolarado'} onChange={e => setFormData({ ...formData, weather: e.target.value })} className="w-full bg-[#1C232E] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none appearance-none transition-all">
                       {['Ensolarado', 'Nublado', 'Chuvoso', 'Tempestade'].map(w => <option key={w} value={w}>{w}</option>)}
                     </select>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Efetivo</label>
-                  <input type="number" placeholder="Trabalhadores" value={formData.workers || 0} onChange={e => setFormData({ ...formData, workers: Number(e.target.value) })} className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none transition-all" />
+                  <input type="number" placeholder="Trabalhadores" value={formData.workers || 0} onChange={e => setFormData({ ...formData, workers: Number(e.target.value) })} className="w-full bg-[#1C232E] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none transition-all" />
                 </div>
               </div>
               
@@ -380,7 +380,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                   rows={4} 
                   value={formData.activities || ''} 
                   onChange={e => setFormData({ ...formData, activities: e.target.value })} 
-                  className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none resize-none transition-all" 
+                  className="w-full bg-[#1C232E] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none resize-none transition-all" 
                 />
               </div>
 
@@ -391,14 +391,14 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                   rows={2} 
                   value={formData.restrictions || ''} 
                   onChange={e => setFormData({ ...formData, restrictions: e.target.value })} 
-                  className="w-full bg-[#13171f] border border-white/5 rounded-xl px-4 py-3 text-sm text-red-300/80 placeholder:text-red-900/30 focus:border-red-500/50 outline-none resize-none transition-all" 
+                  className="w-full bg-[#1C232E] border border-white/5 rounded-xl px-4 py-3 text-sm text-red-300/80 placeholder:text-red-900/30 focus:border-red-500/50 outline-none resize-none transition-all" 
                 />
               </div>
 
               <div className="space-y-6 pt-4 border-t border-white/5">
                 <div className="flex items-center justify-between">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Evidências Fotográficas</label>
-                  <button onClick={handleAddPhotoSlot} className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest flex items-center gap-1.5 hover:text-white transition-colors">
+                  <button onClick={handleAddPhotoSlot} className="text-[10px] font-black text-[#BCB5AC] uppercase tracking-widest flex items-center gap-1.5 hover:text-white transition-colors">
                     <PlusCircle className="h-4 w-4" /> Adicionar Mais
                   </button>
                 </div>
@@ -407,7 +407,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                   {photosToUpload.map((item, index) => (
                     <div key={item.id} className="relative bg-black/20 p-6 rounded-3xl border border-white/5 group/slot animate-in slide-in-from-bottom-2 duration-300">
                       {photosToUpload.length > 1 && (
-                        <button onClick={() => handleRemovePhotoSlot(index)} className="absolute -top-2 -right-2 h-8 w-8 bg-[#181C21] border border-white/10 rounded-full flex items-center justify-center text-slate-500 hover:text-red-500 transition-colors shadow-xl z-10">
+                        <button onClick={() => handleRemovePhotoSlot(index)} className="absolute -top-2 -right-2 h-8 w-8 bg-[#1C232E] border border-white/10 rounded-full flex items-center justify-center text-slate-500 hover:text-red-500 transition-colors shadow-xl z-10">
                           <X className="h-4 w-4" />
                         </button>
                       )}
@@ -416,7 +416,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                           <label className="text-[9px] font-bold text-slate-600 uppercase tracking-widest ml-1">Anexo {index + 1}</label>
                           <label className={cn(
                             "flex-1 min-h-[160px] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative",
-                            item.previewUrl ? "border-[#4170FF] bg-black/40" : "border-white/5 hover:border-[#4170FF]/50 bg-[#13171f]"
+                            item.previewUrl ? "border-[#BCB5AC] bg-black/40" : "border-white/5 hover:border-[#BCB5AC]/50 bg-[#1C232E]"
                           )}>
                             {item.previewUrl ? (
                               <img src={item.previewUrl} className="w-full h-full object-cover" alt="Preview" />
@@ -435,7 +435,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                             placeholder="Legenda para esta evidência..." 
                             value={item.description}
                             onChange={(e) => handleUpdatePhoto(index, { description: e.target.value })}
-                            className="flex-1 min-h-[160px] w-full bg-[#13171f] border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:border-[#4170FF] outline-none resize-none transition-all placeholder:text-slate-700"
+                            className="flex-1 min-h-[160px] w-full bg-[#1C232E] border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:border-[#BCB5AC] outline-none resize-none transition-all placeholder:text-slate-700"
                           />
                         </div>
                       </div>
@@ -445,12 +445,12 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
               </div>
             </div>
 
-            <div className="p-8 bg-[#13171f]/50 border-t border-white/5 flex items-center justify-end gap-6">
+            <div className="p-8 bg-[#1C232E]/50 border-t border-white/5 flex items-center justify-end gap-6">
               <button onClick={() => setIsModalOpen(false)} className="text-[11px] font-black text-slate-600 uppercase tracking-widest hover:text-white transition-colors">Cancelar</button>
               <button 
                 onClick={handleSave} 
                 disabled={uploading || !formData.date || !formData.activities}
-                className="px-12 py-4 bg-[#4170FF] text-white text-[11px] font-black rounded-2xl uppercase tracking-[2px] hover:bg-blue-600 transition-all shadow-2xl shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 flex items-center gap-3"
+                className="px-12 py-4 bg-[#BCB5AC] text-white text-[11px] font-black rounded-2xl uppercase tracking-[2px] hover:bg-slate-700 transition-all shadow-2xl shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 flex items-center gap-3"
               >
                 {uploading ? (
                   <>

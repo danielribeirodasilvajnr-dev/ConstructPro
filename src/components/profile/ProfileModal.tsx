@@ -150,13 +150,13 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-lg bg-[#181C21] rounded-3xl border border-white/5 shadow-2xl overflow-hidden"
+            className="relative w-full max-w-lg bg-[#1C232E] rounded-3xl border border-white/5 shadow-2xl overflow-hidden"
           >
             {/* Header */}
-            <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-[#4170FF]/5 to-transparent">
+            <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-[#BCB5AC]/5 to-transparent">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-[#4170FF]/10 rounded-2xl">
-                  <User className="h-6 w-6 text-[#4170FF]" />
+                <div className="p-3 bg-[#BCB5AC]/10 rounded-2xl">
+                  <User className="h-6 w-6 text-[#BCB5AC]" />
                 </div>
                 <div>
                   <h2 className="text-xl font-black text-white tracking-tight">Detalhes do Perfil</h2>
@@ -174,7 +174,7 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
             <div className="p-8 max-h-[80vh] overflow-y-auto pr-4 custom-scrollbar">
               {loading ? (
                 <div className="py-20 flex flex-col items-center gap-4">
-                  <Loader2 className="h-8 w-8 text-[#4170FF] animate-spin" />
+                  <Loader2 className="h-8 w-8 text-[#BCB5AC] animate-spin" />
                   <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Carregando perfil...</p>
                 </div>
               ) : (
@@ -182,7 +182,7 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
                   {/* Photo Section */}
                   <div className="flex flex-col items-center gap-6">
                     <div className="relative group">
-                      <div className="w-32 h-32 rounded-3xl bg-slate-800 border-4 border-[#13171f] overflow-hidden shadow-2xl relative">
+                      <div className="w-32 h-32 rounded-3xl bg-slate-800 border-4 border-[#1C232E] overflow-hidden shadow-2xl relative">
                         {isUploading ? (
                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
                             <Loader2 className="h-8 w-8 text-white animate-spin" />
@@ -213,7 +213,7 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
                     <div className="text-center">
                       <p className="text-sm font-bold text-white mb-1">{profile?.email}</p>
                       <div className="flex items-center justify-center gap-2">
-                        <span className="px-2 py-0.5 bg-[#4170FF]/10 text-[#4170FF] text-[8px] font-black uppercase tracking-wider rounded border border-[#4170FF]/20 flex items-center gap-1">
+                        <span className="px-2 py-0.5 bg-[#BCB5AC]/10 text-[#BCB5AC] text-[8px] font-black uppercase tracking-wider rounded border border-[#BCB5AC]/20 flex items-center gap-1">
                           <Shield className="h-2 w-2" /> Administrador
                         </span>
                       </div>
@@ -231,7 +231,7 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
                         value={form.full_name}
                         onChange={e => setForm(prev => ({ ...prev, full_name: e.target.value }))}
                         placeholder="Seu nome completo"
-                        className="w-full bg-[#13171f] border border-white/5 rounded-2xl px-5 py-3.5 text-sm text-white focus:border-[#4170FF] outline-none transition-all shadow-inner"
+                        className="w-full bg-[#1C232E] border border-white/5 rounded-2xl px-5 py-3.5 text-sm text-white focus:border-[#BCB5AC] outline-none transition-all shadow-inner"
                       />
                     </div>
 
@@ -245,7 +245,7 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
                           value={form.phone}
                           onChange={e => setForm(prev => ({ ...prev, phone: e.target.value }))}
                           placeholder="Ex: 55119..."
-                          className="w-full bg-[#13171f] border border-white/5 rounded-2xl px-5 py-3.5 text-sm text-white focus:border-[#4170FF] outline-none transition-all shadow-inner"
+                          className="w-full bg-[#1C232E] border border-white/5 rounded-2xl px-5 py-3.5 text-sm text-white focus:border-[#BCB5AC] outline-none transition-all shadow-inner"
                         />
                       </div>
                       <div className="flex-1 space-y-2">
@@ -255,7 +255,7 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
                         <select
                           value={form.job_title}
                           onChange={e => setForm(prev => ({ ...prev, job_title: e.target.value }))}
-                          className="w-full bg-[#13171f] border border-white/5 rounded-2xl px-5 py-3.5 text-sm text-white focus:border-[#4170FF] outline-none transition-all shadow-inner cursor-pointer"
+                          className="w-full bg-[#1C232E] border border-white/5 rounded-2xl px-5 py-3.5 text-sm text-white focus:border-[#BCB5AC] outline-none transition-all shadow-inner cursor-pointer"
                         >
                           <option value="">Não definido</option>
                           <option value="Gerente de obras">Gerente de obras</option>
@@ -303,7 +303,7 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
                     <button 
                       type="submit"
                       disabled={isUpdating}
-                      className="flex-[2] py-4 bg-[#4170FF] text-white text-xs font-black uppercase tracking-[2px] rounded-2xl hover:bg-blue-600 transition-all flex items-center justify-center gap-3 shadow-xl shadow-blue-500/20 disabled:opacity-50"
+                      className="flex-[2] py-4 bg-[#BCB5AC] text-white text-xs font-black uppercase tracking-[2px] rounded-2xl hover:bg-slate-700 transition-all flex items-center justify-center gap-3 shadow-xl shadow-black/30 disabled:opacity-50"
                     >
                       {isUpdating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
                       Salvar Alterações

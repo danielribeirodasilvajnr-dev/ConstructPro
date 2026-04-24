@@ -130,7 +130,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
               className={cn(
                 "px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-colors border",
                 activeTab === 'colaboradores'
-                  ? "bg-[#4170FF] text-white border-[#4170FF]"
+                  ? "bg-[#BCB5AC] text-white border-[#BCB5AC]"
                   : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
               )}
             >
@@ -152,7 +152,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
               className={cn(
                 "px-8 py-5 text-[11px] font-bold uppercase tracking-[2px] border-b-2 transition-all whitespace-nowrap",
                 activeTab === tab.id
-                  ? "border-[#4170FF] text-[#4170FF]"
+                  ? "border-[#BCB5AC] text-[#BCB5AC]"
                   : "border-transparent text-slate-500 hover:text-slate-300"
               )}
             >
@@ -221,7 +221,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         </div>
         <button
           onClick={handleNew}
-          className="px-6 py-3 bg-[#4170FF] text-white text-xs font-bold rounded-xl flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 uppercase tracking-widest active:scale-95"
+          className="px-6 py-3 bg-[#BCB5AC] text-white text-xs font-bold rounded-xl flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 uppercase tracking-widest active:scale-95"
         >
           <Plus className="h-4 w-4" /> Novo Projeto
         </button>
@@ -235,7 +235,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             <div
               key={project.id}
               onClick={() => onSelectProject(project.id)}
-              className="bg-[#181C21] rounded-[24px] border border-slate-800 overflow-hidden flex flex-col group hover:shadow-2xl hover:border-[#4170FF]/50 cursor-pointer transition-all relative animate-in fade-in duration-500"
+              className="bg-[#1C232E] rounded-[24px] border border-slate-800 overflow-hidden flex flex-col group hover:shadow-2xl hover:border-[#BCB5AC]/50 cursor-pointer transition-all relative animate-in fade-in duration-500"
             >
               <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 z-10">
                 {project.user_id === projects.find(p => p.id === project.id)?.user_id && (
@@ -268,7 +268,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                   </span>
                 </div>
 
-                <h3 className="text-xl font-bold text-slate-100 tracking-tight group-hover:text-[#4170FF] transition-colors line-clamp-2 min-h-[56px]">{project.name}</h3>
+                <h3 className="text-xl font-bold text-slate-100 tracking-tight group-hover:text-[#BCB5AC] transition-colors line-clamp-2 min-h-[56px]">{project.name}</h3>
 
                 <div className="mt-6 space-y-4">
                   <div className="flex items-center gap-3 text-slate-500">
@@ -286,9 +286,9 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                 </div>
               </div>
 
-              <div className="px-8 py-6 bg-slate-900/30 border-t border-slate-800 flex items-center justify-between group-hover:bg-[#4170FF]/5 transition-colors">
+              <div className="px-8 py-6 bg-slate-900/30 border-t border-slate-800 flex items-center justify-between group-hover:bg-[#BCB5AC]/5 transition-colors">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Acessar Obra</span>
-                <ChevronLeft className="h-4 w-4 text-slate-600 rotate-180 group-hover:text-[#4170FF] transform translate-x-0 group-hover:translate-x-1 transition-all" />
+                <ChevronLeft className="h-4 w-4 text-slate-600 rotate-180 group-hover:text-[#BCB5AC] transform translate-x-0 group-hover:translate-x-1 transition-all" />
               </div>
             </div>
           ))}
@@ -298,7 +298,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-[#181C21] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative bg-[#1C232E] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-8 pb-4 flex items-center justify-between">
               <h3 className="text-xl font-bold text-slate-100 tracking-tight">{editingProject ? 'Editar Projeto' : 'Novo Projeto'}</h3>
               <button
@@ -311,16 +311,16 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             <div className="px-8 pb-8 space-y-6">
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Nome da Obra</label>
-                <input type="text" placeholder="Ex: Residência Alto do Lago..." value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none" />
+                <input type="text" placeholder="Ex: Residência Alto do Lago..." value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
               </div>
               <div className="grid grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Cliente</label>
-                  <input type="text" placeholder="Nome do proprietário" value={formData.client || ''} onChange={e => setFormData({ ...formData, client: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none" />
+                  <input type="text" placeholder="Nome do proprietário" value={formData.client || ''} onChange={e => setFormData({ ...formData, client: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Status</label>
-                  <select value={formData.status || 'Planejamento'} onChange={e => setFormData({ ...formData, status: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none appearance-none">
+                  <select value={formData.status || 'Planejamento'} onChange={e => setFormData({ ...formData, status: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none appearance-none">
                     <option value="Planejamento">Planejamento</option>
                     <option value="Em andamento">Em andamento</option>
                     <option value="Finalizada">Finalizada</option>
@@ -330,24 +330,24 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Área Total (m²)</label>
-                  <input type="number" placeholder="0.00" value={formData.area || 0} onChange={e => setFormData({ ...formData, area: Number(e.target.value) })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none" />
+                  <input type="number" placeholder="0.00" value={formData.area || 0} onChange={e => setFormData({ ...formData, area: Number(e.target.value) })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Localização</label>
-                  <input type="text" placeholder="Endereço da obra" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none" />
+                  <input type="text" placeholder="Endereço da obra" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Data de Início</label>
-                  <input type="date" value={formData.start_date || ''} onChange={e => setFormData({ ...formData, start_date: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none" />
+                  <input type="date" value={formData.start_date || ''} onChange={e => setFormData({ ...formData, start_date: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Previsão Entrega</label>
-                  <input type="date" value={formData.deadline || ''} onChange={e => setFormData({ ...formData, deadline: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none" />
+                  <input type="date" value={formData.deadline || ''} onChange={e => setFormData({ ...formData, deadline: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
                 </div>
               </div>
-              <textarea placeholder="Observações adicionais sobre o projeto..." rows={3} value={formData.description || ''} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none resize-none" />
+              <textarea placeholder="Observações adicionais sobre o projeto..." rows={3} value={formData.description || ''} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none resize-none" />
               <div className="pt-4 flex items-center justify-end gap-3">
                 <button
                   onClick={() => setIsModalOpen(false)}
@@ -357,7 +357,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                 </button>
                 <button
                   onClick={handleSaveProject}
-                  className="px-8 py-3 bg-[#4170FF] text-white text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 active:scale-[0.98]"
+                  className="px-8 py-3 bg-[#BCB5AC] text-white text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-[0.98]"
                 >
                   Salvar Projeto
                 </button>

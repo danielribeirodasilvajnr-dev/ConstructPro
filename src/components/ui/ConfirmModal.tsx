@@ -37,7 +37,7 @@ export function ConfirmModal({
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative bg-[#181C21] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-sm overflow-hidden p-8 text-center"
+            className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-sm overflow-hidden p-8 text-center"
           >
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-white mb-2 tracking-tight">{title}</h3>

@@ -219,7 +219,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
               const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
               setFormData({ date: localDate, category: 'Material' }); 
               setIsModalOpen(true); 
-            }} className="px-5 py-2.5 bg-[#4170FF] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 active:scale-95">
+            }} className="px-5 py-2.5 bg-[#BCB5AC] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-95">
               <Plus className="h-4 w-4" /> Novo Lançamento
             </button>
           )}
@@ -229,26 +229,26 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
       <div className="space-y-4">
         <div className="flex gap-4">
           <div className="relative flex-1 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-[#4170FF] transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-[#BCB5AC] transition-colors" />
             <input 
               type="text" 
               placeholder="Buscar por descrição, fornecedor ou categoria..." 
               value={searchTerm} 
               onChange={e => setSearchTerm(e.target.value)} 
-              className="w-full pl-12 pr-4 py-4 bg-[#13171f] border border-white/5 text-white rounded-2xl focus:border-[#4170FF]/50 outline-none transition-all placeholder:text-slate-600 focus:bg-[#181c21]" 
+              className="w-full pl-12 pr-4 py-4 bg-[#1C232E] border border-white/5 text-white rounded-2xl focus:border-[#BCB5AC]/50 outline-none transition-all placeholder:text-slate-600 focus:bg-[#1C232E]" 
             />
           </div>
           <button 
             onClick={() => setIsFilterExpanded(!isFilterExpanded)} 
             className={cn(
               "px-6 rounded-2xl border border-white/5 flex items-center gap-2 font-bold text-xs uppercase tracking-widest transition-all relative",
-              isFilterExpanded || activeFiltersCount > 0 ? "bg-[#4170FF]/10 border-[#4170FF]/30 text-[#4170FF]" : "bg-[#13171f] text-slate-400 hover:text-white"
+              isFilterExpanded || activeFiltersCount > 0 ? "bg-[#BCB5AC]/10 border-[#BCB5AC]/30 text-[#BCB5AC]" : "bg-[#1C232E] text-slate-400 hover:text-white"
             )}
           >
             {isFilterExpanded ? <X className="h-4 w-4" /> : <FilterIcon className="h-4 w-4" />}
             Filtros
             {activeFiltersCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-blue-600 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center border-2 border-[#0B0F19]">
+              <span className="absolute -top-2 -right-2 bg-slate-700 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center border-2 border-[#0B0F19]">
                 {activeFiltersCount}
               </span>
             )}
@@ -263,9 +263,9 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="p-6 bg-[#181c21] rounded-2xl border border-white/5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+              <div className="p-6 bg-[#1C232E] rounded-2xl border border-white/5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                 <div className="space-y-3 min-w-0">
-                  <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest ml-1 flex items-center gap-2">
+                  <label className="text-[10px] font-black text-[#BCB5AC] uppercase tracking-widest ml-1 flex items-center gap-2">
                     <Calendar className="h-3 w-3" /> Período
                   </label>
                   <div className="flex items-center gap-2 min-w-0">
@@ -273,26 +273,26 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                       type="date" 
                       value={filters.dateStart} 
                       onChange={e => setFilters({ ...filters, dateStart: e.target.value })} 
-                      className="flex-1 min-w-0 bg-[#13171f] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#4170FF]/50 outline-none transition-all" 
+                      className="flex-1 min-w-0 bg-[#1C232E] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none transition-all" 
                     />
                     <span className="text-slate-600 font-bold text-[10px]">à</span>
                     <input 
                       type="date" 
                       value={filters.dateEnd} 
                       onChange={e => setFilters({ ...filters, dateEnd: e.target.value })} 
-                      className="flex-1 bg-[#13171f] border border-white/5 rounded-xl px-3 py-2 text-[10px] text-white focus:border-[#4170FF]/50 outline-none transition-all" 
+                      className="flex-1 bg-[#1C232E] border border-white/5 rounded-xl px-3 py-2 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none transition-all" 
                     />
                   </div>
                 </div>
 
                 <div className="space-y-3 min-w-0">
-                  <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest ml-1 flex items-center gap-2">
+                  <label className="text-[10px] font-black text-[#BCB5AC] uppercase tracking-widest ml-1 flex items-center gap-2">
                     <FilterIcon className="h-3 w-3" /> Categoria
                   </label>
                   <select 
                     value={filters.category} 
                     onChange={e => setFilters({ ...filters, category: e.target.value })} 
-                    className="w-full bg-[#13171f] border border-white/5 rounded-xl px-3 py-2.5 text-[10px] text-white focus:border-[#4170FF]/50 outline-none appearance-none cursor-pointer truncate"
+                    className="w-full bg-[#1C232E] border border-white/5 rounded-xl px-3 py-2.5 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none appearance-none cursor-pointer truncate"
                   >
                     <option value="Todas">Todas</option>
                     {VALID_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -300,13 +300,13 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                 </div>
 
                 <div className="space-y-3 min-w-0">
-                  <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest ml-1 flex items-center gap-2">
+                  <label className="text-[10px] font-black text-[#BCB5AC] uppercase tracking-widest ml-1 flex items-center gap-2">
                     <Paperclip className="h-3 w-3" /> Vínculo
                   </label>
                   <select 
                     value={filters.budgetItemId} 
                     onChange={e => setFilters({ ...filters, budgetItemId: e.target.value })} 
-                    className="w-full bg-[#13171f] border border-white/5 rounded-xl px-3 py-2.5 text-[10px] text-white focus:border-[#4170FF]/50 outline-none appearance-none cursor-pointer truncate"
+                    className="w-full bg-[#1C232E] border border-white/5 rounded-xl px-3 py-2.5 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none appearance-none cursor-pointer truncate"
                   >
                     <option value="">Todos os itens</option>
                     {budgetItems.map(item => (
@@ -318,7 +318,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                 </div>
 
                 <div className="space-y-3 min-w-0">
-                  <label className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest ml-1 flex items-center gap-2">
+                  <label className="text-[10px] font-black text-[#BCB5AC] uppercase tracking-widest ml-1 flex items-center gap-2">
                     <span className="text-[8px] border border-current rounded px-1">R$</span> Valor
                   </label>
                   <div className="flex items-center gap-1.5 min-w-0">
@@ -327,14 +327,14 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                       placeholder="Min" 
                       value={filters.minAmount} 
                       onChange={e => setFilters({ ...filters, minAmount: e.target.value })} 
-                      className="w-full min-w-0 bg-[#13171f] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#4170FF]/50 outline-none placeholder:text-slate-700 transition-all" 
+                      className="w-full min-w-0 bg-[#1C232E] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none placeholder:text-slate-700 transition-all" 
                     />
                     <input 
                       type="number" 
                       placeholder="Max" 
                       value={filters.maxAmount} 
                       onChange={e => setFilters({ ...filters, maxAmount: e.target.value })} 
-                      className="w-full min-w-0 bg-[#13171f] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#4170FF]/50 outline-none placeholder:text-slate-700 transition-all" 
+                      className="w-full min-w-0 bg-[#1C232E] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none placeholder:text-slate-700 transition-all" 
                     />
                   </div>
                 </div>
@@ -366,7 +366,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
               className={cn(
                 "px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all active:scale-95",
                 filters.category === cat 
-                  ? "bg-[#4170FF] border-[#4170FF] text-white shadow-lg shadow-blue-500/20" 
+                  ? "bg-[#BCB5AC] border-[#BCB5AC] text-white shadow-lg shadow-black/30" 
                   : "bg-white/5 border-white/5 text-slate-500 hover:text-slate-300 hover:bg-white/10"
               )}
             >
@@ -379,7 +379,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                 setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '', budgetItemId: '' });
                 setSearchTerm('');
               }}
-              className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#4170FF] flex items-center gap-1 hover:bg-[#4170FF]/5 transition-all"
+              className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#BCB5AC] flex items-center gap-1 hover:bg-[#BCB5AC]/5 transition-all"
             >
               <X className="h-3 w-3" /> Limpar Filtros
             </button>
@@ -387,7 +387,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
         </div>
       </div>
 
-      <div className="bg-[#13171f] rounded-2xl border border-white/5 overflow-hidden">
+      <div className="bg-[#1C232E] rounded-2xl border border-white/5 overflow-hidden">
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-white/5">
@@ -416,7 +416,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                     </div>
                     {item.budget_item_linked_id && (
                       <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
-                        <div className="w-1 h-1 rounded-full bg-[#4170FF]" />
+                        <div className="w-1 h-1 rounded-full bg-[#BCB5AC]" />
                         Vínculo: {budgetItems.find(bi => bi.id === item.budget_item_linked_id)?.description || 'Item não encontrado'}
                       </span>
                     )}
@@ -445,7 +445,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-[#181C21] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative bg-[#1C232E] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-8 pb-4 flex items-center justify-between">
               <h3 className="text-xl font-bold text-slate-100 tracking-tight">Lançamento Financeiro</h3>
               <button
@@ -463,7 +463,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                   placeholder="Ex: Compra de cimento..."
                   value={formData.description || ''}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none transition-all"
+                  className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none transition-all"
                 />
               </div>
 
@@ -483,11 +483,11 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                       description: !formData.description ? (item ? item.description : '') : formData.description
                     });
                   }}
-                  className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none appearance-none cursor-pointer"
+                  className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none appearance-none cursor-pointer"
                 >
                   <option value="">Selecione um item do orçamento...</option>
                   {Array.from(new Set(budgetItems.map(i => i.category))).map(cat => (
-                    <optgroup key={cat} label={cat} className="bg-[#181C21]">
+                    <optgroup key={cat} label={cat} className="bg-[#1C232E]">
                       {budgetItems.filter(i => i.category === cat).map(item => (
                         <option key={item.id} value={item.id}>
                           {item.code ? `${item.code} - ` : ''}{item.description}
@@ -503,7 +503,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                   <select
                     value={formData.category || 'Material'} 
                     onChange={e => setFormData({ ...formData, category: e.target.value })} 
-                    className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none appearance-none"
+                    className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none appearance-none"
                   >
                     {VALID_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
@@ -515,7 +515,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                     placeholder="0,00"
                     value={formData.amount || 0}
                     onChange={e => setFormData({ ...formData, amount: Number(e.target.value) })}
-                    className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none"
+                    className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none"
                   />
                 </div>
               </div>
@@ -525,11 +525,11 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                   type="date"
                   value={formData.date || ''}
                   onChange={e => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none"
+                  className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none"
                 />
               </div>
 
-              <div className="bg-[#13171f] border border-slate-800 rounded-2xl p-6 space-y-3">
+              <div className="bg-[#1C232E] border border-slate-800 rounded-2xl p-6 space-y-3">
                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                   <Paperclip className="h-3 w-3" /> Anexo (Recibo/Nota)
                 </label>
@@ -540,12 +540,12 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                     disabled={uploading}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   />
-                  <div className="w-full border-2 border-dashed border-slate-800 rounded-xl py-6 flex flex-col items-center justify-center gap-2 group-hover:border-[#4170FF]/50 transition-colors">
-                    <Paperclip className="h-6 w-6 text-slate-600 group-hover:text-[#4170FF]" />
+                  <div className="w-full border-2 border-dashed border-slate-800 rounded-xl py-6 flex flex-col items-center justify-center gap-2 group-hover:border-[#BCB5AC]/50 transition-colors">
+                    <Paperclip className="h-6 w-6 text-slate-600 group-hover:text-[#BCB5AC]" />
                     <span className="text-xs text-slate-500">Clique ou arraste para anexar</span>
                   </div>
                 </div>
-                {uploading && <p className="text-center text-xs text-[#4170FF] font-black animate-pulse">Enviando arquivo...</p>}
+                {uploading && <p className="text-center text-xs text-[#BCB5AC] font-black animate-pulse">Enviando arquivo...</p>}
                 {formData.receipt_url && <p className="text-center text-xs text-emerald-500 font-bold flex items-center justify-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Comprovante anexado!</p>}
               </div>
 
@@ -558,7 +558,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                 </button>
                 <button
                   onClick={handleSave}
-                  className="px-8 py-3 bg-[#4170FF] text-white text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 active:scale-[0.98]"
+                  className="px-8 py-3 bg-[#BCB5AC] text-white text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-[0.98]"
                 >
                   Confirmar Lançamento
                 </button>

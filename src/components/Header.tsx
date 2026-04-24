@@ -55,7 +55,7 @@ export function Header({ title }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-800 bg-[#181C21]/85 px-8 backdrop-blur-md">
+      <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-800 bg-[#1C232E]/85 px-8 backdrop-blur-md">
         <div className="flex items-center gap-8">
           {title && (
             <div className="flex items-center gap-4">
@@ -75,7 +75,7 @@ export function Header({ title }: HeaderProps) {
             <input 
               type="text" 
               placeholder="Pesquisar no AevumPro..." 
-              className="w-96 rounded-xl border border-slate-800 bg-[#0B0F15] py-2.5 pl-10 pr-4 text-sm text-slate-100 focus:border-[#4170FF] outline-none transition-all placeholder:text-slate-600 focus:ring-1 focus:ring-[#4170FF]/20"
+              className="w-96 rounded-xl border border-slate-800 bg-[#2B3647] py-2.5 pl-10 pr-4 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none transition-all placeholder:text-slate-600 focus:ring-1 focus:ring-[#BCB5AC]/20"
             />
           </div>
         </div>
@@ -87,7 +87,7 @@ export function Header({ title }: HeaderProps) {
               className="relative p-2.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#4170FF] ring-2 ring-[#13171f]" />
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#BCB5AC] ring-2 ring-[#1C232E]" />
             </button>
             
             <AnimatePresence>
@@ -98,11 +98,11 @@ export function Header({ title }: HeaderProps) {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-3 w-80 bg-[#181C21] rounded-2xl border border-white/5 shadow-2xl p-4 z-20"
+                    className="absolute right-0 mt-3 w-80 bg-[#1C232E] rounded-2xl border border-white/5 shadow-2xl p-4 z-20"
                   >
                     <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/5">
                       <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Notificações</h3>
-                      <span className="px-2 py-0.5 bg-[#4170FF]/10 text-[#4170FF] text-[8px] font-bold rounded">2 Novas</span>
+                      <span className="px-2 py-0.5 bg-[#BCB5AC]/10 text-[#BCB5AC] text-[8px] font-bold rounded">2 Novas</span>
                     </div>
                     <div className="space-y-3">
                       <div className="flex gap-3 p-2 hover:bg-white/5 rounded-xl transition-colors cursor-pointer group">
@@ -145,12 +145,12 @@ export function Header({ title }: HeaderProps) {
               className="flex items-center gap-3 p-1.5 pl-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all group active:scale-95"
             >
               <div className="flex flex-col items-end">
-                <span className="text-xs font-black text-white tracking-tight group-hover:text-[#4170FF] transition-colors line-clamp-1 max-w-[120px]">
+                <span className="text-xs font-black text-white tracking-tight group-hover:text-[#BCB5AC] transition-colors line-clamp-1 max-w-[120px]">
                   {user?.profile?.full_name || user?.email?.split('@')[0] || 'Usuário'}
                 </span>
                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-[1px]">Administrador</span>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-[#4170FF]/10 flex items-center justify-center text-[#4170FF] font-black border border-[#4170FF]/20 overflow-hidden shadow-inner group-hover:border-[#4170FF]/40 transition-all">
+              <div className="h-10 w-10 rounded-xl bg-[#BCB5AC]/10 flex items-center justify-center text-[#BCB5AC] font-black border border-[#BCB5AC]/20 overflow-hidden shadow-inner group-hover:border-[#BCB5AC]/40 transition-all">
                 {user?.profile?.avatar_url ? (
                   <img src={user.profile.avatar_url} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -167,10 +167,10 @@ export function Header({ title }: HeaderProps) {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-3 w-64 bg-[#181C21] rounded-2xl border border-white/5 shadow-2xl overflow-hidden z-20"
+                    className="absolute right-0 mt-3 w-64 bg-[#1C232E] rounded-2xl border border-white/5 shadow-2xl overflow-hidden z-20"
                   >
-                    <div className="p-4 bg-gradient-to-br from-[#4170FF]/20 via-[#4170FF]/5 to-transparent border-b border-white/5 flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-xl bg-[#4170FF] flex items-center justify-center text-white font-black text-xl shadow-lg border border-white/20 overflow-hidden">
+                    <div className="p-4 bg-gradient-to-br from-[#BCB5AC]/20 via-[#BCB5AC]/5 to-transparent border-b border-white/5 flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-[#BCB5AC] flex items-center justify-center text-white font-black text-xl shadow-lg border border-white/20 overflow-hidden">
                         {user?.profile?.avatar_url ? (
                           <img src={user.profile.avatar_url} alt="" className="w-full h-full object-cover" />
                         ) : (
@@ -178,7 +178,7 @@ export function Header({ title }: HeaderProps) {
                         )}
                       </div>
                       <div className="overflow-hidden">
-                        <p className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest mb-0.5">Conta Ativa</p>
+                        <p className="text-[10px] font-black text-[#BCB5AC] uppercase tracking-widest mb-0.5">Conta Ativa</p>
                         <p className="text-sm font-bold text-white truncate">{user?.email}</p>
                       </div>
                     </div>
@@ -188,13 +188,13 @@ export function Header({ title }: HeaderProps) {
                         onClick={() => { setIsProfileModalOpen(true); setIsProfileOpen(false); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group"
                       >
-                        <User className="h-4 w-4 group-hover:text-[#4170FF]" /> Detalhes do Perfil
+                        <User className="h-4 w-4 group-hover:text-[#BCB5AC]" /> Detalhes do Perfil
                       </button>
                       <button 
                         onClick={() => { setIsSettingsModalOpen(true); setIsProfileOpen(false); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group"
                       >
-                        <Settings className="h-4 w-4 group-hover:text-[#4170FF]" /> Configurações
+                        <Settings className="h-4 w-4 group-hover:text-[#BCB5AC]" /> Configurações
                       </button>
                       <div className="h-px bg-white/5 my-2 mx-2"></div>
                       <button 

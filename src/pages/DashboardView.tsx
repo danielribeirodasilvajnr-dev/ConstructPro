@@ -37,12 +37,12 @@ export function DashboardView() {
 
       <div className="space-y-12">
         {dashboardProjects.length === 0 ? (
-          <div className="bg-[#181C21] p-12 text-center rounded-2xl border border-slate-800 text-slate-500">
+          <div className="bg-[#1C232E] p-12 text-center rounded-2xl border border-slate-800 text-slate-500">
             Nenhum projeto encontrado para gerar o dashboard.
           </div>
         ) : (
           dashboardProjects.map((project, i) => (
-            <div key={i} className="bg-[#181C21] rounded-[24px] overflow-hidden shadow-xl border border-slate-800">
+            <div key={i} className="bg-[#1C232E] rounded-[24px] overflow-hidden shadow-xl border border-slate-800">
               <div className="p-8 pb-6 border-b border-slate-800 flex flex-col md:flex-row md:items-start justify-between gap-6">
                 <div>
                   <h4 className="text-[22px] font-bold text-slate-100 tracking-tight">{project.name}</h4>
@@ -101,7 +101,7 @@ export function DashboardView() {
                         <span className="text-xs font-semibold text-slate-300">{project.financialProgress}%</span>
                       </div>
                       <div className="h-[6px] w-full bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#4170FF] rounded-full" style={{ width: `${project.financialProgress}%` }}></div>
+                        <div className="h-full bg-[#BCB5AC] rounded-full" style={{ width: `${project.financialProgress}%` }}></div>
                       </div>
                     </div>
 
@@ -123,7 +123,7 @@ export function DashboardView() {
                     <div className="space-y-4">
                       {project.logs.map((log: any, j: number) => (
                         <div key={j} className="flex gap-4 items-start relative before:absolute before:left-1 before:top-4 before:bottom-[-20px] before:w-[2px] before:bg-slate-800 last:before:hidden">
-                          <div className="w-2.5 h-2.5 rounded-full bg-[#4170FF] mt-1 relative z-10 shrink-0"></div>
+                          <div className="w-2.5 h-2.5 rounded-full bg-[#BCB5AC] mt-1 relative z-10 shrink-0"></div>
                           <div>
                             <p className="text-[10px] font-bold text-slate-500">{log.date}</p>
                             <p className="text-xs text-slate-300 font-medium leading-relaxed mt-0.5">{log.desc}</p>
@@ -146,7 +146,7 @@ export function DashboardView() {
                             <YAxis stroke="#64748B" fontSize={10} />
                             <Tooltip contentStyle={{ backgroundColor: '#1E293B', border: 'none', borderRadius: '8px' }} />
                             <Line type="monotone" dataKey="real" stroke="#FFE299" strokeWidth={3} dot={{ r: 4 }} />
-                            <Line type="monotone" dataKey="previsto" stroke="#4170FF" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                            <Line type="monotone" dataKey="previsto" stroke="#BCB5AC" strokeWidth={2} strokeDasharray="5 5" dot={false} />
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
@@ -161,7 +161,7 @@ export function DashboardView() {
                             <XAxis dataKey="name" stroke="#64748B" fontSize={10} />
                             <YAxis stroke="#64748B" fontSize={10} />
                             <Tooltip contentStyle={{ backgroundColor: '#1E293B', border: 'none', borderRadius: '8px' }} />
-                            <Bar dataKey="previsto" fill="#4170FF" opacity={0.5} radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="previsto" fill="#BCB5AC" opacity={0.5} radius={[4, 4, 0, 0]} />
                             <Bar dataKey="realizado" fill="#FF8A00" radius={[4, 4, 0, 0]} />
                           </BarChart>
                         </ResponsiveContainer>

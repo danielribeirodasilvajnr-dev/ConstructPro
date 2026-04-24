@@ -228,7 +228,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Invite Form */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-[#13171f] p-6 rounded-2xl border border-white/5 space-y-6">
+          <div className="bg-[#1C232E] p-6 rounded-2xl border border-white/5 space-y-6">
             <div>
               <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Convidar Equipe</h3>
               <p className="text-xs text-slate-500">Adicione novos colaboradores por e-mail.</p>
@@ -244,7 +244,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                     placeholder="exemplo@email.com"
                     value={inviteEmail}
                     onChange={e => setInviteEmail(e.target.value)}
-                    className="w-full bg-black/20 border border-slate-800 rounded-xl px-11 py-3 text-sm text-white focus:border-[#4170FF] outline-none transition-all"
+                    className="w-full bg-black/20 border border-slate-800 rounded-xl px-11 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none transition-all"
                   />
                 </div>
               </div>
@@ -254,7 +254,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                 <select
                   value={inviteRole}
                   onChange={e => setInviteRole(e.target.value as any)}
-                  className="w-full bg-black/20 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none appearance-none cursor-pointer"
+                  className="w-full bg-black/20 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none appearance-none cursor-pointer"
                 >
                   <option value="editor">Editor / Gestor</option>
                   <option value="viewer">Apenas Leitura</option>
@@ -272,7 +272,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
               <button
                 type="submit"
                 disabled={inviting || !inviteEmail}
-                className="w-full py-3.5 bg-[#4170FF] text-white text-[10px] font-bold rounded-xl uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3.5 bg-[#BCB5AC] text-white text-[10px] font-bold rounded-xl uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
                 Enviar Convite
@@ -283,7 +283,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
 
         {/* List Section */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-[#13171f] rounded-2xl border border-white/5 overflow-hidden">
+          <div className="bg-[#1C232E] rounded-2xl border border-white/5 overflow-hidden">
             <div className="p-6 border-b border-white/5">
               <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Nossa Equipe</h3>
             </div>
@@ -302,7 +302,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                   <div className="flex items-center gap-4">
                     <div 
                       onClick={() => document.getElementById('admin-avatar-upload')?.click()}
-                      className="w-14 h-14 rounded-2xl bg-[#4170FF]/10 flex items-center justify-center text-[#4170FF] font-black text-xl border border-[#4170FF]/20 overflow-hidden relative cursor-pointer group shadow-lg shadow-blue-500/5 transition-all hover:scale-105 active:scale-95"
+                      className="w-14 h-14 rounded-2xl bg-[#BCB5AC]/10 flex items-center justify-center text-[#BCB5AC] font-black text-xl border border-[#BCB5AC]/20 overflow-hidden relative cursor-pointer group shadow-lg shadow-blue-500/5 transition-all hover:scale-105 active:scale-95"
                     >
                       {isUpdating ? (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
@@ -323,7 +323,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                     <div>
                       <h4 className="text-sm font-bold text-white flex items-center gap-2">
                         {ownerProfile?.email || 'Administrador'}
-                        <span className="px-2 py-0.5 bg-[#4170FF]/10 text-[#4170FF] text-[8px] font-black uppercase tracking-wider rounded">Gestor</span>
+                        <span className="px-2 py-0.5 bg-[#BCB5AC]/10 text-[#BCB5AC] text-[8px] font-black uppercase tracking-wider rounded">Gestor</span>
                       </h4>
                       <div className="flex items-center gap-2 mt-0.5">
                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Criador do Projeto</p>
@@ -373,7 +373,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                           placeholder="55119..."
                           value={editForm.phone}
                           onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#4170FF] outline-none transition-all"
+                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#BCB5AC] outline-none transition-all"
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -383,7 +383,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                         <select
                           value={editForm.job_title}
                           onChange={e => setEditForm(prev => ({ ...prev, job_title: e.target.value }))}
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#4170FF] outline-none cursor-pointer"
+                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#BCB5AC] outline-none cursor-pointer"
                         >
                           <option value="">Não definido</option>
                           <option value="Gerente de obras">Gerente de obras</option>
@@ -402,7 +402,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                       <button 
                         onClick={() => ownerProfile && handleUpdateProfile(ownerProfile.id)}
                         disabled={isUpdating}
-                        className="flex-1 py-2.5 text-[9px] font-black text-white uppercase tracking-widest bg-[#4170FF] rounded-xl hover:bg-blue-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
+                        className="flex-1 py-2.5 text-[9px] font-black text-white uppercase tracking-widest bg-[#BCB5AC] rounded-xl hover:bg-slate-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-black/30"
                       >
                         {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                         Salvar Alterações
@@ -434,7 +434,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                           <div className={cn(
                             "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider",
                             c.role === 'proprietor' ? 'bg-[#FF8A00]/10 text-[#FF8A00]' :
-                            c.role === 'editor' ? 'bg-[#4170FF]/10 text-[#4170FF]' :
+                            c.role === 'editor' ? 'bg-[#BCB5AC]/10 text-[#BCB5AC]' :
                             'bg-slate-800 text-slate-500'
                           )}>
                             {c.role === 'proprietor' ? 'Proprietário' : c.role === 'editor' ? 'Editor' : 'Leitor'}
@@ -492,7 +492,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                             placeholder="55119..."
                             value={editForm.phone}
                             onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#4170FF] outline-none transition-all"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#BCB5AC] outline-none transition-all"
                           />
                         </div>
                         <div className="space-y-1.5">
@@ -502,7 +502,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                           <select
                             value={editForm.job_title}
                             onChange={e => setEditForm(prev => ({ ...prev, job_title: e.target.value }))}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#4170FF] outline-none cursor-pointer"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#BCB5AC] outline-none cursor-pointer"
                           >
                             <option value="">Não definido</option>
                             <option value="Gerente de obras">Gerente de obras</option>
@@ -521,7 +521,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                         <button 
                           onClick={() => c.profile && handleUpdateProfile(c.profile.id)}
                           disabled={isUpdating}
-                          className="flex-1 py-2.5 text-[9px] font-black text-white uppercase tracking-widest bg-[#4170FF] rounded-xl hover:bg-blue-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
+                          className="flex-1 py-2.5 text-[9px] font-black text-white uppercase tracking-widest bg-[#BCB5AC] rounded-xl hover:bg-slate-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-black/30"
                         >
                           {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                           Salvar Alterações

@@ -16,7 +16,7 @@ export function LogsView({ selectedProjectId, onSelectProject }: LogsViewProps) 
     return (
       <div className="space-y-8 max-w-[1400px] mx-auto">
         <h2 className="text-3xl font-black text-white">Diários de Obra Global</h2>
-        <div className="bg-[#13171f] p-8 rounded-2xl border border-white/5 text-center">
+        <div className="bg-[#1C232E] p-8 rounded-2xl border border-white/5 text-center">
            <p className="text-slate-500 mb-6">Selecione um projeto para visualizar os registros diários (RDO).</p>
            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {projects.map(p => (

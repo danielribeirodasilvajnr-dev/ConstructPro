@@ -176,7 +176,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={onClose}></div>
-      <div className="relative bg-[#181C21] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="relative bg-[#1C232E] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="p-8 pb-4 flex items-center justify-between border-b border-slate-800/50">
           <div>
             <h3 className="text-xl font-bold text-slate-100 tracking-tight">Colaboradores</h3>
@@ -203,13 +203,13 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                     placeholder="exemplo@email.com"
                     value={inviteEmail}
                     onChange={e => setInviteEmail(e.target.value)}
-                    className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-11 py-3 text-sm text-white focus:border-[#4170FF] outline-none transition-all"
+                    className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-11 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none transition-all"
                   />
                 </div>
                 <select
                   value={inviteRole}
                   onChange={e => setInviteRole(e.target.value as any)}
-                  className="bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#4170FF] outline-none appearance-none cursor-pointer"
+                  className="bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none appearance-none cursor-pointer"
                 >
                   <option value="editor">Editor</option>
                   <option value="viewer">Leitor/Cliente</option>
@@ -228,7 +228,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
             <button
               type="submit"
               disabled={inviting || !inviteEmail}
-              className="w-full py-3.5 bg-[#4170FF] text-white text-xs font-bold rounded-xl uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3.5 bg-[#BCB5AC] text-white text-xs font-bold rounded-xl uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
               Enviar Convite
@@ -243,7 +243,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
               <div className="flex flex-col p-4 bg-slate-900/50 rounded-2xl border border-slate-800/50 gap-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#4170FF]/10 flex items-center justify-center text-[#4170FF] font-bold text-sm overflow-hidden">
+                    <div className="w-10 h-10 rounded-full bg-[#BCB5AC]/10 flex items-center justify-center text-[#BCB5AC] font-bold text-sm overflow-hidden">
                       {ownerProfile?.avatar_url ? (
                         <img src={ownerProfile.avatar_url} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -254,7 +254,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                       <span className="text-sm font-bold text-slate-100 block truncate max-w-[150px]">{ownerProfile?.email || 'Administrador'}</span>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-[10px] text-slate-500 font-medium">Controle Total</span>
-                        <div className="px-1.5 py-0.5 bg-[#4170FF]/20 rounded text-[8px] font-black text-[#4170FF] uppercase tracking-wider">Gestor</div>
+                        <div className="px-1.5 py-0.5 bg-[#BCB5AC]/20 rounded text-[8px] font-black text-[#BCB5AC] uppercase tracking-wider">Gestor</div>
                         {ownerProfile?.job_title && (
                           <span className="text-[9px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400 font-bold">{ownerProfile.job_title}</span>
                         )}
@@ -299,7 +299,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                           placeholder="Ex: 55119..."
                           value={editForm.phone}
                           onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                          className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#4170FF] outline-none"
+                          className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#BCB5AC] outline-none"
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -309,7 +309,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                         <select
                           value={editForm.job_title}
                           onChange={e => setEditForm(prev => ({ ...prev, job_title: e.target.value }))}
-                          className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#4170FF] outline-none"
+                          className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#BCB5AC] outline-none"
                         >
                           <option value="">Nenhum</option>
                           <option value="Gerente de obras">Gerente de obras</option>
@@ -328,7 +328,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                       <button 
                         onClick={() => ownerProfile && handleUpdateProfile(ownerProfile.id)}
                         disabled={isUpdating}
-                        className="flex-1 py-2 text-[10px] font-bold text-white uppercase bg-[#4170FF] rounded-lg hover:bg-blue-600 flex items-center justify-center gap-2"
+                        className="flex-1 py-2 text-[10px] font-bold text-white uppercase bg-[#BCB5AC] rounded-lg hover:bg-slate-700 flex items-center justify-center gap-2"
                       >
                         {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                         Salvar
@@ -344,7 +344,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
               ) : collaborators.length === 0 ? (
                 <p className="text-center py-4 text-xs text-slate-600 italic">Nenhum colaborador convidado ainda.</p>
               ) : collaborators.map((c) => (
-                <div key={c.id} className="group flex flex-col p-4 bg-[#13171f] rounded-2xl border border-slate-800/50 hover:border-[#4170FF]/30 transition-all gap-4">
+                <div key={c.id} className="group flex flex-col p-4 bg-[#1C232E] rounded-2xl border border-slate-800/50 hover:border-[#BCB5AC]/30 transition-all gap-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-sm overflow-hidden border border-slate-700">
@@ -360,7 +360,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                           {c.role === 'proprietor' ? (
                             <><Verified className="h-3 w-3 text-[#FF8A00]" /><span className="text-[10px] text-[#FF8A00] font-bold uppercase tracking-wider">Proprietário</span></>
                           ) : c.role === 'editor' ? (
-                            <><Shield className="h-3 w-3 text-[#4170FF]" /><span className="text-[10px] text-[#4170FF] font-bold uppercase tracking-wider">Editor</span></>
+                            <><Shield className="h-3 w-3 text-[#BCB5AC]" /><span className="text-[10px] text-[#BCB5AC] font-bold uppercase tracking-wider">Editor</span></>
                           ) : (
                             <><Eye className="h-3 w-3 text-slate-500" /><span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Leitor</span></>
                           )}
@@ -405,7 +405,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                             placeholder="Ex: 55119..."
                             value={editForm.phone}
                             onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                            className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#4170FF] outline-none"
+                            className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#BCB5AC] outline-none"
                           />
                         </div>
                         <div className="space-y-1.5">
@@ -415,7 +415,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                           <select
                             value={editForm.job_title}
                             onChange={e => setEditForm(prev => ({ ...prev, job_title: e.target.value }))}
-                            className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#4170FF] outline-none"
+                            className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#BCB5AC] outline-none"
                           >
                             <option value="">Nenhum</option>
                             <option value="Gerente de obras">Gerente de obras</option>
@@ -434,7 +434,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                         <button 
                           onClick={() => c.profile && handleUpdateProfile(c.profile.id)}
                           disabled={isUpdating}
-                          className="flex-1 py-2 text-[10px] font-bold text-white uppercase bg-[#4170FF] rounded-lg hover:bg-blue-600 flex items-center justify-center gap-2"
+                          className="flex-1 py-2 text-[10px] font-bold text-white uppercase bg-[#BCB5AC] rounded-lg hover:bg-slate-700 flex items-center justify-center gap-2"
                         >
                           {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                           Salvar

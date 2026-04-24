@@ -51,7 +51,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
 
   if (!selectedProjectId || !project) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 bg-[#181c21] rounded-2xl border border-white/5 mx-auto max-w-4xl">
+      <div className="flex flex-col items-center justify-center py-20 bg-[#1C232E] rounded-2xl border border-white/5 mx-auto max-w-4xl">
         <HardHat className="h-12 w-12 text-slate-700 mb-4" />
         <h2 className="text-xl font-bold text-white mb-2">Acesso do Proprietário</h2>
         <p className="text-slate-500 text-center max-w-xs">Selecione uma obra na lista de projetos para visualizar o painel exclusivo do cliente.</p>
@@ -218,7 +218,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
       <div className="grid grid-cols-12 gap-8">
         <div className="col-span-12 lg:col-span-8 space-y-8">
           {/* Timeline - Last Daily Logs with Photos */}
-          <div className="bg-[#181c21] rounded-2xl p-8 border border-white/5 shadow-sm">
+          <div className="bg-[#1C232E] rounded-2xl p-8 border border-white/5 shadow-sm">
             <h3 className="text-xl font-bold mb-8 flex items-center gap-2">
               <Camera className="h-5 w-5 text-primary" />
               Progresso Diário
@@ -229,7 +229,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                   <div className="absolute left-3 top-2 bottom-2 w-px bg-white/5"></div>
                   {dailyLogs.slice(0, 5).map((log, i) => (
                     <div key={log.id} className="relative flex gap-8 items-start group">
-                      <div className="z-10 bg-primary w-6 h-6 rounded-full flex items-center justify-center shrink-0 ring-4 ring-[#181c21] shadow-lg shadow-primary/20 transition-transform group-hover:scale-110">
+                      <div className="z-10 bg-primary w-6 h-6 rounded-full flex items-center justify-center shrink-0 ring-4 ring-[#1C232E] shadow-lg shadow-primary/20 transition-transform group-hover:scale-110">
                         <Check className="text-white h-3 w-3" />
                       </div>
                       <div className="flex-1 space-y-4">
@@ -282,7 +282,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
         <div className="col-span-12 lg:col-span-4 space-y-8">
 
           {/* Documents */}
-          <div className="bg-[#13171f] rounded-xl p-6 border border-white/5 shadow-sm">
+          <div className="bg-[#1C232E] rounded-xl p-6 border border-white/5 shadow-sm">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold flex items-center gap-2">
                 <FileText className="text-primary h-5 w-5" />
@@ -366,7 +366,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-[#181C21] border border-slate-800 rounded-[28px] w-full max-w-md shadow-2xl p-8"
+            className="bg-[#1C232E] border border-slate-800 rounded-[28px] w-full max-w-md shadow-2xl p-8"
           >
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -389,7 +389,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                   value={newDoc.name}
                   onChange={(e) => setNewDoc({ ...newDoc, name: e.target.value })}
                   placeholder="Ex: Projeto_Arquitetonico_Rev01.pdf"
-                  className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none"
+                  className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none"
                 />
               </div>
 
@@ -401,7 +401,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                     onChange={(e) => setNewDoc({ ...newDoc, file: e.target.files?.[0] || null })}
                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                   />
-                  <div className="bg-[#13171f] border border-slate-800 border-dashed rounded-xl px-4 py-6 text-center group-hover:border-primary transition-colors">
+                  <div className="bg-[#1C232E] border border-slate-800 border-dashed rounded-xl px-4 py-6 text-center group-hover:border-primary transition-colors">
                     <Cloud className="h-6 w-6 text-slate-500 mx-auto mb-2 group-hover:text-primary" />
                     <p className="text-xs text-slate-400 font-medium">
                       {newDoc.file ? newDoc.file.name : 'Clique para selecionar ou arraste o arquivo'}
@@ -420,7 +420,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                 <button 
                   onClick={handleSaveDocument}
                   disabled={!newDoc.name || isSaving}
-                  className="flex-1 bg-primary py-3.5 text-xs font-bold text-white rounded-xl transition-all hover:bg-blue-600 shadow-lg shadow-blue-500/10 disabled:opacity-50 disabled:scale-100 active:scale-95 flex items-center justify-center gap-2"
+                  className="flex-1 bg-primary py-3.5 text-xs font-bold text-white rounded-xl transition-all hover:bg-slate-700 shadow-lg shadow-black/20 disabled:opacity-50 disabled:scale-100 active:scale-95 flex items-center justify-center gap-2"
                 >
                   {isSaving ? (
                     <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />

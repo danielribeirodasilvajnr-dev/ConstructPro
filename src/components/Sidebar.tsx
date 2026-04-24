@@ -36,13 +36,13 @@ export function Sidebar({ activeTab, setActiveTab, isClient, isCollapsed, setIsC
 
   return (
     <aside className={cn(
-      "fixed left-0 top-0 z-50 flex h-screen flex-col bg-[#181C21] border-r border-slate-800 shadow-2xl transition-all duration-300",
+      "fixed left-0 top-0 z-50 flex h-screen flex-col bg-[#1C232E] border-r border-slate-800 shadow-2xl transition-all duration-300",
       isCollapsed ? "w-20" : "w-72"
     )}>
       {/* Sidebar Toggle */}
       <button 
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-10 flex h-6 w-6 items-center justify-center rounded-full bg-[#4170FF] text-white shadow-lg hover:bg-blue-600 transition-transform active:scale-90 z-[60]"
+        className="absolute -right-3 top-10 flex h-6 w-6 items-center justify-center rounded-full bg-[#BCB5AC] text-white shadow-lg hover:bg-slate-700 transition-transform active:scale-90 z-[60]"
       >
         {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </button>
@@ -52,13 +52,13 @@ export function Sidebar({ activeTab, setActiveTab, isClient, isCollapsed, setIsC
         "flex items-center gap-3 p-6 mb-2 overflow-hidden",
         isCollapsed && "justify-center p-4"
       )}>
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#c1baae]">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#BCB5AC]">
           <img src="/logo.png" alt="AevumPro" className="w-full h-full object-cover" />
         </div>
         {!isCollapsed && (
           <div className="animate-in fade-in slide-in-from-left-2 duration-300">
             <h2 className="text-sm font-bold tracking-tight text-white">AevumPro</h2>
-            <p className="text-[10px] font-bold uppercase tracking-[2px] text-[#4170FF] opacity-80 mt-0.5 whitespace-nowrap">Gestão de Obras</p>
+            <p className="text-[10px] font-bold uppercase tracking-[2px] text-[#BCB5AC] opacity-80 mt-0.5 whitespace-nowrap">Gestão de Obras</p>
           </div>
         )}
       </div>
@@ -96,7 +96,7 @@ export function Sidebar({ activeTab, setActiveTab, isClient, isCollapsed, setIsC
           <button 
             title={isCollapsed ? "Novo Lançamento" : undefined}
             className={cn(
-              "mb-6 flex items-center justify-center rounded-xl bg-[#4170FF] text-white transition-all hover:bg-blue-600 shadow-lg shadow-blue-500/10 active:scale-95",
+              "mb-6 flex items-center justify-center rounded-xl bg-[#BCB5AC] text-white transition-all hover:bg-slate-700 shadow-lg shadow-black/20 active:scale-95",
               isCollapsed ? "h-12 w-12 p-0" : "w-full py-3.5 gap-2 text-xs font-bold uppercase tracking-widest"
             )}
           >

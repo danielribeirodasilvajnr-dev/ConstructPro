@@ -300,10 +300,10 @@ export function CalculatorView() {
         </div>
 
         {/* RELATÓRIO PRINCIPAL */}
-        <div className="bg-[#181c21] rounded-2xl border border-white/5 shadow-2xl overflow-hidden">
+        <div className="bg-[#1C232E] rounded-2xl border border-white/5 shadow-2xl overflow-hidden">
 
           {/* Título */}
-          <div className="p-8 pb-6 border-b border-white/5 bg-[#13171f]/50">
+          <div className="p-8 pb-6 border-b border-white/5 bg-[#1C232E]/50">
             <h2 className="text-2xl font-extrabold text-white tracking-tight">Relatório do seu cálculo de INSS</h2>
           </div>
 
@@ -376,9 +376,9 @@ export function CalculatorView() {
           </div>
 
           {/* Botões de ação */}
-          <div className="p-8 bg-[#13171f]/30 border-t border-white/5">
+          <div className="p-8 bg-[#1C232E]/30 border-t border-white/5">
             <div className="flex flex-wrap gap-3">
-              <button className="px-5 py-2.5 bg-[#4170FF] text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2">
+              <button className="px-5 py-2.5 bg-[#BCB5AC] text-white text-sm font-bold rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2">
                 <CalculatorIcon className="inline h-4 w-4" /> Calcular Decadência
               </button>
               <button
@@ -407,12 +407,12 @@ export function CalculatorView() {
             ===================================================== */}
         {showFatorAjuste && (
           <div className="mt-8 animate-in slide-in-from-top-4 duration-500">
-            <div className="bg-[#181c21] rounded-2xl border border-white/5 shadow-2xl overflow-hidden">
+            <div className="bg-[#1C232E] rounded-2xl border border-white/5 shadow-2xl overflow-hidden">
 
               {/* Header com seletores de data */}
-              <div className="p-8 border-b border-white/5 bg-[#13171f]/50">
+              <div className="p-8 border-b border-white/5 bg-[#1C232E]/50">
                 <h3 className="text-xl font-bold text-white mb-4">Simulação do Fator de Ajuste</h3>
-                <div className="bg-[#13171f] p-6 rounded-2xl border border-white/5">
+                <div className="bg-[#1C232E] p-6 rounded-2xl border border-white/5">
                   <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                     <div>
                       <h4 className="text-white font-bold mb-1 flex items-center gap-2">
@@ -423,19 +423,19 @@ export function CalculatorView() {
                     <div className="flex flex-wrap items-center justify-center gap-4">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Início:</span>
-                        <select value={fatorInicioMes} onChange={e => setFatorInicioMes(e.target.value)} className="bg-[#181c21] border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-green-500 transition-colors">
+                        <select value={fatorInicioMes} onChange={e => setFatorInicioMes(e.target.value)} className="bg-[#1C232E] border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-green-500 transition-colors">
                           {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0')).map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
-                        <select value={fatorInicioAno} onChange={e => setFatorInicioAno(e.target.value)} className="bg-[#181c21] border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-green-500 transition-colors">
+                        <select value={fatorInicioAno} onChange={e => setFatorInicioAno(e.target.value)} className="bg-[#1C232E] border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-green-500 transition-colors">
                           {Array.from({ length: 25 }, (_, i) => (2010 + i).toString()).map(a => <option key={a} value={a}>{a}</option>)}
                         </select>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fim:</span>
-                        <select value={fatorFimMes} onChange={e => setFatorFimMes(e.target.value)} className="bg-[#181c21] border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-green-500 transition-colors">
+                        <select value={fatorFimMes} onChange={e => setFatorFimMes(e.target.value)} className="bg-[#1C232E] border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-green-500 transition-colors">
                           {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0')).map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
-                        <select value={fatorFimAno} onChange={e => setFatorFimAno(e.target.value)} className="bg-[#181c21] border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-green-500 transition-colors">
+                        <select value={fatorFimAno} onChange={e => setFatorFimAno(e.target.value)} className="bg-[#1C232E] border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-green-500 transition-colors">
                           {Array.from({ length: 25 }, (_, i) => (2010 + i).toString()).map(a => <option key={a} value={a}>{a}</option>)}
                         </select>
                       </div>
@@ -580,9 +580,9 @@ export function CalculatorView() {
   // =====================================================
   return (
     <div className="max-w-[800px] mx-auto w-full pb-32 animate-in fade-in duration-500">
-      <div className="bg-[#181c21] rounded-2xl shadow-xl border border-white/5 overflow-hidden">
+      <div className="bg-[#1C232E] rounded-2xl shadow-xl border border-white/5 overflow-hidden">
 
-        <div className="p-8 pb-6 border-b border-white/5 text-center bg-[#13171f]/50">
+        <div className="p-8 pb-6 border-b border-white/5 text-center bg-[#1C232E]/50">
           <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-2">Simulador de débitos federais para construção</h1>
           <p className="text-slate-400 text-sm font-medium">Atualizado SERO (Instrução Normativa RFB Nº 2.021 de 16/04/2021)</p>
         </div>
@@ -593,14 +593,14 @@ export function CalculatorView() {
             <div className="space-y-4">
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-between border-b border-white/5 pb-4">
                 <label className="text-sm font-medium text-slate-300 w-1/2">Responsável pela obra:</label>
-                <select value={responsavel} onChange={e => setResponsavel(e.target.value)} className="flex-1 bg-[#13171f] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none appearance-none">
+                <select value={responsavel} onChange={e => setResponsavel(e.target.value)} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none appearance-none">
                   <option value="pessoa física">pessoa física</option>
                   <option value="pessoa jurídica">pessoa jurídica</option>
                 </select>
               </div>
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-between border-b border-white/5 pb-4">
                 <label className="text-sm font-medium text-slate-300 w-1/2">Destinação:</label>
-                <select value={destinacao} onChange={e => setDestinacao(e.target.value)} className="flex-1 bg-[#13171f] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none appearance-none">
+                <select value={destinacao} onChange={e => setDestinacao(e.target.value)} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none appearance-none">
                   <option value="Residencial unifamiliar">Residencial unifamiliar</option>
                   <option value="Residencial multifamiliar">Residencial multifamiliar</option>
                   <option value="Comercial">Comercial</option>
@@ -608,7 +608,7 @@ export function CalculatorView() {
               </div>
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-between border-b border-white/5 pb-4">
                 <label className="text-sm font-medium text-slate-300 w-1/2">Tipo de obra:</label>
-                <select value={tipoObra} onChange={e => setTipoObra(e.target.value)} className="flex-1 bg-[#13171f] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none appearance-none">
+                <select value={tipoObra} onChange={e => setTipoObra(e.target.value)} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none appearance-none">
                   <option value="Alvenaria">Alvenaria</option>
                   <option value="Madeira">Madeira</option>
                   <option value="Mista">Mista</option>
@@ -616,14 +616,14 @@ export function CalculatorView() {
               </div>
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-between border-b border-white/5 pb-4">
                 <label className="text-sm font-medium text-slate-300 w-1/2">Usou concreto usinado?</label>
-                <select value={concreto} onChange={e => setConcreto(e.target.value)} className="flex-1 bg-[#13171f] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none appearance-none">
+                <select value={concreto} onChange={e => setConcreto(e.target.value)} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none appearance-none">
                   <option value="Sim">Sim</option>
                   <option value="Não">Não</option>
                 </select>
               </div>
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-between">
                 <label className="text-sm font-medium text-slate-300 w-1/2">Unidade federativa:</label>
-                <select value={uf} onChange={e => setUf(e.target.value)} className="flex-1 bg-[#13171f] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none appearance-none">
+                <select value={uf} onChange={e => setUf(e.target.value)} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none appearance-none">
                   <option value="SP">SP</option>
                   <option value="RJ">RJ</option>
                   <option value="MG">MG</option>
@@ -643,19 +643,19 @@ export function CalculatorView() {
             <div className="space-y-4">
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-between border-b border-white/5 pb-4">
                 <label className="text-sm font-medium text-slate-300 w-1/2">Construção (m²):</label>
-                <input type="number" min="0" value={areaCon} onChange={e => setAreaCon(Number(e.target.value))} className="flex-1 bg-[#13171f] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
+                <input type="number" min="0" value={areaCon} onChange={e => setAreaCon(Number(e.target.value))} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
               </div>
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-between border-b border-white/5 pb-4">
                 <label className="text-sm font-medium text-slate-300 w-1/2">Reforma (m²):</label>
-                <input type="number" min="0" value={areaRef} onChange={e => setAreaRef(Number(e.target.value))} className="flex-1 bg-[#13171f] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
+                <input type="number" min="0" value={areaRef} onChange={e => setAreaRef(Number(e.target.value))} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
               </div>
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-between border-b border-white/5 pb-4">
                 <label className="text-sm font-medium text-slate-300 w-1/2">Demolição (m²):</label>
-                <input type="number" min="0" value={areaDem} onChange={e => setAreaDem(Number(e.target.value))} className="flex-1 bg-[#13171f] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
+                <input type="number" min="0" value={areaDem} onChange={e => setAreaDem(Number(e.target.value))} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
               </div>
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-between">
                 <label className="text-sm font-medium text-slate-300 w-1/2">Piscina descoberta (m²):</label>
-                <input type="number" min="0" value={areaPisc} onChange={e => setAreaPisc(Number(e.target.value))} className="flex-1 bg-[#13171f] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
+                <input type="number" min="0" value={areaPisc} onChange={e => setAreaPisc(Number(e.target.value))} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
               </div>
             </div>
           </section>

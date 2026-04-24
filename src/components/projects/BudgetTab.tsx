@@ -81,13 +81,13 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-[#13171f] p-6 rounded-2xl border border-[#3B82F6]/30 relative overflow-hidden">
+        <div className="bg-[#1C232E] p-6 rounded-2xl border border-[#3B82F6]/30 relative overflow-hidden">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Custo da obra</p>
           <h3 className="text-3xl font-black text-white">{formatCurrency(totalBudget)}</h3>
           <CalculatorIcon className="absolute right-6 top-1/2 -translate-y-1/2 h-8 w-8 text-[#3B82F6]/20" />
         </div>
 
-        <div className="bg-[#13171f] p-6 rounded-2xl border border-white/5 relative overflow-hidden">
+        <div className="bg-[#1C232E] p-6 rounded-2xl border border-white/5 relative overflow-hidden">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Realizado</p>
           <h3 className="text-3xl font-black text-white">{formatCurrency(totalSpent)}</h3>
           <p className={`text-xs font-medium mt-1 ${realizedPercent > 100 ? 'text-red-500' : 'text-emerald-500'}`}>
@@ -98,7 +98,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
       </div>
 
       <div className="bg-[#0b0f19] rounded-2xl border border-white/5 shadow-2xl overflow-hidden mt-8">
-        <div className="p-6 flex items-center justify-between border-b border-white/5 bg-[#13171f]">
+        <div className="p-6 flex items-center justify-between border-b border-white/5 bg-[#1C232E]">
           <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Levantamento Quantitativo / Orçamento</h3>
           {!readOnly && (
             <button onClick={() => { setEditingItem(null); setFormData({ category: 'Outros', unit: 'vb', quantity: 1, unit_cost: 0 }); setIsItemModalOpen(true); }} className="px-4 py-2 bg-[#3B82F6] text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-[#2563EB] transition-colors shadow-lg shadow-[#3B82F6]/20">
@@ -129,7 +129,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                   const catTotal = items.reduce((acc: number, cur: BudgetItem) => acc + (Number(cur.unit_cost) * Number(cur.quantity)), 0);
                   return (
                     <React.Fragment key={category}>
-                      <tr className="bg-[#13171f]/50 border-y border-white/5">
+                      <tr className="bg-[#1C232E]/50 border-y border-white/5">
                         <td colSpan={5} className="py-3 px-6 text-xs font-bold text-[#3B82F6] uppercase tracking-wider">{category}</td>
                         <td className="py-3 px-6 text-xs font-bold text-white text-right">{formatCurrency(catTotal)}</td>
                         <td colSpan={2}></td>
@@ -152,7 +152,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                                       <div 
                                         className={cn(
                                           "h-full rounded-full transition-all duration-500",
-                                          linePercent > 100 ? "bg-red-500" : linePercent > 80 ? "bg-amber-500" : "bg-[#4170FF]"
+                                          linePercent > 100 ? "bg-red-500" : linePercent > 80 ? "bg-amber-500" : "bg-[#BCB5AC]"
                                         )}
                                         style={{ width: `${Math.min(linePercent, 100)}%` }}
                                       />
@@ -202,7 +202,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
       {isItemModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={() => setIsItemModalOpen(false)}></div>
-          <div className="relative bg-[#181C21] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative bg-[#1C232E] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-8 pb-4 flex items-center justify-between">
               <h3 className="text-xl font-bold text-slate-100 tracking-tight">{editingItem ? 'Editar Item' : 'Novo Item'}</h3>
               <button onClick={() => setIsItemModalOpen(false)} className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-slate-800 rounded-full">
@@ -216,7 +216,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                   type="text" 
                   value={formData.description || ''} 
                   onChange={e => setFormData({ ...formData, description: e.target.value })} 
-                  className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] focus:ring-1 focus:ring-[#4170FF] outline-none transition-all placeholder:text-slate-600"
+                  className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] focus:ring-1 focus:ring-[#BCB5AC] outline-none transition-all placeholder:text-slate-600"
                   placeholder="Ex: Alvenaria de vedação..."
                 />
               </div>
@@ -226,7 +226,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                   <select 
                     value={formData.category || 'Outros'} 
                     onChange={e => setFormData({ ...formData, category: e.target.value })} 
-                    className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none appearance-none cursor-pointer"
+                    className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none appearance-none cursor-pointer"
                   >
                     {['Serviços Preliminares', 'Infraestrutura', 'Superestrutura', 'Alvenaria', 'Esquadrias', 'Cobertura', 'Impermeabilização', 'Forros', 'Inst. Elétricas', 'Inst. Hidráulicas', 'Revestimento', 'Piso', 'Pintura', 'Complementos', 'Louças e Metais', 'Acabamentos', 'Outros'].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
@@ -237,7 +237,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                     type="text" 
                     value={formData.code || ''} 
                     onChange={e => setFormData({ ...formData, code: e.target.value })} 
-                    className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none transition-all" 
+                    className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none transition-all" 
                     placeholder="01.01"
                   />
                 </div>
@@ -245,15 +245,15 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
               <div className="grid grid-cols-3 gap-5">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Unidade</label>
-                  <input type="text" value={formData.unit || ''} onChange={e => setFormData({ ...formData, unit: e.target.value })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none" placeholder="m2" />
+                  <input type="text" value={formData.unit || ''} onChange={e => setFormData({ ...formData, unit: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none" placeholder="m2" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Qtd</label>
-                  <input type="number" value={formData.quantity || 0} onChange={e => setFormData({ ...formData, quantity: Number(e.target.value) })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none" />
+                  <input type="number" value={formData.quantity || 0} onChange={e => setFormData({ ...formData, quantity: Number(e.target.value) })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Custo Unit.</label>
-                  <input type="number" value={formData.unit_cost || 0} onChange={e => setFormData({ ...formData, unit_cost: Number(e.target.value) })} className="w-full bg-[#13171f] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#4170FF] outline-none" />
+                  <input type="number" value={formData.unit_cost || 0} onChange={e => setFormData({ ...formData, unit_cost: Number(e.target.value) })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none" />
                 </div>
               </div>
               <div className="pt-6 flex items-center justify-end gap-3">
@@ -265,7 +265,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                 </button>
                 <button 
                   onClick={handleSave} 
-                  className="px-8 py-3 bg-[#4170FF] text-white text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10 active:scale-[0.98]"
+                  className="px-8 py-3 bg-[#BCB5AC] text-white text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-[0.98]"
                 >
                   Salvar Item
                 </button>
@@ -279,7 +279,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
       {deletingItem && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDeletingItem(null)}></div>
-          <div className="relative bg-[#13171f] rounded-2xl shadow-2xl border border-[#1e293b] w-full max-w-sm p-6 text-center">
+          <div className="relative bg-[#1C232E] rounded-2xl shadow-2xl border border-[#1e293b] w-full max-w-sm p-6 text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-white mb-2">Excluir Item?</h3>
             <p className="text-sm text-slate-400 mb-6">Esta ação não pode ser desfeita.</p>

@@ -41,7 +41,7 @@ export function AuthView() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#0b0f15] items-center justify-center relative overflow-hidden">
+    <div className="flex min-h-screen bg-[#2B3647] items-center justify-center relative overflow-hidden">
       {/* Dynamic Background Elements */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-secondary/10 rounded-full blur-[150px] pointer-events-none" />
@@ -50,10 +50,10 @@ export function AuthView() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-md p-8 bg-[#13171f]/80 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-black/50"
+        className="relative z-10 w-full max-w-md p-8 bg-[#1C232E]/80 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-black/50"
       >
         <div className="flex justify-center mb-8">
-          <div className="flex h-16 w-16 items-center justify-center rounded-[24px] overflow-hidden border border-white/10 shadow-xl bg-[#c1baae]">
+          <div className="flex h-16 w-16 items-center justify-center rounded-[24px] overflow-hidden border border-white/10 shadow-xl bg-[#BCB5AC]">
             <img src="/logo.png" alt="AevumPro" className="w-full h-full object-cover" />
           </div>
         </div>
@@ -89,7 +89,7 @@ export function AuthView() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-white/5 bg-[#0b0f15] py-3 pl-12 pr-4 text-sm text-white focus:border-transparent focus:ring-2 focus:ring-primary transition-all"
+                className="w-full rounded-xl border border-white/5 bg-[#2B3647] py-3 pl-12 pr-4 text-sm text-white focus:border-transparent focus:ring-2 focus:ring-primary transition-all"
                 placeholder="seu@email.com"
               />
             </div>
@@ -104,7 +104,7 @@ export function AuthView() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-white/5 bg-[#0b0f15] py-3 pl-12 pr-4 text-sm text-white focus:border-transparent focus:ring-2 focus:ring-primary transition-all"
+                className="w-full rounded-xl border border-white/5 bg-[#2B3647] py-3 pl-12 pr-4 text-sm text-white focus:border-transparent focus:ring-2 focus:ring-primary transition-all"
                 placeholder="••••••••"
               />
             </div>
@@ -113,7 +113,7 @@ export function AuthView() {
           <button
             type="submit"
             disabled={loading}
-            className="group mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold text-white transition-all hover:bg-blue-600 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="group mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold text-white transition-all hover:bg-slate-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Processando...' : (isLogin ? 'Entrar na plataforma' : 'Cadastrar agora')}
             {!loading && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}

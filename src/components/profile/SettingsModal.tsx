@@ -39,10 +39,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-lg bg-[#181C21] rounded-3xl border border-white/5 shadow-2xl overflow-hidden"
+            className="relative w-full max-w-lg bg-[#1C232E] rounded-3xl border border-white/5 shadow-2xl overflow-hidden"
           >
             {/* Header */}
-            <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-[#4170FF]/5 to-transparent">
+            <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-[#BCB5AC]/5 to-transparent">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-slate-800 rounded-2xl">
                   <Settings className="h-6 w-6 text-slate-400" />
@@ -91,7 +91,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       </div>
                       <div className={cn(
                         "w-12 h-6 rounded-full relative transition-all duration-300 transition-all",
-                        notifications[n.id as keyof typeof notifications] ? "bg-[#4170FF]" : "bg-slate-800"
+                        notifications[n.id as keyof typeof notifications] ? "bg-[#BCB5AC]" : "bg-slate-800"
                       )}>
                         <div className={cn(
                           "absolute top-1 w-4 h-4 rounded-full bg-white transition-all shadow-lg",
@@ -116,7 +116,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     </div>
                     <p className="text-xs font-bold text-slate-200">Português (Brasil)</p>
                   </div>
-                  <span className="text-[10px] font-black text-[#4170FF] uppercase tracking-widest bg-[#4170FF]/10 px-2 py-1 rounded">Padrão</span>
+                  <span className="text-[10px] font-black text-[#BCB5AC] uppercase tracking-widest bg-[#BCB5AC]/10 px-2 py-1 rounded">Padrão</span>
                 </div>
               </section>
 
@@ -124,7 +124,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <div className="flex gap-4 pt-6 border-t border-white/5">
                 <button 
                   onClick={onClose}
-                  className="w-full py-4 bg-[#4170FF] text-white text-xs font-black uppercase tracking-[2px] rounded-2xl hover:bg-blue-600 transition-all flex items-center justify-center gap-3 shadow-xl shadow-blue-500/20"
+                  className="w-full py-4 bg-[#BCB5AC] text-white text-xs font-black uppercase tracking-[2px] rounded-2xl hover:bg-slate-700 transition-all flex items-center justify-center gap-3 shadow-xl shadow-black/30"
                 >
                   <Check className="h-4 w-4" /> Finalizar Ajustes
                 </button>
