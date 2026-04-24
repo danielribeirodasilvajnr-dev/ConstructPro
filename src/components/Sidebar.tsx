@@ -52,8 +52,8 @@ export function Sidebar({ activeTab, setActiveTab, isClient, isCollapsed, setIsC
         "flex items-center gap-3 p-6 mb-2 overflow-hidden",
         isCollapsed && "justify-center p-4"
       )}>
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 text-white shadow-lg border border-white/10 overflow-hidden p-1.5">
-          <img src="/logo.png" alt="AevumPro" className="w-full h-full object-contain" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#c1baae]">
+          <img src="/logo.png" alt="AevumPro" className="w-full h-full object-cover" />
         </div>
         {!isCollapsed && (
           <div className="animate-in fade-in slide-in-from-left-2 duration-300">
