@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { MobileNav } from './MobileNav';
 import { cn } from '../lib/utils';
 
 interface LayoutProps {
@@ -33,16 +34,19 @@ export default function Layout({ children, activeTab, setActiveTab, title, isCli
       
       {/* Main Content */}
       <main className={cn(
-        "flex flex-1 flex-col transition-all duration-300",
-        isCollapsed ? "ml-20" : "ml-72"
+        "flex flex-1 flex-col transition-all duration-300 w-full min-w-0",
+        isCollapsed ? "md:ml-20" : "md:ml-72",
+        "ml-0" // Always 0 margin on mobile
       )}>
         <Header title={title} />
 
         {/* Content Area */}
-        <div className="flex-1 p-8 overflow-auto">
+        <div className="flex-1 p-4 md:p-8 overflow-auto">
           {children}
         </div>
       </main>
+
+      <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} isClient={isClient} />
     </div>
   );
 }

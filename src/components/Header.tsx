@@ -55,22 +55,22 @@ export function Header({ title }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-800 bg-[#1C232E]/85 px-8 backdrop-blur-md">
-        <div className="flex items-center gap-8">
+      <header className="sticky top-0 z-40 flex h-16 md:h-20 items-center justify-between border-b border-slate-800 bg-[#1C232E]/85 px-4 md:px-8 backdrop-blur-md">
+        <div className="flex items-center gap-4 md:gap-8">
           {title && (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <button 
                 onClick={() => window.history.back()}
                 className="text-slate-500 hover:text-white transition-colors"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
-              <h1 className="text-xl font-bold tracking-tighter text-white">{title}</h1>
+              <h1 className="text-lg md:text-xl font-bold tracking-tighter text-white truncate max-w-[150px] md:max-w-none">{title}</h1>
             </div>
           )}
-          {!title && <h1 className="text-xl font-bold tracking-tighter text-white uppercase tracking-[4px] text-sm opacity-50">AevumPro</h1>}
+          {!title && <h1 className="text-xl font-bold tracking-tighter text-white uppercase tracking-[4px] text-sm opacity-50 hidden md:block">AevumPro</h1>}
           
-          <div className="relative hidden lg:block">
+          <div className="relative hidden xl:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
@@ -80,7 +80,7 @@ export function Header({ title }: HeaderProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2 md:gap-6">
           <div className="relative">
             <button 
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
@@ -142,9 +142,9 @@ export function Header({ title }: HeaderProps) {
           <div className="relative">
             <button 
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center gap-3 p-1.5 pl-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all group active:scale-95"
+              className="flex items-center gap-3 p-1.5 md:pl-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all group active:scale-95"
             >
-              <div className="flex flex-col items-end">
+              <div className="flex-col items-end hidden md:flex">
                 <span className="text-xs font-black text-white tracking-tight group-hover:text-[#BCB5AC] transition-colors line-clamp-1 max-w-[120px]">
                   {user?.profile?.full_name || user?.email?.split('@')[0] || 'Usuário'}
                 </span>

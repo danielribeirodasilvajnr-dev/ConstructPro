@@ -36,7 +36,7 @@ export function Sidebar({ activeTab, setActiveTab, isClient, isCollapsed, setIsC
 
   return (
     <aside className={cn(
-      "fixed left-0 top-0 z-50 flex h-screen flex-col bg-[#1C232E] border-r border-slate-800 shadow-2xl transition-all duration-300",
+      "fixed left-0 top-0 z-50 hidden md:flex h-screen flex-col bg-[#1C232E] border-r border-slate-800 shadow-2xl transition-all duration-300",
       isCollapsed ? "w-20" : "w-72"
     )}>
       {/* Sidebar Toggle */}
