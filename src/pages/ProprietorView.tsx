@@ -40,6 +40,8 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
   const { financialItems, budgetItems, scheduleItems, dailyLogs, documents, collaborators, refresh } = useProjectData(selectedProjectId);
 
   const [isAddingDoc, setIsAddingDoc] = useState(false);
+  const [showFullHistory, setShowFullHistory] = useState(false);
+  const [dateFilter, setDateFilter] = useState({ start: '', end: '' });
   const [newDoc, setNewDoc] = useState<NewDocument>({ name: '', file: null });
   const [isSaving, setIsSaving] = useState(false);
   const [deletingDoc, setDeletingDoc] = useState<ProjectDocument | null>(null);
@@ -219,10 +221,18 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
         <div className="col-span-12 lg:col-span-8 space-y-8">
           {/* Timeline - Last Daily Logs with Photos */}
           <div className="bg-[#1C232E] rounded-2xl p-8 border border-white/5 shadow-sm">
-            <h3 className="text-xl font-bold mb-8 flex items-center gap-2">
-              <Camera className="h-5 w-5 text-primary" />
-              Progresso Diário
-            </h3>
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <Camera className="h-5 w-5 text-primary" />
+                Progresso Diário
+              </h3>
+              <button 
+                onClick={() => setShowFullHistory(true)}
+                className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline"
+              >
+                Ver Tudo
+              </button>
+            </div>
             <div className="relative space-y-12">
               {dailyLogs.length > 0 ? (
                 <>
@@ -449,6 +459,127 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
         message={alertConfig.message}
         type={alertConfig.type as any}
       />
+
+      {/* Full History Modal */}
+      {showFullHistory && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-0 md:p-4 bg-black/80 backdrop-blur-md">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-[#1C232E] w-full h-full md:h-[90vh] md:max-w-4xl md:rounded-[32px] border border-white/5 shadow-2xl flex flex-col overflow-hidden"
+          >
+            <div className="p-6 md:p-8 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-primary/10 to-transparent shrink-0">
+              <div className="flex items-center justify-between w-full md:w-auto">
+                <div>
+                  <h3 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
+                    <Camera className="h-6 w-6 text-primary" />
+                    Histórico Completo
+                  </h3>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Trajetória da Obra: {project.name}</p>
+                </div>
+                <button 
+                  onClick={() => setShowFullHistory(false)}
+                  className="p-3 hover:bg-white/5 rounded-full transition-colors text-slate-400 hover:text-white md:hidden"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Date Filters */}
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">De:</span>
+                  <input 
+                    type="date" 
+                    value={dateFilter.start}
+                    onChange={(e) => setDateFilter({ ...dateFilter, start: e.target.value })}
+                    className="bg-[#2B3647] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:border-primary outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Até:</span>
+                  <input 
+                    type="date" 
+                    value={dateFilter.end}
+                    onChange={(e) => setDateFilter({ ...dateFilter, end: e.target.value })}
+                    className="bg-[#2B3647] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:border-primary outline-none"
+                  />
+                </div>
+                <button 
+                  onClick={() => setDateFilter({ start: '', end: '' })}
+                  className="mt-5 p-2.5 text-slate-500 hover:text-white transition-colors"
+                  title="Limpar filtros"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+                <button 
+                  onClick={() => setShowFullHistory(false)}
+                  className="hidden md:flex p-3 hover:bg-white/5 rounded-full transition-colors text-slate-400 hover:text-white ml-4"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 md:p-12 no-scrollbar">
+              <div className="relative space-y-16 max-w-2xl mx-auto">
+                <div className="absolute left-3 top-2 bottom-2 w-px bg-white/5"></div>
+                {dailyLogs
+                  .filter(log => {
+                    if (!dateFilter.start && !dateFilter.end) return true;
+                    const logDateStr = log.date.split('T')[0];
+                    if (dateFilter.start && logDateStr < dateFilter.start) return false;
+                    if (dateFilter.end && logDateStr > dateFilter.end) return false;
+                    return true;
+                  })
+                  .map((log, i) => (
+                  <div key={log.id} className="relative flex gap-8 items-start group">
+                    <div className="z-10 bg-primary w-6 h-6 rounded-full flex items-center justify-center shrink-0 ring-4 ring-[#1C232E] shadow-lg shadow-primary/20 transition-transform">
+                      <Check className="text-white h-3 w-3" />
+                    </div>
+                    <div className="flex-1 space-y-6">
+                      <div className="flex flex-col gap-2">
+                        <h4 className="text-xl font-black text-white capitalize">{formatDate(log.date, { day: '2-digit', month: 'long', year: 'numeric', weekday: 'long' })}</h4>
+                        <div className="flex flex-wrap items-center gap-4">
+                           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full flex items-center gap-1.5"><Cloud className="h-3 w-3" /> {log.weather}</span>
+                           <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full flex items-center gap-1.5"><HardHat className="h-3 w-3" /> Equipe: {log.workers}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-inner">
+                         <p className="text-slate-200 text-base leading-relaxed">"{log.activities || 'Nenhuma atividade registrada.'}"</p>
+                      </div>
+
+                      {log.daily_log_photos && log.daily_log_photos.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {log.daily_log_photos.map((photo: any) => (
+                            <div key={photo.id} className="aspect-video rounded-2xl overflow-hidden border border-white/10 relative group/photo cursor-pointer bg-black/40">
+                              <img 
+                                src={photo.image_url} 
+                                alt="Daily" 
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover/photo:scale-110" 
+                              />
+                              {photo.description && (
+                                <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                                  <p className="text-xs text-white font-medium">{photo.description}</p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-white/5 bg-slate-900/20 text-center shrink-0">
+              <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[3px]">AevumPro • Relatório de Progresso</p>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
