@@ -55,14 +55,13 @@ export function Sidebar({
       )}
 
       <aside className={cn(
-        "fixed left-0 top-0 z-50 flex h-screen flex-col bg-[#1C232E] border-r border-slate-800 shadow-2xl transition-all duration-300",
-        // Desktop sizing
+        "fixed left-0 top-0 z-50 h-screen flex-col bg-[#1C232E] border-r border-slate-800 shadow-2xl transition-all duration-300 flex",
+        // Desktop: Always visible, width depends on collapse state
+        "hidden md:flex",
         isCollapsed ? "md:w-20" : "md:w-72",
-        // Mobile sizing and positioning
-        "w-72 md:translate-x-0",
-        isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-        // Hide completely on mobile if not open to avoid ghost elements
-        !isMobileOpen && "pointer-events-none md:pointer-events-auto"
+        // Mobile: Overlay drawer, only visible when isMobileOpen
+        isMobileOpen ? "flex w-72 translate-x-0" : "w-72 -translate-x-full",
+        "md:translate-x-0" // Reset translate on desktop
       )}>
       {/* Sidebar Toggle */}
       <button 
