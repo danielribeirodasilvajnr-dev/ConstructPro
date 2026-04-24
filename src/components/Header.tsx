@@ -21,9 +21,10 @@ import { SettingsModal } from './profile/SettingsModal';
 
 interface HeaderProps {
   title?: string;
+  onMenuClick?: () => void;
 }
 
-export function Header({ title }: HeaderProps) {
+export function Header({ title, onMenuClick }: HeaderProps) {
   const [user, setUser] = useState<any>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
