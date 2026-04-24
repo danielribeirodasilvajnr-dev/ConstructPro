@@ -6,9 +6,7 @@ import {
   ShieldCheck, 
   PlusCircle, 
   CircleHelp, 
-  LogOut,
-  ChevronLeft,
-  ChevronRight
+  LogOut
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -61,66 +59,64 @@ export function Sidebar({
         // Mobile: Controlled by isMobileOpen, always full width when open
         isMobileOpen ? "flex w-72 translate-x-0 !inline-flex" : "max-md:hidden max-md:w-0 max-md:-translate-x-full"
       )}>
-      {/* Brand Section */}
-      <div className="flex items-center gap-3 p-6 mb-2 overflow-hidden">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#BCB5AC]">
-          <img src="/logo.png" alt="AevumPro" className="w-full h-full object-cover" />
+        {/* Brand Section */}
+        <div className="flex items-center gap-3 p-6 mb-2 overflow-hidden">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#BCB5AC]">
+            <img src="/logo.png" alt="AevumPro" className="w-full h-full object-cover" />
+          </div>
+          <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+            <h2 className="text-sm font-bold tracking-tight text-white">AevumPro</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[2px] text-[#BCB5AC] opacity-80 mt-0.5 whitespace-nowrap">Gestão de Obras</p>
+          </div>
         </div>
-        <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-          <h2 className="text-sm font-bold tracking-tight text-white">AevumPro</h2>
-          <p className="text-[10px] font-bold uppercase tracking-[2px] text-[#BCB5AC] opacity-80 mt-0.5 whitespace-nowrap">Gestão de Obras</p>
-        </div>
-      </div>
 
-      <nav className="flex flex-1 flex-col gap-1 p-4">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => {
-              setActiveTab(item.id);
-              setIsMobileOpen(false);
-            }}
-            title={isCollapsed ? item.label : undefined}
-            className={cn(
-              "flex items-center gap-3 rounded-lg transition-all duration-150 relative",
-              isCollapsed ? "justify-center w-12 h-12 p-0" : "px-4 py-3",
-              activeTab === item.id 
-                ? "bg-primary text-on-primary shadow-lg shadow-primary/20 scale-105 border border-white/10" 
-                : "text-slate-400 hover:bg-white/5"
-            )}
-          >
-            <item.icon className="h-5 w-5" />
-            <span className="text-sm font-medium animate-in fade-in slide-in-from-left-1 duration-200">{item.label}</span>
-          </button>
-        ))}
-      </nav>
+        <nav className="flex flex-1 flex-col gap-1 p-4">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                setActiveTab(item.id);
+                setIsMobileOpen(false);
+              }}
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-150 relative w-full",
+                activeTab === item.id 
+                  ? "bg-[#BCB5AC] text-[#1C232E] shadow-lg shadow-black/20 scale-[1.02] border border-white/10" 
+                  : "text-slate-400 hover:bg-white/5"
+              )}
+            >
+              <item.icon className="h-5 w-5 shrink-0" />
+              <span className="text-sm font-semibold tracking-tight">{item.label}</span>
+            </button>
+          ))}
+        </nav>
 
-      <div className="p-6 mt-auto border-t border-slate-800 bg-slate-900/10">
-        {!isClient && (
-          <button 
-            className="mb-6 flex items-center justify-center rounded-xl bg-[#BCB5AC] text-[#1C232E] transition-all hover:bg-slate-700 shadow-lg shadow-black/20 active:scale-95 w-full py-3.5 gap-2 text-xs font-bold uppercase tracking-widest"
-          >
-            <PlusCircle className="h-5 w-5" />
-            <span>Novo Lançamento</span>
-          </button>
-        )}
-        <div className="flex flex-col gap-1 w-full">
-          <button 
-            className="flex items-center gap-3 text-sm text-slate-400 hover:text-primary transition-colors px-4 py-2"
-          >
-            <CircleHelp className="h-5 w-5" />
-            <span>Suporte</span>
-          </button>
-          <button 
-            onClick={signOut}
-            className="flex items-center gap-3 text-sm text-slate-400 hover:text-error transition-colors px-4 py-2"
-          >
-            <LogOut className="h-5 w-5" />
-            <span>Sair</span>
-          </button>
+        <div className="p-6 mt-auto border-t border-slate-800 bg-slate-900/10">
+          {!isClient && (
+            <button 
+              className="mb-6 flex items-center justify-center rounded-xl bg-[#BCB5AC] text-[#1C232E] transition-all hover:bg-slate-700 shadow-lg shadow-black/20 active:scale-95 w-full py-3.5 gap-2 text-xs font-bold uppercase tracking-widest"
+            >
+              <PlusCircle className="h-5 w-5" />
+              <span>Novo Lançamento</span>
+            </button>
+          )}
+          <div className="flex flex-col gap-1 w-full">
+            <button 
+              className="flex items-center gap-3 text-sm text-slate-400 hover:text-primary transition-colors px-4 py-2"
+            >
+              <CircleHelp className="h-5 w-5" />
+              <span>Suporte</span>
+            </button>
+            <button 
+              onClick={signOut}
+              className="flex items-center gap-3 text-sm text-slate-400 hover:text-error transition-colors px-4 py-2"
+            >
+              <LogOut className="h-5 w-5" />
+              <span>Sair</span>
+            </button>
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
     </>
   );
 }
