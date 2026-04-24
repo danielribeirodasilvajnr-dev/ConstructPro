@@ -217,7 +217,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
       <div className="flex items-end justify-between mb-10">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-white">Projetos</h2>
-          <p className="text-slate-500 text-sm mt-1">{projects.length} obra(s) no portfólio ConstructPro</p>
+          <p className="text-slate-500 text-sm mt-1">{projects.length} obra(s) no portfólio AevumPro</p>
         </div>
         <button
           onClick={handleNew}

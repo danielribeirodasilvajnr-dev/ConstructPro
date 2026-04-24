@@ -52,12 +52,12 @@ export function Sidebar({ activeTab, setActiveTab, isClient, isCollapsed, setIsC
         "flex items-center gap-3 p-6 mb-2 overflow-hidden",
         isCollapsed && "justify-center p-4"
       )}>
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-white">
-          <span className="text-xl font-black">CP</span>
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-white overflow-hidden p-1.5">
+          <img src="/logo.png" alt="AevumPro" className="w-full h-full object-contain" />
         </div>
         {!isCollapsed && (
           <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-            <h2 className="text-sm font-bold tracking-tight text-white">ConstructPro</h2>
+            <h2 className="text-sm font-bold tracking-tight text-white">AevumPro</h2>
             <p className="text-[10px] font-bold uppercase tracking-[2px] text-[#4170FF] opacity-80 mt-0.5 whitespace-nowrap">Gestão de Obras</p>
           </div>
         )}

@@ -68,13 +68,13 @@ export function Header({ title }: HeaderProps) {
               <h1 className="text-xl font-bold tracking-tighter text-white">{title}</h1>
             </div>
           )}
-          {!title && <h1 className="text-xl font-bold tracking-tighter text-white uppercase tracking-[4px] text-sm opacity-50">ConstructPro</h1>}
+          {!title && <h1 className="text-xl font-bold tracking-tighter text-white uppercase tracking-[4px] text-sm opacity-50">AevumPro</h1>}
           
           <div className="relative hidden lg:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Pesquisar no ConstructPro..." 
+              placeholder="Pesquisar no AevumPro..." 
               className="w-96 rounded-xl border border-slate-800 bg-[#0B0F15] py-2.5 pl-10 pr-4 text-sm text-slate-100 focus:border-[#4170FF] outline-none transition-all placeholder:text-slate-600 focus:ring-1 focus:ring-[#4170FF]/20"
             />
           </div>

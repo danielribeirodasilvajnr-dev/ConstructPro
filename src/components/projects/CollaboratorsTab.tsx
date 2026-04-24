@@ -85,7 +85,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
         .single();
 
       if (profileError || !profile) {
-        throw new Error('Usuário não encontrado. O colaborador precisa ter uma conta no ConstructPro.');
+        throw new Error('Usuário não encontrado. O colaborador precisa ter uma conta no AevumPro.');
       }
 
       if (profile.id === project.user_id) {

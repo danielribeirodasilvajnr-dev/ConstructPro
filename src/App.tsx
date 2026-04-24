@@ -83,7 +83,7 @@ export default function App() {
       case 'logs': return 'Diário de Obra';
       case 'resources': return 'Calculadora INSS';
       case 'safety': return 'Painel do Proprietário';
-      default: return 'ConstructPro';
+      default: return 'AevumPro';
     }
   };
 

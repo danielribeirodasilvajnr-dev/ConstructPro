@@ -53,8 +53,8 @@ export function AuthView() {
         className="relative z-10 w-full max-w-md p-8 bg-[#13171f]/80 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-black/50"
       >
         <div className="flex justify-center mb-8">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-600 text-white shadow-lg shadow-primary/30">
-            <HardHat className="h-8 w-8" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-white shadow-lg border border-white/10 overflow-hidden p-2.5">
+            <img src="/logo.png" alt="AevumPro" className="w-full h-full object-contain" />
           </div>
         </div>
 
@@ -63,7 +63,7 @@ export function AuthView() {
             {isLogin ? 'Bem-vindo de volta' : 'Criar sua conta'}
           </h2>
           <p className="text-sm text-slate-400 font-medium">
-            {isLogin ? 'Acesse seus projetos no ConstructPro' : 'Junte-se à próxima geração de gestão'}
+            {isLogin ? 'Acesse seus projetos no AevumPro' : 'Junte-se à próxima geração de gestão'}
           </p>
         </div>
 
