@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Search,
   ChevronLeft,
   Bell,
@@ -44,7 +44,7 @@ export function Header({ title, onMenuClick }: HeaderProps) {
         .select('*')
         .eq('id', user.id)
         .single();
-      
+
       setUser({ ...user, profile });
     }
   };
@@ -59,31 +59,20 @@ export function Header({ title, onMenuClick }: HeaderProps) {
     <>
       <header className="sticky top-0 z-40 flex h-16 md:h-20 items-center justify-between border-b border-slate-800 bg-[#1C232E]/85 px-4 md:px-8 backdrop-blur-md">
         <div className="flex items-center gap-4 md:gap-8">
-          <button 
+          <button
             onClick={onMenuClick}
             className="p-2 -ml-2 text-slate-400 hover:text-white"
           >
             <Menu className="h-6 w-6" />
           </button>
 
-          {title && (
-            <div className="flex items-center gap-2 md:gap-4">
-              <button 
-                onClick={() => window.history.back()}
-                className="text-slate-500 hover:text-white transition-colors hidden md:block"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <h1 className="text-lg md:text-xl font-bold tracking-tighter text-white truncate max-w-[150px] md:max-w-none">{title}</h1>
-            </div>
-          )}
-          {!title && <h1 className="text-xl font-bold tracking-tighter text-white uppercase tracking-[4px] text-sm opacity-50 hidden md:block">AevumPro</h1>}
-          
+
+
           <div className="relative hidden xl:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Pesquisar no AevumPro..." 
+            <input
+              type="text"
+              placeholder="Pesquisar no AevumPro..."
               className="w-96 rounded-xl border border-slate-800 bg-[#2B3647] py-2.5 pl-10 pr-4 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none transition-all placeholder:text-slate-600 focus:ring-1 focus:ring-[#BCB5AC]/20"
             />
           </div>
@@ -91,19 +80,19 @@ export function Header({ title, onMenuClick }: HeaderProps) {
 
         <div className="flex items-center gap-2 md:gap-6">
           <div className="relative">
-            <button 
+            <button
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
               className="relative p-2.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
             >
               <Bell className="h-5 w-5" />
               <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#BCB5AC] ring-2 ring-[#1C232E]" />
             </button>
-            
+
             <AnimatePresence>
               {isNotificationsOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setIsNotificationsOpen(false)} />
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -145,11 +134,11 @@ export function Header({ title, onMenuClick }: HeaderProps) {
           <button className="p-2.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all">
             <CircleHelp className="h-5 w-5" />
           </button>
-          
+
           <div className="h-8 w-px bg-white/5 mx-2" />
 
           <div className="relative">
-            <button 
+            <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="flex items-center gap-3 p-1.5 md:pl-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all group active:scale-95"
             >
@@ -172,7 +161,7 @@ export function Header({ title, onMenuClick }: HeaderProps) {
               {isProfileOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setIsProfileOpen(false)} />
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -191,22 +180,22 @@ export function Header({ title, onMenuClick }: HeaderProps) {
                         <p className="text-sm font-bold text-white truncate">{user?.email}</p>
                       </div>
                     </div>
-                    
+
                     <div className="p-2">
-                      <button 
+                      <button
                         onClick={() => { setIsProfileModalOpen(true); setIsProfileOpen(false); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group"
                       >
                         <User className="h-4 w-4 group-hover:text-[#BCB5AC]" /> Detalhes do Perfil
                       </button>
-                      <button 
+                      <button
                         onClick={() => { setIsSettingsModalOpen(true); setIsProfileOpen(false); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group"
                       >
                         <Settings className="h-4 w-4 group-hover:text-[#BCB5AC]" /> Configurações
                       </button>
                       <div className="h-px bg-white/5 my-2 mx-2"></div>
-                      <button 
+                      <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-red-500 hover:text-red-400 hover:bg-red-500/5 rounded-xl transition-all"
                       >
@@ -222,14 +211,14 @@ export function Header({ title, onMenuClick }: HeaderProps) {
       </header>
 
       <div className="z-[100]">
-        <ProfileModal 
-          isOpen={isProfileModalOpen} 
-          onClose={() => setIsProfileModalOpen(false)} 
+        <ProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
           onUpdate={fetchUser}
         />
-        <SettingsModal 
-          isOpen={isSettingsModalOpen} 
-          onClose={() => setIsSettingsModalOpen(false)} 
+        <SettingsModal
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
         />
       </div>
     </>
