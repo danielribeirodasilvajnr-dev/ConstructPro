@@ -24,24 +24,24 @@ export default function Layout({ children, activeTab, setActiveTab, title, isCli
 
   return (
     <div className="flex min-h-screen bg-surface">
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        isClient={isClient} 
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isClient={isClient}
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
         isMobileOpen={isMobileSidebarOpen}
         setIsMobileOpen={setIsMobileSidebarOpen}
       />
-      
+
       {/* Main Content */}
       <main className={cn(
         "flex flex-1 flex-col transition-all duration-300 w-full min-w-0",
         isCollapsed ? "ml-0" : "md:ml-72",
         "ml-0"
       )}>
-        <Header 
-          title={title} 
+        <Header
+          title={title}
           onMenuClick={() => {
             if (window.innerWidth < 768) {
               setIsMobileSidebarOpen(true);
