@@ -56,7 +56,7 @@ export function Sidebar({
 
       <aside className={cn(
         "fixed left-0 top-0 z-50 h-screen flex-col bg-[#1C232E] border-r border-slate-800 shadow-2xl transition-all duration-300 flex",
-        // Desktop: Controlled by isCollapsed. If collapsed, it hides completely.
+        // Desktop/Tablet: Controlled by isCollapsed. If collapsed, it hides completely.
         isCollapsed ? "w-0 -translate-x-full md:hidden" : "w-72 translate-x-0 md:flex",
         // Mobile: Controlled by isMobileOpen. If not open, it's hidden.
         !isMobileOpen && "max-md:hidden max-md:w-0 max-md:-translate-x-full",
