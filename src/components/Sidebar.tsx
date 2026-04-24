@@ -62,14 +62,6 @@ export function Sidebar({
         !isMobileOpen && "max-md:hidden max-md:w-0 max-md:-translate-x-full",
         isMobileOpen && "max-md:flex max-md:w-72 max-md:translate-x-0 !inline-flex"
       )}>
-      {/* Sidebar Toggle */}
-      <button 
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-10 flex h-6 w-6 items-center justify-center rounded-full bg-[#BCB5AC] text-[#1C232E] shadow-lg hover:bg-slate-700 transition-transform active:scale-90 z-[60]"
-      >
-        {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-      </button>
-
       {/* Brand Section */}
       <div className={cn(
         "flex items-center gap-3 p-6 mb-2 overflow-hidden",
