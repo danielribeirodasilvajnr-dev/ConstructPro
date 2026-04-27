@@ -73,7 +73,7 @@ export function PCIProjeto({ data, onChange }: Props) {
             <L>Sistema Construtivo</L>
             <S value={data.sistema_construtivo} onChange={set('sistema_construtivo')} options={LISTA_SISTEMA_CONSTRUTIVO} colSpan={2} />
             <L>Sist. Constr. Outros (Especificar)</L>
-            <E value={data.sistema_construtivo_outros} onChange={set('sistema_construtivo_outros')} colSpan={5} />
+            <E value={data.sistema_construtivo_outros} onChange={set('sistema_construtivo_outros')} colSpan={6} />
           </tr>
           <tr>
             <L>Nº DATec</L>
@@ -97,7 +97,7 @@ export function PCIProjeto({ data, onChange }: Props) {
             <span className="text-[9px] font-bold text-white">Memorial Descritivo</span>
           </td></tr>
           <tr>
-            <td colSpan={12} className="bg-white border border-[#8ea0b4] px-2 py-1">
+            <td colSpan={14} className="bg-white border border-[#8ea0b4] px-2 py-1">
               <span className="text-[8px] text-slate-500">Discriminar a solução prevista em projeto para caracterizar o padrão do acabamento</span>
             </td>
             <L>Padrão Acabamento</L>
@@ -134,6 +134,7 @@ export function PCIProjeto({ data, onChange }: Props) {
             <S value={data.cozinha} onChange={set('cozinha')} options={LISTA_COZINHA} />
             <L>Água Quente</L>
             <S value={data.agua_quente} onChange={set('agua_quente')} options={LISTA_AGUA_QUENTE} />
+            <td className="bg-white border border-[#8ea0b4]" colSpan={6}></td>
           </tr>
           {/* Linha 3: Acabamento interno, Pards secas, Calefação, Sustentabilidade */}
           <tr>
@@ -147,6 +148,7 @@ export function PCIProjeto({ data, onChange }: Props) {
             <E value={data.sustentabilidade} onChange={set('sustentabilidade')} />
             <L>Implantação/Inserção</L>
             <E value={data.implantacao} onChange={set('implantacao')} />
+            <td className="bg-white border border-[#8ea0b4]" colSpan={6}></td>
           </tr>
           {/* Linha 4: Revest molhadas, piso secas, piso molhadas, divisão */}
           <tr>
@@ -158,6 +160,7 @@ export function PCIProjeto({ data, onChange }: Props) {
             <S value={data.revest_piso_molhadas} onChange={set('revest_piso_molhadas')} options={LISTA_PISO_AREAS_MOLHADAS} />
             <L>Divisão Interna</L>
             <E value={data.divisao_interna} onChange={set('divisao_interna')} />
+            <td className="bg-white border border-[#8ea0b4]" colSpan={8}></td>
           </tr>
           {/* Linha 5: Esquadrias, Abastecimento */}
           <tr>
@@ -169,6 +172,7 @@ export function PCIProjeto({ data, onChange }: Props) {
             <E value={data.abastecimento_agua} onChange={set('abastecimento_agua')} />
             <L>Outros (Especificar)</L>
             <E value={data.outros_acabamento} onChange={set('outros_acabamento')} colSpan={3} />
+            <td className="bg-white border border-[#8ea0b4]" colSpan={6}></td>
           </tr>
           {/* Linha 6: Drenagem, Esgoto, Energia */}
           <tr>
@@ -178,7 +182,7 @@ export function PCIProjeto({ data, onChange }: Props) {
             <S value={data.coleta_esgoto} onChange={set('coleta_esgoto')} options={LISTA_ESGOTO} />
             <L>Ger. Alternt. de Energia</L>
             <S value={data.ger_energia} onChange={set('ger_energia')} options={LISTA_ENERGIA_ALT} />
-            <td className="bg-white border border-[#8ea0b4]" colSpan={6}></td>
+            <td className="bg-white border border-[#8ea0b4]" colSpan={10}></td>
           </tr>
         </tbody>
       </table>

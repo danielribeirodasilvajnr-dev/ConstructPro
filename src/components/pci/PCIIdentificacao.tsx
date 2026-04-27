@@ -76,7 +76,7 @@ export function PCIIdentificacao({ data, onChange }: Props) {
           {/* Proponente */}
           <tr>
             <L w="180px">Proponente</L>
-            <E value={data.proponente_nome} onChange={set('proponente_nome')} colSpan={3} />
+            <E value={data.proponente_nome} onChange={set('proponente_nome')} colSpan={5} />
             <L>E-mail</L>
             <E value={data.proponente_email} onChange={set('proponente_email')} colSpan={2} />
             <L>CPF/CNPJ Prop.</L>
@@ -127,13 +127,13 @@ export function PCIIdentificacao({ data, onChange }: Props) {
           </td></tr>
           <tr>
             <L>Endereço</L>
-            <E value={data.imovel_endereco} onChange={set('imovel_endereco')} colSpan={7} />
+            <E value={data.imovel_endereco} onChange={set('imovel_endereco')} colSpan={9} />
             <L>Complemento</L>
             <E value={data.imovel_complemento} onChange={set('imovel_complemento')} colSpan={2} />
           </tr>
           <tr>
             <L>Bairro</L>
-            <E value={data.imovel_bairro} onChange={set('imovel_bairro')} colSpan={3} />
+            <E value={data.imovel_bairro} onChange={set('imovel_bairro')} colSpan={4} />
             <L>CEP</L>
             <E value={data.imovel_cep} onChange={set('imovel_cep')} />
             <L>Município</L>
