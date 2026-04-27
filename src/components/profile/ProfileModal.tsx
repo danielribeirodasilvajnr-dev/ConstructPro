@@ -119,7 +119,7 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
 
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: publicUrl || null })
         .eq('id', profile.id);
 
       if (updateError) throw updateError;
@@ -197,9 +197,12 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
                           </div>
                         )}
                         <img 
-                          src={profile?.avatar_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuDr2KBEM3IfNuLeYQzBV2epZtmQRHo705P26eLsIJNDiEclnujrH-W8yGNhysNXXqjOiVzILkQhCDIwxjR0PGIerPvj8eqJTY7Oc8UEQKKnhaSsupnlPqauvvqKk3HoJNEcvL1Kyc0iwjG1Z-tQN2YkiFoDh5SO8ALfjcgKp8FuaK6v3Tsp4RQcn2s7yE3k14OYP1RI8jfXjJ8uHoczokjDD4vwOK4TciQdENZTm185x4zIDC_1ElKSlJ8kQxS_R-2KzY0iRSGLhg"} 
+                          src={profile?.avatar_url ? `${profile.avatar_url}${profile.avatar_url.includes('?') ? '&' : '?'}t=${new Date().getTime()}` : "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop"} 
                           alt="Avatar" 
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop";
+                          }}
                         />
                       </div>
                       <input 

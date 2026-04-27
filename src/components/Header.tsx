@@ -45,6 +45,11 @@ export function Header({ title, onMenuClick }: HeaderProps) {
         .eq('id', user.id)
         .single();
 
+      // Ensure avatar_url is treated as null if empty string
+      if (profile && profile.avatar_url === '') {
+        profile.avatar_url = null;
+      }
+
       setUser({ ...user, profile });
     }
   };
@@ -157,7 +162,20 @@ export function Header({ title, onMenuClick }: HeaderProps) {
               </div>
               <div className="h-10 w-10 rounded-xl bg-[#BCB5AC]/10 flex items-center justify-center text-[#BCB5AC] font-black border border-[#BCB5AC]/20 overflow-hidden shadow-inner group-hover:border-[#BCB5AC]/40 transition-all">
                 {user?.profile?.avatar_url ? (
-                  <img src={user.profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                  <img 
+                    src={`${user.profile.avatar_url}${user.profile.avatar_url.includes('?') ? '&' : '?'}t=${new Date().getTime()}`} 
+                    alt="" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      const parent = (e.target as HTMLImageElement).parentElement;
+                      if (parent) {
+                        const fallback = document.createElement('span');
+                        fallback.innerText = (user?.email || 'A').charAt(0).toUpperCase();
+                        parent.appendChild(fallback);
+                      }
+                    }}
+                  />
                 ) : (
                   (user?.email || 'A').charAt(0).toUpperCase()
                 )}
@@ -177,7 +195,11 @@ export function Header({ title, onMenuClick }: HeaderProps) {
                     <div className="p-4 bg-gradient-to-br from-[#BCB5AC]/20 via-[#BCB5AC]/5 to-transparent border-b border-white/5 flex items-center gap-4">
                       <div className="h-12 w-12 rounded-xl bg-[#BCB5AC] flex items-center justify-center text-[#1C232E] font-black text-xl shadow-lg border border-white/20 overflow-hidden">
                         {user?.profile?.avatar_url ? (
-                          <img src={user.profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                          <img 
+                            src={`${user.profile.avatar_url}${user.profile.avatar_url.includes('?') ? '&' : '?'}t=${new Date().getTime()}`} 
+                            alt="" 
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
                           (user?.email || 'A').charAt(0).toUpperCase()
                         )}
