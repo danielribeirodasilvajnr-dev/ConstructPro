@@ -18,74 +18,65 @@ export function useProjects() {
 
       setLoading(true);
       
-      // Fetch projects where user is owner OR collaborator
-      let [ownedProjects, collaborations] = await Promise.all([
-        supabase.from('projects').select('*').eq('user_id', user.id),
-        supabase.from('project_collaborators').select('project_id').eq('user_id', user.id)
-      ]);
+      const timeoutPromise = new Promise<any>((_, reject) => 
+        setTimeout(() => reject(new Error('Supabase timeout')), 2500)
+      );
 
-      // RETRY LOGIC FOR F5 RACE CONDITION: Bypass Supabase JS completely
-      if ((!ownedProjects.data || ownedProjects.data.length === 0) && (!collaborations.data || collaborations.data.length === 0)) {
+      try {
+        const supabaseCall = supabase
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        let result: any = null;
         try {
+          result = await Promise.race([supabaseCall, timeoutPromise]);
+        } catch (e) {
+          console.warn('Supabase hung in useProjects, triggering fallback');
+        }
+
+        let projectsData = result?.data || [];
+
+        // RETRY LOGIC FOR F5 RACE CONDITION: Bypass Supabase JS completely
+        if (!projectsData || projectsData.length === 0) {
           const sessionStr = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
           if (sessionStr) {
             const sessionData = JSON.parse(localStorage.getItem(sessionStr) || '{}');
             const token = sessionData?.access_token;
             if (token) {
-              const [rawProjectsRes, rawCollabsRes] = await Promise.all([
-                fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/projects?select=*&user_id=eq.${user.id}`, {
-                  headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` }
-                }),
-                fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/project_collaborators?select=project_id&user_id=eq.${user.id}`, {
-                  headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` }
-                })
-              ]);
-              
-              if (rawProjectsRes.ok && rawCollabsRes.ok) {
-                const rawProjects = await rawProjectsRes.json();
-                const rawCollabs = await rawCollabsRes.json();
+              try {
+                const controller = new AbortController();
+                const id = setTimeout(() => controller.abort(), 5000);
+
+                const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/projects?select=*&order=created_at.desc`, {
+                  headers: { 
+                    'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 
+                    'Authorization': `Bearer ${token}` 
+                  },
+                  signal: controller.signal
+                });
                 
-                if (rawProjects.length > 0 || rawCollabs.length > 0) {
-                  ownedProjects = { data: rawProjects, error: null } as any;
-                  collaborations = { data: rawCollabs, error: null } as any;
+                clearTimeout(id);
+                
+                if (res.ok) {
+                  const raw = await res.json();
+                  if (raw && raw.length > 0) projectsData = raw;
                 }
+              } catch (e) {
+                console.error('Raw fetch inside useProjects failed:', e);
               }
             }
           }
-        } catch (e) {
-          console.error('Raw fetch fallback failed', e);
         }
-      }
 
-      if (ownedProjects.error) throw ownedProjects.error;
-      if (collaborations.error) throw collaborations.error;
-
-      let allProjectIds = (ownedProjects.data || []).map(p => p.id);
-      const collabIds = (collaborations.data || []).map(c => c.project_id);
-      
-      const uniqueIds = [...new Set([...allProjectIds, ...collabIds])];
-      
-      if (uniqueIds.length === 0) {
-        setProjects([]);
+        setProjects(projectsData);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
         clearTimeout(timeout);
-        return;
+        setLoading(false);
       }
-
-      const { data, error: fetchError } = await supabase
-        .from('projects')
-        .select('*')
-        .in('id', uniqueIds)
-        .order('created_at', { ascending: false });
-
-      clearTimeout(timeout);
-      if (fetchError) throw fetchError;
-      setProjects(data || []);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
   useEffect(() => {
     fetchProjects();

@@ -29,40 +29,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkRole = async (userId: string) => {
     try {
-      let { data: collaborations } = await supabase
-        .from('project_collaborators')
-        .select('role')
-        .eq('user_id', userId);
+      const timeoutPromise = new Promise<any>((_, reject) => 
+        setTimeout(() => reject(new Error('Supabase timeout')), 2000)
+      );
 
-      let { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+      const supabaseCalls = Promise.all([
+        supabase.from('project_collaborators').select('role').eq('user_id', userId),
+        supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+      ]);
+
+      let collaborations: any = { data: [] };
+      let profileData: any = null;
+
+      try {
+        const results = await Promise.race([supabaseCalls, timeoutPromise]);
+        collaborations = results[0].data;
+        profileData = results[1].data;
+      } catch (e) {
+        console.warn('Supabase hung in checkRole, moving to fallback');
+      }
 
       // RETRY LOGIC FOR F5 RACE CONDITION: Bypass Supabase JS completely
-      if (!profileData || !collaborations) {
+      if (!profileData || !collaborations || collaborations.length === 0) {
         try {
           const sessionStr = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
           if (sessionStr) {
             const sessionData = JSON.parse(localStorage.getItem(sessionStr) || '{}');
             const token = sessionData?.access_token;
             if (token) {
-              const [rawCollabsRes, rawProfileRes] = await Promise.all([
-                fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/project_collaborators?select=role&user_id=eq.${userId}`, {
-                  headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` }
-                }),
-                fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?select=*&id=eq.${userId}`, {
-                  headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` }
-                })
-              ]);
-              
-              if (rawCollabsRes.ok && rawProfileRes.ok) {
-                const rawCollabs = await rawCollabsRes.json();
-                const rawProfile = await rawProfileRes.json();
+              const controller = new AbortController();
+              const id = setTimeout(() => controller.abort(), 5000);
+
+              try {
+                const [rawCollabsRes, rawProfileRes] = await Promise.all([
+                  fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/project_collaborators?select=role&user_id=eq.${userId}`, {
+                    headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` },
+                    signal: controller.signal
+                  }),
+                  fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?select=*&id=eq.${userId}`, {
+                    headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` },
+                    signal: controller.signal
+                  })
+                ]);
                 
-                if (rawCollabs && rawCollabs.length > 0) collaborations = rawCollabs;
-                if (rawProfile && rawProfile.length > 0) profileData = rawProfile[0];
+                clearTimeout(id);
+                
+                if (rawCollabsRes.ok && rawProfileRes.ok) {
+                  const rawCollabs = await rawCollabsRes.json();
+                  const rawProfile = await rawProfileRes.json();
+                  
+                  if (rawCollabs && rawCollabs.length > 0) collaborations = rawCollabs;
+                  if (rawProfile && rawProfile.length > 0) profileData = rawProfile[0];
+                }
+              } catch (e) {
+                console.error('Raw fetch inside checkRole failed:', e);
               }
             }
           }
@@ -71,12 +91,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      let ownsProjects = false;
-      try {
-        const { data: proj } = await supabase.from('projects').select('id').eq('user_id', userId);
-        ownsProjects = (proj || []).length > 0;
-      } catch (e) {}
-
       if (profileData) {
         if (profileData.avatar_url === '') profileData.avatar_url = null;
         setProfile(profileData);
@@ -84,12 +98,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(null);
       }
 
+      // Check for proprietor status safely
       const roles = collaborations || [];
-      const proprietorRole = roles.find(c => c.role === 'proprietor');
-      const isProp = !!proprietorRole && !ownsProjects;
-      setIsProprietor(isProp);
+      const proprietorRole = roles.find((c: any) => c.role === 'proprietor');
       
-      if (isProp) {
+      // Assume NOT proprietor if we can't verify ownership quickly, 
+      // or just trust the role if it's explicitly proprietor.
+      setIsProprietor(!!proprietorRole);
+      
+      if (proprietorRole) {
         localStorage.setItem('is-proprietor', 'true');
       } else {
         localStorage.removeItem('is-proprietor');

@@ -22,7 +22,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export function DashboardView() {
   const { isProprietor, user } = useAuth();
-  const { data: dashboardProjects, loading, error: dashError } = useDashboardData();
+  const { data: dashboardProjects, loading, error: dashError, debugInfo: hookDebug } = useDashboardData();
   const [rawDiagnostic, setRawDiagnostic] = useState<string>('Not run');
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export function DashboardView() {
           }
         });
         const text = await res.text();
-        setRawDiagnostic(`Status: ${res.status}, Body length: ${text.length}, URL: ${url.substring(0, 30)}`);
+        setRawDiagnostic(`Status: ${res.status}, Body: ${text.substring(0, 50)}, URL: ${url.substring(0, 30)}`);
       } catch (err: any) {
         setRawDiagnostic(`Error: ${err.message}`);
       }
@@ -74,6 +74,7 @@ export function DashboardView() {
           : 'NONE'
         }</p>
         <p><strong>RAW FETCH DB TEST:</strong> {rawDiagnostic}</p>
+        <p><strong>HOOK DEBUG:</strong> {hookDebug}</p>
         <p><strong>DASH PROJECTS:</strong> {dashboardProjects.length}</p>
       </div>
 

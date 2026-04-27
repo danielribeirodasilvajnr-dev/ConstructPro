@@ -8,19 +8,22 @@ export function useDashboardData() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<string>('Init');
 
   const fetchDashboardData = async () => {
-    if (!user) return;
+    if (!user) {
+      setDebugInfo('No user');
+      return;
+    }
     
-    // Safety timeout to prevent infinite spinner
     const timeout = setTimeout(() => {
       setLoading(false);
     }, 8000);
 
     setLoading(true);
     try {
-      // Fetch all projects for the user
-      let { data: projects, error: projectsError } = await supabase
+      // Race the Supabase call against a 2-second timeout
+      const supabaseCall = supabase
         .from('projects')
         .select(`
           *,
@@ -31,36 +34,61 @@ export function useDashboardData() {
         `)
         .order('created_at', { ascending: false });
 
+      const timeoutPromise = new Promise<{ data: any[] | null, error: any }>((_, reject) => 
+        setTimeout(() => reject(new Error('Supabase timeout')), 2000)
+      );
+
+      let projects: any[] | null = null;
+      let projectsError: any = null;
+
+      try {
+        const result = await Promise.race([supabaseCall, timeoutPromise]);
+        projects = result.data;
+        projectsError = result.error;
+        setDebugInfo(`Supabase returned: ${projects?.length ?? 'null'} projects`);
+      } catch (e: any) {
+        setDebugInfo(`Supabase hung or timed out: ${e.message}. Triggering fallback...`);
+      }
+
       // RETRY LOGIC FOR F5 RACE CONDITION: Bypass Supabase JS completely
-      if (!projectsError && (!projects || projects.length === 0)) {
-        console.log('SUPABASE JS RETURNED EMPTY. TRIGGERING RAW FALLBACK...');
+      if (!projects || projects.length === 0) {
         const sessionStr = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
         if (sessionStr) {
           const sessionData = JSON.parse(localStorage.getItem(sessionStr) || '{}');
           const token = sessionData?.access_token;
           if (token) {
             try {
-              // Try a simpler query first to see if it works
-              const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/projects?select=*,budget_items(*),schedule_items(*),financial_items(*),daily_logs(*)&order=created_at.desc`, {
+              const controller = new AbortController();
+              const id = setTimeout(() => controller.abort(), 5000);
+
+              const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/projects?select=*,budget_items(*),schedule_items(*),financial_items(*),daily_logs(*)&order=created_at.desc`;
+              const res = await fetch(url, {
                 headers: {
                   'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
                   'Authorization': `Bearer ${token}`
-                }
+                },
+                signal: controller.signal
               });
               
+              clearTimeout(id);
+
               if (res.ok) {
                 const rawData = await res.json();
-                console.log('RAW FALLBACK DATA SUCCESS:', rawData);
+                setDebugInfo(`Fallback success: ${rawData.length} projects found`);
                 if (rawData && rawData.length > 0) {
                   projects = rawData;
                 }
               } else {
-                console.error('RAW FALLBACK FAILED:', res.status);
+                setDebugInfo(`Fallback failed: HTTP ${res.status}`);
               }
-            } catch (e) {
-              console.error('Raw fetch fallback failed exception:', e);
+            } catch (e: any) {
+              setDebugInfo(`Fallback exception: ${e.message}`);
             }
+          } else {
+            setDebugInfo('No token in localStorage');
           }
+        } else {
+          setDebugInfo('No session key in localStorage');
         }
       }
 
@@ -73,6 +101,7 @@ export function useDashboardData() {
       }
 
       const mapped = projects.map((p: any) => {
+        // ... (keeping mapping logic same)
         const ordained = (p.budget_items || []).reduce((acc: number, item: any) => acc + (Number(item.quantity) * Number(item.unit_cost)), 0);
         const spent = (p.financial_items || []).reduce((acc: number, item: any) => acc + Number(item.amount), 0);
         const balance = ordained - spent;
@@ -133,5 +162,5 @@ export function useDashboardData() {
     fetchDashboardData();
   }, [user]);
 
-  return { data, loading, error, refresh: fetchDashboardData };
+  return { data, loading, error, refresh: fetchDashboardData, debugInfo };
 }
