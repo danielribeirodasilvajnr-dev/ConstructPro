@@ -41,14 +41,49 @@ export default function App() {
       setActiveTab('safety');
       // If we don't have a selected project yet, we need to find it
       if (!selectedProjectId) {
-        supabase.from('project_collaborators')
-          .select('project_id')
-          .eq('user_id', user.id)
-          .eq('role', 'proprietor')
-          .maybeSingle()
-          .then(({ data }) => {
+        const checkProprietor = async () => {
+          try {
+            const timeoutPromise = new Promise<any>((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout')), 2000)
+            );
+            
+            const supabaseCall = supabase.from('project_collaborators')
+              .select('project_id')
+              .eq('user_id', user.id)
+              .eq('role', 'proprietor')
+              .maybeSingle();
+
+            let data = null;
+            try {
+              const res = await Promise.race([supabaseCall, timeoutPromise]);
+              data = res.data;
+            } catch (e) {
+              console.warn('App.tsx hung, using fetch fallback for proprietor check');
+              const sessionStr = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+              if (sessionStr) {
+                const sessionData = JSON.parse(localStorage.getItem(sessionStr) || '{}');
+                const token = sessionData?.access_token;
+                if (token) {
+                  const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/project_collaborators?user_id=eq.${user.id}&role=eq.proprietor&select=project_id`, {
+                    headers: { 
+                      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 
+                      'Authorization': `Bearer ${token}` 
+                    }
+                  });
+                  if (res.ok) {
+                    const list = await res.json();
+                    if (list && list.length > 0) data = list[0];
+                  }
+                }
+              }
+            }
+
             if (data) setSelectedProjectId(data.project_id);
-          });
+          } catch (err) {
+            console.error('Error in App.tsx proprietor check:', err);
+          }
+        };
+        checkProprietor();
       }
     } else {
       if (!activeTab || activeTab === 'safety') {

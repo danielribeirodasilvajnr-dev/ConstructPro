@@ -18,7 +18,11 @@ export function useProjectData(projectId: string | null) {
     if (!projectId) return;
     setLoading(true);
     try {
-      const [budget, schedule, finance, logs, docs, collab, collabList] = await Promise.all([
+      const timeoutPromise = new Promise<any>((_, reject) => 
+        setTimeout(() => reject(new Error('Supabase timeout')), 2500)
+      );
+
+      const supabaseCall = Promise.all([
         supabase.from('budget_items').select('*').eq('project_id', projectId),
         supabase.from('schedule_items').select('*').eq('project_id', projectId).order('start_date', { ascending: true }),
         supabase.from('financial_items').select('*').eq('project_id', projectId).order('date', { ascending: false }).order('created_at', { ascending: false }),
@@ -28,20 +32,73 @@ export function useProjectData(projectId: string | null) {
         supabase.from('project_collaborators').select('*, profile:profiles(*)').eq('project_id', projectId)
       ]);
 
-      setBudgetItems(budget.data || []);
-      setScheduleItems(schedule.data || []);
-      setFinancialItems(finance.data || []);
-      setDailyLogs(logs.data || []);
-      setDocuments(docs.data || []);
-      setCollaborators(collabList.data || []);
+      let results: any[] = [];
+      try {
+        const raceResult = await Promise.race([supabaseCall, timeoutPromise]);
+        results = raceResult;
+      } catch (e) {
+        console.warn('Supabase hung in useProjectData, triggering fallback');
+        
+        // RAW FETCH FALLBACK for specific project data
+        const sessionStr = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+        if (sessionStr) {
+          const sessionData = JSON.parse(localStorage.getItem(sessionStr) || '{}');
+          const token = sessionData?.access_token;
+          if (token) {
+            const fetchTable = async (table: string, params: string = '') => {
+              try {
+                const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/${table}?project_id=eq.${projectId}${params}`, {
+                  headers: { 
+                    'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 
+                    'Authorization': `Bearer ${token}` 
+                  }
+                });
+                return res.ok ? await res.json() : [];
+              } catch { return []; }
+            };
+
+            const [budget, schedule, finance, logs, docs, collabList] = await Promise.all([
+              fetchTable('budget_items'),
+              fetchTable('schedule_items', '&order=start_date.asc'),
+              fetchTable('financial_items', '&order=date.desc'),
+              fetchTable('daily_logs', '&select=*,daily_log_photos(*)&order=date.desc'),
+              fetchTable('project_documents', '&order=created_at.desc'),
+              fetchTable('project_collaborators', '&select=*,profiles(*)'),
+            ]);
+
+            results = [
+              { data: budget },
+              { data: schedule },
+              { data: finance },
+              { data: logs },
+              { data: docs },
+              { data: { role: null } }, // Role logic will be handled below
+              { data: collabList }
+            ];
+          }
+        }
+      }
+
+      const [budget, schedule, finance, logs, docs, collab, collabList] = results;
+
+      setBudgetItems(budget?.data || []);
+      setScheduleItems(schedule?.data || []);
+      setFinancialItems(finance?.data || []);
+      setDailyLogs(logs?.data || []);
+      setDocuments(docs?.data || []);
+      setCollaborators(collabList?.data || []);
 
       // Determine user role
-      const { data: project } = await supabase.from('projects').select('user_id').eq('id', projectId).single();
-      if (project?.user_id === user?.id) {
-        setUserRole('owner');
-      } else if (collab.data) {
-        setUserRole(collab.data.role as 'editor' | 'viewer');
-      } else {
+      try {
+        const { data: project } = await supabase.from('projects').select('user_id').eq('id', projectId).single();
+        if (project?.user_id === user?.id) {
+          setUserRole('owner');
+        } else if (collab?.data) {
+          setUserRole(collab.data.role as 'editor' | 'viewer');
+        } else {
+          setUserRole(null);
+        }
+      } catch {
         setUserRole(null);
       }
     } catch (error) {

@@ -44,6 +44,18 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // FILE SIZE VALIDATION (Max 5MB)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setAlertConfig({
+        isOpen: true,
+        title: 'Arquivo muito grande',
+        message: 'O tamanho máximo permitido para comprovantes é de 5MB.',
+        type: 'error'
+      });
+      return;
+    }
+
     setUploading(true);
     try {
       const sanitizedName = sanitizeFileName(file.name);

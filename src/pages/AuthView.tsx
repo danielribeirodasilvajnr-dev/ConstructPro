@@ -113,13 +113,12 @@ export function AuthView() {
           <button
             type="submit"
             disabled={loading}
-            className="group mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold text-white transition-all hover:bg-slate-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="group mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-[#BCB5AC] py-3.5 text-sm font-bold text-[#1C232E] transition-all hover:bg-slate-700 hover:text-white active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-black/20"
           >
-            {loading ? 'Processando...' : (isLogin ? 'Entrar na plataforma' : 'Cadastrar agora')}
+            {loading ? 'Processando...' : 'Entrar na plataforma'}
             {!loading && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
           </button>
         </form>
-
       </motion.div>
     </div>
   );
