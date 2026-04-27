@@ -65,18 +65,7 @@ export function DashboardView() {
         </div>
       )}
       
-      <div className="bg-blue-900/50 border border-blue-500 p-4 rounded-xl text-white font-mono text-xs mb-8 overflow-auto break-all">
-        <p><strong>USER ID:</strong> {user?.id || 'NULL'}</p>
-        <p><strong>USER EMAIL:</strong> {user?.email || 'NULL'}</p>
-        <p><strong>TOKEN PREFIX:</strong> {
-          Object.keys(localStorage).some(k => k.startsWith('sb-') && k.endsWith('-auth-token')) 
-          ? JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'))!) || '{}')?.access_token?.substring(0, 30) + '...'
-          : 'NONE'
-        }</p>
-        <p><strong>RAW FETCH DB TEST:</strong> {rawDiagnostic}</p>
-        <p><strong>HOOK DEBUG:</strong> {hookDebug}</p>
-        <p><strong>DASH PROJECTS:</strong> {dashboardProjects.length}</p>
-      </div>
+
 
       <div className="mb-8">
         <h2 className="text-3xl font-extrabold tracking-tight text-white">Dashboard</h2>

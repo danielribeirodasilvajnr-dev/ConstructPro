@@ -237,11 +237,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         </button>
       </div>
 
-      <div className="bg-emerald-900/50 border border-emerald-500 p-4 rounded-xl text-white font-mono text-xs mb-8">
-        <p><strong>USER:</strong> {user?.email || 'NULL'}</p>
-        <p><strong>PROJECTS COUNT:</strong> {projects.length}</p>
-        <p><strong>LOADING:</strong> {loadingProjects ? 'YES' : 'NO'}</p>
-      </div>
+
 
       {loadingProjects ? (
         <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div></div>
