@@ -29,21 +29,41 @@ export function PCICronograma({ data, onChange }: Props) {
   // Valor: IF(L(n)="",0,(L(n)*custoGeral)/100)
   const valores = cronPct.map(pct => pct > 0 ? (pct * custoGeral) / 100 : 0);
 
-  const etapas = ['PréExc.', ...Array.from({ length: 26 }, (_, i) => String(i + 1))];
+  const etapas = ['PréExc.', ...Array.from({ length: 24 }, (_, i) => String(i + 1))];
 
   return (
     <div className="space-y-0">
+      {/* PRAZO E PRÉ-EXECUTADO (R142) */}
       <table className="w-full border-collapse">
         <tbody>
+          <tr>
+            <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 py-[3px] text-[9px] font-bold text-slate-700">Prazo proposto para a Execução da obra</td>
+            <td className="bg-[#D9E1F2] border border-[#8ea0b4] px-1 py-0 w-16">
+              <input type="text" value={data.prazo_meses} onChange={e => onChange({ prazo_meses: e.target.value })}
+                className="w-full bg-transparent text-[10px] font-bold text-center outline-none px-1 py-[2px]" placeholder="0" />
+            </td>
+            <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 py-[3px] text-[9px] font-bold text-slate-600 w-12">meses</td>
+            <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 py-[3px] text-[9px] font-bold text-slate-700">Percentual de Obra Pré-Executado (Etapa 0) %</td>
+            <td className="bg-[#D9E1F2] border border-[#8ea0b4] px-1 py-0 w-16">
+              <input type="text" value={data.pct_pre_executado} onChange={e => onChange({ pct_pre_executado: e.target.value })}
+                className="w-full bg-transparent text-[10px] font-bold text-center outline-none px-1 py-[2px]" placeholder="0" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* CRONOGRAMA */}
+      <table className="w-full border-collapse mt-0">
+        <tbody>
           <tr><td colSpan={5} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
-            <span className="text-[10px] font-black text-white uppercase tracking-wider">Cronograma Físico Financeiro</span>
+            <span className="text-[10px] font-black text-white uppercase tracking-wider">Cronograma</span>
           </td></tr>
-          {/* Cabeçalho */}
+          {/* Cabeçalho — R144 */}
           <tr className="bg-[#D6DCE4]">
             <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-center w-16">Etapa</td>
-            <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-center w-20">% Mensal</td>
-            <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-center w-20">% Acumulado</td>
-            <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-center w-28">Valor R$</td>
+            <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-center w-24">% Execução previsto para a etapa</td>
+            <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-center w-24">% Execução previsto acumulado</td>
+            <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-center w-28">Valor estimado para a etapa (R$)</td>
             <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-center">Cronograma de referência</td>
           </tr>
 
@@ -86,6 +106,27 @@ export function PCICronograma({ data, onChange }: Props) {
               {custoGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </td>
             <td className="border border-[#8ea0b4]"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* INSERIR POLIGONAL DO TERRENO (R172-174) */}
+      <table className="w-full border-collapse mt-2">
+        <tbody>
+          <tr><td colSpan={2} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
+            <span className="text-[10px] font-black text-white uppercase tracking-wider">Inserir Poligonal do Terreno</span>
+          </td></tr>
+          <tr>
+            <td className="bg-white border border-[#8ea0b4] px-2 py-1">
+              <span className="text-[8px] text-slate-500">A Partir do Google Earth ou Planta do Loteamento</span>
+            </td>
+          </tr>
+          <tr>
+            <td className="bg-[#D9E1F2] border border-[#8ea0b4] p-1">
+              <textarea value={data.poligonal_descricao} onChange={e => onChange({ poligonal_descricao: e.target.value })}
+                rows={3} className="w-full bg-transparent text-[10px] outline-none resize-none px-1"
+                placeholder="Descrever foto / inserir descrição da poligonal" />
+            </td>
           </tr>
         </tbody>
       </table>

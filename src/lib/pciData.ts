@@ -220,6 +220,11 @@ export interface PCIFormData {
   drenagem: string;
   coleta_esgoto: string;
   ger_energia: string;
+  // R77-78: Campos complementares do projeto
+  selo_casa_azul: string;
+  doc_compl_inovador: string;
+  doc_compl_selo: string;
+  padrao_acabamento: string;
   // Documentação
   doc_certidao: string;
   doc_alvara: string;
@@ -236,14 +241,19 @@ export interface PCIFormData {
   executor_obra: string;
   // Serviços adicionais (10 linhas)
   servicos_adicionais: { nome: string; custo: number }[];
-  // Cronograma (26 meses)
+  // Cronograma (25 etapas: 0-24)
   cronograma_pct: number[];
+  prazo_meses: string;
+  pct_pre_executado: string;
   // Infraestrutura urbana
   infra: Record<string, string>;
+  // Poligonal do terreno
+  poligonal_descricao: string;
   // Outros
   descricao_obras_executadas: string;
   observacoes: string;
   local_data: string;
+  justificativas_incidencias: string;
 }
 
 export const INITIAL_PCI_DATA: PCIFormData = {
@@ -315,6 +325,10 @@ export const INITIAL_PCI_DATA: PCIFormData = {
   drenagem: '',
   coleta_esgoto: '',
   ger_energia: '',
+  selo_casa_azul: '',
+  doc_compl_inovador: '',
+  doc_compl_selo: '',
+  padrao_acabamento: '',
   doc_certidao: '',
   doc_alvara: '',
   doc_alvara_data: '',
@@ -328,9 +342,13 @@ export const INITIAL_PCI_DATA: PCIFormData = {
   bdi_pct: 0,
   executor_obra: '',
   servicos_adicionais: Array.from({ length: 10 }, () => ({ nome: '', custo: 0 })),
-  cronograma_pct: new Array(27).fill(0), // PréExc + 1..26
+  cronograma_pct: new Array(25).fill(0), // Etapa 0 (PréExc) + 1..24
+  prazo_meses: '',
+  pct_pre_executado: '',
   infra: {},
+  poligonal_descricao: '',
   descricao_obras_executadas: '',
   observacoes: '',
   local_data: '',
+  justificativas_incidencias: '',
 };

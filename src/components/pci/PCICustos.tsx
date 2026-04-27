@@ -11,6 +11,10 @@ export function PCICustos({ data, onChange }: Props) {
   const totalServicos = custos.reduce((a, b) => a + b, 0);
   const bdiValor = totalServicos > 0 ? (data.bdi_pct * totalServicos) / 100 : 0;
   const totalComBdi = totalServicos + bdiValor;
+  const valorTerreno = parseFloat(data.valor_terreno) || 0;
+  const custoProducao = valorTerreno + totalComBdi; // AP133 = AP130 + AP132
+  const areaTotal = (parseFloat(data.area_coberta_padrao) || 0) + (parseFloat(data.area_acessoria_coberta) || 0);
+  const areaTerreno = parseFloat(data.area_terreno) || 0;
 
   // % acumulado — conforme fórmula original: AI(n) = X(n) + AI(n-1)
   // Porém linhas 12/13 têm ordem trocada na planilha real (pinturas→pisos)
@@ -138,46 +142,84 @@ export function PCICustos({ data, onChange }: Props) {
         </tbody>
       </table>
 
-      {/* SERVIÇOS ADICIONAIS */}
+      {/* SERVIÇOS ADICIONAIS + RESUMO (R128-R140) */}
       <table className="w-full border-collapse mt-2">
         <tbody>
-          <tr><td colSpan={5} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
+          <tr><td colSpan={6} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Serviços adicionais</span>
           </td></tr>
+          {/* Cabeçalho R129 */}
           <tr className="bg-[#D6DCE4]">
             <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-center w-8">Item</td>
             <td className="border border-[#8ea0b4] px-2 py-1 text-[8px] font-black text-slate-600">Serviços</td>
             <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-center w-24">Custos [R$]</td>
-            <td className="border border-[#8ea0b4] px-2 py-1 text-[8px] font-black text-slate-600 w-32">Resumo dos custos</td>
+            <td className="border border-[#8ea0b4] px-2 py-1 text-[8px] font-black text-slate-600 w-36">Resumo dos custos</td>
             <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-right w-24">Totais</td>
+            <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-right w-20">Unitário/m²</td>
           </tr>
           {data.servicos_adicionais.map((sa, i) => (
             <tr key={i}>
               <td className="bg-white border border-[#8ea0b4] px-1 py-[2px] text-[9px] text-center text-slate-400 font-bold">{i + 1}</td>
               <td className="bg-[#D9E1F2] border border-[#8ea0b4] px-0 py-0">
                 <input type="text" value={sa.nome} onChange={e => setServAd(i, 'nome', e.target.value)}
-                  placeholder="Descreva o serviço..." className="w-full bg-transparent text-[9px] outline-none px-2 py-[2px]" />
+                  placeholder={i < 4 ? 'Descreva o serviço...' : i === 4 ? 'Justificativas para itens fora das referências de incidênci' : ''}
+                  className="w-full bg-transparent text-[9px] outline-none px-2 py-[2px]" />
               </td>
               <td className="bg-[#D9E1F2] border border-[#8ea0b4] px-0 py-0">
                 <input type="number" step="0.01" value={sa.custo || ''} onChange={e => setServAd(i, 'custo', e.target.value)}
                   placeholder="0,00" className="w-full bg-transparent text-[9px] font-bold text-right outline-none px-2 py-[2px]" />
               </td>
+              {/* Resumo lado direito — R130-R133 */}
               {i === 0 && <>
-                <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 text-[8px] font-bold text-slate-600" rowSpan={4}>Custo de Serviços</td>
-                <td className="bg-white border border-[#8ea0b4] px-2 text-[9px] font-bold text-right" rowSpan={4}>{totalServicos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 text-[8px] font-bold text-slate-600" rowSpan={1}>Valor do Terreno</td>
+                <td className="bg-white border border-[#8ea0b4] px-2 text-[9px] font-bold text-right" rowSpan={1}>{valorTerreno.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                <td className="bg-white border border-[#8ea0b4] px-2 text-[8px] font-bold text-right text-slate-500" rowSpan={1}>{areaTerreno > 0 ? (valorTerreno / areaTerreno).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}</td>
               </>}
-              {i === 4 && <>
-                <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 text-[8px] font-bold text-slate-600" rowSpan={3}>Custo de Serv. Adicionais</td>
-                <td className="bg-white border border-[#8ea0b4] px-2 text-[9px] font-bold text-right" rowSpan={3}>{totalAdicionais.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+              {i === 1 && <>
+                <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 text-[8px] font-bold text-slate-600" rowSpan={1}>Custo Total de Serviços</td>
+                <td className="bg-white border border-[#8ea0b4] px-2 text-[9px] font-bold text-right" rowSpan={1}>{totalServicos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                <td className="bg-white border border-[#8ea0b4] px-2 text-[8px] font-bold text-right text-slate-500" rowSpan={1}>{areaTotal > 0 ? (totalServicos / areaTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}</td>
               </>}
-              {i === 7 && <>
-                <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 text-[8px] font-black text-slate-700" rowSpan={3}>CUSTO TOTAL DA OBRA</td>
-                <td className="bg-[#C6EFCE] border-2 border-[#006100] px-2 text-[10px] font-black text-[#006100] text-right" rowSpan={3}>
-                  {(totalComBdi + totalAdicionais).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {i === 2 && <>
+                <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 text-[8px] font-bold text-slate-600" rowSpan={1}>Custo Total de Serviços c/ BDI</td>
+                <td className="bg-white border border-[#8ea0b4] px-2 text-[9px] font-bold text-right" rowSpan={1}>{totalComBdi.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                <td className="bg-white border border-[#8ea0b4] px-2 text-[8px] font-bold text-right text-slate-500" rowSpan={1}>{areaTotal > 0 ? (totalComBdi / areaTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}</td>
+              </>}
+              {i === 3 && <>
+                <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 text-[8px] font-black text-slate-700" rowSpan={1}>Custo Total de Produção</td>
+                <td className="bg-[#C6EFCE] border-2 border-[#006100] px-2 text-[10px] font-black text-[#006100] text-right" rowSpan={1}>
+                  {custoProducao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </td>
+                <td className="bg-white border border-[#8ea0b4] px-2 text-[8px] font-bold text-right text-slate-500" rowSpan={1}>{areaTotal > 0 ? (custoProducao / areaTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}</td>
               </>}
+              {i >= 4 && i <= 8 && <><td className="border border-[#8ea0b4]"></td><td className="border border-[#8ea0b4]"></td><td className="border border-[#8ea0b4]"></td></>}
+              {i === 9 && <><td className="border border-[#8ea0b4]"></td><td className="border border-[#8ea0b4]"></td><td className="border border-[#8ea0b4]"></td></>}
             </tr>
           ))}
+          {/* TOTAIS serv. adicionais */}
+          <tr className="bg-[#D6DCE4]">
+            <td className="border border-[#8ea0b4] px-1 py-1 text-[9px] font-black text-slate-700 text-center" colSpan={2}>TOTAIS</td>
+            <td className="border border-[#8ea0b4] px-2 py-1 text-[9px] font-black text-slate-900 text-right bg-[#E2EFDA]">
+              {totalAdicionais.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </td>
+            <td className="border border-[#8ea0b4]" colSpan={3}></td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* JUSTIFICATIVAS */}
+      <table className="w-full border-collapse mt-2">
+        <tbody>
+          <tr><td className="bg-[#2F528F]/80 px-3 py-0.5 border border-[#1a3a6e]">
+            <span className="text-[9px] font-bold text-white">Justificativas para itens fora das referências de incidências aceitáveis</span>
+          </td></tr>
+          <tr>
+            <td className="bg-[#D9E1F2] border border-[#8ea0b4] p-1">
+              <textarea value={data.justificativas_incidencias || ''} onChange={e => onChange({ justificativas_incidencias: e.target.value })}
+                rows={3} className="w-full bg-transparent text-[10px] outline-none resize-none px-1"
+                placeholder="Justificar itens com incidência fora dos percentuais mínimo/máximo..." />
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>

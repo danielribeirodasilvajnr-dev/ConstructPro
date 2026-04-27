@@ -4,7 +4,7 @@ import {
   LISTA_REVEST_PAREDES_EXT, LISTA_ESQUADRIAS_EXT, LISTA_REVEST_PISO_MOLHADAS,
   LISTA_REVEST_PISO_SECAS, LISTA_PISO_AREAS_MOLHADAS, LISTA_LOUCAS_METAIS,
   LISTA_ESGOTO, LISTA_ENERGIA_ALT, LISTA_TIPO_VAGAS, LISTA_COZINHA,
-  LISTA_AGUA_QUENTE, LISTA_DESTINACAO, LISTA_PADRAO, LISTA_CUSTO_REF
+  LISTA_AGUA_QUENTE, LISTA_DESTINACAO, LISTA_PADRAO
 } from '../../lib/pciData';
 
 interface Props {
@@ -78,7 +78,14 @@ export function PCIProjeto({ data, onChange }: Props) {
           <tr>
             <L>Nº DATec</L>
             <E value={data.num_datec} onChange={set('num_datec')} />
-            <td colSpan={10} className="bg-white border border-[#8ea0b4]"></td>
+            <L colSpan={2}>Docum. complementar Sistema Inovador</L>
+            <E value={data.doc_compl_inovador} onChange={set('doc_compl_inovador')} colSpan={8} />
+          </tr>
+          <tr>
+            <L colSpan={2}>Optante pelo Selo Casa Azul - Unidade Isolada?</L>
+            <S value={data.selo_casa_azul} onChange={set('selo_casa_azul')} options={['(escolha)', 'Sim', 'Não']} />
+            <L colSpan={2}>Documentação complementar Selo</L>
+            <E value={data.doc_compl_selo} onChange={set('doc_compl_selo')} colSpan={7} />
           </tr>
         </tbody>
       </table>
@@ -86,9 +93,16 @@ export function PCIProjeto({ data, onChange }: Props) {
       {/* MEMORIAL DESCRITIVO */}
       <table className="w-full border-collapse mt-0">
         <tbody>
-          <tr><td colSpan={12} className="bg-[#2F528F]/80 px-3 py-0.5 border border-[#1a3a6e]">
-            <span className="text-[9px] font-bold text-white">Discriminar a solução prevista em projeto para caracterizar o padrão do acabamento</span>
+          <tr><td colSpan={14} className="bg-[#2F528F]/80 px-3 py-0.5 border border-[#1a3a6e]">
+            <span className="text-[9px] font-bold text-white">Memorial Descritivo</span>
           </td></tr>
+          <tr>
+            <td colSpan={12} className="bg-white border border-[#8ea0b4] px-2 py-1">
+              <span className="text-[8px] text-slate-500">Discriminar a solução prevista em projeto para caracterizar o padrão do acabamento</span>
+            </td>
+            <L>Padrão Acabamento</L>
+            <S value={data.padrao_acabamento} onChange={set('padrao_acabamento')} options={LISTA_PADRAO} />
+          </tr>
           {/* Linha 1: Cobertura, Teto, Pavtos, Quartos, Suítes, Salas, Vagas, Tipo Vagas */}
           <tr>
             <L>Cobertura</L>
