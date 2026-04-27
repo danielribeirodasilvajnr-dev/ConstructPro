@@ -3,6 +3,7 @@ import { Plus, Trash2, Filter, Download, Maximize, Share2, PlusCircle, MinusCirc
 import { supabase } from '../../lib/supabase';
 import { ScheduleItem } from '../../lib/types';
 import { cn, formatDate } from '../../lib/utils';
+import { ConfirmModal } from '../ui/ConfirmModal';
 
 interface ScheduleTabProps {
   projectId: string;
@@ -16,6 +17,7 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
   const [editingItem, setEditingItem] = useState<ScheduleItem | null>(null);
   const [formData, setFormData] = useState<Partial<ScheduleItem>>({});
   const [zoom, setZoom] = useState(1); // 1: Compact, 2: Regular, 3: Detailed
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Timeline Logic
   const timelineConfig = useMemo(() => {
@@ -108,10 +110,12 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const confirmDelete = async () => {
+    if (!deletingId) return;
     try {
-      const { error } = await supabase.from('schedule_items').delete().eq('id', id);
+      const { error } = await supabase.from('schedule_items').delete().eq('id', deletingId);
       if (error) throw error;
+      setDeletingId(null);
       onRefresh();
     } catch (err) {
       console.error(err);
@@ -124,50 +128,46 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8 flex flex-col h-full">
       {/* Header Section */}
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
           <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#BCB5AC]">Cronograma de Obra</span>
-          <h2 className="text-4xl font-black text-white tracking-tighter mt-1">Planejamento Estrutural</h2>
+          <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tighter mt-1">Planejamento Estrutural</h2>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {!readOnly && (
-            <button onClick={() => { setEditingItem(null); setFormData({ progress: 0 }); setIsModalOpen(true); }} className="px-5 py-2.5 rounded-lg bg-[#BCB5AC] text-[#1C232E] text-sm font-bold flex items-center gap-2 shadow-lg shadow-black/20 hover:bg-slate-700 transition-all active:scale-95">
+            <button onClick={() => { setEditingItem(null); setFormData({ progress: 0 }); setIsModalOpen(true); }} className="flex-1 sm:flex-none px-4 py-2.5 rounded-lg bg-[#BCB5AC] text-[#1C232E] text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-black/20 hover:bg-slate-700 transition-all active:scale-95 whitespace-nowrap">
               <Plus className="h-4 w-4" /> Nova Etapa
             </button>
           )}
-          <button className="px-5 py-2.5 rounded-lg border border-white/5 bg-[#1C232E] text-white text-sm font-semibold hover:bg-white/5 transition-colors flex items-center gap-2">
+          <button className="flex-1 sm:flex-none px-4 py-2.5 rounded-lg border border-white/5 bg-[#1C232E] text-white text-xs sm:text-sm font-semibold hover:bg-white/5 transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
             <Filter className="h-4 w-4" /> Filtros
-          </button>
-          <button className="px-5 py-2.5 rounded-lg bg-[#1C232E] border border-white/5 text-white text-sm font-bold flex items-center gap-2 hover:bg-white/5 transition-all">
-            <Download className="h-4 w-4" /> Exportar Relatório
           </button>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-[#1C232E] p-5 rounded-xl border border-white/5 relative overflow-hidden group">
-          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Status Global</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="bg-[#1C232E] p-4 sm:p-5 rounded-xl border border-white/5 relative overflow-hidden group">
+          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Status</p>
           <div className="flex items-center gap-2">
-            <span className={cn("w-3 h-3 rounded-full animate-pulse", scheduleAtrasadas > 0 ? "bg-orange-500" : "bg-emerald-500")}></span>
-            <span className="text-2xl font-black text-white">{scheduleAtrasadas > 0 ? 'Atrasado' : 'No Prazo'}</span>
+            <span className={cn("w-2 h-2 sm:w-3 sm:h-3 rounded-full animate-pulse", scheduleAtrasadas > 0 ? "bg-orange-500" : "bg-emerald-500")}></span>
+            <span className="text-lg sm:text-2xl font-black text-white">{scheduleAtrasadas > 0 ? 'Atraso' : 'Em Dia'}</span>
           </div>
         </div>
-        <div className="bg-[#1C232E] p-5 rounded-xl border border-white/5">
+        <div className="bg-[#1C232E] p-4 sm:p-5 rounded-xl border border-white/5">
           <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Conclusão</p>
-          <span className="text-2xl font-black text-white">{globalProgress}%</span>
+          <span className="text-lg sm:text-2xl font-black text-white">{globalProgress}%</span>
           <div className="w-full bg-white/10 h-1 rounded-full mt-2 overflow-hidden">
             <div className="h-full bg-[#BCB5AC]" style={{ width: `${globalProgress}%` }}></div>
           </div>
         </div>
-        <div className="bg-[#1C232E] p-5 rounded-xl border-l-4 border-l-orange-500">
+        <div className="bg-[#1C232E] p-4 sm:p-5 rounded-xl border-l-4 border-l-orange-500">
           <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Críticos</p>
-          <span className="text-2xl font-black text-white">{scheduleAtrasadas} Tarefas</span>
-          <p className="text-[10px] text-slate-400 font-medium mt-1">Atenção imediata necessária</p>
+          <span className="text-lg sm:text-2xl font-black text-white">{scheduleAtrasadas} Tarefas</span>
         </div>
-        <div className="bg-[#1C232E] p-5 rounded-xl border border-white/5">
-          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Próxima Entrega</p>
-          <span className="text-2xl font-black text-white">
+        <div className="bg-[#1C232E] p-4 sm:p-5 rounded-xl border border-white/5">
+          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Entrega</p>
+          <span className="text-lg sm:text-2xl font-black text-white">
             {scheduleItems.filter(i => getStatus(i) === 'Pendente').sort((a,b) => a.end_date.localeCompare(b.end_date))[0]?.end_date 
              ? formatDate(scheduleItems.filter(i => getStatus(i) === 'Pendente').sort((a,b) => a.end_date.localeCompare(b.end_date))[0].end_date, { day: '2-digit', month: 'short' })
              : '--'}
@@ -175,8 +175,8 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
         </div>
       </div>
 
-      {/* Main Gantt UI */}
-      <div className="flex-1 flex overflow-hidden rounded-2xl bg-[#1C232E] border border-white/5 min-h-[500px]">
+      {/* Main Gantt UI (Desktop Only) */}
+      <div className="hidden lg:flex flex-1 overflow-hidden rounded-2xl bg-[#1C232E] border border-white/5 min-h-[500px]">
         {/* Left Pane: Task List */}
         <div className="w-[450px] flex flex-col border-r border-white/10 overflow-hidden">
           <div className="h-12 flex items-center px-6 bg-[#2B3647] text-white text-[10px] font-bold uppercase tracking-[0.15em] border-b border-white/5">
@@ -216,7 +216,7 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
                     {getStatus(item)}
                   </span>
                   {!readOnly && (
-                    <button onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }} className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-500 hover:text-red-500 transition-all rounded-lg hover:bg-red-500/10">
+                    <button onClick={(e) => { e.stopPropagation(); setDeletingId(item.id); }} className="md:opacity-0 group-hover:opacity-100 p-1.5 text-slate-500 hover:text-red-500 transition-all rounded-lg hover:bg-red-500/10">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   )}
@@ -320,10 +320,79 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
         </div>
       </div>
 
+      {/* Mobile Timeline View */}
+      <div className="lg:hidden flex flex-col gap-4">
+        {scheduleItems.length === 0 && (
+          <div className="p-12 text-center bg-[#1C232E] rounded-2xl border border-white/5">
+            <p className="text-slate-500 font-bold">Nenhuma etapa cadastrada.</p>
+          </div>
+        )}
+        <div className="space-y-4">
+          {scheduleItems.map((item) => (
+            <div key={item.id} className="bg-[#1C232E] rounded-2xl border border-white/5 p-5 space-y-4 relative active:bg-white/5 transition-colors">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-white font-bold text-lg leading-tight">{item.name}</h3>
+                  <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1">
+                    Dependência: {item.dependency || 'Nenhuma'}
+                  </p>
+                </div>
+                <span className={cn(
+                  "px-2 py-1 rounded text-[9px] font-black uppercase",
+                  getStatus(item) === 'Concluído' ? "bg-emerald-500/10 text-emerald-500" :
+                  getStatus(item) === 'Atrasado' ? "bg-orange-500/10 text-orange-500" :
+                  "bg-[#BCB5AC]/10 text-[#BCB5AC]"
+                )}>
+                  {getStatus(item)}
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                  <span>{formatDate(item.start_date)} - {formatDate(item.end_date)}</span>
+                  <span>{item.progress}%</span>
+                </div>
+                <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                  <div className={cn("h-full transition-all duration-500", 
+                    getStatus(item) === 'Concluído' ? "bg-emerald-500" : 
+                    getStatus(item) === 'Atrasado' ? "bg-orange-500" : "bg-[#BCB5AC]"
+                  )} style={{ width: `${item.progress}%` }}></div>
+                </div>
+              </div>
+
+              {!readOnly && (
+                <div className="flex gap-2 pt-2 border-t border-white/5">
+                  <button 
+                    onClick={() => { setEditingItem(item); setFormData(item); setIsModalOpen(true); }}
+                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95"
+                  >
+                    <Edit className="h-3 w-3" /> Editar
+                  </button>
+                  <button 
+                    onClick={() => setDeletingId(item.id)}
+                    className="px-4 py-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-red-500 transition-all active:scale-95"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <ConfirmModal 
+        isOpen={!!deletingId}
+        onClose={() => setDeletingId(null)}
+        onConfirm={confirmDelete}
+        title="Excluir Etapa?"
+        message="Tem certeza que deseja excluir esta etapa do cronograma? Esta ação não pode ser desfeita."
+      />
+
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-[#0B0F19]/95 backdrop-blur-xl" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
+          <div className="absolute inset-0 bg-[#0B0F19]/95 sm:backdrop-blur-xl" onClick={() => setIsModalOpen(false)}></div>
+          <div className="relative bg-[#1C232E] rounded-none sm:rounded-[32px] shadow-2xl border-x-0 sm:border border-white/5 w-full h-full sm:h-auto sm:max-w-lg overflow-y-auto animate-in zoom-in-95 duration-200">
             <div className="p-8 pb-4 flex items-center justify-between border-b border-white/5">
               <div>
                 <h3 className="text-xl font-bold text-white tracking-tight">Nova Etapa</h3>
