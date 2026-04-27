@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Trash2, Filter, Download, Maximize, Share2, PlusCircle, MinusCircle } from 'lucide-react';
+import { Plus, Trash2, Filter, Download, Maximize, Share2, PlusCircle, MinusCircle, Edit } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { ScheduleItem } from '../../lib/types';
 import { cn, formatDate } from '../../lib/utils';
