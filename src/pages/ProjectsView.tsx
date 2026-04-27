@@ -24,6 +24,8 @@ import { Project } from '../lib/types';
 import { AlertModal } from '../components/ui/AlertModal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { ProprietorView } from './ProprietorView';
+import { useAuth } from '../contexts/AuthContext';
+import { useEffect } from 'react';
 
 
 interface ProjectsViewProps {
@@ -233,6 +235,12 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         >
           <Plus className="h-4 w-4" /> Novo Projeto
         </button>
+      </div>
+
+      <div className="bg-emerald-900/50 border border-emerald-500 p-4 rounded-xl text-white font-mono text-xs mb-8">
+        <p><strong>USER:</strong> {user?.email || 'NULL'}</p>
+        <p><strong>PROJECTS COUNT:</strong> {projects.length}</p>
+        <p><strong>LOADING:</strong> {loadingProjects ? 'YES' : 'NO'}</p>
       </div>
 
       {loadingProjects ? (

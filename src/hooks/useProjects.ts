@@ -73,10 +73,14 @@ export function useProjects() {
       } catch (err: any) {
         setError(err.message);
       } finally {
-        clearTimeout(timeout);
         setLoading(false);
       }
-    };
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchProjects();
