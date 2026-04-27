@@ -35,15 +35,16 @@ export function formatDate(dateStr: string, options?: Intl.DateTimeFormatOptions
   return date.toLocaleDateString('pt-BR', options);
 }
 
-export function sanitizeFileName(fileName: string): string {
-  return fileName
+export function sanitizeFileName(fileName: string | undefined | null): string {
+  const name = fileName || `arquivo_${Date.now()}`;
+  return String(name)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Remove accents
     .replace(/[^\w.-]/g, '_')        // Replace special characters and spaces with underscores
     .replace(/_{2,}/g, '_');         // Replace multiple underscores with a single one
 }
 
-export async function compressImage(file: File, maxWidth = 1200, quality = 0.7): Promise<Blob> {
+export async function compressImage(file: File, maxWidth = 1200, quality = 0.7): Promise<File> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -69,8 +70,12 @@ export async function compressImage(file: File, maxWidth = 1200, quality = 0.7):
         canvas.toBlob(
           (blob) => {
             if (blob) {
-              // Create a new file from the blob to preserve the name
-              resolve(blob);
+              // Create a new File from the blob to preserve the name and metadata
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
             } else {
               reject(new Error('Falha na compressão da imagem.'));
             }

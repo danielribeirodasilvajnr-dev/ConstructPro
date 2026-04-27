@@ -10,7 +10,7 @@ interface DailyLogWithPhotos extends DailyLog {
 }
 
 interface PhotoUploadItem {
-  file: File | Blob | null;
+  file: File | null;
   description: string;
   previewUrl: string | null;
   id: string;
@@ -137,7 +137,8 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
         for (const item of photosToUpload) {
           if (item.file) {
             // New photo: upload and insert
-            const sanitizedName = sanitizeFileName(item.file.name);
+            const fileNameToSanitize = (item.file as any).name || `foto_${Date.now()}.jpg`;
+            const sanitizedName = sanitizeFileName(fileNameToSanitize);
             const fileName = `${projectId}/${logId}/${Date.now()}-${sanitizedName}`;
             
             const { error: uploadError } = await supabase.storage
@@ -156,7 +157,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
             const { error: photoLogError } = await supabase.from('daily_log_photos').insert({
               log_id: logId,
               image_url: publicUrl,
-              description: item.description || item.file.name
+              description: item.description || (item.file as any).name || 'Sem descrição'
             });
 
             if (photoLogError) console.error('Error linking photo to log:', photoLogError);
