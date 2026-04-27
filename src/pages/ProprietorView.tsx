@@ -26,6 +26,7 @@ import { ProjectDocument } from '../lib/types';
 
 interface ProprietorViewProps {
   selectedProjectId: string | null;
+  onBack?: () => void;
 }
 
 interface NewDocument {
@@ -34,7 +35,7 @@ interface NewDocument {
 }
 
 // --- Proprietor View ---
-export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
+export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProps) {
   const { user } = useAuth();
   const { projects } = useProjects();
   const project = projects.find(p => p.id === selectedProjectId);
@@ -182,6 +183,14 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
         animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden rounded-xl p-8 bg-gradient-to-br from-primary to-primary-container text-white min-h-[280px] flex flex-col justify-end"
       >
+        {onBack && (
+          <button 
+            onClick={onBack}
+            className="absolute top-6 left-6 z-20 p-2 bg-black/20 hover:bg-black/40 rounded-full transition-colors border border-white/10"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+        )}
         <div className="absolute top-0 right-0 w-1/2 h-full opacity-20 pointer-events-none">
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSXTwlkIJ2po2lzhvYHkYpNiu8Zk_DwOJw2l53rUcGp10lJqXyv0XuMhldOJFuT_NtQIW9AN7rreILGvKctD0nFmBs9O9tIE_S1AfcVcDAJgckrFbSgnPWL_4WVMGZnBgEFaG-dYNQYyFEIZTfOckeN2lus9T7k65MALihPkP0Av87k_Hh1GLgtrYJ1SQL0Z0K1oOilkUZwYJ2CtPBQZFCZHmE3_QNATf62qpzxfaIK7-ZbgapOTLDeApDVFmoG78IMVK9gV_iGA"

@@ -23,6 +23,7 @@ import { cn } from '../lib/utils';
 import { Project } from '../lib/types';
 import { AlertModal } from '../components/ui/AlertModal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ProprietorView } from './ProprietorView';
 
 
 interface ProjectsViewProps {
@@ -107,6 +108,12 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
   if (selectedProjectId && selectedProject) {
+    // SECURITY FIX: If the user's role for this specific project is 'proprietor',
+    // force them into the ProprietorView, preventing access to the financial tabs.
+    if (userRole === 'proprietor') {
+      return <ProprietorView selectedProjectId={selectedProjectId} onBack={() => onSelectProject(null)} />;
+    }
+
     return (
       <div className="space-y-8 max-w-[1400px] mx-auto pb-24 relative animate-in fade-in duration-300">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
