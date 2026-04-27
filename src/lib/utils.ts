@@ -53,7 +53,7 @@ export function sanitizeFileName(fileName: any): string {
   }
 }
 
-export async function compressImage(file: File, maxWidth = 1200, quality = 0.7): Promise<File> {
+export async function compressImage(file: File, maxWidth = 800, quality = 0.6): Promise<File> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);

@@ -135,8 +135,8 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
           }
         }
 
-        // 2. Handle Uploads and Updates
-        for (const item of photosToUpload) {
+        // 2. Handle Uploads and Updates in parallel
+        const uploadPromises = photosToUpload.map(async (item) => {
           if (item.file) {
             // New photo: upload and insert
             let sanitizedName = `foto_${Date.now()}.jpg`;
@@ -155,7 +155,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
 
             if (uploadError) {
               console.error('Error uploading photo:', uploadError);
-              continue;
+              return;
             }
 
             const { data: { publicUrl } } = supabase.storage
@@ -178,7 +178,9 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
             
             if (updateError) console.error('Error updating photo description:', updateError);
           }
-        }
+        });
+
+        await Promise.all(uploadPromises);
       }
 
       setIsModalOpen(false);
