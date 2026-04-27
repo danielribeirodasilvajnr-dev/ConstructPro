@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Plus, Edit, Trash2, Camera, Sun, Cloud, HardHat, X, Image as ImageIcon, UploadCloud, PlusCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { DailyLog, DailyLogPhoto } from '../../lib/types';
-import { cn, formatDate, sanitizeFileName } from '../../lib/utils';
+import { cn, formatDate, sanitizeFileName, compressImage } from '../../lib/utils';
 import { AlertModal } from '../ui/AlertModal';
 
 interface DailyLogWithPhotos extends DailyLog {
@@ -10,7 +10,7 @@ interface DailyLogWithPhotos extends DailyLog {
 }
 
 interface PhotoUploadItem {
-  file: File | null;
+  file: File | Blob | null;
   description: string;
   previewUrl: string | null;
   id: string;
@@ -63,14 +63,30 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
     if (file) {
-      handleUpdatePhoto(index, {
-        file,
-        previewUrl: URL.createObjectURL(file),
-        description: formData.activities ? formData.activities.slice(0, 50) : file.name
-      });
+      try {
+        // Revoke old preview if exists
+        if (photosToUpload[index].previewUrl && !photosToUpload[index].existingId) {
+          URL.revokeObjectURL(photosToUpload[index].previewUrl!);
+        }
+
+        const compressedBlob = await compressImage(file);
+        handleUpdatePhoto(index, {
+          file: compressedBlob,
+          previewUrl: URL.createObjectURL(compressedBlob),
+          description: formData.activities ? formData.activities.slice(0, 50) : file.name
+        });
+      } catch (err) {
+        console.error('Error compressing image:', err);
+        // Fallback to original file if compression fails
+        handleUpdatePhoto(index, {
+          file,
+          previewUrl: URL.createObjectURL(file),
+          description: formData.activities ? formData.activities.slice(0, 50) : file.name
+        });
+      }
     }
   };
 
@@ -194,11 +210,13 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
 
     setUploading(true);
     try {
+      const compressedBlob = await compressImage(file);
       const sanitizedName = sanitizeFileName(file.name);
       const fileName = `${projectId}/${logId}/${Date.now()}-${sanitizedName}`;
+      
       const { error: uploadError } = await supabase.storage
         .from('daily_logs')
-        .upload(fileName, file);
+        .upload(fileName, compressedBlob);
 
       if (uploadError) {
         console.error('Quick upload storage error:', uploadError);
@@ -339,11 +357,11 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-[#0B0F19]/95 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-            <div className="p-8 pb-6 flex items-center justify-between border-b border-white/5">
+          <div className="relative bg-[#1C232E] rounded-t-[32px] md:rounded-[32px] shadow-2xl border border-white/5 w-full max-w-2xl overflow-hidden animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-200 flex flex-col h-[95vh] md:max-h-[90vh]">
+            <div className="p-5 md:p-8 flex items-center justify-between border-b border-white/5">
               <div>
-                <h3 className="text-2xl font-bold text-white tracking-tight">Registro de Diário de Obra</h3>
-                <p className="text-sm text-slate-400">Preencha os detalhes do dia e anexe evidências.</p>
+                <h3 className="text-xl md:text-2xl font-bold text-white tracking-tight">Registro de Diário de Obra</h3>
+                <p className="text-xs md:text-sm text-slate-400">Preencha os detalhes do dia e anexe evidências.</p>
               </div>
               <button 
                 onClick={() => setIsModalOpen(false)} 
@@ -353,8 +371,8 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
               </button>
             </div>
 
-            <div className="px-8 py-8 space-y-8 overflow-y-auto scrollbar-hide">
-              <div className="grid grid-cols-3 gap-6">
+            <div className="px-5 md:px-8 py-6 md:py-8 space-y-6 md:space-y-8 overflow-y-auto scrollbar-hide">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Data</label>
                   <input type="date" value={formData.date || ''} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full bg-[#1C232E] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none transition-all" />
@@ -445,12 +463,12 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
               </div>
             </div>
 
-            <div className="p-8 bg-[#1C232E]/50 border-t border-white/5 flex items-center justify-end gap-6">
-              <button onClick={() => setIsModalOpen(false)} className="text-[11px] font-black text-slate-600 uppercase tracking-widest hover:text-white transition-colors">Cancelar</button>
+            <div className="p-5 md:p-8 bg-[#1C232E]/50 border-t border-white/5 flex flex-col md:flex-row items-center justify-end gap-4 md:gap-6">
+              <button onClick={() => setIsModalOpen(false)} className="order-2 md:order-1 text-[11px] font-black text-slate-600 uppercase tracking-widest hover:text-white transition-colors">Cancelar</button>
               <button 
                 onClick={handleSave} 
                 disabled={uploading || !formData.date || !formData.activities}
-                className="px-12 py-4 bg-[#BCB5AC] text-[#1C232E] text-[11px] font-black rounded-2xl uppercase tracking-[2px] hover:bg-slate-700 transition-all shadow-2xl shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 flex items-center gap-3"
+                className="order-1 md:order-2 w-full md:w-auto px-12 py-4 bg-[#BCB5AC] text-[#1C232E] text-[11px] font-black rounded-2xl uppercase tracking-[2px] hover:bg-slate-700 transition-all shadow-2xl shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
               >
                 {uploading ? (
                   <>

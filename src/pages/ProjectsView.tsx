@@ -109,26 +109,26 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
   if (selectedProjectId && selectedProject) {
     return (
       <div className="space-y-8 max-w-[1400px] mx-auto pb-24 relative animate-in fade-in duration-300">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <button onClick={() => onSelectProject(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white">
+            <button onClick={() => onSelectProject(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white shrink-0">
               <ChevronLeft className="h-6 w-6" />
             </button>
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-3xl font-bold tracking-tight text-white">{selectedProject.name}</h2>
-                <span className="px-2.5 py-0.5 text-xs font-bold rounded-md bg-[#FFF3D6] text-[#C48C00]">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h2 className="text-xl md:text-3xl font-bold tracking-tight text-white truncate">{selectedProject.name}</h2>
+                <span className="px-2.5 py-0.5 text-[10px] md:text-xs font-bold rounded-md bg-[#FFF3D6] text-[#C48C00] shrink-0">
                   {selectedProject.status}
                 </span>
               </div>
-              <p className="text-slate-400 text-sm mt-1">{selectedProject.location} • Início: {selectedProject.start_date || 'N/D'}</p>
+              <p className="text-slate-400 text-xs md:text-sm mt-1 truncate">{selectedProject.location} • Início: {selectedProject.start_date || 'N/D'}</p>
             </div>
           </div>
           {userRole === 'owner' && (
             <button
               onClick={() => setActiveTab('colaboradores')}
               className={cn(
-                "px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-colors border",
+                "w-full md:w-auto px-4 py-2 text-[10px] md:text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-colors border",
                 activeTab === 'colaboradores'
                   ? "bg-[#BCB5AC] text-[#1C232E] border-[#BCB5AC]"
                   : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
@@ -139,7 +139,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           )}
         </div>
 
-        <div className="flex border-b border-slate-800 mb-10 overflow-x-auto scrollbar-hide">
+        <div className="flex border-b border-slate-800 mb-6 md:mb-10 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
           {[
             { id: 'orcamento', label: 'Orçamento' },
             { id: 'cronograma', label: 'Cronograma' },
@@ -150,7 +150,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={cn(
-                "px-8 py-5 text-[11px] font-bold uppercase tracking-[2px] border-b-2 transition-all whitespace-nowrap",
+                "px-5 md:px-8 py-4 md:py-5 text-[10px] md:text-[11px] font-bold uppercase tracking-[1px] md:tracking-[2px] border-b-2 transition-all whitespace-nowrap",
                 activeTab === tab.id
                   ? "border-[#BCB5AC] text-[#BCB5AC]"
                   : "border-transparent text-slate-500 hover:text-slate-300"
