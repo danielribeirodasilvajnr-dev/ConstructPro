@@ -7,6 +7,7 @@ import { FinancialsView } from './pages/FinancialsView';
 import { LogsView } from './pages/LogsView';
 import { BudgetView } from './pages/BudgetView';
 import { ProjectsView } from './pages/ProjectsView';
+import { PCIView } from './pages/PCIView';
 import { ProprietorView } from './pages/ProprietorView';
 import { CalculatorView } from './pages/CalculatorView';
 import { AuthView } from './pages/AuthView';
@@ -140,15 +141,7 @@ export default function App() {
       case 'resources':
         return <CalculatorView />;
       case 'pci':
-        return (
-          <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-4">
-            <div className="w-20 h-20 bg-[#BCB5AC]/10 rounded-full flex items-center justify-center">
-              <FileSpreadsheet className="h-10 w-10 text-[#BCB5AC]" />
-            </div>
-            <h2 className="text-2xl font-black text-white">Planilha PCI</h2>
-            <p className="text-slate-500 max-w-md">Módulo em desenvolvimento. Aqui você poderá gerenciar suas planilhas de Proposta de Construção Individual (PCI).</p>
-          </div>
-        );
+        return <PCIView />;
       case 'safety':
         return <ProprietorView selectedProjectId={selectedProjectId} />;
       default:

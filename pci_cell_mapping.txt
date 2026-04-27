@@ -1,0 +1,7 @@
+﻿Proponente|Row:6|Col:7
+E-mail|Row:43|Col:25
+CPF/CNPJ Prop.|Row:43|Col:37
+Telefone Prop.|Row:43|Col:43
+RTP|Row:46|Col:7
+RTE|Row:49|Col:7
+Finalidade|Row:30|Col:11
