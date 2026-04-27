@@ -178,7 +178,7 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
       {/* Main Gantt UI (Desktop Only) */}
       <div className="hidden lg:flex flex-1 overflow-hidden rounded-2xl bg-[#1C232E] border border-white/5 min-h-[500px]">
         {/* Left Pane: Task List */}
-        <div className="w-[450px] flex flex-col border-r border-white/10 overflow-hidden">
+        <div className="w-[400px] sm:w-[450px] flex flex-col border-r border-white/10 overflow-hidden shrink-0">
           <div className="h-12 flex items-center px-6 bg-[#2B3647] text-white text-[10px] font-bold uppercase tracking-[0.15em] border-b border-white/5">
             <div className="w-1/2">Etapa / Tarefa</div>
             <div className="w-1/4 px-2">Datas</div>
@@ -284,6 +284,9 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
                 );
               })}
 
+            {/* Bottom Padding for floating controls */}
+            <div className="h-20 w-full" />
+
             {/* Today Marker */}
             <div 
               className="absolute top-0 bottom-0 w-px bg-red-500/50 z-20 pointer-events-none" 
@@ -295,25 +298,28 @@ export function ScheduleTab({ projectId, scheduleItems, onRefresh, readOnly }: S
           </div>
 
           {/* Floating Controls */}
-          <div className="absolute bottom-6 right-6 flex items-center gap-2 z-30">
-            <div className="flex bg-[#1C232E] border border-white/10 rounded-xl p-1 shadow-2xl backdrop-blur-md">
+          <div className="absolute bottom-8 right-8 flex items-center gap-2 z-50">
+            <div className="flex bg-[#1C232E]/80 border border-white/10 rounded-xl p-1 shadow-2xl backdrop-blur-xl transition-all hover:bg-[#1C232E]">
               <button 
                 onClick={() => setZoom(Math.max(1, zoom - 1))}
-                className="p-2 text-slate-400 hover:text-white transition-colors"
+                className="p-2.5 text-slate-400 hover:text-white transition-colors"
+                title="Diminuir Zoom"
               >
                 <MinusCircle className="h-4 w-4" />
               </button>
+              <div className="w-px h-4 bg-white/10 self-center" />
               <button 
                 onClick={() => setZoom(Math.min(5, zoom + 1))}
-                className="p-2 text-slate-400 hover:text-white transition-colors"
+                className="p-2.5 text-slate-400 hover:text-white transition-colors"
+                title="Aumentar Zoom"
               >
                 <PlusCircle className="h-4 w-4" />
               </button>
             </div>
-            <button className="p-3 bg-[#1C232E] border border-white/10 text-slate-400 hover:text-white transition-colors rounded-xl shadow-2xl backdrop-blur-md">
-              <Share2 className="h-4 w-4" />
-            </button>
-            <button className="p-3 bg-primary text-on-primary transition-colors rounded-xl shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95">
+            <button 
+              className="p-3.5 bg-[#1C232E]/80 border border-white/10 text-slate-400 hover:text-white transition-colors rounded-xl shadow-2xl backdrop-blur-xl"
+              title="Expandir"
+            >
               <Maximize className="h-4 w-4" />
             </button>
           </div>
