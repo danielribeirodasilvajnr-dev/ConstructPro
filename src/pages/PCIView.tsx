@@ -15,54 +15,81 @@ import { cn } from '../lib/utils';
 
 type PCIStep = 'identification' | 'memorial' | 'budget' | 'summary';
 
+const InputGroup = ({ label, children }: { label: string, children: React.ReactNode }) => (
+  <div className="space-y-0 border border-slate-700 rounded-lg overflow-hidden shadow-lg mb-8">
+    <div className="bg-[#2F528F] px-4 py-2 border-b border-slate-700">
+      <h3 className="text-xs font-black text-white uppercase tracking-wider">{label}</h3>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-12 bg-[#E9EBF5]">
+      {children}
+    </div>
+  </div>
+);
+
+const InputField = ({ label, placeholder, value, onChange, className = "md:col-span-4", required = false }: any) => (
+  <div className={cn(
+    "border-r border-b border-white/40 p-2 transition-colors", 
+    required ? "bg-[#D9E1F2]" : "bg-[#E9EBF5]",
+    className
+  )}>
+    <label className="block text-[9px] font-bold text-slate-600 uppercase mb-1">
+      {label} {required && <span className="text-blue-600">*</span>}
+    </label>
+    <input 
+      type="text" 
+      placeholder={placeholder}
+      className="w-full bg-transparent border-none p-0 text-sm text-slate-900 font-bold placeholder:text-slate-400 focus:ring-0 outline-none"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+    />
+  </div>
+);
+
+const UFField = ({ label, value, onChange, required = true }: any) => (
+  <div className={cn(
+    "md:col-span-1 border-r border-b border-white/40 p-2 flex flex-col items-center justify-center transition-colors",
+    required ? "bg-[#D9E1F2]" : "bg-orange-50/50",
+  )}>
+    <label className="block text-[9px] font-bold text-slate-600 uppercase mb-1">{label}</label>
+    <input 
+      type="text" 
+      maxLength={2}
+      className="w-full bg-transparent border-none p-0 text-xs text-center text-slate-900 font-black placeholder:text-slate-400 focus:ring-0 outline-none uppercase"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+    />
+  </div>
+);
+
 export function PCIView() {
   const [activeStep, setActiveStep] = useState<PCIStep>('identification');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    // Proponente
     proponente_nome: '',
     proponente_email: '',
     proponente_cpf_cnpj: '',
     proponente_telefone: '',
-    
-    // RT Projeto (RTP)
     rtp_nome: '',
     rtp_email: '',
-    rtp_conselho: '', // CAU/CREA/CFT
+    rtp_conselho: '',
     rtp_uf: '',
     rtp_cpf: '',
     rtp_telefone: '',
-
-    // RT Execuo (RTE)
     rte_nome: '',
     rte_email: '',
     rte_conselho: '',
     rte_uf: '',
     rte_cpf: '',
     rte_telefone: '',
-
-    // Imvel
     imovel_endereco: '',
     imovel_complemento: '',
     imovel_bairro: '',
     imovel_cep: '',
     imovel_municipio: '',
     imovel_uf: '',
-    imovel_matricula: '',
-    imovel_ori: '',
-    imovel_coordenadas: '',
-    imovel_construtora: '',
-    imovel_cnpj_construtora: '',
-    imovel_finalidade: '',
-
-    // Outros
-    tipo_proposta: 'construcao_terreno_proprio',
-    destino_imovel: 'residencial',
     memorial_cobertura: '',
     memorial_paredes_externas: '',
     memorial_paredes_internas: '',
-    valor_terreno: 0,
-    valor_obra: 0,
   });
 
   const steps = [
@@ -74,46 +101,8 @@ export function PCIView() {
 
   const handleSave = async () => {
     setLoading(true);
-    // TODO: Implement Supabase Save
     setTimeout(() => setLoading(false), 1000);
   };
-
-  const InputGroup = ({ label, children }: { label: string, children: React.ReactNode }) => (
-    <div className="space-y-0 border border-slate-700 rounded-lg overflow-hidden shadow-lg mb-8">
-      <div className="bg-[#2F528F] px-4 py-2 border-b border-slate-700">
-        <h3 className="text-xs font-black text-white uppercase tracking-wider">{label}</h3>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-12 bg-[#E9EBF5]">
-        {children}
-      </div>
-    </div>
-  );
-
-  const InputField = ({ label, placeholder, value, onChange, className = "md:col-span-4" }: any) => (
-    <div className={cn("border-r border-b border-white/40 p-2", className)}>
-      <label className="block text-[9px] font-bold text-slate-600 uppercase mb-1">{label}</label>
-      <input 
-        type="text" 
-        placeholder={placeholder}
-        className="w-full bg-transparent border-none p-0 text-sm text-slate-900 font-bold placeholder:text-slate-400 focus:ring-0 outline-none"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-      />
-    </div>
-  );
-
-  const UFField = ({ label, value, onChange }: any) => (
-    <div className="md:col-span-1 border-r border-b border-white/40 p-2 flex flex-col items-center justify-center bg-orange-50/50">
-      <label className="block text-[9px] font-bold text-slate-600 uppercase mb-1">{label}</label>
-      <input 
-        type="text" 
-        maxLength={2}
-        className="w-full bg-transparent border-none p-0 text-xs text-center text-slate-900 font-black placeholder:text-slate-400 focus:ring-0 outline-none uppercase"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-      />
-    </div>
-  );
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
@@ -124,9 +113,7 @@ export function PCIView() {
           <h2 className="text-4xl font-black text-white tracking-tighter mt-1">PCI Digital</h2>
         </div>
         <div className="flex gap-2">
-           <button 
-            className="px-6 py-3 rounded-xl bg-white/5 text-white font-bold flex items-center gap-2 hover:bg-white/10 transition-all active:scale-95 border border-white/10"
-          >
+          <button className="px-6 py-3 rounded-xl bg-white/5 text-white font-bold flex items-center gap-2 hover:bg-white/10 transition-all active:scale-95 border border-white/10">
             Visualizar Impressão
           </button>
           <button 
@@ -142,7 +129,7 @@ export function PCIView() {
 
       {/* Stepper Navigation */}
       <div className="flex items-center justify-between bg-[#1C232E] p-2 rounded-2xl border border-white/5 overflow-x-auto gap-2">
-        {steps.map((step, index) => {
+        {steps.map((step) => {
           const Icon = step.icon;
           const isActive = activeStep === step.id;
           return (
@@ -186,6 +173,7 @@ export function PCIView() {
                 <InputField 
                   label="Proponente" 
                   className="md:col-span-5"
+                  required={true}
                   value={formData.proponente_nome}
                   onChange={(v: string) => setFormData({...formData, proponente_nome: v})}
                 />
@@ -198,12 +186,14 @@ export function PCIView() {
                 <InputField 
                   label="CPF/CNPJ Prop." 
                   className="md:col-span-2"
+                  required={true}
                   value={formData.proponente_cpf_cnpj}
                   onChange={(v: string) => setFormData({...formData, proponente_cpf_cnpj: v})}
                 />
                 <InputField 
                   label="Telefone Prop." 
                   className="md:col-span-2"
+                  required={true}
                   value={formData.proponente_telefone}
                   onChange={(v: string) => setFormData({...formData, proponente_telefone: v})}
                 />
@@ -211,6 +201,7 @@ export function PCIView() {
                 <InputField 
                   label="RT pelo Proj. Arquit./Edif. - RTP" 
                   className="md:col-span-4"
+                  required={true}
                   value={formData.rtp_nome}
                   onChange={(v: string) => setFormData({...formData, rtp_nome: v})}
                 />
@@ -223,6 +214,7 @@ export function PCIView() {
                 <InputField 
                   label="Nº CAU/CREA/CFT-RTP" 
                   className="md:col-span-2"
+                  required={true}
                   value={formData.rtp_conselho}
                   onChange={(v: string) => setFormData({...formData, rtp_conselho: v})}
                 />
@@ -234,6 +226,7 @@ export function PCIView() {
                 <InputField 
                   label="CPF - RTP" 
                   className="md:col-span-1.5"
+                  required={true}
                   value={formData.rtp_cpf}
                   onChange={(v: string) => setFormData({...formData, rtp_cpf: v})}
                 />
@@ -247,6 +240,7 @@ export function PCIView() {
                 <InputField 
                   label="RT pela Execução da Obra - RTE" 
                   className="md:col-span-4"
+                  required={true}
                   value={formData.rte_nome}
                   onChange={(v: string) => setFormData({...formData, rte_nome: v})}
                 />
@@ -259,6 +253,7 @@ export function PCIView() {
                 <InputField 
                   label="Nº CAU/CREA/CFT-RTE" 
                   className="md:col-span-2"
+                  required={true}
                   value={formData.rte_conselho}
                   onChange={(v: string) => setFormData({...formData, rte_conselho: v})}
                 />
@@ -270,6 +265,7 @@ export function PCIView() {
                 <InputField 
                   label="CPF - RTE" 
                   className="md:col-span-1.5"
+                  required={true}
                   value={formData.rte_cpf}
                   onChange={(v: string) => setFormData({...formData, rte_cpf: v})}
                 />
@@ -285,6 +281,7 @@ export function PCIView() {
                 <InputField 
                   label="Endereço" 
                   className="md:col-span-8"
+                  required={true}
                   value={formData.imovel_endereco}
                   onChange={(v: string) => setFormData({...formData, imovel_endereco: v})}
                 />
@@ -297,18 +294,21 @@ export function PCIView() {
                 <InputField 
                   label="Bairro" 
                   className="md:col-span-4"
+                  required={true}
                   value={formData.imovel_bairro}
                   onChange={(v: string) => setFormData({...formData, imovel_bairro: v})}
                 />
                 <InputField 
                   label="CEP" 
                   className="md:col-span-3"
+                  required={true}
                   value={formData.imovel_cep}
                   onChange={(v: string) => setFormData({...formData, imovel_cep: v})}
                 />
                 <InputField 
                   label="Município" 
                   className="md:col-span-4"
+                  required={true}
                   value={formData.imovel_municipio}
                   onChange={(v: string) => setFormData({...formData, imovel_municipio: v})}
                 />
@@ -337,7 +337,7 @@ export function PCIView() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="p-8 space-y-8"
+              className="space-y-8"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {['cobertura', 'paredes_externas', 'paredes_internas'].map((field) => (
@@ -347,7 +347,7 @@ export function PCIView() {
                     </label>
                     <textarea 
                       placeholder="Descreva o material e acabamento..."
-                      className="w-full bg-[#2B3647]/50 border border-white/5 rounded-2xl px-6 py-4 text-white focus:border-[#BCB5AC] outline-none transition-all shadow-inner min-h-[120px]"
+                      className="w-full bg-[#E9EBF5] border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 focus:border-[#2F528F] outline-none transition-all shadow-inner min-h-[120px]"
                       value={(formData as any)[`memorial_${field}`]}
                       onChange={e => setFormData({...formData, [`memorial_${field}`]: e.target.value})}
                     />
@@ -358,14 +358,14 @@ export function PCIView() {
               <div className="flex justify-between pt-8">
                 <button 
                   onClick={() => setActiveStep('identification')}
-                  className="px-6 py-4 text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2 hover:text-white transition-colors"
+                  className="px-6 py-4 text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2 hover:text-[#2F528F] transition-colors"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Voltar
                 </button>
                 <button 
                   onClick={() => setActiveStep('budget')}
-                  className="px-10 py-4 bg-[#BCB5AC] text-[#1C232E] font-black rounded-2xl uppercase tracking-[2px] flex items-center gap-3 hover:bg-white transition-all shadow-xl shadow-black/30"
+                  className="px-10 py-4 bg-[#2F528F] text-white font-black rounded-2xl uppercase tracking-[2px] flex items-center gap-3 hover:bg-slate-700 transition-all shadow-xl shadow-black/20"
                 >
                   Próximo: Orçamento
                   <ChevronRight className="h-4 w-4" />
@@ -380,27 +380,27 @@ export function PCIView() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="p-8 space-y-8"
+              className="space-y-8"
             >
-              <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-2xl flex items-center gap-4">
+              <div className="bg-red-50 border border-red-100 p-6 rounded-2xl flex items-center gap-4">
                 <AlertCircle className="h-6 w-6 text-red-500 shrink-0" />
                 <div>
-                  <p className="text-red-500 font-bold text-sm">Orçamento Pendente</p>
-                  <p className="text-red-500/70 text-xs">Os itens de orçamento sero importados automaticamente da Planilha PCI selecionada.</p>
+                  <p className="text-red-900 font-bold text-sm">Orçamento Pendente</p>
+                  <p className="text-red-700 text-xs">Os itens de orçamento serão importados automaticamente da Planilha PCI selecionada.</p>
                 </div>
               </div>
 
               <div className="flex justify-between pt-8">
                 <button 
                   onClick={() => setActiveStep('memorial')}
-                  className="px-6 py-4 text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2 hover:text-white transition-colors"
+                  className="px-6 py-4 text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2 hover:text-[#2F528F] transition-colors"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Voltar
                 </button>
                 <button 
                   onClick={() => setActiveStep('summary')}
-                  className="px-10 py-4 bg-[#BCB5AC] text-[#1C232E] font-black rounded-2xl uppercase tracking-[2px] flex items-center gap-3 hover:bg-white transition-all shadow-xl shadow-black/30"
+                  className="px-10 py-4 bg-[#2F528F] text-white font-black rounded-2xl uppercase tracking-[2px] flex items-center gap-3 hover:bg-slate-700 transition-all shadow-xl shadow-black/20"
                 >
                   Resumo Final
                   <ChevronRight className="h-4 w-4" />
@@ -414,21 +414,21 @@ export function PCIView() {
               key="summary"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="p-12 text-center space-y-6"
+              className="text-center space-y-6 py-12"
             >
-              <div className="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle2 className="h-12 w-12 text-emerald-500" />
+              <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle2 className="h-12 w-12 text-emerald-600" />
               </div>
               <div>
-                <h3 className="text-2xl font-black text-white">Pronto para Enviar!</h3>
-                <p className="text-slate-500 mt-2">Sua proposta PCI foi preenchida com sucesso e est pronta para ser exportada ou enviada para anlise.</p>
+                <h3 className="text-2xl font-black text-slate-900">Pronto para Enviar!</h3>
+                <p className="text-slate-500 mt-2">Sua proposta PCI foi preenchida com sucesso e está pronta para ser exportada ou enviada para análise.</p>
               </div>
               <div className="flex justify-center gap-4 pt-4">
-                <button className="px-8 py-4 border border-white/10 rounded-2xl text-white font-bold text-xs uppercase tracking-widest hover:bg-white/5 transition-all">
+                <button className="px-8 py-4 border border-slate-200 rounded-2xl text-slate-600 font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all">
                   Baixar PDF (Modelo Caixa)
                 </button>
-                <button className="px-8 py-4 bg-[#BCB5AC] text-[#1C232E] font-black rounded-2xl text-xs uppercase tracking-widest shadow-xl shadow-black/20 hover:scale-105 transition-all">
-                  Enviar para Aprovao
+                <button className="px-8 py-4 bg-[#2F528F] text-white font-black rounded-2xl text-xs uppercase tracking-widest shadow-xl shadow-black/20 hover:scale-105 transition-all">
+                  Enviar para Aprovação
                 </button>
               </div>
             </motion.div>
