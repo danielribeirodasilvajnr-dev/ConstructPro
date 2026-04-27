@@ -11,7 +11,8 @@ import {
   Cloud,
   Wallet,
   Trash2,
-  X
+  X,
+  Search
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'motion/react';
@@ -50,6 +51,8 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
     title: '',
     message: ''
   });
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
 
   if (!selectedProjectId || !project) {
     return (
@@ -219,29 +222,30 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
 
       <div className="grid grid-cols-12 gap-8">
         <div className="col-span-12 lg:col-span-8 space-y-8">
-          {/* Gallery Section */}
+          {/* Gallery Trigger Card */}
           {allPhotos.length > 0 && (
-            <div className="bg-[#1C232E] rounded-2xl p-8 border border-white/5 shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                  <Camera className="h-5 w-5 text-primary" />
-                  Galeria de Fotos
-                </h3>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {allPhotos.map((photo, i) => (
-                  <div key={i} className="group relative aspect-square rounded-2xl overflow-hidden border border-white/10 bg-black/20 cursor-pointer">
-                    <img 
-                      src={photo.url} 
-                      alt={photo.desc} 
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                      <p className="text-[10px] text-white font-medium line-clamp-2">{photo.desc}</p>
+            <div className="bg-[#1C232E] rounded-2xl p-6 border border-white/5 shadow-sm flex items-center justify-between group cursor-pointer hover:bg-white/5 transition-all" onClick={() => setIsGalleryOpen(true)}>
+              <div className="flex items-center gap-6">
+                <div className="flex -space-x-4 overflow-hidden p-1">
+                  {allPhotos.slice(0, 3).map((photo, i) => (
+                    <div key={i} className="inline-block h-14 w-14 rounded-xl ring-4 ring-[#1C232E] overflow-hidden">
+                      <img src={photo.url} alt="" className="h-full w-full object-cover" />
                     </div>
-                  </div>
-                ))}
+                  ))}
+                  {allPhotos.length > 3 && (
+                    <div className="flex items-center justify-center h-14 w-14 rounded-xl ring-4 ring-[#1C232E] bg-slate-800 text-xs font-bold text-white">
+                      +{allPhotos.length - 3}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Galeria de Fotos</h3>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">Veja a evolução completa da obra</p>
+                </div>
               </div>
+              <button className="px-5 py-2.5 bg-primary/10 text-primary text-xs font-black uppercase tracking-widest rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
+                Ver Galeria
+              </button>
             </div>
           )}
 
@@ -602,6 +606,110 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
             
             <div className="p-6 border-t border-white/5 bg-slate-900/20 text-center shrink-0">
               <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[3px]">AevumPro • Relatório de Progresso</p>
+            </div>
+          </motion.div>
+        </div>
+      )}
+      {/* Gallery Modal */}
+      {isGalleryOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-0 md:p-6 bg-black/90 backdrop-blur-xl">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#1C232E] w-full h-full md:rounded-[40px] border border-white/5 shadow-2xl flex flex-col overflow-hidden max-w-6xl"
+          >
+            <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-primary/20 to-transparent shrink-0">
+              <div>
+                <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                  <Camera className="h-6 w-6 text-primary" />
+                  Galeria de Fotos
+                </h3>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">{allPhotos.length} fotos registradas</p>
+              </div>
+              <button 
+                onClick={() => setIsGalleryOpen(false)}
+                className="p-4 hover:bg-white/5 rounded-2xl transition-colors text-slate-400 hover:text-white"
+              >
+                <X className="h-7 w-7" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                {dailyLogs.flatMap(log =>
+                  (log.daily_log_photos || []).map((photo: any) => ({
+                    url: photo.image_url,
+                    desc: photo.description || log.activities || 'Foto da obra',
+                    date: log.date
+                  }))
+                ).map((photo, i) => (
+                  <div key={i} className="group flex flex-col gap-3">
+                    <div 
+                      onClick={() => setSelectedPhoto(photo)}
+                      className="aspect-square rounded-3xl overflow-hidden border border-white/10 bg-black/40 relative cursor-pointer"
+                    >
+                      <img 
+                        src={photo.url} 
+                        alt="" 
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
+                        <div className="bg-white/20 backdrop-blur-md rounded-full p-4 border border-white/10 transform scale-90 group-hover:scale-100 transition-transform">
+                          <Search className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
+                      <div className="absolute top-4 left-4 px-3 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-bold text-white uppercase tracking-widest border border-white/10">
+                        {formatDate(photo.date)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {selectedPhoto && (
+        <div 
+          className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-12 bg-black/95 backdrop-blur-2xl"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative max-w-5xl w-full flex flex-col gap-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="absolute -top-16 right-0 flex items-center gap-4">
+              <button 
+                onClick={() => setSelectedPhoto(null)}
+                className="p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all border border-white/10"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="rounded-[32px] overflow-hidden border border-white/10 shadow-2xl bg-black/40 aspect-[4/3] md:aspect-video flex items-center justify-center">
+              <img 
+                src={selectedPhoto.url} 
+                alt="" 
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 md:p-8">
+              <div className="flex items-center justify-between gap-6">
+                <div>
+                  <p className="text-xs text-primary font-black uppercase tracking-[3px] mb-2">Registro de Obra</p>
+                  <h4 className="text-xl font-bold text-white leading-tight">{selectedPhoto.desc}</h4>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Data da Foto</p>
+                  <p className="text-sm font-bold text-white">{formatDate(selectedPhoto.date, { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>

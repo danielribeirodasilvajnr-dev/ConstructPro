@@ -13,36 +13,48 @@ import { AuthView } from './pages/AuthView';
 import { useAuth } from './contexts/AuthContext';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [isRoleLoading, setIsRoleLoading] = useState(true);
   const { user } = useAuth();
 
-  React.useEffect(() => {
     async function checkRole() {
-      if (!user) return;
+      if (!user) {
+        setIsRoleLoading(false);
+        return;
+      }
 
-      // Check if user is proprietor in any project
-      const { data: collaborations } = await supabase
-        .from('project_collaborators')
-        .select('project_id, role')
-        .eq('user_id', user.id);
+      setIsRoleLoading(true);
+      try {
+        // Check if user is proprietor in any project
+        const { data: collaborations } = await supabase
+          .from('project_collaborators')
+          .select('project_id, role')
+          .eq('user_id', user.id);
 
-      const { data: projects } = await supabase
-        .from('projects')
-        .select('id')
-        .eq('user_id', user.id);
+        const { data: projects } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('user_id', user.id);
 
-      const roles = collaborations || [];
-      const ownsProjects = (projects || []).length > 0;
-      const isProprietorOf = roles.find(c => c.role === 'proprietor');
+        const roles = collaborations || [];
+        const ownsProjects = (projects || []).length > 0;
+        const isProprietorOf = roles.find(c => c.role === 'proprietor');
 
-      if (isProprietorOf && !ownsProjects) {
-        setIsClient(true);
-        setActiveTab('safety');
-        setSelectedProjectId(isProprietorOf.project_id);
-      } else {
-        setIsClient(false);
+        if (isProprietorOf && !ownsProjects) {
+          setIsClient(true);
+          setActiveTab('safety');
+          setSelectedProjectId(isProprietorOf.project_id);
+        } else {
+          setIsClient(false);
+          setActiveTab('dashboard');
+        }
+      } catch (error) {
+        console.error('Error checking role:', error);
+        setActiveTab('dashboard');
+      } finally {
+        setIsRoleLoading(false);
       }
     }
     checkRole();
@@ -50,6 +62,23 @@ export default function App() {
 
   if (!user) {
     return <AuthView />;
+  }
+
+  if (isRoleLoading || activeTab === null) {
+    return (
+      <div className="fixed inset-0 bg-[#1C232E] flex flex-col items-center justify-center gap-6 z-[1000]">
+        <div className="relative">
+          <div className="h-20 w-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center animate-pulse">
+             <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+          <div className="absolute -inset-4 bg-primary/5 blur-3xl rounded-full animate-pulse" />
+        </div>
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-black text-white uppercase tracking-[4px]">AevumPro</h2>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sincronizando ambiente seguro...</p>
+        </div>
+      </div>
+    );
   }
 
 
