@@ -13,58 +13,38 @@ import { AuthView } from './pages/AuthView';
 import { useAuth } from './contexts/AuthContext';
 
 export default function App() {
+  const { user, isProprietor, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [isClient, setIsClient] = useState(false);
-  const [isRoleLoading, setIsRoleLoading] = useState(true);
-  const { user } = useAuth();
 
-    async function checkRole() {
-      if (!user) {
-        setIsRoleLoading(false);
-        return;
+  React.useEffect(() => {
+    if (authLoading || !user) return;
+
+    if (isProprietor) {
+      setActiveTab('safety');
+      // If we don't have a selected project yet, we need to find it
+      if (!selectedProjectId) {
+        supabase.from('project_collaborators')
+          .select('project_id')
+          .eq('user_id', user.id)
+          .eq('role', 'proprietor')
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data) setSelectedProjectId(data.project_id);
+          });
       }
-
-      setIsRoleLoading(true);
-      try {
-        // Check if user is proprietor in any project
-        const { data: collaborations } = await supabase
-          .from('project_collaborators')
-          .select('project_id, role')
-          .eq('user_id', user.id);
-
-        const { data: projects } = await supabase
-          .from('projects')
-          .select('id')
-          .eq('user_id', user.id);
-
-        const roles = collaborations || [];
-        const ownsProjects = (projects || []).length > 0;
-        const isProprietorOf = roles.find(c => c.role === 'proprietor');
-
-        if (isProprietorOf && !ownsProjects) {
-          setIsClient(true);
-          setActiveTab('safety');
-          setSelectedProjectId(isProprietorOf.project_id);
-        } else {
-          setIsClient(false);
-          setActiveTab('dashboard');
-        }
-      } catch (error) {
-        console.error('Error checking role:', error);
+    } else {
+      if (!activeTab || activeTab === 'safety') {
         setActiveTab('dashboard');
-      } finally {
-        setIsRoleLoading(false);
       }
     }
-    checkRole();
-  }, [user]);
+  }, [user, isProprietor, authLoading]);
 
   if (!user) {
     return <AuthView />;
   }
 
-  if (isRoleLoading || activeTab === null) {
+  if (authLoading || activeTab === null) {
     return (
       <div className="fixed inset-0 bg-[#1C232E] flex flex-col items-center justify-center gap-6 z-[1000]">
         <div className="relative">
@@ -99,7 +79,7 @@ export default function App() {
       case 'safety':
         return <ProprietorView selectedProjectId={selectedProjectId} />;
       default:
-        return <DashboardView />;
+        return null;
     }
   };
 
@@ -118,10 +98,10 @@ export default function App() {
 
   return (
     <Layout
-      activeTab={activeTab}
+      activeTab={activeTab || 'dashboard'}
       setActiveTab={setActiveTab}
       title={getTitle()}
-      isClient={isClient}
+      isClient={isProprietor}
     >
       {renderView()}
     </Layout>
