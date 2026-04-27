@@ -4,7 +4,7 @@ import {
   ClipboardList,
   Users,
   ShieldCheck,
-  PlusCircle,
+  FileSpreadsheet,
   CircleHelp,
   LogOut
 } from 'lucide-react';
@@ -35,6 +35,7 @@ export function Sidebar({
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'projects', label: 'Projetos', icon: ClipboardList },
     { id: 'resources', label: 'Calculadora INSS', icon: Users },
+    { id: 'pci', label: 'Planilha PCI', icon: FileSpreadsheet },
     { id: 'safety', label: 'Painel do Proprietário', icon: ShieldCheck },
   ];
 

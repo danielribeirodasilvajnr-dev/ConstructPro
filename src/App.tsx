@@ -10,6 +10,7 @@ import { ProjectsView } from './pages/ProjectsView';
 import { ProprietorView } from './pages/ProprietorView';
 import { CalculatorView } from './pages/CalculatorView';
 import { AuthView } from './pages/AuthView';
+import { FileSpreadsheet } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 
 export default function App() {
@@ -138,6 +139,16 @@ export default function App() {
         return <LogsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'resources':
         return <CalculatorView />;
+      case 'pci':
+        return (
+          <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-4">
+            <div className="w-20 h-20 bg-[#BCB5AC]/10 rounded-full flex items-center justify-center">
+              <FileSpreadsheet className="h-10 w-10 text-[#BCB5AC]" />
+            </div>
+            <h2 className="text-2xl font-black text-white">Planilha PCI</h2>
+            <p className="text-slate-500 max-w-md">Módulo em desenvolvimento. Aqui você poderá gerenciar suas planilhas de Proposta de Construção Individual (PCI).</p>
+          </div>
+        );
       case 'safety':
         return <ProprietorView selectedProjectId={selectedProjectId} />;
       default:
@@ -153,6 +164,7 @@ export default function App() {
       case 'financials': return 'Financeiro da Obra';
       case 'logs': return 'Diário de Obra';
       case 'resources': return 'Calculadora INSS';
+      case 'pci': return 'Planilha PCI';
       case 'safety': return 'Painel do Proprietário';
       default: return 'AevumPro';
     }
