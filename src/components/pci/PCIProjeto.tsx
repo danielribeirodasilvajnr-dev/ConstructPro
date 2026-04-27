@@ -42,7 +42,7 @@ export function PCIProjeto({ data, onChange }: Props) {
   return (
     <div className="space-y-0">
       {/* ÁREAS */}
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse" style={{ minWidth: '900px' }}>
         <tbody>
           <tr><td colSpan={12} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Projeto</span>
@@ -91,7 +91,7 @@ export function PCIProjeto({ data, onChange }: Props) {
       </table>
 
       {/* MEMORIAL DESCRITIVO */}
-      <table className="w-full border-collapse mt-0">
+      <table className="w-full border-collapse mt-0" style={{ minWidth: '900px' }}>
         <tbody>
           <tr><td colSpan={14} className="bg-[#2F528F]/80 px-3 py-0.5 border border-[#1a3a6e]">
             <span className="text-[9px] font-bold text-white">Memorial Descritivo</span>

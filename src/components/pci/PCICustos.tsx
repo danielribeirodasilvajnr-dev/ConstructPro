@@ -43,7 +43,7 @@ export function PCICustos({ data, onChange }: Props) {
   return (
     <div className="space-y-0">
       {/* TÍTULO */}
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse" style={{ minWidth: '900px' }}>
         <tbody>
           <tr><td colSpan={8} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Serviços componentes do projeto/custo referencial adotado</span>
@@ -143,7 +143,7 @@ export function PCICustos({ data, onChange }: Props) {
       </table>
 
       {/* SERVIÇOS ADICIONAIS + RESUMO (R128-R140) */}
-      <table className="w-full border-collapse mt-2">
+      <table className="w-full border-collapse mt-2" style={{ minWidth: '900px' }}>
         <tbody>
           <tr><td colSpan={6} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Serviços adicionais</span>

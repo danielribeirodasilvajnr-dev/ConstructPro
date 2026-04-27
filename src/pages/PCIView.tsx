@@ -140,9 +140,9 @@ export function PCIView() {
       </div>
 
       {/* Conteúdo da planilha */}
-      <div className="bg-white rounded-2xl border border-white/5 overflow-hidden shadow-2xl">
+      <div className="bg-white rounded-2xl border border-white/5 overflow-hidden shadow-2xl text-black">
         {/* Área da planilha */}
-        <div className="p-4 sm:p-6 overflow-x-auto min-h-[500px]" style={{ maxHeight: 'calc(100vh - 260px)', overflowY: 'auto' }}>
+        <div className="p-4 sm:p-6 overflow-x-auto min-h-[500px] [&_input]:text-black [&_select]:text-black [&_textarea]:text-black" style={{ maxHeight: 'calc(100vh - 260px)', overflowY: 'auto' }}>
           {activeTab === 'ident' && <PCIIdentificacao data={data} onChange={handleChange} />}
           {activeTab === 'docs' && <PCIDocumentacao data={data} onChange={handleChange} />}
           {activeTab === 'projeto' && <PCIProjeto data={data} onChange={handleChange} />}

@@ -46,15 +46,19 @@ export function PCIIdentificacao({ data, onChange }: Props) {
   return (
     <div className="space-y-0">
       {/* CABEÇALHO */}
-      <table className="w-full border-collapse text-left">
+      <table className="w-full border-collapse text-left" style={{ minWidth: '900px' }}>
         <tbody>
           <tr>
-            <td colSpan={12} className="bg-white py-3 px-2">
-              <div className="flex items-center justify-between">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Caixa_Econ%C3%B4mica_Federal_logo.svg/1024px-Caixa_Econ%C3%B4mica_Federal_logo.svg.png" alt="CAIXA" className="h-7" />
+            <td colSpan={12} className="bg-white py-3 px-3 border border-[#8ea0b4]">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="bg-[#005CA9] text-white font-black text-[14px] px-3 py-1.5 rounded-sm tracking-wider leading-none">
+                    CAIXA
+                  </div>
+                </div>
                 <div className="text-right">
-                  <div className="text-[11px] font-black text-slate-800">Proposta de Construção Individual</div>
-                  <div className="text-[8px] text-slate-500 font-bold">Construção em Terreno Próprio e Aquisição de Terreno e Construção</div>
+                  <div className="text-[12px] font-black text-slate-800">Proposta de Construção Individual</div>
+                  <div className="text-[9px] text-slate-500 font-bold">Construção em Terreno Próprio e Aquisição de Terreno e Construção</div>
                 </div>
               </div>
             </td>
@@ -63,7 +67,7 @@ export function PCIIdentificacao({ data, onChange }: Props) {
       </table>
 
       {/* IDENTIFICAÇÃO */}
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse" style={{ minWidth: '900px' }}>
         <tbody>
           <tr><td colSpan={12} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Identificação</span>
@@ -116,7 +120,7 @@ export function PCIIdentificacao({ data, onChange }: Props) {
       </table>
 
       {/* IDENTIFICAÇÃO DO IMÓVEL */}
-      <table className="w-full border-collapse mt-0">
+      <table className="w-full border-collapse mt-0" style={{ minWidth: '900px' }}>
         <tbody>
           <tr><td colSpan={12} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Identificação do imóvel proposto</span>
