@@ -302,7 +302,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                    </div>
                 </div>
                 {!readOnly && (
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <button onClick={() => { 
                       const { daily_log_photos, ...logData } = log;
                       setEditingLog(log); 
