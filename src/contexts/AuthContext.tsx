@@ -8,6 +8,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   loading: boolean;
   isProprietor: boolean;
+  profile: any;
   refreshRole: () => Promise<void>;
 }
 
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isProprietor, setIsProprietor] = useState<boolean>(() => {
     return localStorage.getItem('is-proprietor') === 'true';
@@ -33,6 +35,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId);
 
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
       const roles = collaborations || [];
       const ownsProjects = (projects || []).length > 0;
       const proprietorRole = roles.find(c => c.role === 'proprietor');
@@ -40,6 +48,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const proprietorStatus = !!proprietorRole && !ownsProjects;
       setIsProprietor(proprietorStatus);
       localStorage.setItem('is-proprietor', String(proprietorStatus));
+      
+      if (profileData) {
+        // Sanitize avatar_url
+        if (profileData.avatar_url === '') profileData.avatar_url = null;
+        setProfile(profileData);
+      }
     } catch (error) {
       console.error('Error checking role:', error);
     }
@@ -80,6 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     session,
     user,
+    profile,
     signOut,
     loading,
     isProprietor,

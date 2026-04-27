@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { ProfileModal } from './profile/ProfileModal';
 import { SettingsModal } from './profile/SettingsModal';
+import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
   title?: string;
@@ -25,36 +26,13 @@ interface HeaderProps {
 }
 
 export function Header({ title, onMenuClick }: HeaderProps) {
-  const [user, setUser] = useState<any>(null);
+  const { user, profile, isProprietor, signOut } = useAuth();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
-
-  useEffect(() => {
-    fetchUser();
-  }, []);
-
-  const fetchUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      // Ensure avatar_url is treated as null if empty string
-      if (profile && profile.avatar_url === '') {
-        profile.avatar_url = null;
-      }
-
-      setUser({ ...user, profile });
-      setImageError(false); // Reset error state on new user fetch
-    }
-  };
 
   const formatDisplayName = (name: string) => {
     if (!name) return 'Usuário';
@@ -158,14 +136,16 @@ export function Header({ title, onMenuClick }: HeaderProps) {
             >
               <div className="flex-col items-end hidden md:flex">
                 <span className="text-xs font-black text-white tracking-tight group-hover:text-[#BCB5AC] transition-colors line-clamp-1 max-w-[150px]">
-                  {formatDisplayName(user?.profile?.full_name || user?.email?.split('@')[0])}
+                  {formatDisplayName(profile?.full_name || user?.email?.split('@')[0])}
                 </span>
-                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[1px]">Administrador</span>
+                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[1px]">
+                  {isProprietor ? 'Proprietário' : 'Administrador'}
+                </span>
               </div>
               <div className="h-10 w-10 rounded-xl bg-[#BCB5AC]/10 flex items-center justify-center text-[#BCB5AC] font-black border border-[#BCB5AC]/20 overflow-hidden shadow-inner group-hover:border-[#BCB5AC]/40 transition-all">
-                {user?.profile?.avatar_url && !imageError ? (
+                {profile?.avatar_url && !imageError ? (
                   <img 
-                    src={user.profile.avatar_url} 
+                    src={profile.avatar_url} 
                     alt="" 
                     className="w-full h-full object-cover"
                     onError={() => setImageError(true)}
@@ -188,9 +168,9 @@ export function Header({ title, onMenuClick }: HeaderProps) {
                   >
                     <div className="p-4 bg-gradient-to-br from-[#BCB5AC]/20 via-[#BCB5AC]/5 to-transparent border-b border-white/5 flex items-center gap-4">
                       <div className="h-12 w-12 rounded-xl bg-[#BCB5AC]/10 flex items-center justify-center text-[#BCB5AC] font-black text-xl shadow-lg border border-[#BCB5AC]/20 overflow-hidden">
-                        {user?.profile?.avatar_url && !imageError ? (
+                        {profile?.avatar_url && !imageError ? (
                           <img 
-                            src={user.profile.avatar_url} 
+                            src={profile.avatar_url} 
                             alt="" 
                             className="w-full h-full object-cover"
                           />
@@ -199,7 +179,9 @@ export function Header({ title, onMenuClick }: HeaderProps) {
                         )}
                       </div>
                       <div className="overflow-hidden">
-                        <p className="text-[10px] font-black text-[#BCB5AC] uppercase tracking-widest mb-0.5">Conta Ativa</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">
+                          {isProprietor ? 'Proprietário' : 'Administrador'}
+                        </p>
                         <p className="text-sm font-bold text-white truncate">{user?.email}</p>
                       </div>
                     </div>
