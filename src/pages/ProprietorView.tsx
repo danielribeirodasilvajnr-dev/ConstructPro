@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Check,
+  ChevronLeft,
   Download,
   Plus,
   Camera,

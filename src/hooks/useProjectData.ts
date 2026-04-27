@@ -11,7 +11,7 @@ export function useProjectData(projectId: string | null) {
   const [documents, setDocuments] = useState<any[]>([]);
   const [collaborators, setCollaborators] = useState<ProjectCollaborator[]>([]);
   const [loading, setLoading] = useState(false);
-  const [userRole, setUserRole] = useState<'owner' | 'editor' | 'viewer' | null>(null);
+  const [userRole, setUserRole] = useState<'owner' | 'editor' | 'viewer' | 'proprietor' | null>(null);
   const { user } = useAuth();
 
   const fetchData = async () => {
@@ -94,7 +94,7 @@ export function useProjectData(projectId: string | null) {
         if (project?.user_id === user?.id) {
           setUserRole('owner');
         } else if (collab?.data) {
-          setUserRole(collab.data.role as 'editor' | 'viewer');
+          setUserRole(collab.data.role as 'editor' | 'viewer' | 'proprietor');
         } else {
           setUserRole(null);
         }

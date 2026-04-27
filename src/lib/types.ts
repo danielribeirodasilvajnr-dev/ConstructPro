@@ -75,6 +75,17 @@ export interface Profile {
   job_title?: string;
 }
 
+export interface ProjectDocument {
+  id: string;
+  project_id: string;
+  name: string;
+  url: string;
+  file_type?: string;
+  file_size?: number;
+  uploaded_by?: string;
+  created_at?: string;
+}
+
 export interface ProjectCollaborator {
   id: string;
   project_id: string;
