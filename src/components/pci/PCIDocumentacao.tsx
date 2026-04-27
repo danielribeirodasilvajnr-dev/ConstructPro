@@ -60,7 +60,7 @@ export function PCIDocumentacao({ data, onChange }: Props) {
                     </td>
                   </>
                 ) : (
-                  <td className="bg-white border border-[#8ea0b4]" colSpan={3}></td>
+                  <td className="bg-white border border-[#8ea0b4]" colSpan={4}></td>
                 )}
                 {i === 1 && (
                   <td className="bg-[#D9E1F2] border-2 border-[#ED7D31] px-1 py-0" rowSpan={4}>
