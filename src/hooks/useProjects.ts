@@ -14,15 +14,51 @@ export function useProjects() {
     try {
       const timeout = setTimeout(() => {
         setLoading(false);
-      }, 5000);
+      }, 10000);
 
       setLoading(true);
       
       // Fetch projects where user is owner OR collaborator
-      const [ownedProjects, collaborations] = await Promise.all([
+      let [ownedProjects, collaborations] = await Promise.all([
         supabase.from('projects').select('*').eq('user_id', user.id),
         supabase.from('project_collaborators').select('project_id').eq('user_id', user.id)
       ]);
+
+      // RETRY LOGIC FOR F5 RACE CONDITION: Bypass Supabase JS completely
+      if ((!ownedProjects.data || ownedProjects.data.length === 0) && (!collaborations.data || collaborations.data.length === 0)) {
+        try {
+          const sessionStr = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+          if (sessionStr) {
+            const sessionData = JSON.parse(localStorage.getItem(sessionStr) || '{}');
+            const token = sessionData?.access_token;
+            if (token) {
+              const [rawProjectsRes, rawCollabsRes] = await Promise.all([
+                fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/projects?select=*&user_id=eq.${user.id}`, {
+                  headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/project_collaborators?select=project_id&user_id=eq.${user.id}`, {
+                  headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` }
+                })
+              ]);
+              
+              if (rawProjectsRes.ok && rawCollabsRes.ok) {
+                const rawProjects = await rawProjectsRes.json();
+                const rawCollabs = await rawCollabsRes.json();
+                
+                if (rawProjects.length > 0 || rawCollabs.length > 0) {
+                  ownedProjects = { data: rawProjects, error: null } as any;
+                  collaborations = { data: rawCollabs, error: null } as any;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Raw fetch fallback failed', e);
+        }
+      }
+
+      if (ownedProjects.error) throw ownedProjects.error;
+      if (collaborations.error) throw collaborations.error;
 
       let allProjectIds = (ownedProjects.data || []).map(p => p.id);
       const collabIds = (collaborations.data || []).map(c => c.project_id);

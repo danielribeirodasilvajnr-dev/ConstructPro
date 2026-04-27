@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TrendingUp,
   AlertCircle,
@@ -21,8 +21,35 @@ import { cn, formatCurrency } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 
 export function DashboardView() {
-  const { isProprietor } = useAuth();
-  const { data: dashboardProjects, loading } = useDashboardData();
+  const { isProprietor, user } = useAuth();
+  const { data: dashboardProjects, loading, error: dashError } = useDashboardData();
+  const [rawDiagnostic, setRawDiagnostic] = useState<string>('Not run');
+
+  useEffect(() => {
+    const runDiagnostic = async () => {
+      const sessionStr = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (!sessionStr) return setRawDiagnostic('No token key');
+      
+      const sessionData = JSON.parse(localStorage.getItem(sessionStr) || '{}');
+      const token = sessionData?.access_token;
+      if (!token) return setRawDiagnostic('No access token');
+
+      try {
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/projects?select=*,budget_items(*),schedule_items(*),financial_items(*),daily_logs(*)&order=created_at.desc`;
+        const res = await fetch(url, {
+          headers: {
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const text = await res.text();
+        setRawDiagnostic(`Status: ${res.status}, Body length: ${text.length}, URL: ${url.substring(0, 30)}`);
+      } catch (err: any) {
+        setRawDiagnostic(`Error: ${err.message}`);
+      }
+    };
+    runDiagnostic();
+  }, []);
 
   if (isProprietor) return null;
 
@@ -32,6 +59,24 @@ export function DashboardView() {
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto pb-24">
+      {dashError && (
+        <div className="bg-red-500 text-white p-4 font-mono text-sm mb-4">
+          DASHBOARD ERROR: {String(dashError)}
+        </div>
+      )}
+      
+      <div className="bg-blue-900/50 border border-blue-500 p-4 rounded-xl text-white font-mono text-xs mb-8 overflow-auto break-all">
+        <p><strong>USER ID:</strong> {user?.id || 'NULL'}</p>
+        <p><strong>USER EMAIL:</strong> {user?.email || 'NULL'}</p>
+        <p><strong>TOKEN PREFIX:</strong> {
+          Object.keys(localStorage).some(k => k.startsWith('sb-') && k.endsWith('-auth-token')) 
+          ? JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'))!) || '{}')?.access_token?.substring(0, 30) + '...'
+          : 'NONE'
+        }</p>
+        <p><strong>RAW FETCH DB TEST:</strong> {rawDiagnostic}</p>
+        <p><strong>DASH PROJECTS:</strong> {dashboardProjects.length}</p>
+      </div>
+
       <div className="mb-8">
         <h2 className="text-3xl font-extrabold tracking-tight text-white">Dashboard</h2>
         <p className="text-slate-500 text-sm mt-1">Visão geral dos seus projetos e custos</p>

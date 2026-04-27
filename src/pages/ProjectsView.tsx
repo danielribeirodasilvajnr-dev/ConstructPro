@@ -32,7 +32,8 @@ interface ProjectsViewProps {
 }
 
 export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsViewProps) {
-  const { projects, loading: loadingProjects, saveProject, deleteProject, refresh: refreshProjects } = useProjects();
+  const { user } = useAuth();
+  const { projects, loading: loadingProjects, error, saveProject, deleteProject, refresh: refreshProjects } = useProjects();
   const [activeTab, setActiveTab] = useState<'orcamento' | 'cronograma' | 'financeiro' | 'diario' | 'colaboradores'>('orcamento');
 
   // Modals for Projects
@@ -237,7 +238,14 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
       {loadingProjects ? (
         <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div></div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <>
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-2xl mb-8">
+              <h3 className="text-red-500 font-bold mb-2 flex items-center gap-2"><AlertCircle className="h-5 w-5"/> Erro ao carregar projetos</h3>
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {projects.map((project) => (
             <div
               key={project.id}
@@ -300,6 +308,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             </div>
           ))}
         </div>
+        </>
       )}
 
       {isModalOpen && (

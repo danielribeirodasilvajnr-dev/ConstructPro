@@ -120,19 +120,6 @@ export function AuthView() {
           </button>
         </form>
 
-        <div className="mt-8 text-center text-sm font-medium text-slate-400">
-          {isLogin ? 'Ainda não tem conta?' : 'Já possui uma conta?'}
-          <button
-            type="button"
-            onClick={() => {
-              setIsLogin(!isLogin);
-              setError(null);
-            }}
-            className="ml-2 text-primary hover:text-white transition-colors hover:underline"
-          >
-            {isLogin ? 'Criar uma agora' : 'Faça login'}
-          </button>
-        </div>
       </motion.div>
     </div>
   );

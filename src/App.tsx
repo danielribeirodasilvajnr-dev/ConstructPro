@@ -14,8 +14,25 @@ import { useAuth } from './contexts/AuthContext';
 
 export default function App() {
   const { user, isProprietor, loading: authLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState<string | null>(null);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string | null>(() => {
+    return sessionStorage.getItem('activeTab') || null;
+  });
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(() => {
+    return sessionStorage.getItem('selectedProjectId') || null;
+  });
+
+  // Save state to sessionStorage
+  React.useEffect(() => {
+    if (activeTab) sessionStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
+
+  React.useEffect(() => {
+    if (selectedProjectId) {
+      sessionStorage.setItem('selectedProjectId', selectedProjectId);
+    } else {
+      sessionStorage.removeItem('selectedProjectId');
+    }
+  }, [selectedProjectId]);
 
   React.useEffect(() => {
     if (authLoading || !user) return;

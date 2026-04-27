@@ -7,6 +7,7 @@ export function useDashboardData() {
   const { user } = useAuth();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<any>(null);
 
   const fetchDashboardData = async () => {
     if (!user) return;
@@ -19,7 +20,7 @@ export function useDashboardData() {
     setLoading(true);
     try {
       // Fetch all projects for the user
-      const { data: projects, error: projectsError } = await supabase
+      let { data: projects, error: projectsError } = await supabase
         .from('projects')
         .select(`
           *,
@@ -30,10 +31,43 @@ export function useDashboardData() {
         `)
         .order('created_at', { ascending: false });
 
+      // RETRY LOGIC FOR F5 RACE CONDITION: Bypass Supabase JS completely
+      if (!projectsError && (!projects || projects.length === 0)) {
+        console.log('SUPABASE JS RETURNED EMPTY. TRIGGERING RAW FALLBACK...');
+        const sessionStr = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+        if (sessionStr) {
+          const sessionData = JSON.parse(localStorage.getItem(sessionStr) || '{}');
+          const token = sessionData?.access_token;
+          if (token) {
+            try {
+              // Try a simpler query first to see if it works
+              const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/projects?select=*,budget_items(*),schedule_items(*),financial_items(*),daily_logs(*)&order=created_at.desc`, {
+                headers: {
+                  'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              
+              if (res.ok) {
+                const rawData = await res.json();
+                console.log('RAW FALLBACK DATA SUCCESS:', rawData);
+                if (rawData && rawData.length > 0) {
+                  projects = rawData;
+                }
+              } else {
+                console.error('RAW FALLBACK FAILED:', res.status);
+              }
+            } catch (e) {
+              console.error('Raw fetch fallback failed exception:', e);
+            }
+          }
+        }
+      }
+
       clearTimeout(timeout);
 
       if (projectsError) throw projectsError;
-      if (!projects) {
+      if (!projects || projects.length === 0) {
         setData([]);
         return;
       }
@@ -87,8 +121,9 @@ export function useDashboardData() {
       });
 
       setData(mapped);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error('Error fetching dashboard data:', err);
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -98,5 +133,5 @@ export function useDashboardData() {
     fetchDashboardData();
   }, [user]);
 
-  return { data, loading, refresh: fetchDashboardData };
+  return { data, loading, error, refresh: fetchDashboardData };
 }
