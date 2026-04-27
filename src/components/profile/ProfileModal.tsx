@@ -33,6 +33,7 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
     job_title: ''
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -196,14 +197,18 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
                             <span className="text-[10px] font-black text-white uppercase tracking-widest">Alterar</span>
                           </div>
                         )}
-                        <img 
-                          src={profile?.avatar_url ? `${profile.avatar_url}${profile.avatar_url.includes('?') ? '&' : '?'}t=${new Date().getTime()}` : "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop"} 
-                          alt="Avatar" 
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop";
-                          }}
-                        />
+                        {profile?.avatar_url && !imageError ? (
+                          <img 
+                            src={profile.avatar_url} 
+                            alt="Avatar" 
+                            className="w-full h-full object-cover"
+                            onError={() => setImageError(true)}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-[#BCB5AC]/10 text-[#BCB5AC]">
+                            <User className="h-12 w-12" />
+                          </div>
+                        )}
                       </div>
                       <input 
                         type="file" 
