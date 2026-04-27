@@ -34,7 +34,7 @@ export function useProjectData(projectId: string | null) {
       setDailyLogs(logs.data || []);
       setDocuments(docs.data || []);
       setCollaborators(collabList.data || []);
-      
+
       // Determine user role
       const { data: project } = await supabase.from('projects').select('user_id').eq('id', projectId).single();
       if (project?.user_id === user?.id) {

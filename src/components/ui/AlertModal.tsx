@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 

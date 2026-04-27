@@ -20,7 +20,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isProprietor, setIsProprietor] = useState<boolean>(() => {
-    return localStorage.getItem('is-proprietor') === 'true';
+    try {
+      return localStorage.getItem('is-proprietor') === 'true';
+    } catch {
+      return false;
+    }
   });
 
   const checkRole = async (userId: string) => {
@@ -32,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const { data: projects } = await supabase
         .from('projects')
-        .select('id', { count: 'exact', head: true })
+        .select('id')
         .eq('user_id', userId);
 
       const { data: profileData } = await supabase
@@ -44,13 +48,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const roles = collaborations || [];
       const ownsProjects = (projects || []).length > 0;
       const proprietorRole = roles.find(c => c.role === 'proprietor');
-      
+
+      // If user is a proprietor in a collaboration AND does not own projects, they are a client
       const proprietorStatus = !!proprietorRole && !ownsProjects;
       setIsProprietor(proprietorStatus);
       localStorage.setItem('is-proprietor', String(proprietorStatus));
-      
+
       if (profileData) {
-        // Sanitize avatar_url
         if (profileData.avatar_url === '') profileData.avatar_url = null;
         setProfile(profileData);
       }
@@ -59,49 +63,83 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    // Busca a sessão inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkRole(session.user.id).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
-    });
+  const initAuth = async () => {
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 5000);
 
-    // Escuta mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    try {
+      const { data: { session: initialSession } } = await supabase.auth.getSession();
+      setSession(initialSession);
+      setUser(initialSession?.user ?? null);
+      
+      if (initialSession?.user) {
+        await checkRole(initialSession.user.id);
+      }
+    } catch (error) {
+      console.error('Auth initialization error:', error);
+    } finally {
+      clearTimeout(timeout);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        checkRole(session.user.id).finally(() => setLoading(false));
+        await checkRole(session.user.id);
       } else {
         setIsProprietor(false);
+        setProfile(null);
         localStorage.removeItem('is-proprietor');
-        setLoading(false);
       }
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
-
   const value = {
     session,
     user,
     profile,
-    signOut,
+    signOut: async () => {
+      // Clear Supabase tokens manually to prevent ghost logins on fast redirects
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Clear app state
+      setSession(null);
+      setUser(null);
+      setIsProprietor(false);
+      setProfile(null);
+      localStorage.removeItem('is-proprietor');
+      
+      try {
+        // Attempt server logout with a 2-second timeout so it never hangs
+        await Promise.race([
+          supabase.auth.signOut(),
+          new Promise(resolve => setTimeout(resolve, 2000))
+        ]);
+      } catch (err) {
+        console.error('SignOut error:', err);
+      } finally {
+        window.location.href = '/login';
+      }
+    },
     loading,
     isProprietor,
     refreshRole: () => user ? checkRole(user.id) : Promise.resolve(),
   };
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = () => {

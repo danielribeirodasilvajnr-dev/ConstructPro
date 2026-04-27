@@ -72,7 +72,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
   const totalInvested = financialItems.reduce((acc, item) => acc + Number(item.amount), 0);
   const totalBudget = budgetItems.reduce((acc, item) => acc + (Number(item.quantity) * Number(item.unit_cost)), 0);
   const financialProgress = totalBudget > 0 ? Math.round((totalInvested / totalBudget) * 100) : 0;
-  
+
   const handleSaveDocument = async () => {
     if (!newDoc.name || !selectedProjectId || !newDoc.file) return;
     setIsSaving(true);
@@ -80,7 +80,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
       // 1. Upload to Storage
       const fileExt = newDoc.file.name.split('.').pop();
       const fileName = `${selectedProjectId}/${Date.now()}_${sanitizeFileName(newDoc.file.name)}`;
-      
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('project-documents')
         .upload(fileName, newDoc.file);
@@ -256,7 +256,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                 <Camera className="h-5 w-5 text-primary" />
                 Progresso Diário
               </h3>
-              <button 
+              <button
                 onClick={() => setShowFullHistory(true)}
                 className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline"
               >
@@ -277,14 +277,14 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                           <div>
                             <h4 className="text-lg font-bold text-white capitalize">{formatDate(log.date, { day: '2-digit', month: 'long', weekday: 'long' })}</h4>
                             <div className="flex items-center gap-3 mt-1">
-                               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5"><Cloud className="h-3 w-3" /> {log.weather}</span>
-                               <span className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-1.5"><HardHat className="h-3 w-3" /> Equipe: {log.workers}</span>
+                              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5"><Cloud className="h-3 w-3" /> {log.weather}</span>
+                              <span className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-1.5"><HardHat className="h-3 w-3" /> Equipe: {log.workers}</span>
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                           <p className="text-slate-300 text-sm leading-relaxed italic">"{log.activities || 'Nenhuma atividade registrada.'}"</p>
+                          <p className="text-slate-300 text-sm leading-relaxed italic">"{log.activities || 'Nenhuma atividade registrada.'}"</p>
                         </div>
 
                         {/* Photos for this log */}
@@ -292,10 +292,10 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             {log.daily_log_photos.map((photo: any) => (
                               <div key={photo.id} className="aspect-square rounded-xl overflow-hidden border border-white/10 group/photo cursor-pointer relative bg-black/20">
-                                <img 
-                                  src={photo.image_url} 
-                                  alt="Daily" 
-                                  className="w-full h-full object-cover transition-transform duration-500 group-hover/photo:scale-110" 
+                                <img
+                                  src={photo.image_url}
+                                  alt="Daily"
+                                  className="w-full h-full object-cover transition-transform duration-500 group-hover/photo:scale-110"
                                 />
                                 {photo.description && (
                                   <div className="absolute inset-x-0 bottom-0 p-2 bg-black/60 opacity-0 group-hover/photo:opacity-100 transition-opacity">
@@ -328,7 +328,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                 <FileText className="text-primary h-5 w-5" />
                 Documentação
               </h3>
-              <button 
+              <button
                 onClick={() => setIsAddingDoc(true)}
                 className="p-1.5 bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
                 title="Cadastrar Documento"
@@ -336,7 +336,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                 <Plus className="h-4 w-4 text-primary" />
               </button>
             </div>
-            
+
             <div className="space-y-3">
               {documents.length > 0 ? (
                 documents.map((doc, i) => (
@@ -353,14 +353,14 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
+                      <button
                         onClick={(e) => { e.stopPropagation(); setDeletingDoc(doc); }}
                         className="p-1.5 hover:bg-red-500/10 rounded-lg text-slate-500 hover:text-red-500 transition-colors"
                         title="Excluir"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
-                      <button 
+                      <button
                         onClick={(e) => { e.stopPropagation(); handleDownloadDocument(doc); }}
                         className="p-1.5 hover:bg-primary/10 rounded-lg text-slate-500 hover:text-primary transition-colors"
                         title="Baixar Arquivo"
@@ -387,7 +387,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
             <p className="text-sm text-on-surface-variant mt-1 mb-4">
               Fale com {supportName}{supportJob ? ` - ${supportJob}` : ''}
             </p>
-            <a 
+            <a
               href={`https://wa.me/${supportPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${supportName.split(' ')[0]}, sou o proprietário da obra ${project.name} e tenho uma dúvida.`)}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -403,7 +403,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
       {/* Document Upload Modal */}
       {isAddingDoc && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="bg-[#1C232E] border border-slate-800 rounded-[28px] w-full max-w-md shadow-2xl p-8"
@@ -413,7 +413,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                 <FileText className="h-5 w-5 text-primary" />
                 Cadastrar Documento
               </h3>
-              <button 
+              <button
                 onClick={() => setIsAddingDoc(false)}
                 className="p-2 hover:bg-white/5 rounded-full transition-colors"
               >
@@ -424,7 +424,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
             <div className="space-y-6">
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Nome do Documento</label>
-                <input 
+                <input
                   type="text"
                   value={newDoc.name}
                   onChange={(e) => setNewDoc({ ...newDoc, name: e.target.value })}
@@ -436,8 +436,8 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Anexo (Arquivo)</label>
                 <div className="relative group">
-                  <input 
-                    type="file" 
+                  <input
+                    type="file"
                     onChange={(e) => setNewDoc({ ...newDoc, file: e.target.files?.[0] || null })}
                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                   />
@@ -451,13 +451,13 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
               </div>
 
               <div className="flex gap-4 pt-2">
-                <button 
+                <button
                   onClick={() => setIsAddingDoc(false)}
                   className="flex-1 py-3.5 text-xs font-bold text-slate-400 hover:bg-white/5 rounded-xl transition-colors border border-transparent"
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   onClick={handleSaveDocument}
                   disabled={!newDoc.name || isSaving}
                   className="flex-1 bg-primary py-3.5 text-xs font-bold text-white rounded-xl transition-all hover:bg-slate-700 shadow-lg shadow-black/20 disabled:opacity-50 disabled:scale-100 active:scale-95 flex items-center justify-center gap-2"
@@ -474,7 +474,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
         </div>
       )}
 
-      <ConfirmModal 
+      <ConfirmModal
         isOpen={!!deletingDoc}
         onClose={() => setDeletingDoc(null)}
         onConfirm={() => deletingDoc && handleDeleteDocument(deletingDoc.id)}
@@ -482,7 +482,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
         message={`Tem certeza que deseja excluir o documento "${deletingDoc?.name}"? Esta ação não pode ser desfeita.`}
       />
 
-      <AlertModal 
+      <AlertModal
         isOpen={alertConfig.isOpen}
         onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
         title={alertConfig.title}
@@ -493,7 +493,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
       {/* Full History Modal */}
       {showFullHistory && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-0 md:p-4 bg-black/80 backdrop-blur-md">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-[#1C232E] w-full h-full md:h-[90vh] md:max-w-4xl md:rounded-[32px] border border-white/5 shadow-2xl flex flex-col overflow-hidden"
@@ -507,7 +507,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                   </h3>
                   <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Trajetória da Obra: {project.name}</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowFullHistory(false)}
                   className="p-3 hover:bg-white/5 rounded-full transition-colors text-slate-400 hover:text-white md:hidden"
                 >
@@ -519,8 +519,8 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">De:</span>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={dateFilter.start}
                     onChange={(e) => setDateFilter({ ...dateFilter, start: e.target.value })}
                     className="bg-[#2B3647] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:border-primary outline-none"
@@ -528,21 +528,21 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Até:</span>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={dateFilter.end}
                     onChange={(e) => setDateFilter({ ...dateFilter, end: e.target.value })}
                     className="bg-[#2B3647] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:border-primary outline-none"
                   />
                 </div>
-                <button 
+                <button
                   onClick={() => setDateFilter({ start: '', end: '' })}
                   className="mt-5 p-2.5 text-slate-500 hover:text-white transition-colors"
                   title="Limpar filtros"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
-                <button 
+                <button
                   onClick={() => setShowFullHistory(false)}
                   className="hidden md:flex p-3 hover:bg-white/5 rounded-full transition-colors text-slate-400 hover:text-white ml-4"
                 >
@@ -563,47 +563,47 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                     return true;
                   })
                   .map((log, i) => (
-                  <div key={log.id} className="relative flex gap-8 items-start group">
-                    <div className="z-10 bg-primary w-6 h-6 rounded-full flex items-center justify-center shrink-0 ring-4 ring-[#1C232E] shadow-lg shadow-primary/20 transition-transform">
-                      <Check className="text-white h-3 w-3" />
-                    </div>
-                    <div className="flex-1 space-y-6">
-                      <div className="flex flex-col gap-2">
-                        <h4 className="text-xl font-black text-white capitalize">{formatDate(log.date, { day: '2-digit', month: 'long', year: 'numeric', weekday: 'long' })}</h4>
-                        <div className="flex flex-wrap items-center gap-4">
-                           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full flex items-center gap-1.5"><Cloud className="h-3 w-3" /> {log.weather}</span>
-                           <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full flex items-center gap-1.5"><HardHat className="h-3 w-3" /> Equipe: {log.workers}</span>
+                    <div key={log.id} className="relative flex gap-8 items-start group">
+                      <div className="z-10 bg-primary w-6 h-6 rounded-full flex items-center justify-center shrink-0 ring-4 ring-[#1C232E] shadow-lg shadow-primary/20 transition-transform">
+                        <Check className="text-white h-3 w-3" />
+                      </div>
+                      <div className="flex-1 space-y-6">
+                        <div className="flex flex-col gap-2">
+                          <h4 className="text-xl font-black text-white capitalize">{formatDate(log.date, { day: '2-digit', month: 'long', year: 'numeric', weekday: 'long' })}</h4>
+                          <div className="flex flex-wrap items-center gap-4">
+                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full flex items-center gap-1.5"><Cloud className="h-3 w-3" /> {log.weather}</span>
+                            <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full flex items-center gap-1.5"><HardHat className="h-3 w-3" /> Equipe: {log.workers}</span>
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-inner">
-                         <p className="text-slate-200 text-base leading-relaxed">"{log.activities || 'Nenhuma atividade registrada.'}"</p>
-                      </div>
 
-                      {log.daily_log_photos && log.daily_log_photos.length > 0 && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {log.daily_log_photos.map((photo: any) => (
-                            <div key={photo.id} className="aspect-video rounded-2xl overflow-hidden border border-white/10 relative group/photo cursor-pointer bg-black/40">
-                              <img 
-                                src={photo.image_url} 
-                                alt="Daily" 
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover/photo:scale-110" 
-                              />
-                              {photo.description && (
-                                <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-                                  <p className="text-xs text-white font-medium">{photo.description}</p>
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                        <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-inner">
+                          <p className="text-slate-200 text-base leading-relaxed">"{log.activities || 'Nenhuma atividade registrada.'}"</p>
                         </div>
-                      )}
+
+                        {log.daily_log_photos && log.daily_log_photos.length > 0 && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {log.daily_log_photos.map((photo: any) => (
+                              <div key={photo.id} className="aspect-video rounded-2xl overflow-hidden border border-white/10 relative group/photo cursor-pointer bg-black/40">
+                                <img
+                                  src={photo.image_url}
+                                  alt="Daily"
+                                  className="w-full h-full object-cover transition-transform duration-700 group-hover/photo:scale-110"
+                                />
+                                {photo.description && (
+                                  <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                                    <p className="text-xs text-white font-medium">{photo.description}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
-            
+
             <div className="p-6 border-t border-white/5 bg-slate-900/20 text-center shrink-0">
               <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[3px]">AevumPro • Relatório de Progresso</p>
             </div>
@@ -613,7 +613,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
       {/* Gallery Modal */}
       {isGalleryOpen && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-0 md:p-6 bg-black/90 backdrop-blur-xl">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="bg-[#1C232E] w-full h-full md:rounded-[40px] border border-white/5 shadow-2xl flex flex-col overflow-hidden max-w-6xl"
@@ -626,7 +626,7 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                 </h3>
                 <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">{allPhotos.length} fotos registradas</p>
               </div>
-              <button 
+              <button
                 onClick={() => setIsGalleryOpen(false)}
                 className="p-4 hover:bg-white/5 rounded-2xl transition-colors text-slate-400 hover:text-white"
               >
@@ -644,14 +644,14 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
                   }))
                 ).map((photo, i) => (
                   <div key={i} className="group flex flex-col gap-3">
-                    <div 
+                    <div
                       onClick={() => setSelectedPhoto(photo)}
                       className="aspect-square rounded-3xl overflow-hidden border border-white/10 bg-black/40 relative cursor-pointer"
                     >
-                      <img 
-                        src={photo.url} 
-                        alt="" 
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                      <img
+                        src={photo.url}
+                        alt=""
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
                         <div className="bg-white/20 backdrop-blur-md rounded-full p-4 border border-white/10 transform scale-90 group-hover:scale-100 transition-transform">
@@ -672,18 +672,18 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
 
       {/* Lightbox Modal */}
       {selectedPhoto && (
-        <div 
+        <div
           className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-12 bg-black/95 backdrop-blur-2xl"
           onClick={() => setSelectedPhoto(null)}
         >
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             className="relative max-w-5xl w-full flex flex-col gap-6"
             onClick={e => e.stopPropagation()}
           >
             <div className="absolute -top-16 right-0 flex items-center gap-4">
-              <button 
+              <button
                 onClick={() => setSelectedPhoto(null)}
                 className="p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all border border-white/10"
               >
@@ -692,9 +692,9 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
             </div>
 
             <div className="rounded-[32px] overflow-hidden border border-white/10 shadow-2xl bg-black/40 aspect-[4/3] md:aspect-video flex items-center justify-center">
-              <img 
-                src={selectedPhoto.url} 
-                alt="" 
+              <img
+                src={selectedPhoto.url}
+                alt=""
                 className="max-w-full max-h-full object-contain"
               />
             </div>

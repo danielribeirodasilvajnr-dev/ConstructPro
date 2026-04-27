@@ -49,7 +49,7 @@ export default function App() {
       <div className="fixed inset-0 bg-[#1C232E] flex flex-col items-center justify-center gap-6 z-[1000]">
         <div className="relative">
           <div className="h-20 w-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center animate-pulse">
-             <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
           <div className="absolute -inset-4 bg-primary/5 blur-3xl rounded-full animate-pulse" />
         </div>

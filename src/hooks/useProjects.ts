@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Project, BudgetItem, ScheduleItem, FinancialItem, DailyLog } from '../lib/types';
+import { Project } from '../lib/types';
 
 export function useProjects() {
   const { user } = useAuth();
@@ -12,13 +12,37 @@ export function useProjects() {
   const fetchProjects = async () => {
     if (!user) return;
     try {
+      const timeout = setTimeout(() => {
+        setLoading(false);
+      }, 5000);
+
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch projects where user is owner OR collaborator
+      const [ownedProjects, collaborations] = await Promise.all([
+        supabase.from('projects').select('*').eq('user_id', user.id),
+        supabase.from('project_collaborators').select('project_id').eq('user_id', user.id)
+      ]);
+
+      let allProjectIds = (ownedProjects.data || []).map(p => p.id);
+      const collabIds = (collaborations.data || []).map(c => c.project_id);
+      
+      const uniqueIds = [...new Set([...allProjectIds, ...collabIds])];
+      
+      if (uniqueIds.length === 0) {
+        setProjects([]);
+        clearTimeout(timeout);
+        return;
+      }
+
+      const { data, error: fetchError } = await supabase
         .from('projects')
         .select('*')
+        .in('id', uniqueIds)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      clearTimeout(timeout);
+      if (fetchError) throw fetchError;
       setProjects(data || []);
     } catch (err: any) {
       setError(err.message);

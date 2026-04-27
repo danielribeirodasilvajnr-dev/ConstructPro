@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, Trash2, Shield, Eye, Mail, Loader2, AlertCircle, Verified, Phone, Briefcase, Check, PenLine, Camera } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 import { Project, Profile, ProjectCollaborator } from '../../lib/types';
 import { cn } from '../../lib/utils';
@@ -428,9 +428,9 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                           (c.profile?.email || 'U').charAt(0).toUpperCase()
                         )}
                       </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-white truncate max-w-[200px]">{c.profile?.email}</h4>
-                        <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-bold text-white break-words">{c.profile?.email}</h4>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                           <div className={cn(
                             "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider",
                             c.role === 'proprietor' ? 'bg-[#FF8A00]/10 text-[#FF8A00]' :

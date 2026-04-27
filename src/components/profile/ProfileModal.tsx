@@ -11,7 +11,7 @@ import {
   AlertCircle,
   Shield
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 import { Profile } from '../../lib/types';
 import { cn } from '../../lib/utils';

@@ -1,11 +1,11 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  ClipboardList, 
-  Users, 
-  ShieldCheck, 
-  PlusCircle, 
-  CircleHelp, 
+import {
+  LayoutDashboard,
+  ClipboardList,
+  Users,
+  ShieldCheck,
+  PlusCircle,
+  CircleHelp,
   LogOut
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -21,11 +21,11 @@ interface SidebarProps {
   setIsMobileOpen: (open: boolean) => void;
 }
 
-export function Sidebar({ 
-  activeTab, 
-  setActiveTab, 
-  isClient, 
-  isCollapsed, 
+export function Sidebar({
+  activeTab,
+  setActiveTab,
+  isClient,
+  isCollapsed,
   setIsCollapsed,
   isMobileOpen,
   setIsMobileOpen
@@ -38,7 +38,7 @@ export function Sidebar({
     { id: 'safety', label: 'Painel do Proprietário', icon: ShieldCheck },
   ];
 
-  const navItems = isClient 
+  const navItems = isClient
     ? allNavItems.filter(item => item.id === 'safety')
     : allNavItems;
 
@@ -46,7 +46,7 @@ export function Sidebar({
     <>
       {/* Mobile Overlay */}
       {isMobileOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-[45] bg-black/60 backdrop-blur-sm md:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
@@ -80,8 +80,8 @@ export function Sidebar({
               }}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-150 relative w-full",
-                activeTab === item.id 
-                  ? "bg-[#BCB5AC] text-[#1C232E] shadow-lg shadow-black/20 scale-[1.02] border border-white/10" 
+                activeTab === item.id
+                  ? "bg-[#BCB5AC] text-[#1C232E] shadow-lg shadow-black/20 scale-[1.02] border border-white/10"
                   : "text-slate-400 hover:bg-white/5"
               )}
             >
@@ -93,7 +93,7 @@ export function Sidebar({
 
         <div className="p-6 mt-auto border-t border-slate-800 bg-slate-900/10">
           {!isClient && (
-            <button 
+            <button
               className="mb-6 flex items-center justify-center rounded-xl bg-[#BCB5AC] text-[#1C232E] transition-all hover:bg-slate-700 shadow-lg shadow-black/20 active:scale-95 w-full py-3.5 gap-2 text-xs font-bold uppercase tracking-widest"
             >
               <PlusCircle className="h-5 w-5" />
@@ -101,13 +101,13 @@ export function Sidebar({
             </button>
           )}
           <div className="flex flex-col gap-1 w-full">
-            <button 
+            <button
               className="flex items-center gap-3 text-sm text-slate-400 hover:text-primary transition-colors px-4 py-2"
             >
               <CircleHelp className="h-5 w-5" />
               <span>Suporte</span>
             </button>
-            <button 
+            <button
               onClick={signOut}
               className="flex items-center gap-3 text-sm text-slate-400 hover:text-error transition-colors px-4 py-2"
             >

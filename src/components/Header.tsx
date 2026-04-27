@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Search,
-  ChevronLeft,
   Bell,
   CircleHelp,
   Settings,
@@ -9,12 +8,9 @@ import {
   User,
   CheckCircle2,
   AlertCircle,
-  Camera,
-  Loader2,
   Menu
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { ProfileModal } from './profile/ProfileModal';
 import { SettingsModal } from './profile/SettingsModal';
@@ -26,10 +22,9 @@ interface HeaderProps {
 }
 
 export function Header({ title, onMenuClick }: HeaderProps) {
-  const { user, profile, isProprietor, signOut } = useAuth();
+  const { user, profile, isProprietor, signOut, refreshRole } = useAuth();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -41,12 +36,6 @@ export function Header({ title, onMenuClick }: HeaderProps) {
     return `${parts[0]} ${parts[parts.length - 1]}`;
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/login';
-  };
-
-
   return (
     <>
       <header className="sticky top-0 z-40 flex h-16 md:h-20 items-center justify-between border-b border-slate-800 bg-[#1C232E]/85 px-4 md:px-8 backdrop-blur-md">
@@ -57,8 +46,6 @@ export function Header({ title, onMenuClick }: HeaderProps) {
           >
             <Menu className="h-6 w-6" />
           </button>
-
-
 
           <div className="relative hidden xl:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -144,9 +131,9 @@ export function Header({ title, onMenuClick }: HeaderProps) {
               </div>
               <div className="h-10 w-10 rounded-xl bg-[#BCB5AC]/10 flex items-center justify-center text-[#BCB5AC] font-black border border-[#BCB5AC]/20 overflow-hidden shadow-inner group-hover:border-[#BCB5AC]/40 transition-all">
                 {profile?.avatar_url && !imageError ? (
-                  <img 
-                    src={profile.avatar_url} 
-                    alt="" 
+                  <img
+                    src={profile.avatar_url}
+                    alt=""
                     className="w-full h-full object-cover"
                     onError={() => setImageError(true)}
                   />
@@ -169,9 +156,9 @@ export function Header({ title, onMenuClick }: HeaderProps) {
                     <div className="p-4 bg-gradient-to-br from-[#BCB5AC]/20 via-[#BCB5AC]/5 to-transparent border-b border-white/5 flex items-center gap-4">
                       <div className="h-12 w-12 rounded-xl bg-[#BCB5AC]/10 flex items-center justify-center text-[#BCB5AC] font-black text-xl shadow-lg border border-[#BCB5AC]/20 overflow-hidden">
                         {profile?.avatar_url && !imageError ? (
-                          <img 
-                            src={profile.avatar_url} 
-                            alt="" 
+                          <img
+                            src={profile.avatar_url}
+                            alt=""
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -201,7 +188,7 @@ export function Header({ title, onMenuClick }: HeaderProps) {
                       </button>
                       <div className="h-px bg-white/5 my-2 mx-2"></div>
                       <button
-                        onClick={handleLogout}
+                        onClick={signOut}
                         className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-red-500 hover:text-red-400 hover:bg-red-500/5 rounded-xl transition-all"
                       >
                         <LogOut className="h-4 w-4" /> Sair da Conta
@@ -219,7 +206,7 @@ export function Header({ title, onMenuClick }: HeaderProps) {
         <ProfileModal
           isOpen={isProfileModalOpen}
           onClose={() => setIsProfileModalOpen(false)}
-          onUpdate={fetchUser}
+          onUpdate={refreshRole}
         />
         <SettingsModal
           isOpen={isSettingsModalOpen}
