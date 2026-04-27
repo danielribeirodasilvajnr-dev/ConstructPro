@@ -199,16 +199,16 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
-      <div className="flex items-start justify-between">
-        <h2 className="text-3xl font-black text-white flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+        <h2 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
           Controle de Custos
           <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-600 font-mono">v2.1</span>
         </h2>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           <button 
             onClick={handleExportExcel}
             title="Exportar para Excel"
-            className="p-2.5 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500/20 transition-all border border-emerald-500/20 group"
+            className="p-2.5 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500/20 transition-all border border-emerald-500/20 group flex-1 sm:flex-none justify-center flex"
           >
             <FileDown className="h-5 w-5 group-hover:scale-110 transition-transform" />
           </button>
@@ -219,8 +219,8 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
               const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
               setFormData({ date: localDate, category: 'Material' }); 
               setIsModalOpen(true); 
-            }} className="px-5 py-2.5 bg-[#BCB5AC] text-[#1C232E] text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-95">
-              <Plus className="h-4 w-4" /> Novo Lançamento
+            }} className="flex-2 sm:flex-none px-4 sm:px-5 py-2.5 bg-[#BCB5AC] text-[#1C232E] text-xs sm:text-sm font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-95 whitespace-nowrap">
+              <Plus className="h-4 w-4" /> <span>Novo Lançamento</span>
             </button>
           )}
         </div>
@@ -387,7 +387,8 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
         </div>
       </div>
 
-      <div className="bg-[#1C232E] rounded-2xl border border-white/5 overflow-hidden">
+      {/* Desktop Table View */}
+      <div className="hidden md:block bg-[#1C232E] rounded-2xl border border-white/5 overflow-hidden">
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-white/5">
@@ -401,13 +402,13 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
               <th className="p-4 text-xs font-bold text-slate-500 uppercase cursor-pointer hover:text-white transition-colors" onClick={() => requestSort('amount')}>
                 <div className="flex items-center gap-2">Valor {getSortIcon('amount')}</div>
               </th>
-              <th className="p-4 text-xs font-bold text-slate-500 uppercase">Ações</th>
+              <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
             {sortedItems.map(item => (
-              <tr key={item.id} className="border-b border-white/5 hover:bg-white/5">
-                <td className="p-4 text-slate-400">{formatDate(item.date)}</td>
+              <tr key={item.id} className="border-b border-white/5 hover:bg-white/5 group">
+                <td className="p-4 text-slate-400 text-sm">{formatDate(item.date)}</td>
                 <td className="p-4 text-white">
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2 font-medium">
@@ -422,18 +423,19 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                     )}
                   </div>
                 </td>
-                <td className="p-4"><span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">{item.category}</span></td>
+                <td className="p-4"><span className="px-2 py-1 bg-slate-800 rounded text-[10px] uppercase font-bold text-slate-400">{item.category}</span></td>
                 <td className="p-4 text-white font-bold">{formatCurrency(Number(item.amount))}</td>
                 {!readOnly && (
-                  <td className="p-4 flex gap-2">
-                    <button onClick={() => { 
-                      setEditingItem(item); 
-                      // Se a categoria atual não estiver na lista permitida, força 'Material'
-                      const sanitizedCategory = VALID_CATEGORIES.includes(item.category) ? item.category : 'Material';
-                      setFormData({ ...item, category: sanitizedCategory }); 
-                      setIsModalOpen(true); 
-                    }} className="p-1 hover:text-blue-600"><Edit className="h-4 w-4" /></button>
-                    <button onClick={() => handleDelete(item.id)} className="p-1 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                  <td className="p-4">
+                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => { 
+                        setEditingItem(item); 
+                        const sanitizedCategory = VALID_CATEGORIES.includes(item.category) ? item.category : 'Material';
+                        setFormData({ ...item, category: sanitizedCategory }); 
+                        setIsModalOpen(true); 
+                      }} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-all"><Edit className="h-4 w-4" /></button>
+                      <button onClick={() => handleDelete(item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg text-red-500 transition-all"><Trash2 className="h-4 w-4" /></button>
+                    </div>
                   </td>
                 )}
               </tr>
@@ -442,10 +444,87 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
         </table>
       </div>
 
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {sortedItems.map(item => (
+          <div key={item.id} className="bg-[#1C232E] rounded-2xl border border-white/5 p-5 space-y-4 relative overflow-hidden group active:bg-white/5 transition-colors">
+            <div className="flex justify-between items-start gap-4">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black text-[#BCB5AC] uppercase tracking-widest block">
+                  {formatDate(item.date)}
+                </span>
+                <h3 className="text-white font-bold text-lg leading-tight">
+                  {item.description}
+                </h3>
+                <div className="flex items-center gap-2">
+                   <span className="px-2 py-0.5 bg-slate-800 rounded text-[10px] font-black uppercase text-slate-400">
+                    {item.category}
+                  </span>
+                  {item.receipt_url && (
+                    <button 
+                      onClick={() => window.open(item.receipt_url, '_blank')}
+                      className="flex items-center gap-1 text-[10px] font-black text-emerald-500 uppercase"
+                    >
+                      <Paperclip className="h-3 w-3" /> Anexo
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-lg font-black text-white">
+                  {formatCurrency(Number(item.amount))}
+                </div>
+              </div>
+            </div>
+
+            {item.budget_item_linked_id && (
+              <div className="pt-3 border-t border-white/5">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#BCB5AC] mt-1 shrink-0" />
+                  <span className="leading-relaxed">
+                    Vínculo: <span className="text-slate-400">{budgetItems.find(bi => bi.id === item.budget_item_linked_id)?.description || 'Item não encontrado'}</span>
+                  </span>
+                </span>
+              </div>
+            )}
+
+            {!readOnly && (
+              <div className="flex items-center gap-2 pt-2">
+                <button 
+                  onClick={() => { 
+                    setEditingItem(item); 
+                    const sanitizedCategory = VALID_CATEGORIES.includes(item.category) ? item.category : 'Material';
+                    setFormData({ ...item, category: sanitizedCategory }); 
+                    setIsModalOpen(true); 
+                  }} 
+                  className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95"
+                >
+                  <Edit className="h-4 w-4" /> Editar
+                </button>
+                <button 
+                  onClick={() => handleDelete(item.id)} 
+                  className="px-4 py-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-red-500 transition-all active:scale-95"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+        {sortedItems.length === 0 && (
+          <div className="p-12 bg-[#1C232E] rounded-2xl border border-white/5 text-center space-y-4">
+            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto">
+              <Search className="h-8 w-8 text-slate-600" />
+            </div>
+            <p className="text-slate-500 font-bold">Nenhum lançamento encontrado para os filtros selecionados.</p>
+          </div>
+        )}
+      </div>
+
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-[#1C232E] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
+          <div className="absolute inset-0 bg-[#0B0F19]/95 sm:backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
+          <div className="relative bg-[#1C232E] rounded-none sm:rounded-[24px] shadow-2xl border-x-0 sm:border border-slate-800 w-full h-full sm:h-auto sm:max-w-lg overflow-y-auto animate-in zoom-in-95 duration-200">
             <div className="p-8 pb-4 flex items-center justify-between">
               <h3 className="text-xl font-bold text-slate-100 tracking-tight">Lançamento Financeiro</h3>
               <button
