@@ -137,8 +137,8 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
         for (const item of photosToUpload) {
           if (item.file) {
             // New photo: upload and insert
-            const fileNameToSanitize = (item.file as any).name || `foto_${Date.now()}.jpg`;
-            const sanitizedName = sanitizeFileName(fileNameToSanitize);
+            const rawFileName = (item.file as any)?.name || `foto_${Date.now()}.jpg`;
+            const sanitizedName = sanitizeFileName(rawFileName);
             const fileName = `${projectId}/${logId}/${Date.now()}-${sanitizedName}`;
             
             const { error: uploadError } = await supabase.storage
@@ -157,7 +157,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
             const { error: photoLogError } = await supabase.from('daily_log_photos').insert({
               log_id: logId,
               image_url: publicUrl,
-              description: item.description || (item.file as any).name || 'Sem descrição'
+              description: item.description || (item.file as any)?.name || 'Sem descrição'
             });
 
             if (photoLogError) console.error('Error linking photo to log:', photoLogError);
