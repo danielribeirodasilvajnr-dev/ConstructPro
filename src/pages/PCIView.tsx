@@ -12,6 +12,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import * as XLSX from 'xlsx';
 
 type PCIStep = 'identification' | 'memorial' | 'budget' | 'summary';
 
@@ -64,37 +65,55 @@ const UFField = ({ label, value, onChange, required = true }: any) => (
 export function PCIView() {
   const [activeStep, setActiveStep] = useState<PCIStep>('identification');
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    proponente_nome: '',
-    proponente_email: '',
-    proponente_cpf_cnpj: '',
-    proponente_telefone: '',
-    rtp_nome: '',
-    rtp_email: '',
-    rtp_conselho: '',
-    rtp_uf: '',
-    rtp_cpf: '',
-    rtp_telefone: '',
-    rte_nome: '',
-    rte_email: '',
-    rte_conselho: '',
-    rte_uf: '',
-    rte_cpf: '',
-    rte_telefone: '',
-    imovel_endereco: '',
-    imovel_complemento: '',
-    imovel_bairro: '',
-    imovel_cep: '',
-    imovel_municipio: '',
-    imovel_uf: '',
-    memorial_cobertura: '',
-    memorial_paredes_externas: '',
-    memorial_paredes_internas: '',
+  const [formData, setFormData] = useState(() => {
+    // Tenta carregar dados salvos anteriormente
+    const saved = localStorage.getItem('pci_form_draft');
+    return saved ? JSON.parse(saved) : {
+      proponente_nome: '',
+      proponente_email: '',
+      proponente_cpf_cnpj: '',
+      proponente_telefone: '',
+      rtp_nome: '',
+      rtp_email: '',
+      rtp_conselho: '',
+      rtp_uf: '',
+      rtp_cpf: '',
+      rtp_telefone: '',
+      rte_nome: '',
+      rte_email: '',
+      rte_conselho: '',
+      rte_uf: '',
+      rte_cpf: '',
+      rte_telefone: '',
+      imovel_endereco: '',
+      imovel_complemento: '',
+      imovel_bairro: '',
+      imovel_cep: '',
+      imovel_municipio: '',
+      imovel_uf: '',
+      imovel_matricula: '',
+      imovel_ori: '',
+      imovel_coord_lat: '',
+      imovel_coord_lat_dir: 'S',
+      imovel_coord_lon: '',
+      imovel_coord_lon_dir: 'W',
+      imovel_construtora: '',
+      imovel_construtora_cnpj: '',
+      imovel_finalidade: '',
+      memorial_cobertura: '',
+      memorial_paredes_externas: '',
+      memorial_paredes_internas: '',
+    };
   });
+
+  // Salva automaticamente sempre que houver mudança
+  React.useEffect(() => {
+    localStorage.setItem('pci_form_draft', JSON.stringify(formData));
+  }, [formData]);
 
   const steps = [
     { id: 'identification', label: 'Identificação', icon: FileText },
-    { id: 'memorial', label: 'Memorial Descritivo', icon: MapPin },
+    { id: 'memorial', label: 'PCI', icon: MapPin },
     { id: 'budget', label: 'Orçamento PLS', icon: Layers },
     { id: 'summary', label: 'Resumo e Envio', icon: TrendingUp },
   ];
@@ -104,8 +123,69 @@ export function PCIView() {
     setTimeout(() => setLoading(false), 1000);
   };
 
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        
+        // Foca na aba principal (Proposta_Constr_Individual ou similar)
+        const wsName = wb.SheetNames.find(n => n.includes('Proposta')) || wb.SheetNames[0];
+        const ws = wb.Sheets[wsName];
+
+        // Mapeamento de Células (Coordenadas reais da Planilha PCI)
+        const getValue = (cell: string) => ws[cell]?.v || '';
+
+        setFormData(prev => ({
+          ...prev,
+          proponente_nome: getValue('G6'),
+          proponente_email: getValue('W6'),
+          proponente_cpf_cnpj: getValue('AK6'),
+          proponente_telefone: getValue('AR6'),
+          
+          rtp_nome: getValue('G8'),
+          rtp_conselho: getValue('AK8'),
+          rtp_uf: getValue('AX8'),
+          rtp_cpf: getValue('BC8'),
+
+          imovel_endereco: getValue('G14'),
+          imovel_complemento: getValue('AK14'),
+          imovel_bairro: getValue('G16'),
+          imovel_cep: getValue('W16'),
+          imovel_municipio: getValue('AK16'),
+          imovel_uf: getValue('AX16'),
+          
+          imovel_matricula: getValue('G18'),
+          imovel_finalidade: getValue('BC18'),
+        }));
+
+        alert('Planilha importada com sucesso!');
+      } catch (error) {
+        console.error('Erro ao ler Excel:', error);
+        alert('Erro ao processar o arquivo. Verifique se o formato está correto.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+      {/* Hidden File Input */}
+      <input 
+        type="file" 
+        id="excel-upload" 
+        className="hidden" 
+        accept=".xlsx, .xls, .xlsm"
+        onChange={handleImportExcel}
+      />
+      
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
@@ -113,6 +193,13 @@ export function PCIView() {
           <h2 className="text-4xl font-black text-white tracking-tighter mt-1">PCI Digital</h2>
         </div>
         <div className="flex gap-2">
+          <button 
+            onClick={() => document.getElementById('excel-upload')?.click()}
+            className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold flex items-center gap-2 hover:bg-blue-500 transition-all active:scale-95 shadow-xl shadow-blue-900/20"
+          >
+            <FileText className="h-4 w-4" />
+            Importar .xlsm
+          </button>
           <button className="px-6 py-3 rounded-xl bg-white/5 text-white font-bold flex items-center gap-2 hover:bg-white/10 transition-all active:scale-95 border border-white/10">
             Visualizar Impressão
           </button>
@@ -180,6 +267,7 @@ export function PCIView() {
                 <InputField 
                   label="E-mail" 
                   className="md:col-span-3"
+                  required={true}
                   value={formData.proponente_email}
                   onChange={(v: string) => setFormData({...formData, proponente_email: v})}
                 />
@@ -208,6 +296,7 @@ export function PCIView() {
                 <InputField 
                   label="E-mail - RTP" 
                   className="md:col-span-2"
+                  required={true}
                   value={formData.rtp_email}
                   onChange={(v: string) => setFormData({...formData, rtp_email: v})}
                 />
@@ -220,6 +309,7 @@ export function PCIView() {
                 />
                 <UFField 
                   label="UF" 
+                  required={true}
                   value={formData.rtp_uf}
                   onChange={(v: string) => setFormData({...formData, rtp_uf: v})}
                 />
@@ -233,6 +323,7 @@ export function PCIView() {
                 <InputField 
                   label="Telefone - RTP" 
                   className="md:col-span-1.5"
+                  required={true}
                   value={formData.rtp_telefone}
                   onChange={(v: string) => setFormData({...formData, rtp_telefone: v})}
                 />
@@ -247,6 +338,7 @@ export function PCIView() {
                 <InputField 
                   label="E-mail - RTE" 
                   className="md:col-span-2"
+                  required={true}
                   value={formData.rte_email}
                   onChange={(v: string) => setFormData({...formData, rte_email: v})}
                 />
@@ -259,6 +351,7 @@ export function PCIView() {
                 />
                 <UFField 
                   label="UF" 
+                  required={true}
                   value={formData.rte_uf}
                   onChange={(v: string) => setFormData({...formData, rte_uf: v})}
                 />
@@ -272,6 +365,7 @@ export function PCIView() {
                 <InputField 
                   label="Telefone - RTE" 
                   className="md:col-span-1.5"
+                  required={true}
                   value={formData.rte_telefone}
                   onChange={(v: string) => setFormData({...formData, rte_telefone: v})}
                 />
@@ -288,6 +382,7 @@ export function PCIView() {
                 <InputField 
                   label="Complemento" 
                   className="md:col-span-4"
+                  required={true}
                   value={formData.imovel_complemento}
                   onChange={(v: string) => setFormData({...formData, imovel_complemento: v})}
                 />
@@ -314,8 +409,87 @@ export function PCIView() {
                 />
                 <UFField 
                   label="UF" 
+                  required={true}
                   value={formData.imovel_uf}
                   onChange={(v: string) => setFormData({...formData, imovel_uf: v})}
+                />
+
+                <InputField 
+                  label="Matrícula" 
+                  className="md:col-span-1"
+                  required={true}
+                  value={formData.imovel_matricula}
+                  onChange={(v: string) => setFormData({...formData, imovel_matricula: v})}
+                />
+                <InputField 
+                  label="ORI (Registro de Imóveis)" 
+                  className="md:col-span-2"
+                  required={true}
+                  value={formData.imovel_ori}
+                  onChange={(v: string) => setFormData({...formData, imovel_ori: v})}
+                />
+                
+                {/* Coordenadas como Caixas Individuais */}
+                <div className="md:col-span-3 grid grid-cols-4 bg-[#D9E1F2]">
+                  <div className="col-span-4 px-2 py-0.5 border-b border-white/40">
+                    <label className="block text-[8px] font-bold text-slate-600 uppercase">Coordenadas (Graus°, Min', S")</label>
+                  </div>
+                  <div className="border-r border-white/40 p-1">
+                    <input 
+                      type="text" 
+                      className="w-full bg-transparent border-none p-0 text-[11px] text-center text-slate-900 font-bold focus:ring-0 outline-none"
+                      value={formData.imovel_coord_lat}
+                      onChange={e => setFormData({...formData, imovel_coord_lat: e.target.value})}
+                    />
+                  </div>
+                  <div className="border-r border-orange-400 p-1 bg-white mx-0.5 my-0.5 border">
+                    <input 
+                      type="text" 
+                      maxLength={1}
+                      className="w-full bg-transparent border-none p-0 text-[11px] text-center text-slate-900 font-black uppercase focus:ring-0 outline-none"
+                      value={formData.imovel_coord_lat_dir}
+                      onChange={e => setFormData({...formData, imovel_coord_lat_dir: e.target.value})}
+                    />
+                  </div>
+                  <div className="border-r border-white/40 p-1">
+                    <input 
+                      type="text" 
+                      className="w-full bg-transparent border-none p-0 text-[11px] text-center text-slate-900 font-bold focus:ring-0 outline-none"
+                      value={formData.imovel_coord_lon}
+                      onChange={e => setFormData({...formData, imovel_coord_lon: e.target.value})}
+                    />
+                  </div>
+                  <div className="border-orange-400 p-1 bg-white mx-0.5 my-0.5 border">
+                    <input 
+                      type="text" 
+                      maxLength={1}
+                      className="w-full bg-transparent border-none p-0 text-[11px] text-center text-slate-900 font-black uppercase focus:ring-0 outline-none"
+                      value={formData.imovel_coord_lon_dir}
+                      onChange={e => setFormData({...formData, imovel_coord_lon_dir: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <InputField 
+                  label="Construtora (se houver)" 
+                  className="md:col-span-2"
+                  required={true}
+                  value={formData.imovel_construtora}
+                  onChange={(v: string) => setFormData({...formData, imovel_construtora: v})}
+                />
+                <InputField 
+                  label="CNPJ" 
+                  className="md:col-span-1.5"
+                  required={true}
+                  value={formData.imovel_construtora_cnpj}
+                  onChange={(v: string) => setFormData({...formData, imovel_construtora_cnpj: v})}
+                />
+                <InputField 
+                  label="Finalidade" 
+                  className="md:col-span-2.5"
+                  required={true}
+                  value={formData.imovel_finalidade}
+                  onChange={(v: string) => setFormData({...formData, imovel_finalidade: v})}
                 />
               </InputGroup>
 
@@ -337,19 +511,133 @@ export function PCIView() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="space-y-8"
+              className="space-y-6"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {['cobertura', 'paredes_externas', 'paredes_internas'].map((field) => (
-                  <div key={field} className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">
-                      {field.replace('_', ' ')}
-                    </label>
+              <div className="flex justify-between items-center mb-6">
+                <div className="bg-[#2F528F] text-white px-4 py-1 text-[10px] font-black uppercase tracking-widest rounded">
+                  Documentação para Análise Técnica
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Página 1 de 3</span>
+              </div>
+
+              <InputGroup label="Documentação Básica">
+                <InputField 
+                  label="Alvará de Licença da Obra" 
+                  className="md:col-span-4"
+                  required={true}
+                  value={formData.doc_alvara}
+                  onChange={(v: string) => setFormData({...formData, doc_alvara: v})}
+                />
+                <InputField 
+                  label="Data do Alvará" 
+                  className="md:col-span-4"
+                  required={true}
+                  value={formData.doc_alvara_data}
+                  onChange={(v: string) => setFormData({...formData, doc_alvara_data: v})}
+                />
+                <InputField 
+                  label="Número do Alvará" 
+                  className="md:col-span-4"
+                  required={true}
+                  value={formData.doc_alvara_num}
+                  onChange={(v: string) => setFormData({...formData, doc_alvara_num: v})}
+                />
+                <InputField 
+                  label="ART/RRT de Proj. Arquit./Edif." 
+                  className="md:col-span-6"
+                  required={true}
+                  value={formData.doc_art_proj}
+                  onChange={(v: string) => setFormData({...formData, doc_art_proj: v})}
+                />
+                <InputField 
+                  label="Número" 
+                  className="md:col-span-6"
+                  required={true}
+                  value={formData.doc_art_proj_num}
+                  onChange={(v: string) => setFormData({...formData, doc_art_proj_num: v})}
+                />
+                <InputField 
+                  label="ART/RRT de Exec. de Obra" 
+                  className="md:col-span-6"
+                  required={true}
+                  value={formData.doc_art_exec}
+                  onChange={(v: string) => setFormData({...formData, doc_art_exec: v})}
+                />
+                <InputField 
+                  label="Número" 
+                  className="md:col-span-6"
+                  required={true}
+                  value={formData.doc_art_exec_num}
+                  onChange={(v: string) => setFormData({...formData, doc_art_exec_num: v})}
+                />
+              </InputGroup>
+
+              <InputGroup label="Áreas">
+                <InputField 
+                  label="Área Coberta Padrão (m²)" 
+                  className="md:col-span-2"
+                  required={true}
+                  value={formData.area_coberta}
+                  onChange={(v: string) => setFormData({...formData, area_coberta: v})}
+                />
+                <InputField 
+                  label="Área Permeável (m²)" 
+                  className="md:col-span-2"
+                  required={true}
+                  value={formData.area_permeavel}
+                  onChange={(v: string) => setFormData({...formData, area_permeavel: v})}
+                />
+                <InputField 
+                  label="Área Descoberta Coberta (m²)" 
+                  className="md:col-span-2"
+                  required={true}
+                  value={formData.area_descoberta}
+                  onChange={(v: string) => setFormData({...formData, area_descoberta: v})}
+                />
+                <InputField 
+                  label="Área Construída Total (m²)" 
+                  className="md:col-span-2"
+                  required={true}
+                  value={formData.area_total}
+                  onChange={(v: string) => setFormData({...formData, area_total: v})}
+                />
+                <InputField 
+                  label="Área do Terreno (m²)" 
+                  className="md:col-span-2"
+                  required={true}
+                  value={formData.area_terreno_m2}
+                  onChange={(v: string) => setFormData({...formData, area_terreno_m2: v})}
+                />
+                <InputField 
+                  label="Valor do Terreno (R$)" 
+                  className="md:col-span-2"
+                  required={true}
+                  value={formData.valor_terreno_rs}
+                  onChange={(v: string) => setFormData({...formData, valor_terreno_rs: v})}
+                />
+              </InputGroup>
+
+              <div className="bg-[#2F528F] px-4 py-2 rounded-t-lg">
+                <h3 className="text-xs font-black text-white uppercase tracking-wider">Memorial Descritivo</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-slate-300 border border-slate-300 rounded-b-lg overflow-hidden mb-8">
+                {[
+                  { id: 'cobertura', label: 'Cobertura' },
+                  { id: 'revest_ext', label: 'Revestimento Paredes Externas' },
+                  { id: 'revest_int', label: 'Revestimento Paredes Internas' },
+                  { id: 'pisos', label: 'Pisos' },
+                  { id: 'esquadrias', label: 'Esquadrias' },
+                  { id: 'inst_eletricas', label: 'Instalações Elétricas' },
+                  { id: 'inst_hidraulicas', label: 'Instalações Hidráulicas' },
+                  { id: 'loucas_metais', label: 'Louças e Metais' },
+                ].map((item) => (
+                  <div key={item.id} className="bg-[#D9E1F2] p-3 space-y-1">
+                    <label className="block text-[9px] font-black text-slate-600 uppercase">{item.label}</label>
                     <textarea 
-                      placeholder="Descreva o material e acabamento..."
-                      className="w-full bg-[#E9EBF5] border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 focus:border-[#2F528F] outline-none transition-all shadow-inner min-h-[120px]"
-                      value={(formData as any)[`memorial_${field}`]}
-                      onChange={e => setFormData({...formData, [`memorial_${field}`]: e.target.value})}
+                      className="w-full bg-white/50 border-none p-2 text-xs text-slate-900 font-bold focus:ring-1 focus:ring-[#2F528F] outline-none min-h-[60px] rounded"
+                      placeholder={`Descreva a solução para ${item.label.toLowerCase()}...`}
+                      value={(formData as any)[`mem_${item.id}`]}
+                      onChange={e => setFormData({...formData, [`mem_${item.id}`]: e.target.value})}
                     />
                   </div>
                 ))}
@@ -380,13 +668,76 @@ export function PCIView() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="space-y-8"
+              className="space-y-6"
             >
-              <div className="bg-red-50 border border-red-100 p-6 rounded-2xl flex items-center gap-4">
-                <AlertCircle className="h-6 w-6 text-red-500 shrink-0" />
-                <div>
-                  <p className="text-red-900 font-bold text-sm">Orçamento Pendente</p>
-                  <p className="text-red-700 text-xs">Os itens de orçamento serão importados automaticamente da Planilha PCI selecionada.</p>
+              <div className="flex justify-between items-center mb-4">
+                <div className="bg-[#2F528F] text-white px-4 py-1 text-[10px] font-black uppercase tracking-widest rounded">
+                  Custos e Cronograma
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Página 2 de 3</span>
+              </div>
+
+              {/* Tabela de Custos */}
+              <div className="border border-slate-300 rounded-lg overflow-hidden shadow-sm">
+                <div className="grid grid-cols-12 bg-[#2F528F] text-white text-[9px] font-black uppercase p-2 gap-2">
+                  <div className="col-span-1 text-center">Item</div>
+                  <div className="col-span-5">Serviços</div>
+                  <div className="col-span-2 text-center">Incidência (%)</div>
+                  <div className="col-span-4 text-center">Custos Propostos (R$)</div>
+                </div>
+                <div className="max-h-[400px] overflow-y-auto bg-white">
+                  {[
+                    "Demolição e Limpeza", "Infraestrutura", "Supraestrutura", "Paredes e Painéis",
+                    "Esquadrias", "Vidros e Plásticos", "Cobertura", "Impermeabilização",
+                    "Revestimento Interno", "Forros", "Revestimento Externo", "Pinturas",
+                    "Pisos", "Acabamentos", "Instalação Elétrica", "Instalação Hidráulica",
+                    "Esgoto e Águas Pluviais", "Louças e Metais", "Complementares", "Outros"
+                  ].map((service, index) => (
+                    <div key={index} className="grid grid-cols-12 border-b border-slate-100 items-center text-[11px] hover:bg-slate-50">
+                      <div className="col-span-1 py-2 text-center font-bold text-slate-400 border-r border-slate-100">{index + 1}</div>
+                      <div className="col-span-5 py-2 px-3 font-medium text-slate-700 border-r border-slate-100">{service}</div>
+                      <div className="col-span-2 py-1 px-2 border-r border-slate-100">
+                        <input type="text" className="w-full text-center bg-[#E9EBF5] border-none p-1 font-bold text-blue-700 rounded" placeholder="0,00" />
+                      </div>
+                      <div className="col-span-4 py-1 px-2">
+                        <input type="text" className="w-full text-right bg-[#E9EBF5] border-none p-1 font-bold text-slate-900 rounded" placeholder="R$ 0,00" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-12 bg-[#D9E1F2] p-2 font-black text-[10px] uppercase border-t border-slate-300 text-slate-800">
+                  <div className="col-span-6 text-right pr-4">Custo Total da Obra:</div>
+                  <div className="col-span-6 text-right pr-2">R$ 0,00</div>
+                </div>
+              </div>
+
+              {/* Cronograma */}
+              <div className="mt-8 space-y-4">
+                <div className="bg-[#E9EBF5] border-l-4 border-[#2F528F] p-4 rounded-r-lg">
+                  <h4 className="text-xs font-black text-[#2F528F] uppercase tracking-wider">Cronograma de Execução da Obra</h4>
+                  <p className="text-[10px] text-slate-500 font-bold mt-1">Previsão de evolução física e financeira por etapas.</p>
+                </div>
+
+                <div className="grid grid-cols-12 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden text-[9px] font-black uppercase text-center text-slate-600">
+                  <div className="col-span-1 bg-slate-50 py-2">Etapa</div>
+                  <div className="col-span-3 bg-slate-50 py-2">Execução Prevista (%)</div>
+                  <div className="col-span-4 bg-slate-50 py-2">Incidência Acumulada (%)</div>
+                  <div className="col-span-4 bg-slate-50 py-2">Valor Estimado (R$)</div>
+                  
+                  {[1, 2, 3, 4, 5].map((etapa) => (
+                    <React.Fragment key={etapa}>
+                      <div className="col-span-1 bg-white py-3 border-t border-slate-100 text-slate-400 font-bold">{etapa}</div>
+                      <div className="col-span-3 bg-white py-2 border-t border-slate-100 px-2">
+                        <input type="text" className="w-full bg-[#D9E1F2] border-none p-1 text-center font-black text-blue-700 rounded" placeholder="0%" />
+                      </div>
+                      <div className="col-span-4 bg-white py-2 border-t border-slate-100 px-2">
+                        <input type="text" className="w-full bg-slate-50 border-none p-1 text-center font-bold text-slate-400 rounded" disabled value="0%" />
+                      </div>
+                      <div className="col-span-4 bg-white py-2 border-t border-slate-100 px-2 text-right flex items-center justify-end pr-4 font-bold text-slate-800">
+                        R$ 0,00
+                      </div>
+                    </React.Fragment>
+                  ))}
                 </div>
               </div>
 
@@ -402,7 +753,7 @@ export function PCIView() {
                   onClick={() => setActiveStep('summary')}
                   className="px-10 py-4 bg-[#2F528F] text-white font-black rounded-2xl uppercase tracking-[2px] flex items-center gap-3 hover:bg-slate-700 transition-all shadow-xl shadow-black/20"
                 >
-                  Resumo Final
+                  Página Final
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
