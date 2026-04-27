@@ -92,14 +92,7 @@ export function Sidebar({
         </nav>
 
         <div className="p-6 mt-auto border-t border-slate-800 bg-slate-900/10">
-          {!isClient && (
-            <button
-              className="mb-6 flex items-center justify-center rounded-xl bg-[#BCB5AC] text-[#1C232E] transition-all hover:bg-slate-700 shadow-lg shadow-black/20 active:scale-95 w-full py-3.5 gap-2 text-xs font-bold uppercase tracking-widest"
-            >
-              <PlusCircle className="h-5 w-5" />
-              <span>Novo Lançamento</span>
-            </button>
-          )}
+
           <div className="flex flex-col gap-1 w-full">
             <button
               className="flex items-center gap-3 text-sm text-slate-400 hover:text-primary transition-colors px-4 py-2"
