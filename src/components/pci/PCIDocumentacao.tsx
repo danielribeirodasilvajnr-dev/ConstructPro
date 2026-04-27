@@ -21,10 +21,10 @@ export function PCIDocumentacao({ data, onChange }: Props) {
     <div className="space-y-0">
       <table className="w-full border-collapse" style={{ minWidth: '900px' }}>
         <tbody>
-          <tr><td colSpan={6} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
+          <tr><td colSpan={20} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Documentação para Análise Técnica</span>
           </td></tr>
-          <tr><td colSpan={6} className="bg-[#2F528F]/80 px-3 py-0.5 border border-[#1a3a6e]">
+          <tr><td colSpan={20} className="bg-[#2F528F]/80 px-3 py-0.5 border border-[#1a3a6e]">
             <span className="text-[9px] font-bold text-white">Documentação básica</span>
           </td></tr>
 

@@ -55,7 +55,7 @@ export function PCICronograma({ data, onChange }: Props) {
       {/* CRONOGRAMA */}
       <table className="w-full border-collapse mt-0">
         <tbody>
-          <tr><td colSpan={5} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
+          <tr><td colSpan={20} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Cronograma</span>
           </td></tr>
           {/* Cabeçalho — R144 */}
@@ -113,7 +113,7 @@ export function PCICronograma({ data, onChange }: Props) {
       {/* INSERIR POLIGONAL DO TERRENO (R172-174) */}
       <table className="w-full border-collapse mt-2">
         <tbody>
-          <tr><td colSpan={2} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
+          <tr><td colSpan={20} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Inserir Poligonal do Terreno</span>
           </td></tr>
           <tr>
@@ -134,7 +134,7 @@ export function PCICronograma({ data, onChange }: Props) {
       {/* DESCRIÇÃO OBRAS EXECUTADAS */}
       <table className="w-full border-collapse mt-2">
         <tbody>
-          <tr><td className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
+          <tr><td colSpan={20} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Descrição das obras já executadas</span>
           </td></tr>
           <tr>
@@ -154,7 +154,7 @@ export function PCICronograma({ data, onChange }: Props) {
       {/* OBSERVAÇÕES */}
       <table className="w-full border-collapse mt-2">
         <tbody>
-          <tr><td className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
+          <tr><td colSpan={20} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Outras Observações</span>
           </td></tr>
           <tr>
@@ -170,7 +170,7 @@ export function PCICronograma({ data, onChange }: Props) {
       {/* DECLARAÇÕES */}
       <table className="w-full border-collapse mt-2">
         <tbody>
-          <tr><td colSpan={4} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
+          <tr><td colSpan={20} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Declarações e ciência do proponente e do responsável técnico</span>
           </td></tr>
           <tr>

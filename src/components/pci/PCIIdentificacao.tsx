@@ -49,7 +49,7 @@ export function PCIIdentificacao({ data, onChange }: Props) {
       <table className="w-full border-collapse text-left" style={{ minWidth: '900px' }}>
         <tbody>
           <tr>
-            <td colSpan={12} className="bg-white py-3 px-3 border border-[#8ea0b4]">
+            <td colSpan={20} className="bg-white py-3 px-3 border border-[#8ea0b4]">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <div className="bg-[#005CA9] text-white font-black text-[14px] px-3 py-1.5 rounded-sm tracking-wider leading-none">
@@ -69,7 +69,7 @@ export function PCIIdentificacao({ data, onChange }: Props) {
       {/* IDENTIFICAÇÃO */}
       <table className="w-full border-collapse" style={{ minWidth: '900px' }}>
         <tbody>
-          <tr><td colSpan={12} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
+          <tr><td colSpan={20} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Identificação</span>
           </td></tr>
 
@@ -122,7 +122,7 @@ export function PCIIdentificacao({ data, onChange }: Props) {
       {/* IDENTIFICAÇÃO DO IMÓVEL */}
       <table className="w-full border-collapse mt-0" style={{ minWidth: '900px' }}>
         <tbody>
-          <tr><td colSpan={12} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
+          <tr><td colSpan={20} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Identificação do imóvel proposto</span>
           </td></tr>
           <tr>
