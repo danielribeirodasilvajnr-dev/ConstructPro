@@ -219,6 +219,32 @@ export function ProprietorView({ selectedProjectId }: ProprietorViewProps) {
 
       <div className="grid grid-cols-12 gap-8">
         <div className="col-span-12 lg:col-span-8 space-y-8">
+          {/* Gallery Section */}
+          {allPhotos.length > 0 && (
+            <div className="bg-[#1C232E] rounded-2xl p-8 border border-white/5 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold flex items-center gap-2 text-white">
+                  <Camera className="h-5 w-5 text-primary" />
+                  Galeria de Fotos
+                </h3>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                {allPhotos.map((photo, i) => (
+                  <div key={i} className="group relative aspect-square rounded-2xl overflow-hidden border border-white/10 bg-black/20 cursor-pointer">
+                    <img 
+                      src={photo.url} 
+                      alt={photo.desc} 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                      <p className="text-[10px] text-white font-medium line-clamp-2">{photo.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Timeline - Last Daily Logs with Photos */}
           <div className="bg-[#1C232E] rounded-2xl p-8 border border-white/5 shadow-sm">
             <div className="flex justify-between items-center mb-8">
