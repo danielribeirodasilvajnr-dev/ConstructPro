@@ -175,7 +175,9 @@ export interface PCIFormData {
   imovel_matricula: string;
   imovel_ori: string;
   imovel_coord_lat: string;
+  imovel_coord_lat_hem: string; // S/N
   imovel_coord_lon: string;
+  imovel_coord_lon_hem: string; // W/E
   imovel_construtora: string;
   imovel_construtora_cnpj: string;
   imovel_finalidade: string;
@@ -282,7 +284,9 @@ export const INITIAL_PCI_DATA: PCIFormData = {
   imovel_matricula: '',
   imovel_ori: '',
   imovel_coord_lat: '',
+  imovel_coord_lat_hem: 'S',
   imovel_coord_lon: '',
+  imovel_coord_lon_hem: 'W',
   imovel_construtora: '',
   imovel_construtora_cnpj: '',
   imovel_finalidade: '',

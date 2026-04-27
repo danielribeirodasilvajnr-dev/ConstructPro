@@ -147,8 +147,28 @@ export function PCIIdentificacao({ data, onChange }: Props) {
             <L>ORI (Registro de Imóveis)</L>
             <E value={data.imovel_ori} onChange={set('imovel_ori')} />
             <L>Coordenadas (Graus°, Min', S'')</L>
-            <E value={data.imovel_coord_lat} onChange={set('imovel_coord_lat')} placeholder="Lat" />
-            <E value={data.imovel_coord_lon} onChange={set('imovel_coord_lon')} placeholder="Lon" />
+            <td className="bg-[#D9E1F2] border border-[#8ea0b4] px-0 py-0">
+              <div className="flex items-center">
+                <input value={data.imovel_coord_lat} onChange={e => set('imovel_coord_lat')(e.target.value)}
+                  className="flex-1 bg-transparent text-[10px] outline-none px-1 py-[2px]" placeholder={"00°00'00\""} />
+                <select value={data.imovel_coord_lat_hem} onChange={e => set('imovel_coord_lat_hem')(e.target.value)}
+                  className="bg-white border-l border-[#8ea0b4] text-[9px] font-black px-1 py-[4px] outline-none cursor-pointer appearance-none min-w-[18px] text-center">
+                  <option value="S">S</option>
+                  <option value="N">N</option>
+                </select>
+              </div>
+            </td>
+            <td className="bg-[#D9E1F2] border border-[#8ea0b4] px-0 py-0">
+              <div className="flex items-center">
+                <input value={data.imovel_coord_lon} onChange={e => set('imovel_coord_lon')(e.target.value)}
+                  className="flex-1 bg-transparent text-[10px] outline-none px-1 py-[2px]" placeholder={"00°00'00\""} />
+                <select value={data.imovel_coord_lon_hem} onChange={e => set('imovel_coord_lon_hem')(e.target.value)}
+                  className="bg-white border-l border-[#8ea0b4] text-[9px] font-black px-1 py-[4px] outline-none cursor-pointer appearance-none min-w-[18px] text-center">
+                  <option value="W">W</option>
+                  <option value="E">E</option>
+                </select>
+              </div>
+            </td>
             <L>Construtora (se houver)</L>
             <E value={data.imovel_construtora} onChange={set('imovel_construtora')} />
             <L>CNPJ</L>
