@@ -37,33 +37,18 @@ export function formatDate(dateStr: string, options?: Intl.DateTimeFormatOptions
 
 export function sanitizeFileName(fileName: any): string {
   try {
-    // If no name provided, generate a default one
     if (!fileName) return `foto_${Date.now()}.jpg`;
     
-    // Ensure we are working with a string
-    let name = typeof fileName === 'string' ? fileName : String(fileName);
+    // Convert to string and take only the name part if it's a path
+    let name = String(fileName).split(/[\\/]/).pop() || '';
     
-    // Fallback if String conversion failed or returned something weird
-    if (!name || name === 'undefined' || name === 'null') {
-      return `foto_${Date.now()}.jpg`;
-    }
-
-    // Modern way to remove accents, but check for support
-    if (typeof name.normalize === 'function') {
-      try {
-        name = name.normalize('NFD');
-      } catch (e) {
-        // Ignore normalization errors and proceed with raw name
-      }
-    }
-    
+    // Very basic sanitization: remove common accented characters manually if needed, 
+    // or just let the regex handle it by replacing non-standard chars with underscores.
     return name
-      .replace(/[\u0300-\u036f]/g, '') // Remove accents (if normalized)
-      .replace(/[^\w.-]/g, '_')        // Replace special characters with underscores
-      .replace(/_{2,}/g, '_')         // Clean up multiple underscores
-      .toLowerCase();                 // Consistent casing for storage
+      .replace(/[^\w.-]/g, '_')
+      .replace(/_{2,}/g, '_')
+      .toLowerCase();
   } catch (err) {
-    console.error('Error sanitizing filename:', err);
     return `foto_${Date.now()}.jpg`;
   }
 }

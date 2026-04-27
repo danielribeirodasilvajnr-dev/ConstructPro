@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { DailyLog, DailyLogPhoto } from '../../lib/types';
 import { cn, formatDate, sanitizeFileName, compressImage } from '../../lib/utils';
 import { AlertModal } from '../ui/AlertModal';
+import { ConfirmModal } from '../ui/ConfirmModal';
 
 interface DailyLogWithPhotos extends DailyLog {
   daily_log_photos?: DailyLogPhoto[];
@@ -34,6 +35,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
     title: '',
     message: ''
   });
+  const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
 
   // Multi-photo state
   const [photosToUpload, setPhotosToUpload] = useState<PhotoUploadItem[]>([
@@ -137,8 +139,14 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
         for (const item of photosToUpload) {
           if (item.file) {
             // New photo: upload and insert
-            const rawFileName = (item.file as any)?.name || `foto_${Date.now()}.jpg`;
-            const sanitizedName = sanitizeFileName(rawFileName);
+            let sanitizedName = `foto_${Date.now()}.jpg`;
+            try {
+              const rawFileName = (item.file as any)?.name || '';
+              sanitizedName = sanitizeFileName(rawFileName);
+            } catch (e) {
+              console.error('Inner sanitization error:', e);
+            }
+            
             const fileName = `${projectId}/${logId}/${Date.now()}-${sanitizedName}`;
             
             const { error: uploadError } = await supabase.storage
@@ -195,10 +203,11 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
     setPhotosToUpload([{ file: null, description: '', previewUrl: null, id: Math.random().toString(36).slice(2) }]);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Excluir este Diário de Obra?')) return;
+  const confirmDelete = async () => {
+    if (!deletingLogId) return;
     try {
-      await supabase.from('daily_logs').delete().eq('id', id);
+      await supabase.from('daily_logs').delete().eq('id', deletingLogId);
+      setDeletingLogId(null);
       onRefresh();
     } catch (err) {
       console.error(err);
@@ -314,7 +323,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                       
                       setIsModalOpen(true); 
                     }} className="p-1 hover:text-white transition-colors"><Edit className="h-4 w-4" /></button>
-                    <button onClick={() => handleDelete(log.id)} className="p-1 hover:text-red-500 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => setDeletingLogId(log.id)} className="p-1 hover:text-red-500 transition-colors"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 )}
               </div>
@@ -482,6 +491,14 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
           </div>
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={!!deletingLogId}
+        onClose={() => setDeletingLogId(null)}
+        onConfirm={confirmDelete}
+        title="Excluir Diário de Obra?"
+        message="Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita."
+      />
 
       <AlertModal 
         isOpen={alertConfig.isOpen}
