@@ -40,6 +40,16 @@ export default function App() {
     }
   }, [user, isProprietor, authLoading]);
 
+  // Failsafe: if activeTab is still null after 3 seconds of having a user, force it to dashboard
+  React.useEffect(() => {
+    if (user && !authLoading && !activeTab) {
+      const fallbackTimer = setTimeout(() => {
+        setActiveTab(isProprietor ? 'safety' : 'dashboard');
+      }, 3000);
+      return () => clearTimeout(fallbackTimer);
+    }
+  }, [user, authLoading, activeTab, isProprietor]);
+
   if (!user) {
     return <AuthView />;
   }

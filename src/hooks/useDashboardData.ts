@@ -10,6 +10,12 @@ export function useDashboardData() {
 
   const fetchDashboardData = async () => {
     if (!user) return;
+    
+    // Safety timeout to prevent infinite spinner
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 8000);
+
     setLoading(true);
     try {
       // Fetch all projects for the user
@@ -23,6 +29,8 @@ export function useDashboardData() {
           daily_logs(*)
         `)
         .order('created_at', { ascending: false });
+
+      clearTimeout(timeout);
 
       if (projectsError) throw projectsError;
       if (!projects) {
