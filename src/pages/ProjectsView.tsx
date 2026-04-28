@@ -157,8 +157,8 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           {[
             { id: 'orcamento', label: 'Orçamento' },
             { id: 'financeiro', label: 'Financeiro' },
-            { id: 'cronograma', label: 'Cronograma' },
             { id: 'concorrencia', label: 'Quadro de Concorrência' },
+            { id: 'cronograma', label: 'Cronograma' },
             { id: 'medicoes', label: 'Medições' },
             { id: 'diario', label: 'Diário de Obra' },
           ].map((tab) => (
@@ -268,73 +268,73 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         <>
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-2xl mb-8">
-              <h3 className="text-red-500 font-bold mb-2 flex items-center gap-2"><AlertCircle className="h-5 w-5"/> Erro ao carregar projetos</h3>
+              <h3 className="text-red-500 font-bold mb-2 flex items-center gap-2"><AlertCircle className="h-5 w-5" /> Erro ao carregar projetos</h3>
               <p className="text-sm text-red-400">{error}</p>
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {projects.map((project) => (
-            <div
-              key={project.id}
-              onClick={() => onSelectProject(project.id)}
-              className="bg-[#1C232E] rounded-[24px] border border-slate-800 overflow-hidden flex flex-col group hover:shadow-2xl hover:border-[#BCB5AC]/50 cursor-pointer transition-all relative animate-in fade-in duration-500"
-            >
-              <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 z-10">
-                {project.user_id === projects.find(p => p.id === project.id)?.user_id && (
-                  <>
-                    <button
-                      onClick={(e) => handleEdit(e, project)}
-                      className="p-2 bg-slate-900/90 text-slate-400 hover:text-white border border-slate-800 rounded-lg backdrop-blur-md transition-all shadow-xl"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setDeletingProject(project); }}
-                      className="p-2 bg-slate-900/90 text-slate-400 hover:text-red-500 border border-slate-800 rounded-lg backdrop-blur-md transition-all shadow-xl"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </>
-                )}
-              </div>
-
-              <div className="p-8 flex-1">
-                <div className="flex items-start justify-between mb-6">
-                  <span className={cn(
-                    "px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider",
-                    project.status === 'Em andamento' ? 'bg-[#FFF3D6] text-[#C48C00]' :
-                      project.status === 'Finalizada' ? 'bg-emerald-500/10 text-emerald-500' :
-                        'bg-slate-800 text-slate-400'
-                  )}>
-                    {project.status}
-                  </span>
+            {projects.map((project) => (
+              <div
+                key={project.id}
+                onClick={() => onSelectProject(project.id)}
+                className="bg-[#1C232E] rounded-[24px] border border-slate-800 overflow-hidden flex flex-col group hover:shadow-2xl hover:border-[#BCB5AC]/50 cursor-pointer transition-all relative animate-in fade-in duration-500"
+              >
+                <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 z-10">
+                  {project.user_id === projects.find(p => p.id === project.id)?.user_id && (
+                    <>
+                      <button
+                        onClick={(e) => handleEdit(e, project)}
+                        className="p-2 bg-slate-900/90 text-slate-400 hover:text-white border border-slate-800 rounded-lg backdrop-blur-md transition-all shadow-xl"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeletingProject(project); }}
+                        className="p-2 bg-slate-900/90 text-slate-400 hover:text-red-500 border border-slate-800 rounded-lg backdrop-blur-md transition-all shadow-xl"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
 
-                <h3 className="text-xl font-bold text-slate-100 tracking-tight group-hover:text-[#BCB5AC] transition-colors line-clamp-2 min-h-[56px]">{project.name}</h3>
+                <div className="p-8 flex-1">
+                  <div className="flex items-start justify-between mb-6">
+                    <span className={cn(
+                      "px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider",
+                      project.status === 'Em andamento' ? 'bg-[#FFF3D6] text-[#C48C00]' :
+                        project.status === 'Finalizada' ? 'bg-emerald-500/10 text-emerald-500' :
+                          'bg-slate-800 text-slate-400'
+                    )}>
+                      {project.status}
+                    </span>
+                  </div>
 
-                <div className="mt-6 space-y-4">
-                  <div className="flex items-center gap-3 text-slate-500">
-                    <MapIcon className="h-4 w-4 text-slate-600" />
-                    <span className="text-xs font-medium">Local: {project.location || 'Local não definido'}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-slate-500">
-                    <div className="w-4 h-4 flex items-center justify-center font-bold text-[9px] border border-slate-700 rounded-sm">m²</div>
-                    <span className="text-xs font-medium">Área: {project.area || '0'},00 m²</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-slate-500">
-                    <CalendarIcon className="h-4 w-4 text-slate-600" />
-                    <span className="text-xs font-medium">Prazo: {project.deadline || 'Sem prazo'}</span>
+                  <h3 className="text-xl font-bold text-slate-100 tracking-tight group-hover:text-[#BCB5AC] transition-colors line-clamp-2 min-h-[56px]">{project.name}</h3>
+
+                  <div className="mt-6 space-y-4">
+                    <div className="flex items-center gap-3 text-slate-500">
+                      <MapIcon className="h-4 w-4 text-slate-600" />
+                      <span className="text-xs font-medium">Local: {project.location || 'Local não definido'}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-slate-500">
+                      <div className="w-4 h-4 flex items-center justify-center font-bold text-[9px] border border-slate-700 rounded-sm">m²</div>
+                      <span className="text-xs font-medium">Área: {project.area || '0'},00 m²</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-slate-500">
+                      <CalendarIcon className="h-4 w-4 text-slate-600" />
+                      <span className="text-xs font-medium">Prazo: {project.deadline || 'Sem prazo'}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="px-8 py-6 bg-slate-900/30 border-t border-slate-800 flex items-center justify-between group-hover:bg-[#BCB5AC]/5 transition-colors">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Acessar Obra</span>
-                <ChevronLeft className="h-4 w-4 text-slate-600 rotate-180 group-hover:text-[#BCB5AC] transform translate-x-0 group-hover:translate-x-1 transition-all" />
+                <div className="px-8 py-6 bg-slate-900/30 border-t border-slate-800 flex items-center justify-between group-hover:bg-[#BCB5AC]/5 transition-colors">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Acessar Obra</span>
+                  <ChevronLeft className="h-4 w-4 text-slate-600 rotate-180 group-hover:text-[#BCB5AC] transform translate-x-0 group-hover:translate-x-1 transition-all" />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
         </>
       )}
 
@@ -410,7 +410,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         </div>
       )}
 
-      <ConfirmModal 
+      <ConfirmModal
         isOpen={!!deletingProject}
         onClose={() => setDeletingProject(null)}
         onConfirm={confirmDelete}
@@ -418,7 +418,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         message={`Tem certeza que deseja excluir o projeto "${deletingProject?.name}"? Esta ação não pode ser desfeita.`}
       />
 
-      <AlertModal 
+      <AlertModal
         isOpen={alertConfig.isOpen}
         onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
         title={alertConfig.title}

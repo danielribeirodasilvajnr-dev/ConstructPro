@@ -64,8 +64,9 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
   }, [selectedGroup]);
 
   const fetchIncc = async () => {
-    if (!inccIfDate || !inccIfDate.includes('/')) {
-      setAlertConfig({ isOpen: true, title: 'Aviso', message: 'Preencha o mês/ano (ex: 01/2025)', type: 'warning' });
+    const formattedDate = inccIfDate.trim();
+    if (!formattedDate || !formattedDate.includes('/')) {
+      setAlertConfig({ isOpen: true, title: 'Aviso', message: 'Preencha o mês/ano corretamente (ex: 03/2026)', type: 'warning' });
       return;
     }
 
@@ -74,8 +75,8 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
       const { data, error } = await supabase
         .from('incc_indices')
         .select('index_value')
-        .eq('month_year', inccIfDate)
-        .single();
+        .eq('month_year', formattedDate)
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -85,15 +86,22 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
         setAlertConfig({ 
           isOpen: true, 
           title: 'Dados Sincronizados', 
-          message: `INCC-DI (FGV) localizado para ${inccIfDate}: ${data.index_value.toLocaleString('pt-BR', { minimumFractionDigits: 3 })}`, 
+          message: `INCC-DI (FGV) localizado para ${formattedDate}: ${data.index_value.toLocaleString('pt-BR', { minimumFractionDigits: 3 })}`, 
           type: 'success' 
+        });
+      } else {
+        setAlertConfig({ 
+          isOpen: true, 
+          title: 'Índice não localizado', 
+          message: `O índice para "${formattedDate}" ainda não consta no sistema. Verifique se o mês já foi divulgado pelo Sinduscon ou preencha manualmente.`, 
+          type: 'warning' 
         });
       }
     } catch (err: any) {
       setAlertConfig({ 
         isOpen: true, 
-        title: 'Índice não localizado', 
-        message: 'O índice para este mês ainda não foi cadastrado ou divulgado. Você pode preenchê-lo manualmente para prosseguir.', 
+        title: 'Erro de Conexão', 
+        message: 'Não foi possível consultar a base de índices. Tente novamente.', 
         type: 'error' 
       });
     } finally {
@@ -543,6 +551,14 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
           confirmText={confirmConfig.confirmText}
           secondaryText={(confirmConfig as any).secondaryText}
           onSecondary={(confirmConfig as any).onSecondary}
+        />
+
+        <AlertModal 
+          isOpen={alertConfig.isOpen} 
+          onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })} 
+          title={alertConfig.title} 
+          message={alertConfig.message} 
+          type={alertConfig.type} 
         />
       </div>
     );
