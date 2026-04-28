@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, Trophy, Save, X, Printer, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { BidGroup, BidQuote } from '../../lib/types';
@@ -16,6 +16,7 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
   const [selectedGroup, setSelectedGroup] = useState<BidGroup | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   // Editable local states
   const [localItems, setLocalItems] = useState<any[]>([]);
@@ -25,8 +26,6 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
   
   const [groupTitle, setGroupTitle] = useState('');
   const [groupDesc, setGroupDesc] = useState('');
-  
-  // INCC States
   const [inccIoIndex, setInccIoIndex] = useState(0);
   const [inccIfIndex, setInccIfIndex] = useState(0);
   const [inccIfDate, setInccIfDate] = useState('');
@@ -51,18 +50,47 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
         });
       });
       setLocalPrices(prices);
+      setIsDirty(false);
     }
   }, [selectedGroup]);
 
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  const handleClose = useCallback(() => {
+    if (isDirty) {
+      if (confirm('Você tem alterações não salvas. Deseja realmente sair sem salvar?')) {
+        setSelectedGroup(null);
+        setIsDirty(false);
+      }
+    } else {
+      setSelectedGroup(null);
+    }
+  }, [isDirty]);
+
   const handleSelectWinner = async (quoteId: string) => {
     if (readOnly || !selectedGroup) return;
-    try {
-      setLocalQuotes(prev => prev.map(q => ({ ...q, is_selected: q.id === quoteId })));
-      await supabase.from('bid_quotes').update({ is_selected: false }).eq('bid_group_id', selectedGroup.id);
-      await supabase.from('bid_quotes').update({ is_selected: true }).eq('id', quoteId);
-      onRefresh();
-    } catch (err: any) {
-      setAlertConfig({ isOpen: true, title: 'Erro', message: err.message, type: 'error' });
+    setLocalQuotes(prev => prev.map(q => ({ ...q, is_selected: q.id === quoteId })));
+    setIsDirty(true);
+  };
+
+  const handleDeleteQuote = (quoteId: string) => {
+    if (confirm('Deseja realmente excluir este fornecedor e todas as suas cotações?')) {
+      setLocalQuotes(localQuotes.filter(q => q.id !== quoteId));
+      const newPrices = { ...localPrices };
+      Object.keys(newPrices).forEach(key => {
+        if (key.startsWith(`${quoteId}_`)) delete newPrices[key];
+      });
+      setLocalPrices(newPrices);
+      setIsDirty(true);
     }
   };
 
@@ -76,6 +104,14 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
         original_budget_total: localBudgetItems.reduce((acc, bi) => acc + (bi.unit_price * bi.quantity), 0)
       }).eq('id', selectedGroup.id);
 
+      // Clean up deleted service items in DB
+      const currentItemIds = localItems.filter(i => !i.id.startsWith('temp_')).map(i => i.id);
+      if (selectedGroup.items) {
+        const deletedItemIds = selectedGroup.items.filter(i => !currentItemIds.includes(i.id)).map(i => i.id);
+        if (deletedItemIds.length > 0) await supabase.from('bid_group_items').delete().in('id', deletedItemIds);
+      }
+
+      // Sync Service Items
       const existingItems = localItems.filter(item => !item.id.startsWith('temp_'));
       const newItems = localItems.filter(item => item.id.startsWith('temp_'));
       for (const item of existingItems) {
@@ -87,6 +123,14 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
         if (data) itemMapping[item.id] = data.id;
       }
 
+      // Clean up deleted budget items in DB
+      const currentBudgetItemIds = localBudgetItems.filter(bi => !bi.id.startsWith('temp_')).map(bi => bi.id);
+      if (selectedGroup.budget_items) {
+        const deletedBudgetIds = selectedGroup.budget_items.filter(bi => !currentBudgetItemIds.includes(bi.id)).map(bi => bi.id);
+        if (deletedBudgetIds.length > 0) await supabase.from('bid_budget_items').delete().in('id', deletedBudgetIds);
+      }
+
+      // Sync Budget Items
       const existingBudget = localBudgetItems.filter(bi => !bi.id.startsWith('temp_'));
       const newBudget = localBudgetItems.filter(bi => bi.id.startsWith('temp_'));
       for (const bi of existingBudget) {
@@ -96,23 +140,34 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
         await supabase.from('bid_budget_items').insert([{ bid_group_id: selectedGroup.id, description: bi.description, quantity: bi.quantity, unit: bi.unit, unit_price: bi.unit_price, total_price: bi.unit_price * bi.quantity }]);
       }
 
+      // Clean up deleted quotes in DB
+      const currentQuoteIds = localQuotes.filter(q => !q.id.startsWith('temp_')).map(q => q.id);
+      if (selectedGroup.quotes) {
+        const deletedQuoteIds = selectedGroup.quotes.filter(q => !currentQuoteIds.includes(q.id)).map(q => q.id);
+        if (deletedQuoteIds.length > 0) await supabase.from('bid_quotes').delete().in('id', deletedQuoteIds);
+      }
+
+      // Sync Quotes
       const existingQuotes = localQuotes.filter(q => !q.id.startsWith('temp_'));
       const newQuotes = localQuotes.filter(q => q.id.startsWith('temp_'));
       for (const q of existingQuotes) {
         await supabase.from('bid_quotes').update({ 
           supplier_name: q.supplier_name, contact_name: q.contact_name, phone: q.phone, 
-          delivery_time: q.delivery_time, payment_terms: q.payment_terms, validity: q.validity, notes: q.notes
+          delivery_time: q.delivery_time, payment_terms: q.payment_terms, validity: q.validity, notes: q.notes,
+          is_selected: q.is_selected
         }).eq('id', q.id);
       }
       const quoteMapping: { [key: string]: string } = {};
       for (const q of newQuotes) {
         const { data } = await supabase.from('bid_quotes').insert([{ 
           bid_group_id: selectedGroup.id, supplier_name: q.supplier_name, contact_name: q.contact_name, phone: q.phone, 
-          delivery_time: q.delivery_time, payment_terms: q.payment_terms, validity: q.validity, notes: q.notes, total_amount: 0 
+          delivery_time: q.delivery_time, payment_terms: q.payment_terms, validity: q.validity, notes: q.notes, 
+          total_amount: 0, is_selected: q.is_selected
         }]).select().single();
         if (data) quoteMapping[q.id] = data.id;
       }
 
+      // Sync Prices
       const finalPrices = Object.entries(localPrices).map(([key, price]) => {
         let [qId, iId] = key.split('_');
         if (quoteMapping[qId]) qId = quoteMapping[qId];
@@ -128,13 +183,15 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
         await supabase.from('bid_quote_items').insert(validPrices);
       }
 
+      // Update total amounts
       for (const qId of allQuoteIds) {
         const currentLocalId = localQuotes.find(lq => lq.id === qId || quoteMapping[lq.id] === qId)?.id || qId;
         const total = localItems.reduce((acc, item) => acc + ((localPrices[`${currentLocalId}_${item.id}`] || 0) * item.quantity), 0);
         await supabase.from('bid_quotes').update({ total_amount: total }).eq('id', qId);
       }
 
-      setAlertConfig({ isOpen: true, title: 'Sucesso', message: 'Dados salvos com sucesso!', type: 'success' });
+      setAlertConfig({ isOpen: true, title: 'Sucesso', message: 'Tudo salvo!', type: 'success' });
+      setIsDirty(false);
       onRefresh();
       const { data } = await supabase.from('bid_groups').select('*, items:bid_group_items(*), quotes:bid_quotes(*, quote_items:bid_quote_items(*)), budget_items:bid_budget_items(*)').eq('id', selectedGroup.id).single();
       if (data) setSelectedGroup(data);
@@ -149,6 +206,7 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
     const item = localItems.find(i => i.id === itemId);
     if (!item) return;
     const quantity = item.quantity || 1;
+    setIsDirty(true);
     if (isTotal) {
       setLocalPrices({ ...localPrices, [`${quoteId}_${itemId}`]: value / quantity });
     } else {
@@ -166,7 +224,10 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
     return (
       <div className="animate-in fade-in duration-300">
         <div className="flex items-center justify-between mb-6 print:hidden">
-          <button onClick={() => setSelectedGroup(null)} className="flex items-center gap-2 text-slate-400 hover:text-white bg-white/5 px-4 py-2 rounded-lg"><X className="h-4 w-4" /> Fechar</button>
+          <div className="flex items-center gap-4">
+            <button onClick={handleClose} className="flex items-center gap-2 text-slate-400 hover:text-white bg-white/5 px-4 py-2 rounded-lg"><X className="h-4 w-4" /> Fechar</button>
+            {isDirty && <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest animate-pulse flex items-center gap-2"><AlertCircle className="h-3 w-3" /> Alterações não salvas</span>}
+          </div>
           <div className="flex items-center gap-3">
             <button onClick={handleSaveAll} disabled={isSaving} className="px-8 py-3 bg-blue-600 text-white text-xs font-black rounded-xl flex items-center gap-2 hover:bg-blue-500 uppercase tracking-widest shadow-xl"><Save className="h-4 w-4" /> {isSaving ? 'Salvando...' : 'Salvar Tudo'}</button>
             <button onClick={() => window.print()} className="px-4 py-2 bg-slate-800 text-white rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-colors"><Printer className="h-4 w-4" /> Imprimir</button>
@@ -188,7 +249,7 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
                   <p className="text-[7px] font-bold tracking-[3px] -mt-1 opacity-60 uppercase">Engenharia</p>
                 </th>
                 <th colSpan={quoteCount * 2} className="border-r border-black p-4 text-center">
-                  <input type="text" value={groupTitle} onChange={e => setGroupTitle(e.target.value)} className="text-xl font-black uppercase text-center w-full bg-transparent outline-none border-none" />
+                  <input type="text" value={groupTitle} onChange={e => { setGroupTitle(e.target.value); setIsDirty(true); }} className="text-xl font-black uppercase text-center w-full bg-transparent outline-none border-none" />
                 </th>
                 <th colSpan={2} className="bg-[#F3F4F6] p-2 text-center">
                   <div className="text-[8px] font-black opacity-30">QC CODE</div>
@@ -199,7 +260,7 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
               <tr className="border-b border-black bg-[#F9FAFB] h-20">
                 <th colSpan={4} className="border-r border-black p-3 text-left">
                   <span className="font-black text-[9px] uppercase opacity-50 block">Serviço:</span>
-                  <input type="text" value={groupDesc} onChange={e => setGroupDesc(e.target.value)} className="font-bold text-[12px] uppercase w-full bg-transparent outline-none border-none" />
+                  <input type="text" value={groupDesc} onChange={e => { setGroupDesc(e.target.value); setIsDirty(true); }} className="font-bold text-[12px] uppercase w-full bg-transparent outline-none border-none" />
                 </th>
                 {[...Array(quoteCount)].map((_, i) => {
                   const q = localQuotes[i];
@@ -207,12 +268,15 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
                     <th key={i} colSpan={2} className="border-r border-black p-2 align-middle relative group/supplier">
                       {q ? (
                         <div className="flex flex-col gap-0.5 text-left text-[8px]">
-                          <div className="flex gap-1"><span className="font-black opacity-40 w-10 uppercase">Forn. {i+1}:</span> <input type="text" value={q.supplier_name} onChange={e => setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, supplier_name: e.target.value} : lq))} className="font-bold w-full bg-transparent outline-none" /></div>
-                          <div className="flex gap-1"><span className="font-black opacity-40 w-10 uppercase">Cont.:</span> <input type="text" value={q.contact_name || ''} onChange={e => setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, contact_name: e.target.value} : lq))} className="w-full bg-transparent outline-none" /></div>
-                          <div className="flex gap-1"><span className="font-black opacity-40 w-10 uppercase">Tel:</span> <input type="text" value={q.phone || ''} onChange={e => setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, phone: e.target.value} : lq))} className="w-full bg-transparent outline-none" /></div>
-                          <button onClick={() => handleSelectWinner(q.id)} className={cn("absolute right-1 top-1 p-1 rounded print:hidden", q.is_selected ? "text-emerald-600" : "text-slate-300 hover:text-emerald-500")}><Trophy className="h-3 w-3" /></button>
+                          <div className="flex gap-1"><span className="font-black opacity-40 w-10 uppercase">Forn. {i+1}:</span> <input type="text" value={q.supplier_name} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, supplier_name: e.target.value} : lq)); setIsDirty(true); }} className="font-bold w-full bg-transparent outline-none" /></div>
+                          <div className="flex gap-1"><span className="font-black opacity-40 w-10 uppercase">Cont.:</span> <input type="text" value={q.contact_name || ''} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, contact_name: e.target.value} : lq)); setIsDirty(true); }} className="w-full bg-transparent outline-none" /></div>
+                          <div className="flex gap-1"><span className="font-black opacity-40 w-10 uppercase">Tel:</span> <input type="text" value={q.phone || ''} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, phone: e.target.value} : lq)); setIsDirty(true); }} className="w-full bg-transparent outline-none" /></div>
+                          <div className="absolute right-1 top-1 flex flex-col gap-1 opacity-0 group-hover/supplier:opacity-100 transition-opacity print:hidden">
+                            <button onClick={() => handleSelectWinner(q.id)} className={cn("p-1 rounded bg-white shadow-sm", q.is_selected ? "text-emerald-600" : "text-slate-300 hover:text-emerald-500")} title="Selecionar como vencedor"><Trophy className="h-3 w-3" /></button>
+                            <button onClick={() => handleDeleteQuote(q.id)} className="p-1 rounded bg-white shadow-sm text-red-300 hover:text-red-500" title="Excluir fornecedor"><Trash2 className="h-3 w-3" /></button>
+                          </div>
                         </div>
-                      ) : ( !readOnly && <button onClick={() => setLocalQuotes([...localQuotes, { id: `temp_${Date.now()}`, supplier_name: 'Novo Fornecedor' }])} className="w-full h-full flex items-center justify-center text-slate-300 hover:text-blue-500 print:hidden"><Plus className="h-4 w-4" /></button> )}
+                      ) : ( !readOnly && <button onClick={() => { setLocalQuotes([...localQuotes, { id: `temp_${Date.now()}`, supplier_name: 'Novo Fornecedor' }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center text-slate-300 hover:text-blue-500 print:hidden"><Plus className="h-4 w-4" /></button> )}
                     </th>
                   );
                 })}
@@ -233,7 +297,7 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
                 <th colSpan={2} className="p-0">
                   <div className="flex items-center h-full px-2 gap-2 justify-center bg-white/50">
                     <span className="font-black uppercase text-[7px]">INCC Io = </span>
-                    <input type="number" value={inccIoIndex} onChange={e => setInccIoIndex(parseFloat(e.target.value) || 0)} className="w-16 bg-transparent text-center font-bold outline-none border-b border-black/10 no-spinners" />
+                    <input type="number" value={inccIoIndex} onChange={e => { setInccIoIndex(parseFloat(e.target.value) || 0); setIsDirty(true); }} className="w-16 bg-transparent text-center font-bold outline-none border-b border-black/10 no-spinners" />
                   </div>
                 </th>
               </tr>
@@ -244,12 +308,12 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
                 <tr key={item.id} className="border-b border-black h-9">
                   <td className="border-r border-black text-center font-bold">{idx + 1}</td>
                   <td className="border-r border-black p-0">
-                    <input type="number" step="any" value={item.quantity} onChange={e => setLocalItems(localItems.map(li => li.id === item.id ? {...li, quantity: parseFloat(e.target.value) || 0} : li))} className="w-full h-full bg-transparent text-center font-bold outline-none no-spinners" />
+                    <input type="number" step="any" value={item.quantity} onChange={e => { setLocalItems(localItems.map(li => li.id === item.id ? {...li, quantity: parseFloat(e.target.value) || 0} : li)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center font-bold outline-none no-spinners" />
                   </td>
-                  <td className="border-r border-black p-0"><input type="text" value={item.unit} onChange={e => setLocalItems(localItems.map(li => li.id === item.id ? {...li, unit: e.target.value} : li))} className="w-full h-full bg-transparent text-center uppercase font-bold outline-none" /></td>
+                  <td className="border-r border-black p-0"><input type="text" value={item.unit} onChange={e => { setLocalItems(localItems.map(li => li.id === item.id ? {...li, unit: e.target.value} : li)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center uppercase font-bold outline-none" /></td>
                   <td className="border-r border-black p-0 relative group">
-                    <input type="text" value={item.description} onChange={e => setLocalItems(localItems.map(li => li.id === item.id ? {...li, description: e.target.value} : li))} className="w-full h-full bg-transparent px-3 font-bold uppercase outline-none" />
-                    {!readOnly && <button onClick={() => setLocalItems(localItems.filter(li => li.id !== item.id))} className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-red-500 opacity-0 group-hover:opacity-100 print:hidden"><Trash2 className="h-3 w-3" /></button>}
+                    <input type="text" value={item.description} onChange={e => { setLocalItems(localItems.map(li => li.id === item.id ? {...li, description: e.target.value} : li)); setIsDirty(true); }} className="w-full h-full bg-transparent px-3 font-bold uppercase outline-none" />
+                    {!readOnly && <button onClick={() => { setLocalItems(localItems.filter(li => li.id !== item.id)); setIsDirty(true); }} className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-red-500 opacity-0 group-hover:opacity-100 print:hidden"><Trash2 className="h-3 w-3" /></button>}
                   </td>
                   {[...Array(quoteCount)].map((_, i) => {
                     const q = localQuotes[i];
@@ -270,7 +334,7 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
                   <td className="bg-gray-50/20"></td>
                 </tr>
               ))}
-              {!readOnly && ( <tr className="border-b border-black h-8 print:hidden"><td colSpan={quoteCount * 2 + 6}><button onClick={() => setLocalItems([...localItems, { id: `temp_${Date.now()}`, description: '', quantity: 1, unit: 'un' }])} className="w-full h-full flex items-center justify-center gap-2 text-slate-300 hover:text-blue-600 font-black uppercase text-[7px] tracking-widest">+ ADICIONAR ITEM DE SERVIÇO</button></td></tr> )}
+              {!readOnly && ( <tr className="border-b border-black h-8 print:hidden"><td colSpan={quoteCount * 2 + 6}><button onClick={() => { setLocalItems([...localItems, { id: `temp_${Date.now()}`, description: '', quantity: 1, unit: 'un' }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center gap-2 text-slate-300 hover:text-blue-600 font-black uppercase text-[7px] tracking-widest">+ ADICIONAR ITEM DE SERVIÇO</button></td></tr> )}
 
               <tr className="bg-[#BDBDBD] border-b border-black h-8">
                 <td colSpan={quoteCount * 2 + 6} className="text-center font-black uppercase tracking-[3px] text-[9px]">ORÇAMENTO</td>
@@ -279,22 +343,22 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
               {localBudgetItems.map((bi, idx) => (
                 <tr key={bi.id} className="border-b border-black h-9">
                   <td className="border-r border-black text-center font-bold opacity-30">{idx + 1}</td>
-                  <td className="border-r border-black p-0"><input type="number" step="any" value={bi.quantity} onChange={e => setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, quantity: parseFloat(e.target.value) || 0} : lbi))} className="w-full h-full bg-transparent text-center font-bold outline-none no-spinners" /></td>
-                  <td className="border-r border-black p-0"><input type="text" value={bi.unit} onChange={e => setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, unit: e.target.value} : lbi))} className="w-full h-full bg-transparent text-center uppercase font-bold outline-none" /></td>
+                  <td className="border-r border-black p-0"><input type="number" step="any" value={bi.quantity} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, quantity: parseFloat(e.target.value) || 0} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center font-bold outline-none no-spinners" /></td>
+                  <td className="border-r border-black p-0"><input type="text" value={bi.unit} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, unit: e.target.value} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center uppercase font-bold outline-none" /></td>
                   <td className="border-r border-black p-0 relative group">
-                    <input type="text" value={bi.description} onChange={e => setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, description: e.target.value} : lbi))} className="w-full h-full bg-transparent px-3 font-bold uppercase outline-none" />
-                    {!readOnly && <button onClick={() => setLocalBudgetItems(localBudgetItems.filter(lbi => lbi.id !== bi.id))} className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-red-500 opacity-0 group-hover:opacity-100 print:hidden"><Trash2 className="h-3 w-3" /></button>}
+                    <input type="text" value={bi.description} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, description: e.target.value} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent px-3 font-bold uppercase outline-none" />
+                    {!readOnly && <button onClick={() => { setLocalBudgetItems(localBudgetItems.filter(lbi => lbi.id !== bi.id)); setIsDirty(true); }} className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-red-500 opacity-0 group-hover:opacity-100 print:hidden"><Trash2 className="h-3 w-3" /></button>}
                   </td>
                   {[...Array(quoteCount)].map((_, i) => ( <React.Fragment key={i}> <td className="border-r border-black/10 bg-gray-50/20"></td> <td className="border-r border-black/10 bg-gray-50/20"></td> </React.Fragment> ))}
                   <td className="border-r border-black/10 p-0 bg-blue-50/50">
-                    <input type="number" step="any" value={bi.unit_price || ''} onChange={e => setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, unit_price: parseFloat(e.target.value) || 0} : lbi))} className="w-full h-full bg-transparent text-right pr-2 font-black outline-none no-spinners" placeholder="0,00" />
+                    <input type="number" step="any" value={bi.unit_price || ''} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, unit_price: parseFloat(e.target.value) || 0} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-right pr-2 font-black outline-none no-spinners" placeholder="0,00" />
                   </td>
                   <td className="p-0 bg-[#F3F4F6]">
-                    <input type="number" step="any" value={(bi.unit_price * bi.quantity).toFixed(2) || ''} onChange={e => setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, unit_price: (parseFloat(e.target.value) || 0) / (bi.quantity || 1)} : lbi))} className="w-full h-full bg-transparent text-right pr-2 font-black outline-none no-spinners" placeholder="0,00" />
+                    <input type="number" step="any" value={(bi.unit_price * bi.quantity).toFixed(2) || ''} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, unit_price: (parseFloat(e.target.value) || 0) / (bi.quantity || 1)} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-right pr-2 font-black outline-none no-spinners" placeholder="0,00" />
                   </td>
                 </tr>
               ))}
-              {!readOnly && ( <tr className="border-b border-black h-8 print:hidden"><td colSpan={quoteCount * 2 + 6}><button onClick={() => setLocalBudgetItems([...localBudgetItems, { id: `temp_b_${Date.now()}`, description: '', quantity: 1, unit: 'VB', unit_price: 0 }])} className="w-full h-full flex items-center justify-center gap-2 text-slate-300 hover:text-emerald-600 font-black uppercase text-[7px] tracking-widest">+ ADICIONAR ITEM AO ORÇAMENTO</button></td></tr> )}
+              {!readOnly && ( <tr className="border-b border-black h-8 print:hidden"><td colSpan={quoteCount * 2 + 6}><button onClick={() => { setLocalBudgetItems([...localBudgetItems, { id: `temp_b_${Date.now()}`, description: '', quantity: 1, unit: 'VB', unit_price: 0 }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center gap-2 text-slate-300 hover:text-emerald-600 font-black uppercase text-[7px] tracking-widest">+ ADICIONAR ITEM AO ORÇAMENTO</button></td></tr> )}
 
               <tr className="bg-[#E5E7EB] font-black border-b border-black h-12">
                 <td colSpan={4} className="px-6 text-right uppercase tracking-[4px] border-r border-black pr-10 text-[11px]">TOTAL FINAL</td>
@@ -320,18 +384,18 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
                   if (!q) return <td key={i} colSpan={2} className="border-r border-black bg-gray-50/30"></td>;
                   return (
                     <td key={i} colSpan={2} className="p-0 border-r border-black align-top">
-                      <textarea value={q.payment_terms || ''} onChange={e => setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, payment_terms: e.target.value} : lq))} className="w-full h-10 p-2 bg-transparent border-b border-black/5 outline-none resize-none font-bold text-[8px]" />
-                      <textarea value={q.delivery_time || ''} onChange={e => setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, delivery_time: e.target.value} : lq))} className="w-full h-10 p-2 bg-transparent border-b border-black/5 outline-none resize-none font-bold text-[8px]" />
-                      <textarea value={q.validity || ''} onChange={e => setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, validity: e.target.value} : lq))} className="w-full h-10 p-2 bg-transparent border-b border-black/5 outline-none resize-none font-bold text-[8px]" />
-                      <textarea value={q.notes || ''} onChange={e => setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, notes: e.target.value} : lq))} className="w-full h-14 p-2 bg-transparent outline-none resize-none text-[8px] italic" />
+                      <textarea value={q.payment_terms || ''} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, payment_terms: e.target.value} : lq)); setIsDirty(true); }} className="w-full h-10 p-2 bg-transparent border-b border-black/5 outline-none resize-none font-bold text-[8px]" />
+                      <textarea value={q.delivery_time || ''} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, delivery_time: e.target.value} : lq)); setIsDirty(true); }} className="w-full h-10 p-2 bg-transparent border-b border-black/5 outline-none resize-none font-bold text-[8px]" />
+                      <textarea value={q.validity || ''} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, validity: e.target.value} : lq)); setIsDirty(true); }} className="w-full h-10 p-2 bg-transparent border-b border-black/5 outline-none resize-none font-bold text-[8px]" />
+                      <textarea value={q.notes || ''} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, notes: e.target.value} : lq)); setIsDirty(true); }} className="w-full h-14 p-2 bg-transparent outline-none resize-none text-[8px] italic" />
                     </td>
                   );
                 })}
                 <td colSpan={2} className="bg-gray-50 align-top p-0 border-l border-black/10">
                    <div className="h-10 flex items-center justify-center font-black text-[8px] border-b border-black/5 uppercase">VALOR ATUALIZADO</div>
                    <div className="p-2 border-b border-black/5">
-                      <div className="flex items-center gap-1 font-black text-[7px] uppercase mb-1">INCC IF = <input type="text" value={inccIfDate} onChange={e => setInccIfDate(e.target.value)} placeholder="mês/ano" className="w-10 bg-transparent border-none outline-none font-bold text-[7px]" /></div>
-                      <input type="number" step="any" value={inccIfIndex} onChange={e => setInccIfIndex(parseFloat(e.target.value) || 0)} className="w-full border-b border-black/10 outline-none font-bold text-center h-6 text-[10px] no-spinners" />
+                      <div className="flex items-center gap-1 font-black text-[7px] uppercase mb-1">INCC IF = <input type="text" value={inccIfDate} onChange={e => { setInccIfDate(e.target.value); setIsDirty(true); }} placeholder="mês/ano" className="w-10 bg-transparent border-none outline-none font-bold text-[7px]" /></div>
+                      <input type="number" step="any" value={inccIfIndex} onChange={e => { setInccIfIndex(parseFloat(e.target.value) || 0); setIsDirty(true); }} className="w-full border-b border-black/10 outline-none font-bold text-center h-6 text-[10px] no-spinners" />
                    </div>
                    <div className="p-3 mt-4 flex flex-col items-center gap-2">
                      <span className="font-black uppercase text-[8px] opacity-40 leading-tight text-center">VALOR CORRIGIDO</span>
