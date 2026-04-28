@@ -205,7 +205,7 @@ export const LISTA_UFS = [
 ];
 
 export const LISTA_EXECUTOR = [
-  '(escolha)', 'Construtora', 'Autoc. Assistida', 'Autoc. Não Assistida'
+  '(escolha)', 'Construtora', 'Profissional Autônomo'
 ];
 
 // --- Serviços de Custo (Rows 101-120 da planilha) ---

@@ -16,6 +16,18 @@ export function PCICustos({ data, onChange }: Props) {
   const areaTotal = (parseFloat(data.area_coberta_padrao) || 0) + (parseFloat(data.area_acessoria_coberta) || 0);
   const areaTerreno = parseFloat(data.area_terreno) || 0;
 
+  // Lógica de cálculo automático do BDI conforme fórmula do print:
+  // =SE(AN121="Construtora";18;(SE(AN121="Profissional Autônomo";6;(SE(AN121="";"";0)))))
+  React.useEffect(() => {
+    if (data.executor_obra === 'Construtora') {
+      if (data.bdi_pct !== 18) onChange({ bdi_pct: 18 });
+    } else if (data.executor_obra === 'Profissional Autônomo') {
+      if (data.bdi_pct !== 6) onChange({ bdi_pct: 6 });
+    } else if (!data.executor_obra) {
+      if (data.bdi_pct !== 0) onChange({ bdi_pct: 0 });
+    }
+  }, [data.executor_obra, data.bdi_pct, onChange]);
+
   // % acumulado — conforme fórmula original: AI(n) = X(n) + AI(n-1)
   // Porém linhas 12/13 têm ordem trocada na planilha real (pinturas→pisos)
   const incidencias = custos.map(c => totalServicos > 0 ? (100 * c / totalServicos) : 0);
