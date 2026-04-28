@@ -508,7 +508,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+          <div className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-7xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
             {/* Header Style like Bid Matrix */}
             <div className="bg-white text-black border-b border-black shrink-0 font-sans p-0">
                <div className="grid grid-cols-12 border-b border-black">
@@ -580,7 +580,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                     {Object.entries(itemsByCategory).map(([category, items]: [any, any]) => (
                       <React.Fragment key={category}>
                         <tr className="bg-[#BDBDBD] border-b border-black h-8">
-                          <td colSpan={7 + previousMeasurements.length} className="px-4 font-black uppercase tracking-[3px] text-[9px]">{category}</td>
+                          <td colSpan={9 + previousMeasurements.length} className="px-4 font-black uppercase tracking-[3px] text-[9px]">{category}</td>
                         </tr>
                         {items.map((item: BudgetItem, idx: number) => {
                           const currentVal = editingItems[item.id] || 0;
@@ -632,11 +632,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                     ))}
                     {/* Total Row */}
                     <tr className="bg-[#1C232E] text-white border-t-2 border-black h-12">
-                       <td colSpan={6 + previousMeasurements.length} className="text-right px-6 font-black uppercase tracking-widest text-[10px]">Total Geral da Medição:</td>
-                       <td className="border-l border-white/10 bg-emerald-600 text-center font-black">
-                          {Object.values(editingItems).reduce((acc, val) => acc + (Number(val) || 0), 0).toLocaleString()}
-                       </td>
-                       <td className="border-l border-white/10"></td>
+                       <td colSpan={8 + previousMeasurements.length} className="text-right px-6 font-black uppercase tracking-widest text-[10px]">Total Geral da Medição:</td>
                        <td className="bg-white text-[#1C232E] text-right px-3 font-black text-sm">
                           {formatCurrency(Object.entries(editingItems).reduce((acc, [id, qty]) => {
                             const item = budgetItems.find(bi => bi.id === id);
