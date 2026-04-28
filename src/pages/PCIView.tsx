@@ -52,7 +52,7 @@ export function PCIView() {
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsName = wb.SheetNames.find(n => n.includes('Proposta')) || wb.SheetNames[0];
         const ws = wb.Sheets[wsName];
-        
+
         const colToNum = (col: string) => {
           let num = 0;
           for (let i = 0; i < col.length; i++) {
@@ -71,7 +71,7 @@ export function PCIView() {
             const c2 = colToNum(b.match(/[A-Z]+/)![0]);
             return c1 - c2;
           });
-        
+
         const findCell = (text: string, startAfter?: string) => {
           const search = text.toUpperCase().trim();
           let found = !startAfter;
@@ -92,15 +92,15 @@ export function PCIView() {
           }
           return String(val || '').trim();
         };
-        
+
         const getV = (label: string, afterCell?: string) => {
           const addr = findCell(label, afterCell);
           if (!addr) return { val: '', addr: '' };
-          
+
           const row = addr.replace(/[A-Z]+/, '');
           const colMatch = addr.match(/[A-Z]+/)![0];
           const startIndex = colToNum(colMatch);
-          
+
           const numToCol = (n: number) => {
             let s = "";
             while (n > 0) {
@@ -159,7 +159,7 @@ export function PCIView() {
           proponente_nome: getV('Nome do Proponente').val,
           proponente_cpf_cnpj: getV('CPF/CNPJ').val,
           imovel_endereco: getV('Endereço do Imóvel').val,
-          
+
           doc_certidao: normalizeDoc(resCert.val),
           doc_proj_arquit: normalizeDoc(resProjA.val),
           doc_alvara: normalizeDoc(resAlvara.val),
@@ -178,7 +178,7 @@ export function PCIView() {
           prazo_meses: getV('Prazo proposto').val,
           pct_pre_executado: getV('Obra Pré-Executado').val,
         });
-        
+
         alert('Importação robusta concluída!');
       } catch (err) {
         console.error(err);
@@ -226,7 +226,7 @@ export function PCIView() {
             <Upload className="h-3.5 w-3.5" />
             Importar .xlsm
           </button>
-          
+
           <button
             onClick={handleClear}
             className="px-4 py-2.5 rounded-xl bg-red-600/20 text-red-400 border border-red-500/30 font-bold text-xs flex items-center gap-2 hover:bg-red-600 hover:text-white transition-all active:scale-95 shadow-xl shadow-red-900/10"
