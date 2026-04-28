@@ -22,6 +22,7 @@ export interface BudgetItem {
   quantity: number;
   unit_cost: number;
   executed_quantity: number;
+  bid_group_id?: string;
 }
 
 export interface ScheduleItem {

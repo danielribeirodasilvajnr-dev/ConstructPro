@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Ruler, Plus, Printer, CheckCircle2, AlertCircle, Trash2, Calendar, FileText, ChevronRight, Save } from 'lucide-react';
+import { Ruler, Plus, Printer, CheckCircle2, AlertCircle, Trash2, Calendar, FileText, ChevronRight, Save, Trophy } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { BudgetItem, Measurement, MeasurementItem } from '../../lib/types';
+import { BudgetItem, Measurement, MeasurementItem, BidGroup } from '../../lib/types';
 import { cn, formatCurrency, formatDate } from '../../lib/utils';
 import { AlertModal } from '../ui/AlertModal';
 import { ConfirmModal } from '../ui/ConfirmModal';
@@ -10,17 +10,20 @@ interface MeasurementsTabProps {
   projectId: string;
   budgetItems: BudgetItem[];
   measurements: Measurement[];
+  bidGroups?: BidGroup[];
   onRefresh: () => void;
   readOnly?: boolean;
 }
 
-export function MeasurementsTab({ projectId, budgetItems, measurements, onRefresh, readOnly }: MeasurementsTabProps) {
+export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroups = [], onRefresh, readOnly }: MeasurementsTabProps) {
   const [selectedMeasurement, setSelectedMeasurement] = useState<Measurement | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isNewItemModalOpen, setIsNewItemModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editingItems, setEditingItems] = useState<{ [key: string]: number }>({});
+  const [activeBidGroupId, setActiveBidGroupId] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState<Partial<Measurement>>({
     description: '',
     date: new Date().toISOString().split('T')[0]
@@ -47,22 +50,27 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
     onConfirm: () => {}
   });
 
+  const closedGroups = useMemo(() => bidGroups.filter(g => g.status === 'closed'), [bidGroups]);
+
   // Organize budget items by category
   const itemsByCategory = useMemo(() => {
-    return (budgetItems || []).reduce((acc: any, item: BudgetItem) => {
+    let filteredItems = budgetItems || [];
+    if (activeBidGroupId) {
+      filteredItems = filteredItems.filter(bi => (bi as any).bid_group_id === activeBidGroupId);
+    }
+
+    return filteredItems.reduce((acc: any, item: BudgetItem) => {
       if (!acc[item.category]) acc[item.category] = [];
       acc[item.category].push(item);
       return acc;
     }, {});
-  }, [budgetItems]);
+  }, [budgetItems, activeBidGroupId]);
 
   // Calculate totals for each budget item across all previous measurements
   const accumulatedQuantities = useMemo(() => {
     const totals: { [key: string]: number } = {};
     (measurements || []).forEach(m => {
       if (selectedMeasurement && m.id === selectedMeasurement.id) return; // Skip current measurement
-      // Check if this measurement was before or at same date but different ID to be safe? 
-      // Actually, if we are editing a measurement, we want all OTHER measurements' totals.
       (m.items || []).forEach(mi => {
         totals[mi.budget_item_id] = (totals[mi.budget_item_id] || 0) + Number(mi.quantity);
       });
@@ -70,9 +78,10 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
     return totals;
   }, [measurements, selectedMeasurement]);
 
-  const handleOpenNew = () => {
+  const handleOpenNew = (bidGroup?: BidGroup) => {
+    setActiveBidGroupId(bidGroup?.id || null);
     setFormData({
-      description: `Medição - ${formatDate(new Date().toISOString())}`,
+      description: bidGroup ? `Medição: ${bidGroup.title} - ${formatDate(new Date().toISOString())}` : `Medição - ${formatDate(new Date().toISOString())}`,
       date: new Date().toISOString().split('T')[0],
       status: 'pending'
     });
@@ -111,7 +120,6 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
       // 2. Save Items
       const measurementId = measurementData.id;
       
-      // Delete old items if updating
       if (selectedMeasurement?.id) {
         await supabase.from('measurement_items').delete().eq('measurement_id', measurementId);
       }
@@ -129,24 +137,13 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
         if (itemsError) throw itemsError;
       }
 
-      setAlertConfig({
-        isOpen: true,
-        title: 'Sucesso',
-        message: 'Medição salva com sucesso.',
-        type: 'success'
-      });
-      
+      setAlertConfig({ isOpen: true, title: 'Sucesso', message: 'Medição salva com sucesso.', type: 'success' });
       setIsModalOpen(false);
       setIsDetailOpen(false);
       onRefresh();
     } catch (err: any) {
       console.error(err);
-      setAlertConfig({
-        isOpen: true,
-        title: 'Erro ao Salvar',
-        message: err.message || 'Não foi possível salvar a medição.',
-        type: 'error'
-      });
+      setAlertConfig({ isOpen: true, title: 'Erro ao Salvar', message: err.message || 'Não foi possível salvar a medição.', type: 'error' });
     } finally {
       setIsSaving(false);
     }
@@ -165,24 +162,12 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
         }]);
 
       if (error) throw error;
-      
-      setNewItemFormData({
-        category: 'Mão de Obra',
-        unit: 'vb',
-        quantity: 1,
-        unit_cost: 0,
-        description: ''
-      });
+      setNewItemFormData({ category: 'Mão de Obra', unit: 'vb', quantity: 1, unit_cost: 0, description: '' });
       setIsNewItemModalOpen(false);
       onRefresh();
     } catch (err: any) {
       console.error(err);
-      setAlertConfig({
-        isOpen: true,
-        title: 'Erro ao criar item',
-        message: err.message || 'Não foi possível criar o item.',
-        type: 'error'
-      });
+      setAlertConfig({ isOpen: true, title: 'Erro ao criar item', message: err.message || 'Não foi possível criar o item.', type: 'error' });
     } finally {
       setIsSaving(false);
     }
@@ -220,9 +205,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
 
       if (error) throw error;
 
-      // If status is 'paid', we should probably create a financial item
       if (status === 'paid') {
-        // Calculate total value of measurement
         const totalValue = (m.items || []).reduce((acc, mi) => {
           const budgetItem = budgetItems.find(bi => bi.id === mi.budget_item_id);
           return acc + (Number(mi.quantity) * Number(budgetItem?.unit_cost || 0));
@@ -276,7 +259,6 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
           </div>
         </div>
 
-        {/* Print Header */}
         <div className="bg-[#1C232E] p-8 rounded-3xl border border-white/5 mb-8 print:border-black print:text-black print:bg-transparent">
           <div className="flex justify-between items-start">
             <div>
@@ -300,7 +282,6 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
           </div>
         </div>
 
-        {/* Measurement Table */}
         <div className="bg-[#0b0f19] rounded-[32px] border border-white/5 shadow-2xl overflow-hidden print:border-black print:bg-transparent">
           <div className="w-full overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -412,149 +393,309 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {measurements.length === 0 ? (
-          <div className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-[#1C232E] rounded-[32px] border border-dashed border-white/10">
-            <Ruler className="h-12 w-12 text-slate-700 mb-4" />
-            <h3 className="text-lg font-bold text-white mb-1">Nenhuma medição registrada</h3>
-            <p className="text-sm text-slate-500">As medições aparecerão aqui conforme forem registradas no sistema.</p>
+      {/* Active Contracts Section */}
+      <div className="mb-12">
+        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[3px] mb-6 flex items-center gap-2">
+          <Trophy className="h-4 w-4 text-emerald-500" /> Contratos Ativos
+        </h3>
+        
+        {closedGroups.length === 0 ? (
+          <div className="bg-[#1C232E]/30 rounded-[32px] border border-dashed border-white/5 p-10 text-center">
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Nenhum contrato fechado no Quadro de Concorrência</p>
+            <p className="text-[10px] text-slate-600 mt-2">Finalize uma concorrência para liberar as medições aqui.</p>
           </div>
         ) : (
-          measurements.map((m) => {
-            const totalValue = (m.items || []).reduce((acc: number, mi: any) => {
-              const budgetItem = budgetItems.find(bi => bi.id === mi.budget_item_id);
-              return acc + (Number(mi.quantity) * Number(budgetItem?.unit_cost || 0));
-            }, 0);
-
-            return (
-              <div
-                key={m.id}
-                onClick={() => handleOpenDetail(m)}
-                className="bg-[#1C232E] rounded-[24px] border border-white/5 p-6 cursor-pointer hover:border-[#BCB5AC]/50 transition-all group relative overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleDeleteMeasurement(m.id); }}
-                    className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {closedGroups.map((group) => {
+              const winningQuote = group.quotes?.find(q => q.is_selected);
+              return (
+                <div key={group.id} className="bg-[#1C232E] rounded-[24px] border border-white/5 p-6 hover:border-emerald-500/30 transition-all group">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[9px] font-black rounded uppercase tracking-widest">Contrato Ativo</span>
+                    <Trophy className="h-4 w-4 text-emerald-500 opacity-50" />
+                  </div>
+                  <h4 className="text-lg font-black text-white uppercase tracking-tight mb-1">{group.title}</h4>
+                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-6">Forn: {winningQuote?.supplier_name || 'N/D'}</p>
+                  
+                  {!readOnly && (
+                    <button 
+                      onClick={() => handleOpenNew(group)}
+                      className="w-full py-3 bg-emerald-600/10 text-emerald-500 text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-center gap-2"
+                    >
+                      <Plus className="h-3 w-3" /> Nova Medição deste Contrato
+                    </button>
+                  )}
                 </div>
-
-                <div className="flex items-center justify-between mb-4">
-                  <span className={cn(
-                    "px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest",
-                    m.status === 'paid' ? 'bg-blue-500/10 text-blue-500' :
-                    m.status === 'authorized' ? 'bg-emerald-500/10 text-emerald-500' :
-                    'bg-amber-500/10 text-amber-500'
-                  )}>
-                    {m.status === 'paid' ? 'Pago' : m.status === 'authorized' ? 'Autorizado' : 'Pendente'}
-                  </span>
-                  <span className="text-xs text-slate-500 font-bold">{formatDate(m.date)}</span>
-                </div>
-
-                <h3 className="text-lg font-bold text-white mb-2 line-clamp-1 group-hover:text-[#BCB5AC] transition-colors">{m.description}</h3>
-                <div className="flex flex-col gap-1">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Valor Medido</p>
-                  <p className="text-2xl font-black text-white">{formatCurrency(totalValue)}</p>
-                </div>
-
-                <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{m.items?.length || 0} itens medidos</span>
-                  <ChevronRight className="h-4 w-4 text-slate-700 group-hover:text-white transform group-hover:translate-x-1 transition-all" />
-                </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
+      </div>
+
+      <div className="space-y-6">
+        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[3px] mb-6 flex items-center gap-2">
+          <FileText className="h-4 w-4" /> Histórico de Medições
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {measurements.length === 0 ? (
+            <div className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-[#1C232E] rounded-[32px] border border-dashed border-white/10">
+              <Ruler className="h-12 w-12 text-slate-700 mb-4" />
+              <h3 className="text-lg font-bold text-white mb-1">Nenhuma medição registrada</h3>
+              <p className="text-sm text-slate-500">As medições aparecerão aqui conforme forem registradas no sistema.</p>
+            </div>
+          ) : (
+            measurements.map((m) => {
+              const totalValue = (m.items || []).reduce((acc: number, mi: any) => {
+                const budgetItem = budgetItems.find(bi => bi.id === mi.budget_item_id);
+                return acc + (Number(mi.quantity) * Number(budgetItem?.unit_cost || 0));
+              }, 0);
+
+              return (
+                <div
+                  key={m.id}
+                  onClick={() => handleOpenDetail(m)}
+                  className="bg-[#1C232E] rounded-[24px] border border-white/5 p-6 cursor-pointer hover:border-[#BCB5AC]/50 transition-all group relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleDeleteMeasurement(m.id); }}
+                      className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between mb-4">
+                    <span className={cn(
+                      "px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest",
+                      m.status === 'paid' ? 'bg-blue-500/10 text-blue-500' :
+                      m.status === 'authorized' ? 'bg-emerald-500/10 text-emerald-500' :
+                      'bg-amber-500/10 text-amber-500'
+                    )}>
+                      {m.status === 'paid' ? 'Pago' : m.status === 'authorized' ? 'Autorizado' : 'Pendente'}
+                    </span>
+                    <span className="text-xs text-slate-500 font-bold">{formatDate(m.date)}</span>
+                  </div>
+
+                  <h3 className="text-lg font-bold text-white mb-2 line-clamp-1 group-hover:text-[#BCB5AC] transition-colors">{m.description}</h3>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Valor Medido</p>
+                    <p className="text-2xl font-black text-white">{formatCurrency(totalValue)}</p>
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{m.items?.length || 0} itens medidos</span>
+                    <ChevronRight className="h-4 w-4 text-slate-700 group-hover:text-white transform group-hover:translate-x-1 transition-all" />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* New Measurement Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="p-8 pb-4 flex items-center justify-between shrink-0">
-              <h3 className="text-2xl font-black text-white tracking-tight">Nova Medição de Obra</h3>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setIsNewItemModalOpen(true)}
-                  className="px-4 py-2 bg-blue-600/20 text-blue-400 text-[10px] font-black rounded-lg flex items-center gap-2 hover:bg-blue-600 hover:text-white transition-all uppercase tracking-widest border border-blue-600/30"
-                >
-                  <Plus className="h-3 w-3" /> Novo Item / Mão de Obra
-                </button>
-                <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-slate-800 rounded-full">
-                  <Plus className="h-6 w-6 rotate-45" />
-                </button>
+          <div className={cn(
+            "relative rounded-[32px] shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200",
+            activeBidGroupId ? "bg-white" : "bg-[#1C232E] border border-white/5"
+          )}>
+            {!activeBidGroupId ? (
+              <div className="p-8 pb-4 flex items-center justify-between shrink-0">
+                <h3 className="text-2xl font-black text-white tracking-tight">Nova Medição de Obra</h3>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setIsNewItemModalOpen(true)}
+                    className="px-4 py-2 bg-blue-600/20 text-blue-400 text-[10px] font-black rounded-lg flex items-center gap-2 hover:bg-blue-600 hover:text-white transition-all uppercase tracking-widest border border-blue-600/30"
+                  >
+                    <Plus className="h-3 w-3" /> Novo Item / Mão de Obra
+                  </button>
+                  <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-slate-800 rounded-full">
+                    <Plus className="h-6 w-6 rotate-45" />
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 z-10 text-slate-400 hover:text-slate-900 transition-colors p-2 hover:bg-slate-100 rounded-full">
+                <Plus className="h-6 w-6 rotate-45" />
+              </button>
+            )}
             
-            <div className="p-8 space-y-8 overflow-y-auto no-scrollbar">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Descrição / Referência</label>
-                  <input 
-                    type="text" 
-                    value={formData.description || ''} 
-                    onChange={e => setFormData({ ...formData, description: e.target.value })} 
-                    className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none"
-                    placeholder="Ex: Medição Quinzenal - Abril/2024"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Data da Medição</label>
-                  <input 
-                    type="date" 
-                    value={formData.date || ''} 
-                    onChange={e => setFormData({ ...formData, date: e.target.value })} 
-                    className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Ruler className="h-4 w-4" /> Selecione os itens e informe as quantidades
-                </h4>
-                <div className="space-y-8">
-                  {Object.entries(itemsByCategory).map(([category, items]: [any, any]) => (
-                    <div key={category} className="space-y-3">
-                      <h5 className="text-[11px] font-black text-[#3B82F6] uppercase tracking-wider bg-[#3B82F6]/5 px-3 py-1 rounded-md inline-block">{category}</h5>
-                      <div className="grid grid-cols-1 gap-3">
-                        {items.map((item: BudgetItem) => {
-                          const accQty = accumulatedQuantities[item.id] || 0;
-                          const remaining = Math.max(0, item.quantity - accQty);
-                          
-                          return (
-                            <div key={item.id} className="bg-[#0b0f19] p-4 rounded-2xl border border-white/5 flex items-center justify-between gap-6 group hover:border-[#BCB5AC]/30 transition-all">
-                              <div className="flex-1">
-                                <p className="text-sm font-bold text-white mb-1">{item.description}</p>
-                                <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                                  <span>Total: {item.quantity} {item.unit}</span>
-                                  <span className="text-emerald-500">Medido: {accQty} {item.unit}</span>
-                                  <span className="text-amber-500">Restante: {remaining} {item.unit}</span>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span className="text-xs font-bold text-slate-400">Qtd Atual:</span>
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  value={editingItems[item.id] === undefined ? '' : editingItems[item.id]}
-                                  onChange={(e) => setEditingItems({ ...editingItems, [item.id]: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                                  className="w-24 bg-[#1C232E] border border-white/10 rounded-lg px-3 py-2 text-right text-sm font-bold text-white focus:border-[#BCB5AC] outline-none"
-                                  placeholder="0,00"
-                                />
-                                <span className="text-xs font-bold text-slate-500 w-8">{item.unit}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
+            <div className={cn("p-8 overflow-y-auto no-scrollbar flex-1", activeBidGroupId && "pt-12")}>
+              {activeBidGroupId && bidGroups.find(g => g.id === activeBidGroupId) && (
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                  {/* High Fidelity Contract Header */}
+                  <div className="p-8 border-b-2 border-slate-900 flex justify-between items-start bg-slate-50/50">
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[2px]">SERVIÇO:</p>
+                        <h4 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+                          {bidGroups.find(g => g.id === activeBidGroupId)?.title}
+                        </h4>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">DATA DA MEDIÇÃO:</label>
+                          <input 
+                            type="date" 
+                            value={formData.date || ''} 
+                            onChange={e => setFormData({ ...formData, date: e.target.value })} 
+                            className="block w-full bg-transparent border-b border-slate-200 py-1 text-sm font-black text-slate-900 outline-none focus:border-blue-500"
+                          />
+                        </div>
                       </div>
                     </div>
-                  ))}
+                    <div className="grid grid-cols-1 gap-2 text-right">
+                      {(() => {
+                        const group = bidGroups.find(g => g.id === activeBidGroupId);
+                        const winner = group?.quotes?.find(q => q.is_selected);
+                        return (
+                          <>
+                            <div className="flex flex-col items-end">
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">FORN. 1:</span>
+                              <span className="text-sm font-black text-slate-900 uppercase">{winner?.supplier_name || 'N/D'}</span>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">CONT.:</span>
+                              <span className="text-xs font-black text-slate-600 uppercase">{winner?.contact_name || 'N/D'}</span>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">TEL:</span>
+                              <span className="text-xs font-bold text-slate-600">{winner?.phone || 'N/D'}</span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* High Fidelity Table */}
+                  <div className="w-full overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-100/80 border-b-2 border-slate-900">
+                          <th className="py-5 px-6 text-[10px] font-black text-slate-900 uppercase tracking-widest w-16">ITEM</th>
+                          <th className="py-5 px-4 text-[10px] font-black text-slate-900 uppercase tracking-widest w-24 text-center">QUANT.</th>
+                          <th className="py-5 px-4 text-[10px] font-black text-slate-900 uppercase tracking-widest w-20 text-center">UNID.</th>
+                          <th className="py-5 px-6 text-[10px] font-black text-slate-900 uppercase tracking-widest">DESCRIÇÃO</th>
+                          <th className="py-5 px-6 text-[10px] font-black text-slate-900 uppercase tracking-widest w-40 text-right">PREÇO UNIT.</th>
+                          <th className="py-5 px-6 text-[10px] font-black text-white uppercase tracking-widest w-40 text-right bg-blue-600">ESTA MEDIÇÃO</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-xs">
+                        {budgetItems.filter(bi => bi.bid_group_id === activeBidGroupId).map((item, idx) => {
+                          const accQty = accumulatedQuantities[item.id] || 0;
+                          const remaining = Math.max(0, item.quantity - accQty);
+                          return (
+                            <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                              <td className="py-6 px-6 font-black text-slate-400 text-center text-sm">{idx + 1}</td>
+                              <td className="py-6 px-4 font-black text-slate-900 text-center text-sm">{item.quantity.toLocaleString()}</td>
+                              <td className="py-6 px-4 font-black text-slate-500 text-center uppercase">{item.unit}</td>
+                              <td className="py-6 px-6">
+                                <div className="space-y-1">
+                                  <p className="font-black text-slate-900 uppercase text-sm">{item.description.replace(` (${bidGroups.find(g => g.id === activeBidGroupId)?.quotes?.find(q => q.is_selected)?.supplier_name})`, '')}</p>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-500 font-black rounded uppercase tracking-widest">Anterior: {accQty}</span>
+                                    <span className={cn(
+                                      "text-[9px] px-1.5 py-0.5 font-black rounded uppercase tracking-widest",
+                                      remaining === 0 ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"
+                                    )}>Restante: {remaining}</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-6 px-6 font-black text-slate-500 text-right text-sm">{formatCurrency(item.unit_cost)}</td>
+                              <td className="py-6 px-6 bg-blue-50/50">
+                                <div className="flex items-center justify-end">
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={editingItems[item.id] === undefined ? '' : editingItems[item.id]}
+                                    onChange={(e) => setEditingItems({ ...editingItems, [item.id]: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
+                                    className="w-28 bg-white border-2 border-slate-200 rounded-xl px-4 py-3 text-right text-base font-black text-slate-900 focus:border-blue-600 outline-none transition-all shadow-sm"
+                                    placeholder="0,00"
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {!activeBidGroupId && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Descrição / Referência</label>
+                      <input 
+                        type="text" 
+                        value={formData.description || ''} 
+                        onChange={e => setFormData({ ...formData, description: e.target.value })} 
+                        className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none"
+                        placeholder="Ex: Medição Quinzenal - Abril/2024"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Data da Medição</label>
+                      <input 
+                        type="date" 
+                        value={formData.date || ''} 
+                        onChange={e => setFormData({ ...formData, date: e.target.value })} 
+                        className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Ruler className="h-4 w-4" /> Selecione os itens e informe as quantidades
+                    </h4>
+                    <div className="space-y-8">
+                      {Object.entries(itemsByCategory).map(([category, items]: [any, any]) => (
+                        <div key={category} className="space-y-3">
+                          <h5 className="text-[11px] font-black text-[#3B82F6] uppercase tracking-wider bg-[#3B82F6]/5 px-3 py-1 rounded-md inline-block">{category}</h5>
+                          <div className="grid grid-cols-1 gap-3">
+                            {items.map((item: BudgetItem) => {
+                              const accQty = accumulatedQuantities[item.id] || 0;
+                              const remaining = Math.max(0, item.quantity - accQty);
+                              
+                              return (
+                                <div key={item.id} className="bg-[#0b0f19] p-4 rounded-2xl border border-white/5 flex items-center justify-between gap-6 group hover:border-[#BCB5AC]/30 transition-all">
+                                  <div className="flex-1">
+                                    <p className="text-sm font-bold text-white mb-1">{item.description}</p>
+                                    <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                                      <span>Total: {item.quantity} {item.unit}</span>
+                                      <span className="text-emerald-500">Medido: {accQty} {item.unit}</span>
+                                      <span className="text-amber-500">Restante: {remaining} {item.unit}</span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-xs font-bold text-slate-400">Qtd Atual:</span>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={editingItems[item.id] === undefined ? '' : editingItems[item.id]}
+                                      onChange={(e) => setEditingItems({ ...editingItems, [item.id]: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
+                                      className="w-24 bg-[#1C232E] border border-white/10 rounded-lg px-3 py-2 text-right text-sm font-bold text-white focus:border-[#BCB5AC] outline-none"
+                                      placeholder="0,00"
+                                    />
+                                    <span className="text-xs font-bold text-slate-500 w-8">{item.unit}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="p-8 border-t border-white/5 flex items-center justify-end gap-4 shrink-0">

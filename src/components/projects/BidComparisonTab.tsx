@@ -327,6 +327,7 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
           // 2. Insert items into budget_items
           const itemsToInsert = localItems.map(item => ({
             project_id: projectId,
+            bid_group_id: selectedGroup.id,
             category: 'Mão de Obra',
             description: `${item.description} (${winningQuote.supplier_name})`,
             unit: item.unit,
