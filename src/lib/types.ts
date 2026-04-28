@@ -123,7 +123,7 @@ export interface BidGroup {
   project_id: string;
   title: string;
   description?: string;
-  status: 'open' | 'completed' | 'cancelled';
+  status: 'open' | 'completed' | 'cancelled' | 'closed';
   incc_io_index?: number;
   incc_io_value?: number;
   incc_if_index?: number;

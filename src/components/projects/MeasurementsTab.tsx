@@ -393,14 +393,6 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
           <h2 className="text-3xl font-black text-white">Medições de Obra</h2>
           <p className="text-slate-500 text-sm mt-1">Gerencie as medições e autorizações de pagamento de mão de obra</p>
         </div>
-        {!readOnly && (
-          <button
-            onClick={handleOpenNew}
-            className="px-6 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-black rounded-xl flex items-center gap-2 hover:bg-white transition-all shadow-xl uppercase tracking-widest"
-          >
-            <Plus className="h-4 w-4" /> Nova Medição
-          </button>
-        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

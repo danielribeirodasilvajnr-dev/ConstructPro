@@ -409,14 +409,29 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
             {!readOnly && selectedGroup.status !== 'closed' && (
               <button 
                 onClick={handleCloseBid} 
-                className="px-6 py-3 bg-emerald-600 text-white text-xs font-black rounded-xl flex items-center gap-2 hover:bg-emerald-500 uppercase tracking-widest shadow-xl shadow-emerald-600/20"
+                className="px-6 py-3 bg-emerald-600 text-white text-xs font-black rounded-xl flex items-center gap-2 hover:bg-emerald-500 uppercase tracking-widest shadow-xl shadow-emerald-600/20 active:scale-95 transition-all"
               >
                 <CheckCircle2 className="h-4 w-4" /> Fechar Quadro
               </button>
             )}
+            {selectedGroup.status === 'closed' && (
+              <div className="px-6 py-3 bg-slate-800 text-slate-400 text-xs font-black rounded-xl flex items-center gap-2 uppercase tracking-widest border border-white/5">
+                <CheckCircle2 className="h-4 w-4" /> Quadro Fechado
+              </div>
+            )}
             <button onClick={handleSaveAll} disabled={isSaving} className="px-8 py-3 bg-blue-600 text-white text-xs font-black rounded-xl flex items-center gap-2 hover:bg-blue-500 uppercase tracking-widest shadow-xl"><Save className="h-4 w-4" /> {isSaving ? 'Salvando...' : 'Salvar Tudo'}</button>
             <button onClick={() => window.print()} className="px-4 py-2 bg-slate-800 text-white rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-colors"><Printer className="h-4 w-4" /> Imprimir</button>
           </div>
+        </div>
+
+        {/* Status Badge */}
+        <div className="mb-4 flex items-center gap-2">
+           <span className={cn(
+             "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+             selectedGroup.status === 'closed' ? "bg-emerald-500/10 text-emerald-500" : "bg-blue-500/10 text-blue-500"
+           )}>
+             Status: {selectedGroup.status === 'closed' ? 'FECHADO' : (selectedGroup.status || 'ABERTO').toUpperCase()}
+           </span>
         </div>
 
         <div className="bg-white text-black border-[1px] border-black shadow-2xl overflow-hidden font-sans text-[10px]">
