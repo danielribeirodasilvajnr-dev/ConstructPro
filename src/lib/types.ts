@@ -105,7 +105,7 @@ export interface Measurement {
   description: string;
   status: 'pending' | 'authorized' | 'paid';
   created_at?: string;
-  items?: MeasurementItem[];
+  measurement_items?: MeasurementItem[];
 }
 
 export interface MeasurementItem {

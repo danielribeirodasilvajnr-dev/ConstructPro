@@ -68,7 +68,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
       if (selectedMeasurement && m.id === selectedMeasurement.id) return; // Skip current measurement
       // Check if this measurement was before or at same date but different ID to be safe? 
       // Actually, if we are editing a measurement, we want all OTHER measurements' totals.
-      (m.items || []).forEach(mi => {
+      (m.measurement_items || []).forEach(mi => {
         totals[mi.budget_item_id] = (totals[mi.budget_item_id] || 0) + Number(mi.quantity);
       });
     });
@@ -90,7 +90,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
   const handleOpenDetail = (m: Measurement) => {
     setSelectedMeasurement(m);
     const items: { [key: string]: number } = {};
-    (m.items || []).forEach(item => {
+    (m.measurement_items || []).forEach(item => {
       items[item.budget_item_id] = item.quantity;
     });
     setEditingItems(items);
@@ -223,7 +223,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
       // If status is 'paid', we should probably create a financial item
       if (status === 'paid') {
         // Calculate total value of measurement
-        const totalValue = (m.items || []).reduce((acc, mi) => {
+        const totalValue = (m.measurement_items || []).reduce((acc, mi) => {
           const budgetItem = budgetItems.find(bi => bi.id === mi.budget_item_id);
           return acc + (Number(mi.quantity) * Number(budgetItem?.unit_cost || 0));
         }, 0);
@@ -248,7 +248,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
   };
 
   if (isDetailOpen && selectedMeasurement) {
-    const totalMeasurement = (selectedMeasurement.items || []).reduce((acc, mi) => {
+    const totalMeasurement = (selectedMeasurement.measurement_items || []).reduce((acc, mi) => {
       const budgetItem = budgetItems.find(bi => bi.id === mi.budget_item_id);
       return acc + (Number(mi.quantity) * Number(budgetItem?.unit_cost || 0));
     }, 0);
@@ -491,11 +491,14 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                 <h3 className="text-lg font-bold text-white mb-2 line-clamp-1 group-hover:text-[#BCB5AC] transition-colors">{m.description}</h3>
                 <div className="flex flex-col gap-1">
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Valor Medido</p>
-                  <p className="text-2xl font-black text-white">{formatCurrency(totalValue)}</p>
+                  <p className="text-2xl font-black text-white">{formatCurrency((m.measurement_items || []).reduce((acc: number, mi: any) => {
+                    const budgetItem = budgetItems.find(bi => bi.id === mi.budget_item_id);
+                    return acc + (Number(mi.quantity) * Number(budgetItem?.unit_cost || 0));
+                  }, 0))}</p>
                 </div>
 
                 <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{m.items?.length || 0} itens medidos</span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{m.measurement_items?.length || 0} itens medidos</span>
                   <ChevronRight className="h-4 w-4 text-slate-700 group-hover:text-white transform group-hover:translate-x-1 transition-all" />
                 </div>
               </div>
@@ -587,7 +590,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                           
                           // Calculate total from previous measurements
                           const totalPrevious = previousMeasurements.reduce((acc, pm) => {
-                            const mItem = (pm.items || []).find((i: any) => i.budget_item_id === item.id);
+                            const mItem = (pm.measurement_items || []).find((i: any) => i.budget_item_id === item.id);
                             return acc + (mItem?.quantity || 0);
                           }, 0);
 
@@ -605,7 +608,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                               
                               {/* Previous Values */}
                               {previousMeasurements.map((pm) => {
-                                const mItem = (pm.items || []).find((i: any) => i.budget_item_id === item.id);
+                                const mItem = (pm.measurement_items || []).find((i: any) => i.budget_item_id === item.id);
                                 return (
                                   <td key={pm.id} className="border-r border-black text-center font-bold text-blue-600 bg-blue-50/10">
                                     {mItem?.quantity ? mItem.quantity.toLocaleString() : '-'}
