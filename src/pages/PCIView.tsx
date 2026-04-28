@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { FileText, Save, Download, Upload } from 'lucide-react';
+import { FileText, Save, Download, Upload, Trash2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { PCIFormData, INITIAL_PCI_DATA } from '../lib/pciData';
 import { PCIIdentificacao } from '../components/pci/PCIIdentificacao';
@@ -52,106 +52,134 @@ export function PCIView() {
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsName = wb.SheetNames.find(n => n.includes('Proposta')) || wb.SheetNames[0];
         const ws = wb.Sheets[wsName];
-        const g = (cell: string) => ws[cell]?.v ?? '';
-        const gn = (cell: string) => {
-          const v = ws[cell]?.v;
-          return typeof v === 'number' ? v : parseFloat(String(v || '0').replace(',', '.'));
+        
+        const colToNum = (col: string) => {
+          let num = 0;
+          for (let i = 0; i < col.length; i++) {
+            num = num * 26 + (col.charCodeAt(i) - 64);
+          }
+          return num;
         };
 
-        // Mapeamento de Custos (Itens 1 a 20)
-        const custosImportados = Array.from({ length: 20 }, (_, i) => gn(`AP${101 + i}`));
+        const cells = Object.keys(ws)
+          .filter(k => k[0] !== '!')
+          .sort((a, b) => {
+            const r1 = parseInt(a.replace(/[A-Z]+/, ''));
+            const r2 = parseInt(b.replace(/[A-Z]+/, ''));
+            if (r1 !== r2) return r1 - r2;
+            const c1 = colToNum(a.match(/[A-Z]+/)![0]);
+            const c2 = colToNum(b.match(/[A-Z]+/)![0]);
+            return c1 - c2;
+          });
         
-        // Mapeamento de Cronograma (Etapas 0 a 24)
-        const cronogramaImportado = Array.from({ length: 25 }, (_, i) => gn(`L${145 + i}`) * 100);
+        const findCell = (text: string, startAfter?: string) => {
+          const search = text.toUpperCase().trim();
+          let found = !startAfter;
+          return cells.find(k => {
+            if (startAfter && !found) {
+              if (k === startAfter) found = true;
+              return false;
+            }
+            const val = String(ws[k]?.v || '').toUpperCase().trim();
+            return val.includes(search);
+          });
+        };
+
+        const formatExcelDate = (val: any) => {
+          if (typeof val === 'number' && val > 30000) {
+            const date = XLSX.SSF.parse_date_code(val);
+            return `${String(date.d).padStart(2, '0')}/${String(date.m).padStart(2, '0')}/${date.y}`;
+          }
+          return String(val || '').trim();
+        };
+        
+        const getV = (label: string, afterCell?: string) => {
+          const addr = findCell(label, afterCell);
+          if (!addr) return { val: '', addr: '' };
+          
+          const row = addr.replace(/[A-Z]+/, '');
+          const colMatch = addr.match(/[A-Z]+/)![0];
+          const startIndex = colToNum(colMatch);
+          
+          const numToCol = (n: number) => {
+            let s = "";
+            while (n > 0) {
+              let m = (n - 1) % 26;
+              s = String.fromCharCode(65 + m) + s;
+              n = Math.floor((n - m) / 26);
+            }
+            return s;
+          };
+
+          for (let i = startIndex + 1; i < startIndex + 50; i++) {
+            const nextCol = numToCol(i);
+            const raw = ws[nextCol + row]?.v;
+            if (raw !== undefined && raw !== null && String(raw).trim() !== '') {
+              const valStr = String(raw).trim();
+              if (valStr.toUpperCase() === String(ws[addr]?.v).toUpperCase()) continue;
+              const cleaned = String(raw).replace(/\.$/, '').trim();
+              return { val: formatExcelDate(cleaned), addr: addr };
+            }
+          }
+          return { val: '', addr: addr };
+        };
+
+        const normalizeDoc = (val: string) => {
+          const v = val.toUpperCase().trim();
+          if (v.includes('APRESENTADO') || v.includes('SIM') || v === 'S' || v.includes('CONSTA')) return 'Apresentado';
+          if (v.includes('NÃO') || v.includes('NAO') || v === 'N') return 'Não apresentado';
+          return '';
+        };
+
+        const normalizeTerreno = (val: string) => {
+          const v = val.toUpperCase().trim();
+          if (v.includes('SIM') || v === 'S') return 'Sim';
+          if (v.includes('NÃO') || v.includes('NAO') || v === 'N') return 'Não (Aquisição)';
+          return '';
+        };
+
+        const normalizeLegal = (val: string) => {
+          const v = val.toUpperCase().trim();
+          if (v.includes('PROJETO APROVADO')) return 'Apresentado projeto aprovado';
+          if (v.includes('DECLARATÓRIA')) return 'Apresentado comprovação de Aprovação Declaratória';
+          if (v.includes('NÃO') || v.includes('NAO')) return 'Não apresentado';
+          return '';
+        };
+
+        const resCert = getV('Certidão de Matrícula do Imóvel');
+        const resProjA = getV('Projeto Legal/Arquit. c/ divisões');
+        const resAlvara = getV('Alvará/Licença da Obra');
+        const resProjL = getV('Projeto Legal Aprovado');
+        const resArtP = getV('Proj. Arquitetura');
+        const resNumP = getV('Número', resArtP.addr);
+        const resArtE = getV('Exec. de Obra');
+        const resNumE = getV('Número', resArtE.addr);
 
         handleChange({
-          // Identificação
-          proponente_nome: String(g('G44')),
-          proponente_email: String(g('Y44')),
-          proponente_cpf_cnpj: String(g('AK44')),
-          proponente_telefone: String(g('AQ44')),
-          rtp_nome: String(g('G47')),
-          rtp_email: String(g('Q47')),
-          rtp_conselho: String(g('AB47')),
-          rtp_uf: String(g('AI47')),
-          rtp_cpf: String(g('AK47')),
-          rtp_telefone: String(g('AQ47')),
-          rte_nome: String(g('G50')),
-          rte_email: String(g('Q50')),
-          rte_conselho: String(g('AB50')),
-          rte_uf: String(g('AI50')),
-          rte_cpf: String(g('AK50')),
-          rte_telefone: String(g('AQ50')),
+          proponente_nome: getV('Nome do Proponente').val,
+          proponente_cpf_cnpj: getV('CPF/CNPJ').val,
+          imovel_endereco: getV('Endereço do Imóvel').val,
           
-          // Imóvel e Documentação
-          imovel_endereco: String(g('G54')),
-          imovel_complemento: String(g('AJ54')),
-          imovel_bairro: String(g('G56')),
-          imovel_cep: String(g('V56')),
-          imovel_municipio: String(g('AA56')),
-          imovel_uf: String(g('AV56')),
-          imovel_matricula: String(g('G58')),
-          imovel_ori: String(g('M58')),
-          imovel_finalidade: String(g('AQ58')),
-          terreno_proprio: String(g('AJ58')),
-          doc_certidao: String(g('G64')),
-          doc_alvara: String(g('G67')),
-          doc_alvara_data: String(g('Y67')),
-          doc_art_proj: String(g('G70')),
-          doc_art_proj_num: String(g('U70')),
-          doc_art_exec: String(g('AB70')),
-          doc_art_exec_num: String(g('AQ70')),
-          doc_proj_legal: String(g('G68')),
-          doc_proj_arquit: String(g('G69')),
+          doc_certidao: normalizeDoc(resCert.val),
+          doc_proj_arquit: normalizeDoc(resProjA.val),
+          doc_alvara: normalizeDoc(resAlvara.val),
+          doc_alvara_data: getV('Data de validade').val,
+          doc_art_proj: normalizeDoc(resArtP.val),
+          doc_art_proj_num: resNumP.val,
+          doc_art_exec: normalizeDoc(resArtE.val),
+          doc_art_exec_num: resNumE.val,
+          doc_proj_legal: normalizeLegal(resProjL.val),
+          terreno_proprio: normalizeTerreno(getV('Terreno é próprio').val),
 
-          // Áreas
-          area_coberta_padrao: String(g('G73')),
-          area_permeavel: String(g('N73')),
-          area_acessoria_coberta: String(g('U73')),
-          area_terreno: String(g('AJ73')),
-          valor_terreno: String(g('AQ73')),
-
-          // Projeto e Memorial
-          destinacao_imovel: String(g('G75')),
-          sistema_construtivo: String(g('N75')),
-          sistema_construtivo_outros: String(g('AG75')),
-          num_datec: String(g('G77')),
-          selo_casa_azul: String(g('G79')),
-          padrao_acabamento: String(g('AG80')),
-          cobertura_tipo: String(g('G83')),
-          teto: String(g('K83')),
-          pavtos: String(g('O83')),
-          quartos: String(g('Q83')),
-          suites: String(g('S83')),
-          salas: String(g('U83')),
-          vagas: String(g('W83')),
-          tipo_vagas: String(g('Y83')),
-          acabamento_paredes_ext: String(g('G87')),
-          loucas_metais: String(g('O87')),
-          area_servico: String(g('U87')),
-          cozinha: String(g('Y87')),
-          agua_quente: String(g('AC87')),
-          acabamento_paredes_int: String(g('G91')),
-          paredes_areas_secas: String(g('O91')),
-          calefacao: String(g('U91')),
-          sustentabilidade: String(g('Y91')),
-          implantacao: String(g('AC91')),
-          revest_paredes_molhadas: String(g('G95')),
-          revest_piso_secas: String(g('M95')),
-          revest_piso_molhadas: String(g('S95')),
-          divisao_interna: String(g('Y95')),
-
-          // Custos
-          custos: custosImportados,
-          bdi_pct: gn('AI122') * 100,
-          executor_obra: String(g('G122')),
-
-          // Cronograma
-          prazo_meses: String(g('O142')),
-          pct_pre_executado: String(g('AK142')),
-          cronograma_pct: cronogramaImportado,
+          area_coberta_padrao: getV('Área Coberta Padrão').val,
+          area_terreno: getV('Área do Terreno').val,
+          valor_terreno: getV('Valor do Terreno').val,
+          executor_obra: getV('Executor da Obra').val,
+          prazo_meses: getV('Prazo proposto').val,
+          pct_pre_executado: getV('Obra Pré-Executado').val,
         });
-        alert('PCI completa importada com sucesso!');
+        
+        alert('Importação robusta concluída!');
       } catch (err) {
         console.error(err);
         alert('Erro ao processar o arquivo.');
@@ -162,7 +190,14 @@ export function PCIView() {
     reader.readAsBinaryString(file);
   };
 
-  // Custo total calculado para exibição no header
+  const handleClear = () => {
+    if (window.confirm('Tem certeza que deseja limpar todos os dados do formulário? Esta ação não pode ser desfeita.')) {
+      setData({ ...INITIAL_PCI_DATA });
+      localStorage.removeItem('pci_form_draft_v2');
+      alert('Dados limpos com sucesso!');
+    }
+  };
+
   const custoTotal = data.custos.reduce((a, b) => a + b, 0);
   const bdi = custoTotal > 0 ? (data.bdi_pct * custoTotal) / 100 : 0;
   const totalAdic = data.servicos_adicionais.reduce((a, b) => a + b.custo, 0);
@@ -170,11 +205,9 @@ export function PCIView() {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-4">
-      {/* Hidden File Input */}
       <input type="file" id="excel-upload-pci" className="hidden" accept=".xlsx,.xls,.xlsm"
         onChange={handleImportExcel} />
 
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
           <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#BCB5AC]">Planilha Digital</span>
@@ -193,6 +226,15 @@ export function PCIView() {
             <Upload className="h-3.5 w-3.5" />
             Importar .xlsm
           </button>
+          
+          <button
+            onClick={handleClear}
+            className="px-4 py-2.5 rounded-xl bg-red-600/20 text-red-400 border border-red-500/30 font-bold text-xs flex items-center gap-2 hover:bg-red-600 hover:text-white transition-all active:scale-95 shadow-xl shadow-red-900/10"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Limpar Dados
+          </button>
+
           <button
             onClick={handleSave}
             disabled={loading}
@@ -204,9 +246,7 @@ export function PCIView() {
         </div>
       </div>
 
-      {/* Conteúdo da planilha */}
       <div className="bg-white rounded-2xl border border-white/5 overflow-hidden shadow-2xl text-black">
-        {/* Área da planilha */}
         <div className="p-4 sm:p-6 overflow-x-auto min-h-[500px] [&_input]:text-black [&_select]:text-black [&_textarea]:text-black" style={{ maxHeight: 'calc(100vh - 260px)', overflowY: 'auto' }}>
           {activeTab === 'ident' && <PCIIdentificacao data={data} onChange={handleChange} />}
           {activeTab === 'docs' && <PCIDocumentacao data={data} onChange={handleChange} />}
@@ -215,7 +255,6 @@ export function PCIView() {
           {activeTab === 'cronograma' && <PCICronograma data={data} onChange={handleChange} />}
         </div>
 
-        {/* Abas do Excel (parte inferior) */}
         <div className="flex items-center border-t border-[#B4B8BF] bg-[#E7E6E6] px-1 py-0.5 overflow-x-auto gap-0">
           {ABAS.map(aba => (
             <button

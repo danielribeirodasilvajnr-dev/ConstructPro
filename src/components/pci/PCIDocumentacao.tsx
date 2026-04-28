@@ -40,12 +40,19 @@ export function PCIDocumentacao({ data, onChange }: Props) {
     <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 py-[3px] text-[8px] font-bold text-slate-500" style={{ width: w }}>{children}</td>
   );
 
-  const E_BLUE = ({ value, field, colSpan = 1 }: { value: string; field: keyof PCIFormData; colSpan?: number }) => (
-    <td className="bg-[#D9E1F2] border border-[#8ea0b4] px-1 py-0" colSpan={colSpan}>
-      <input type="text" value={value} onChange={e => set(field)(e.target.value)}
-        className="w-full bg-transparent text-[10px] outline-none px-1 py-[2px] font-semibold text-center" />
-    </td>
-  );
+  const E_BLUE = ({ value, field, colSpan = 1 }: { value: string; field: keyof PCIFormData; colSpan?: number }) => {
+    const hasValue = value && value.trim() !== '';
+    return (
+      <td className={`border border-[#8ea0b4] px-1 py-0 transition-colors ${hasValue ? 'bg-[#C6EFCE]' : 'bg-[#D9E1F2]'}`} colSpan={colSpan}>
+        <input 
+          type="text" 
+          value={value} 
+          onChange={e => set(field)(e.target.value)}
+          className={`w-full bg-transparent text-[10px] outline-none px-1 py-[2px] font-semibold text-center transition-colors ${hasValue ? 'text-[#006100]' : 'text-slate-900'}`} 
+        />
+      </td>
+    );
+  };
 
   return (
     <div className="space-y-0">

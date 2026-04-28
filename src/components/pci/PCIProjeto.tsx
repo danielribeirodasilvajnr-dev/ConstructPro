@@ -226,14 +226,16 @@ export function PCIProjeto({ data, onChange }: Props) {
             <L colSpan={3}>Revest.Pards.Á.Molhadas</L>
             <L colSpan={3}>Revest.Piso Á.Secas</L>
             <L colSpan={3}>Revest.Piso Á.Molhadas</L>
-            <L colSpan={3}>Divisão Interna</L>
+            <L colSpan={2}>Divisão Interna</L>
+            <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 py-[3px] text-[9px] font-bold text-slate-700 whitespace-nowrap"></td>
           </tr>
           {/* Bloco 4: Dados */}
           <tr>
             <S value={data.revest_paredes_molhadas} onChange={set('revest_paredes_molhadas')} options={LISTA_REVEST_PAREDES_MOLHADAS} colSpan={3} />
             <S value={data.revest_piso_secas} onChange={set('revest_piso_secas')} options={LISTA_REVEST_PISO_SECAS} colSpan={3} />
             <S value={data.revest_piso_molhadas} onChange={set('revest_piso_molhadas')} options={LISTA_PISO_AREAS_MOLHADAS} colSpan={3} />
-            <S value={data.divisao_interna} onChange={set('divisao_interna')} options={LISTA_SIM_NAO} colSpan={3} />
+            <S value={data.divisao_interna} onChange={set('divisao_interna')} options={LISTA_SIM_NAO} colSpan={2} />
+            <td className="bg-[#D9E1F2] border border-[#8ea0b4] px-1 py-0"></td>
           </tr>
 
           {/* Bloco 5: Labels */}
