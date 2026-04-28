@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { FinancialItem, BudgetItem } from '../../lib/types';
 import { cn, formatCurrency, formatDate, sanitizeFileName } from '../../lib/utils';
 import { AlertModal } from '../ui/AlertModal';
+import { ConfirmModal } from '../ui/ConfirmModal';
 
 interface FinanceTabProps {
   projectId: string;
@@ -17,6 +18,7 @@ interface FinanceTabProps {
 export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, readOnly }: FinanceTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FinancialItem | null>(null);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<FinancialItem>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -138,10 +140,16 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Excluir este lançamento?')) return;
+  const handleDelete = (id: string) => {
+    setDeletingItemId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingItemId) return;
     try {
-      await supabase.from('financial_items').delete().eq('id', id);
+      const { error } = await supabase.from('financial_items').delete().eq('id', deletingItemId);
+      if (error) throw error;
+      setDeletingItemId(null);
       onRefresh();
     } catch (err) {
       console.error(err);
@@ -726,6 +734,14 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
           </div>
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={!!deletingItemId}
+        onClose={() => setDeletingItemId(null)}
+        onConfirm={confirmDelete}
+        title="Excluir Lançamento?"
+        message="Tem certeza que deseja excluir este registro financeiro? Esta ação não pode ser desfeita."
+      />
 
       <AlertModal
         isOpen={alertConfig.isOpen}
