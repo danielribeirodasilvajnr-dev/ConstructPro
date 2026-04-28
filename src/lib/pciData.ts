@@ -5,92 +5,92 @@
 
 // --- Listas de Dropdown (Aba "Lista") ---
 
+export const LISTA_SIM_NAO = ['(escolha)', 'Sim', 'Não'];
+export const LISTA_SIM_NAO_NA = ['(escolha)', 'Sim', 'Não', 'Não se aplica'];
+
+export const LISTA_NUMEROS = ['(escolha)', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'mais de 10'];
+
 export const LISTA_TETO = [
   '(escolha)', 'Laje', 'Forro PVC', 'Forro Gesso', 'Forro Madeira',
   'Laje+Forro', 'Outros'
 ];
 
 export const LISTA_COBERTURA = [
-  '(escolha)', 'Telha Cerâmica c/ Platibanda', 'Telha Concreto c/ Platibanda',
-  'Telha Metálica c/ Platibanda', 'Telha de Fibrocimto. s/ Platibanda',
-  'Telha de Barro/Concreto', 'Laje Impermeabilizada', 'Outros'
+  '(escolha)', 'Telha Cerâmica', 'Telha Concreto',
+  'Telha Metálica', 'Telha Fibrocimento',
+  'Laje Impermeabilizada', 'Outros'
 ];
 
 export const LISTA_REVEST_PAREDES_EXT = [
-  '(escolha)', 'Reboco+Massa+Pintura', 'Reboco+Pintura', 'Cerâmica/Porcelanato',
-  'Tijolo/Blc. Apar. Tratado/Imperm.', 'Outros'
+  '(escolha)', 'Pintura', 'Textura', 'Cerâmica',
+  'Porcelanato', 'Pedra Natural', 'Outros'
 ];
 
 export const LISTA_ESQUADRIAS_EXT = [
-  '(escolha)', 'Alumínio', 'Ferro', 'PVC', 'Madeira', 'Concreto', 'Aço', 'Outros'
+  '(escolha)', 'Alumínio', 'Ferro', 'PVC', 'Madeira', 'Aço', 'Outros'
 ];
 
 export const LISTA_REVEST_PISO_MOLHADAS = [
-  '(escolha)', 'Cerâmica 1ª', 'Cerâmica 2ª', 'Emborrachado',
-  'Porcelanato 2ª', 'Granito/Mármore 2ª', 'Pintura/Textura', 'Grafiato'
+  '(escolha)', 'Cerâmica', 'Porcelanato', 'Pedra Natural',
+  'Cimento Desempenado', 'Outros'
 ];
 
 export const LISTA_REVEST_PISO_SECAS = [
-  '(escolha)', 'Cerâmica 1ª', 'Cerâmica 2ª', 'Porcelanato 1ª',
-  'Porcelanato 2ª', 'Granito/Mármore', 'Outros'
+  '(escolha)', 'Cerâmica', 'Porcelanato', 'Madeira/Laminado',
+  'Vinílico', 'Carpete', 'Outros'
 ];
 
 export const LISTA_PISO_AREAS_MOLHADAS = [
-  '(escolha)', 'Cerâmica 1ª', 'Cerâmica 2ª', 'Vinílico',
-  'Emborrachado', 'Porcelanato 1ª', 'Porcelanato 2ª',
-  'Laminado', 'Granito/Mármore', 'Outros'
+  '(escolha)', 'Cerâmica', 'Porcelanato', 'Pedra Natural',
+  'Cimento Desempenado', 'Outros'
 ];
 
 export const LISTA_LOUCAS_METAIS = [
-  '(escolha)', 'Linha Popular', 'Linha Média', 'Linha Luxo'
+  '(escolha)', 'Padrão Mínimo', 'Padrão Médio', 'Padrão Superior'
 ];
 
 export const LISTA_ESGOTO = [
-  '(escolha)', 'Rede Pública', 'Fossa e Sumidouro', 'Outra'
+  '(escolha)', 'Rede Pública', 'Fossa Séptica/Filtro', 'Outros'
 ];
 
 export const LISTA_ENERGIA_ALT = [
-  '(escolha)', 'Solar', 'Eólica', 'Outra'
+  '(escolha)', 'Não possui', 'Solar Fotovoltaica', 'Solar Térmica', 'Eólica', 'Outra'
 ];
 
 export const LISTA_TIPO_VAGAS = [
-  '(escolha)', 'Interna coberta', 'Externa coberta',
-  'Externa descoberta'
+  '(escolha)', 'Descoberta', 'Coberta', 'Não possui'
 ];
 
 export const LISTA_COZINHA = [
-  '(escolha)', 'Cozinha separada', 'Cozinha+Copa', 'Cozinha americana'
+  '(escolha)', 'Tradicional', 'Americana', 'Integrada'
 ];
 
 export const LISTA_AGUA_QUENTE = [
-  '(escolha)', 'Chuveiro elétrico', 'Aquecimento à gás'
+  '(escolha)', 'Apenas Fria', 'Solar', 'Gás', 'Elétrico'
 ];
 
 export const LISTA_SISTEMA_CONSTRUTIVO = [
   '(escolha)',
-  'Conv:Aço estrutural/Blcs.vedação',
-  'Conv:Estrutura de concreto/Blcs.vedação',
-  'Conv:Estrutura de madeira/Blcs.vedação',
-  'Conv:Paredes de concreto NBR nº 16055/16475',
-  'Conv:Wood Framing',
-  'Conv:Steel Framing',
-  'Conv:Vedação Painel leve modular_NBR 17073',
-  'Inov:Parede moldada local c/componente de EPS',
-  'Inov:Parede com blocos de EPS',
-  'Inov:Madeira (componente de vedação)',
+  'Alvenaria Convencional',
+  'Alvenaria Estrutural',
+  'Paredes de Concreto local',
+  'Steel Framing',
+  'Wood Framing',
+  'Estrutura Metálica',
+  'Estrutura de Madeira',
   'Outros'
 ];
 
 export const LISTA_CUSTO_REF = [
-  '(escolha)', 'CUB', 'PINI', 'SINAPI'
+  '(escolha)', 'SINAPI', 'CUB', 'Outro'
 ];
 
 export const LISTA_PADRAO = [
-  '(escolha)', 'Baixo', 'Normal', 'Alto'
+  '(escolha)', 'Mínimo', 'Médio', 'Superior'
 ];
 
 export const LISTA_FINALIDADE = [
-  '(escolha)', 'Aq.Terreno e Constr.', 'Constr.Terr.Próprio', 'Ampliação', 'Melhoria'
+  '(escolha)', 'Aquisição de Terreno e Construção', 'Construção em Terreno Próprio', 'Reforma e Ampliação'
 ];
 
 export const LISTA_DESTINACAO = [
