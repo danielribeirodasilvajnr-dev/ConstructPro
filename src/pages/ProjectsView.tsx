@@ -216,6 +216,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             projectId={selectedProjectId}
             budgetItems={budgetItems}
             measurements={measurements}
+            bidGroups={bidGroups}
             onRefresh={refreshData}
             readOnly={!isEditor}
           />

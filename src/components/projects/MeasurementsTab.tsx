@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Ruler, Plus, Printer, CheckCircle2, AlertCircle, Trash2, Calendar, FileText, ChevronRight, Save } from 'lucide-react';
+import { Ruler, Plus, Printer, CheckCircle2, AlertCircle, Trash2, Calendar, FileText, ChevronRight, Save, Trophy } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { BudgetItem, Measurement, MeasurementItem } from '../../lib/types';
 import { cn, formatCurrency, formatDate } from '../../lib/utils';
@@ -9,11 +9,12 @@ interface MeasurementsTabProps {
   projectId: string;
   budgetItems: BudgetItem[];
   measurements: Measurement[];
+  bidGroups: any[];
   onRefresh: () => void;
   readOnly?: boolean;
 }
 
-export function MeasurementsTab({ projectId, budgetItems, measurements, onRefresh, readOnly }: MeasurementsTabProps) {
+export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroups, onRefresh, readOnly }: MeasurementsTabProps) {
   const [selectedMeasurement, setSelectedMeasurement] = useState<Measurement | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -32,6 +33,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
     description: ''
   });
 
+  const [filterBidGroupId, setFilterBidGroupId] = useState<string | null>(null);
   const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean, title: string, message: string, type?: 'error' | 'success' | 'warning' }>({
     isOpen: false,
     title: '',
@@ -40,12 +42,16 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
 
   // Organize budget items by category
   const itemsByCategory = useMemo(() => {
-    return (budgetItems || []).reduce((acc: any, item: BudgetItem) => {
+    let filtered = budgetItems || [];
+    if (filterBidGroupId) {
+      filtered = filtered.filter(item => (item as any).bid_group_id === filterBidGroupId);
+    }
+    return filtered.reduce((acc: any, item: BudgetItem) => {
       if (!acc[item.category]) acc[item.category] = [];
       acc[item.category].push(item);
       return acc;
     }, {});
-  }, [budgetItems]);
+  }, [budgetItems, filterBidGroupId]);
 
   // Calculate totals for each budget item across all previous measurements
   const accumulatedQuantities = useMemo(() => {
@@ -61,13 +67,15 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
     return totals;
   }, [measurements, selectedMeasurement]);
 
-  const handleOpenNew = () => {
+  const handleOpenNew = (bidGroupId?: string) => {
+    const group = bidGroups.find(bg => bg.id === bidGroupId);
     setFormData({
-      description: `Medição - ${formatDate(new Date().toISOString())}`,
+      description: `Medição - ${group?.title || formatDate(new Date().toISOString())}`,
       date: new Date().toISOString().split('T')[0],
       status: 'pending'
     });
     setEditingItems({});
+    setFilterBidGroupId(bidGroupId || null);
     setIsModalOpen(true);
   };
 
@@ -78,6 +86,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
       items[item.budget_item_id] = item.quantity;
     });
     setEditingItems(items);
+    setFilterBidGroupId(null); // Reset filter when viewing details
     setIsDetailOpen(true);
   };
 
@@ -395,12 +404,47 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
         </div>
       </div>
 
+      {/* Contratos Ativos / Quadros Fechados */}
+      <div className="mb-12">
+        <h3 className="text-xs font-black text-slate-500 uppercase tracking-[3px] mb-6 flex items-center gap-2">
+           <FileText className="h-4 w-4" /> Contratos Ativos (Quadros Fechados)
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {bidGroups.filter(bg => bg.status === 'closed').length === 0 ? (
+            <div className="col-span-full py-12 flex flex-col items-center justify-center text-center bg-[#1C232E]/30 rounded-[32px] border border-dashed border-white/5">
+              <p className="text-slate-500 text-sm italic">Nenhum contrato fechado para medição ainda.</p>
+            </div>
+          ) : (
+            bidGroups.filter(bg => bg.status === 'closed').map(group => (
+              <div 
+                key={group.id} 
+                onClick={() => handleOpenNew(group.id)}
+                className="bg-[#1C232E] rounded-[24px] border border-emerald-500/20 p-6 cursor-pointer hover:border-emerald-500/50 transition-all group relative"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-md text-[10px] font-black uppercase tracking-widest">Contrato Ativo</span>
+                  <Trophy className="h-4 w-4 text-emerald-500" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2 uppercase group-hover:text-emerald-400 transition-colors">{group.title}</h3>
+                <p className="text-xs text-slate-500 mb-6 line-clamp-1">{group.description || 'Contrato para medição'}</p>
+                <button className="w-full py-3 bg-emerald-600/10 text-emerald-500 text-[10px] font-black rounded-xl uppercase tracking-widest group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                   Iniciar Nova Medição
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <h3 className="text-xs font-black text-slate-500 uppercase tracking-[3px] mb-6 flex items-center gap-2">
+         <Ruler className="h-4 w-4" /> Histórico de Medições
+      </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {measurements.length === 0 ? (
           <div className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-[#1C232E] rounded-[32px] border border-dashed border-white/10">
             <Ruler className="h-12 w-12 text-slate-700 mb-4" />
             <h3 className="text-lg font-bold text-white mb-1">Nenhuma medição registrada</h3>
-            <p className="text-sm text-slate-500">Clique em "Nova Medição" para começar o controle físico e financeiro.</p>
+            <p className="text-sm text-slate-500">Selecione um contrato acima para iniciar o controle físico e financeiro.</p>
           </div>
         ) : (
           measurements.map((m) => {
