@@ -1,5 +1,6 @@
-import React from 'react';
-import { PCIFormData } from '../../lib/pciData';
+import { 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+} from 'recharts';
 
 interface Props {
   data: PCIFormData;
@@ -20,16 +21,29 @@ export function PCICronograma({ data, onChange }: Props) {
     onChange({ cronograma_pct: next });
   };
 
-  // Acumulado: fórmula IF(X(n-1)="","",IF(L(n)="",X(n-1),L(n)+X(n-1)))
   const acumulado: number[] = [];
   cronPct.forEach((pct, i) => {
     acumulado[i] = pct + (i > 0 ? acumulado[i - 1] : 0);
   });
 
-  // Valor: IF(L(n)="",0,(L(n)*custoGeral)/100)
   const valores = cronPct.map(pct => pct > 0 ? (pct * custoGeral) / 100 : 0);
-
   const etapas = ['PréExc.', ...Array.from({ length: 24 }, (_, i) => String(i + 1))];
+
+  // Dados para o Gráfico
+  const n = parseInt(data.prazo_meses) || 1;
+  const chartData = Array.from({ length: 25 }, (_, i) => {
+    // i=0 é Pré-executado. i=1..24 são as etapas.
+    const m = Math.max(0, i); 
+    const t = Math.min(m, n);
+    
+    return {
+      etapa: i === 0 ? 'P' : i,
+      'Cronograma de referência': parseFloat(acumulado[i].toFixed(2)),
+      'Lento': parseFloat((100 * Math.pow(t / n, 1.6)).toFixed(2)),
+      'Normal': parseFloat((100 * Math.pow(t / n, 1.0)).toFixed(2)),
+      'Rápido': parseFloat((100 * Math.pow(t / n, 0.6)).toFixed(2)),
+    };
+  });
 
   return (
     <div className="space-y-0">
@@ -58,7 +72,6 @@ export function PCICronograma({ data, onChange }: Props) {
           <tr><td colSpan={20} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Cronograma</span>
           </td></tr>
-          {/* Cabeçalho — R144 */}
           <tr className="bg-[#D6DCE4]">
             <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-center w-16">Etapa</td>
             <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-center w-24">% Execução previsto para a etapa</td>
@@ -86,13 +99,11 @@ export function PCICronograma({ data, onChange }: Props) {
                 {valores[i] > 0 ? valores[i].toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ''}
               </td>
               <td className="bg-[#F2F2F2] border border-[#8ea0b4] px-2 py-[2px] text-[8px] text-slate-400 text-center">
-                {/* Cronograma referência: 100 para etapas 25+ */}
                 {i >= 25 ? '100' : ''}
               </td>
             </tr>
           ))}
 
-          {/* Total */}
           <tr className="bg-[#D6DCE4]">
             <td className="border border-[#8ea0b4] px-1 py-1 text-[9px] font-black text-slate-700 text-center">TOTAL</td>
             <td className="border border-[#8ea0b4] px-1 py-1 text-[9px] font-black text-center" style={{
@@ -110,22 +121,56 @@ export function PCICronograma({ data, onChange }: Props) {
         </tbody>
       </table>
 
-      {/* INSERIR POLIGONAL DO TERRENO (R172-174) */}
-      <table className="w-full border-collapse mt-2">
+      {/* INSERIR POLIGONAL DO TERRENO */}
+      <table className="w-full border-collapse mt-4 table-fixed">
         <tbody>
-          <tr><td colSpan={20} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
-            <span className="text-[10px] font-black text-white uppercase tracking-wider">Inserir Poligonal do Terreno</span>
-          </td></tr>
           <tr>
-            <td className="bg-white border border-[#8ea0b4] px-2 py-1">
-              <span className="text-[8px] text-slate-500">A Partir do Google Earth ou Planta do Loteamento</span>
+            <td colSpan={12} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
+              <span className="text-[10px] font-black text-white uppercase tracking-wider">Inserir Poligonal do Terreno</span>
             </td>
           </tr>
           <tr>
-            <td className="bg-[#D9E1F2] border border-[#8ea0b4] p-1">
-              <textarea value={data.poligonal_descricao} onChange={e => onChange({ poligonal_descricao: e.target.value })}
-                rows={3} className="w-full bg-transparent text-[10px] outline-none resize-none px-1"
-                placeholder="Descrever foto / inserir descrição da poligonal" />
+            <td colSpan={12} className="bg-white border border-[#8ea0b4] px-3 py-1">
+              <span className="text-[9px] font-medium text-slate-700 italic">A partir do Google Earth ou Planta do Loteamento</span>
+            </td>
+          </tr>
+          <tr>
+            <td colSpan={12} className="bg-[#D9E1F2] border border-[#8ea0b4] p-0">
+              <div className="flex flex-col p-2 space-y-2">
+                <div className="flex items-center space-x-2">
+                  <span className="text-[9px] font-bold text-slate-500 italic">Descrever foto / Inserir descrição da poligonal</span>
+                </div>
+                <div className="flex space-x-4">
+                  <div className="flex-1">
+                    <textarea 
+                      value={data.poligonal_descricao}
+                      onChange={e => onChange({ poligonal_descricao: e.target.value })}
+                      placeholder="Descreva aqui os detalhes da poligonal..."
+                      className="w-full h-24 bg-white/50 border border-[#8ea0b4] text-[10px] p-2 outline-none resize-none"
+                    />
+                  </div>
+                  <div className="w-48 h-24 border-2 border-dashed border-[#8ea0b4] bg-white/50 flex flex-col items-center justify-center cursor-pointer hover:bg-white transition-colors relative overflow-hidden">
+                    {data.poligonal_foto ? (
+                      <img src={data.poligonal_foto} alt="Poligonal" className="w-full h-full object-contain" />
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <span className="text-[16px] text-slate-400">📷</span>
+                        <span className="text-[7px] font-bold text-slate-400 mt-1 uppercase">Anexar foto</span>
+                      </div>
+                    )}
+                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => onChange({ poligonal_foto: reader.result as string });
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -151,8 +196,69 @@ export function PCICronograma({ data, onChange }: Props) {
         </tbody>
       </table>
 
+      {/* GRÁFICO DE CURVAS DE EVOLUÇÃO */}
+      <div className="bg-white border border-[#8ea0b4] mt-4 p-4">
+        <h3 className="text-[12px] font-black text-slate-700 text-center mb-4 uppercase tracking-widest">Curvas de Evolução</h3>
+        <div className="h-[300px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis 
+                dataKey="etapa" 
+                fontSize={10} 
+                tick={{ fill: '#64748b' }}
+                label={{ value: 'ETAPAS', position: 'insideBottom', offset: -5, fontSize: 10, fontWeight: 'bold' }}
+              />
+              <YAxis 
+                domain={[0, 100]} 
+                fontSize={10} 
+                tick={{ fill: '#64748b' }}
+                label={{ value: 'PERCENTUAIS DE EVOLUÇÃO', angle: -90, position: 'insideLeft', offset: 15, fontSize: 10, fontWeight: 'bold' }}
+              />
+              <Tooltip 
+                contentStyle={{ fontSize: '10px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+              />
+              <Legend verticalAlign="middle" align="right" layout="vertical" wrapperStyle={{ fontSize: '10px', paddingLeft: '20px' }} />
+              
+              <Line 
+                type="monotone" 
+                dataKey="Cronograma de referência" 
+                stroke="#00AEEF" 
+                strokeWidth={3} 
+                dot={{ r: 4, fill: '#00AEEF' }} 
+                activeDot={{ r: 6 }} 
+              />
+              <Line 
+                type="monotone" 
+                dataKey="Lento" 
+                stroke="#EF4444" 
+                strokeDasharray="5 5" 
+                strokeWidth={2} 
+                dot={false} 
+              />
+              <Line 
+                type="monotone" 
+                dataKey="Normal" 
+                stroke="#94A3B8" 
+                strokeDasharray="5 5" 
+                strokeWidth={2} 
+                dot={false} 
+              />
+              <Line 
+                type="monotone" 
+                dataKey="Rápido" 
+                stroke="#F59E0B" 
+                strokeDasharray="5 5" 
+                strokeWidth={2} 
+                dot={false} 
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
       {/* OBSERVAÇÕES */}
-      <table className="w-full border-collapse mt-2">
+      <table className="w-full border-collapse mt-4">
         <tbody>
           <tr><td colSpan={20} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
             <span className="text-[10px] font-black text-white uppercase tracking-wider">Outras Observações</span>
