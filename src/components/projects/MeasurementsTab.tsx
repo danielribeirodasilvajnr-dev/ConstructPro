@@ -39,8 +39,16 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
     title: '',
     message: ''
   });
+  
+  // Get relevant previous measurements for columns
+  const previousMeasurements = useMemo(() => {
+    return (measurements || [])
+      .filter(m => m.id !== selectedMeasurement?.id)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [measurements, selectedMeasurement]);
 
-  // Organize budget items by category
+  const currentMeasurementNumber = previousMeasurements.length + 1;
+
   const itemsByCategory = useMemo(() => {
     let filtered = budgetItems || [];
     if (filterBidGroupId) {
@@ -501,98 +509,154 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
           <div className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="p-8 pb-4 flex items-center justify-between shrink-0">
-              <h3 className="text-2xl font-black text-white tracking-tight">Nova Medição de Obra</h3>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setIsNewItemModalOpen(true)}
-                  className="px-4 py-2 bg-blue-600/20 text-blue-400 text-[10px] font-black rounded-lg flex items-center gap-2 hover:bg-blue-600 hover:text-white transition-all uppercase tracking-widest border border-blue-600/30"
-                >
-                  <Plus className="h-3 w-3" /> Novo Item / Mão de Obra
-                </button>
-                <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-slate-800 rounded-full">
-                  <Plus className="h-6 w-6 rotate-45" />
-                </button>
-              </div>
+            {/* Header Style like Bid Matrix */}
+            <div className="bg-white text-black border-b border-black shrink-0 font-sans p-0">
+               <div className="grid grid-cols-12 border-b border-black">
+                  <div className="col-span-4 bg-[#E5E1DB] p-4 border-r border-black flex items-center justify-center">
+                    <h1 className="text-2xl font-black text-[#1C232E]">AevumPro</h1>
+                  </div>
+                  <div className="col-span-6 p-4 border-r border-black flex items-center justify-center">
+                    <h2 className="text-xl font-black uppercase tracking-tight">Medição de Obra</h2>
+                  </div>
+                  <div className="col-span-2 bg-[#F3F4F6] p-4 flex flex-col items-center justify-center">
+                    <span className="text-[8px] font-black opacity-30">PROJETO</span>
+                    <span className="text-sm font-black uppercase">#MOD-{projectId.slice(0, 4).toUpperCase()}</span>
+                  </div>
+               </div>
+               
+               <div className="grid grid-cols-12 bg-[#F9FAFB]">
+                  <div className="col-span-6 p-3 border-r border-black flex flex-col justify-center">
+                    <span className="text-[9px] font-black uppercase opacity-40">Descrição da Medição:</span>
+                    <input 
+                      type="text" 
+                      value={formData.description || ''} 
+                      onChange={e => setFormData({ ...formData, description: e.target.value })} 
+                      className="bg-transparent border-none outline-none font-bold text-sm uppercase w-full"
+                      placeholder="EX: MEDIÇÃO QUINZENAL 01..."
+                    />
+                  </div>
+                  <div className="col-span-3 p-3 border-r border-black flex flex-col justify-center">
+                    <span className="text-[9px] font-black uppercase opacity-40">Data Base:</span>
+                    <input 
+                      type="date" 
+                      value={formData.date || ''} 
+                      onChange={e => setFormData({ ...formData, date: e.target.value })} 
+                      className="bg-transparent border-none outline-none font-bold text-sm w-full"
+                    />
+                  </div>
+                  <div className="col-span-3 p-3 flex flex-col justify-center items-end pr-8">
+                     <button
+                        onClick={() => setIsNewItemModalOpen(true)}
+                        className="px-4 py-2 bg-blue-600 text-white text-[10px] font-black rounded-lg flex items-center gap-2 hover:bg-blue-500 transition-all uppercase tracking-widest"
+                      >
+                        <Plus className="h-3 w-3" /> Adicionar Item Extra
+                      </button>
+                  </div>
+               </div>
             </div>
             
-            <div className="p-8 space-y-8 overflow-y-auto no-scrollbar">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Descrição / Referência</label>
-                  <input 
-                    type="text" 
-                    value={formData.description || ''} 
-                    onChange={e => setFormData({ ...formData, description: e.target.value })} 
-                    className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none"
-                    placeholder="Ex: Medição Quinzenal - Abril/2024"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Data da Medição</label>
-                  <input 
-                    type="date" 
-                    value={formData.date || ''} 
-                    onChange={e => setFormData({ ...formData, date: e.target.value })} 
-                    className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none"
-                  />
-                </div>
-              </div>
+            <div className="flex-1 overflow-auto bg-white text-black font-sans text-[10px]">
+              <div className="min-w-max">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-[#E5E7EB] border-b border-black h-10 sticky top-0 z-10">
+                      <th className="border-r border-black font-black uppercase text-[7px] text-center w-10">ITM</th>
+                      <th className="border-r border-black px-3 font-black uppercase text-left min-w-[250px]">Descrição do Serviço</th>
+                      <th className="border-r border-black font-black uppercase text-[7px] text-center w-14">UNID</th>
+                      <th className="border-r border-black font-black uppercase text-[7px] text-center w-24">QUANT. TOTAL</th>
+                      
+                      {/* Previous Measurements Columns */}
+                      {previousMeasurements.map((pm, idx) => (
+                        <th key={pm.id} className="border-r border-black font-black uppercase text-[7px] text-center w-24 bg-blue-50/30">
+                          MEDIÇÃO {idx + 1}
+                          <div className="text-[6px] opacity-40">{formatDate(pm.date)}</div>
+                        </th>
+                      ))}
 
-              <div className="space-y-6">
-                <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Ruler className="h-4 w-4" /> Selecione os itens e informe as quantidades
-                </h4>
-                <div className="space-y-8">
-                  {Object.entries(itemsByCategory).map(([category, items]: [any, any]) => (
-                    <div key={category} className="space-y-3">
-                      <h5 className="text-[11px] font-black text-[#3B82F6] uppercase tracking-wider bg-[#3B82F6]/5 px-3 py-1 rounded-md inline-block">{category}</h5>
-                      <div className="grid grid-cols-1 gap-3">
-                        {items.map((item: BudgetItem) => {
-                          const accQty = accumulatedQuantities[item.id] || 0;
-                          const remaining = Math.max(0, item.quantity - accQty);
+                      <th className="border-r border-black font-black uppercase text-[7px] text-center w-24 bg-emerald-500/10">
+                        MEDIÇÃO {currentMeasurementNumber} (ATUAL)
+                      </th>
+                      <th className="font-black uppercase text-[7px] text-center w-24 bg-amber-500/5">RESTANTE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(itemsByCategory).map(([category, items]: [any, any]) => (
+                      <React.Fragment key={category}>
+                        <tr className="bg-[#BDBDBD] border-b border-black h-8">
+                          <td colSpan={5 + previousMeasurements.length} className="px-4 font-black uppercase tracking-[3px] text-[9px]">{category}</td>
+                        </tr>
+                        {items.map((item: BudgetItem, idx: number) => {
+                          const currentVal = editingItems[item.id] || 0;
                           
+                          // Calculate total from previous measurements
+                          const totalPrevious = previousMeasurements.reduce((acc, pm) => {
+                            const mItem = (pm.items || []).find((i: any) => i.budget_item_id === item.id);
+                            return acc + (mItem?.quantity || 0);
+                          }, 0);
+
+                          const totalMeasured = totalPrevious + currentVal;
+                          const remaining = Math.max(0, item.quantity - totalMeasured);
+
                           return (
-                            <div key={item.id} className="bg-[#0b0f19] p-4 rounded-2xl border border-white/5 flex items-center justify-between gap-6 group hover:border-[#BCB5AC]/30 transition-all">
-                              <div className="flex-1">
-                                <p className="text-sm font-bold text-white mb-1">{item.description}</p>
-                                <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                                  <span>Total: {item.quantity} {item.unit}</span>
-                                  <span className="text-emerald-500">Medido: {accQty} {item.unit}</span>
-                                  <span className="text-amber-500">Restante: {remaining} {item.unit}</span>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span className="text-xs font-bold text-slate-400">Qtd Atual:</span>
+                            <tr key={item.id} className="border-b border-black h-10 group hover:bg-gray-50">
+                              <td className="border-r border-black text-center font-bold opacity-30">{idx + 1}</td>
+                              <td className="border-r border-black px-3 font-bold uppercase">{item.description}</td>
+                              <td className="border-r border-black text-center font-bold uppercase">{item.unit}</td>
+                              <td className="border-r border-black text-center font-bold">{item.quantity.toLocaleString()}</td>
+                              
+                              {/* Previous Values */}
+                              {previousMeasurements.map((pm) => {
+                                const mItem = (pm.items || []).find((i: any) => i.budget_item_id === item.id);
+                                return (
+                                  <td key={pm.id} className="border-r border-black text-center font-bold text-blue-600 bg-blue-50/10">
+                                    {mItem?.quantity ? mItem.quantity.toLocaleString() : '-'}
+                                  </td>
+                                );
+                              })}
+
+                              <td className="border-r border-black p-0 bg-emerald-500/5">
                                 <input
                                   type="number"
                                   step="0.01"
                                   value={editingItems[item.id] === undefined ? '' : editingItems[item.id]}
                                   onChange={(e) => setEditingItems({ ...editingItems, [item.id]: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                                  className="w-24 bg-[#1C232E] border border-white/10 rounded-lg px-3 py-2 text-right text-sm font-bold text-white focus:border-[#BCB5AC] outline-none"
+                                  className="w-full h-full bg-transparent text-center font-black text-emerald-700 outline-none no-spinners text-[11px]"
                                   placeholder="0,00"
                                 />
-                                <span className="text-xs font-bold text-slate-500 w-8">{item.unit}</span>
-                              </div>
-                            </div>
+                              </td>
+                              <td className="text-center font-bold text-amber-600 bg-amber-50/5">{remaining.toLocaleString()}</td>
+                            </tr>
                           );
                         })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            <div className="p-8 border-t border-white/5 flex items-center justify-end gap-4 shrink-0">
-              <button onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Cancelar</button>
-              <button 
-                onClick={handleSaveMeasurement} 
-                disabled={isSaving}
-                className="px-8 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-black rounded-xl uppercase tracking-widest hover:bg-white transition-all shadow-xl disabled:opacity-50"
-              >
-                {isSaving ? 'Salvando...' : 'Salvar Medição'}
-              </button>
+            <div className="p-8 bg-[#E5E1DB] border-t border-black flex items-center justify-between shrink-0">
+               <div className="flex items-center gap-6">
+                  <div className="flex flex-col">
+                    <span className="text-[8px] font-black opacity-40 uppercase">Total Geral Medido (R$)</span>
+                    <span className="text-xl font-black">
+                      {formatCurrency(Object.entries(editingItems).reduce((acc, [id, qty]) => {
+                        const item = budgetItems.find(bi => bi.id === id);
+                        return acc + (qty * (item?.unit_cost || 0));
+                      }, 0))}
+                    </span>
+                  </div>
+               </div>
+               <div className="flex items-center gap-4">
+                <button onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-black transition-colors">Cancelar</button>
+                <button 
+                  onClick={handleSaveMeasurement} 
+                  disabled={isSaving}
+                  className="px-10 py-4 bg-[#1C232E] text-white text-[11px] font-black rounded-none uppercase tracking-[2px] hover:bg-black transition-all shadow-xl disabled:opacity-50 border border-black"
+                >
+                  {isSaving ? 'SALVANDO...' : 'FINALIZAR MEDIÇÃO'}
+                </button>
+               </div>
             </div>
           </div>
         </div>
