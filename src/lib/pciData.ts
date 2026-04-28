@@ -164,13 +164,17 @@ export const LISTA_IMPLANTACAO = [
 
 export const LISTA_SISTEMA_CONSTRUTIVO = [
   '(escolha)',
-  'Alvenaria Convencional',
-  'Alvenaria Estrutural',
-  'Paredes de Concreto local',
-  'Steel Framing',
-  'Wood Framing',
-  'Estrutura Metálica',
-  'Estrutura de Madeira',
+  'Conv:Alvenaria estrutural',
+  'Conv:Aço estrutural/Blcs.vedação',
+  'Conv:Estrutura de concreto/Blcs.vedação',
+  'Conv:Estrutura de madeira/Blcs.vedação',
+  'Conv:Paredes de concreto NBR nº 16055/16475',
+  'Conv:Wood Framing',
+  'Conv:Steel Framing',
+  'Conv:Vedação Painel leve modular_NBR 17073',
+  'Inov:Parede moldada local c/componente de EPS',
+  'Inov:Parede com blocos de EPS',
+  'Inov:Madeira (componente de vedação)',
   'Outros'
 ];
 
