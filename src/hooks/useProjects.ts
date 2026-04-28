@@ -94,11 +94,25 @@ export function useProjects() {
         user_id: user.id
       };
 
-      const { data, error } = await supabase
-        .from('projects')
-        .upsert(projectData)
-        .select()
-        .single();
+      let result;
+      if (project.id) {
+        // Update existing project
+        result = await supabase
+          .from('projects')
+          .update(projectData)
+          .eq('id', project.id)
+          .select()
+          .single();
+      } else {
+        // Insert new project
+        result = await supabase
+          .from('projects')
+          .insert(projectData)
+          .select()
+          .single();
+      }
+
+      const { data, error } = result;
 
       if (error) throw error;
       await fetchProjects();
