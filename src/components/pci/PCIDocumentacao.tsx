@@ -43,7 +43,7 @@ export function PCIDocumentacao({ data, onChange }: Props) {
   const E_BLUE = ({ value, field, colSpan = 1 }: { value: string; field: keyof PCIFormData; colSpan?: number }) => (
     <td className="bg-[#D9E1F2] border border-[#8ea0b4] px-1 py-0" colSpan={colSpan}>
       <input type="text" value={value} onChange={e => set(field)(e.target.value)}
-        className="w-full bg-transparent text-[10px] outline-none px-1 py-[2px] font-semibold" />
+        className="w-full bg-transparent text-[10px] outline-none px-1 py-[2px] font-semibold text-center" />
     </td>
   );
 
@@ -87,7 +87,7 @@ export function PCIDocumentacao({ data, onChange }: Props) {
                 <select 
                   value={data.terreno_proprio} 
                   onChange={e => set('terreno_proprio')(e.target.value)}
-                  className="w-full bg-transparent text-[9px] font-bold outline-none cursor-pointer appearance-none pl-2 pr-4 py-[4px] z-10"
+                  className="w-full bg-transparent text-[9px] font-bold outline-none cursor-pointer appearance-none pl-2 pr-4 py-[4px] z-10 text-center"
                 >
                   <option value="">(escolha)</option>
                   <option value="Sim">Sim</option>
