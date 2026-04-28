@@ -124,18 +124,54 @@ export interface BidGroup {
   title: string;
   description?: string;
   status: 'open' | 'completed' | 'cancelled';
+  incc_io_index?: number;
+  incc_io_value?: number;
+  incc_if_index?: number;
+  incc_if_date?: string;
+  original_budget_total?: number;
   created_at?: string;
+  items?: BidGroupItem[];
   quotes?: BidQuote[];
+  budget_items?: BidBudgetItem[];
+}
+
+export interface BidBudgetItem {
+  id: string;
+  bid_group_id: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  total_price: number;
+}
+
+export interface BidGroupItem {
+  id: string;
+  bid_group_id: string;
+  description: string;
+  quantity: number;
+  unit: string;
 }
 
 export interface BidQuote {
   id: string;
   bid_group_id: string;
   supplier_name: string;
+  contact_name?: string;
+  phone?: string;
   total_amount: number;
   delivery_time?: string;
   payment_terms?: string;
+  validity?: string;
   is_selected: boolean;
   notes?: string;
   created_at?: string;
+  quote_items?: BidQuoteItem[];
+}
+
+export interface BidQuoteItem {
+  id: string;
+  bid_quote_id: string;
+  bid_group_item_id: string;
+  unit_price: number;
 }

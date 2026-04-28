@@ -33,7 +33,11 @@ export function useProjectData(projectId: string | null) {
         supabase.from('project_collaborators').select('role').eq('project_id', projectId).eq('user_id', user?.id).maybeSingle(),
         supabase.from('project_collaborators').select('*, profile:profiles(*)').eq('project_id', projectId),
         supabase.from('measurements').select('*, measurement_items(*)').eq('project_id', projectId).order('date', { ascending: false }),
-        supabase.from('bid_groups').select('*, bid_quotes(*)').eq('project_id', projectId).order('created_at', { ascending: false })
+        supabase
+          .from('bid_groups')
+          .select('*, items:bid_group_items(*), quotes:bid_quotes(*, quote_items:bid_quote_items(*)), budget_items:bid_budget_items(*)')
+          .eq('project_id', projectId)
+          .order('created_at', { ascending: false })
       ]);
 
       let results: any[] = [];
