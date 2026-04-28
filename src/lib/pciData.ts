@@ -8,65 +8,158 @@
 export const LISTA_SIM_NAO = ['(escolha)', 'Sim', 'Não'];
 export const LISTA_SIM_NAO_NA = ['(escolha)', 'Sim', 'Não', 'Não se aplica'];
 
-export const LISTA_NUMEROS = ['(escolha)', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'mais de 10'];
+export const LISTA_NUMEROS = ['(escolha)', '1', '2', '3', '4+'];
 
 export const LISTA_TETO = [
-  '(escolha)', 'Laje', 'Forro PVC', 'Forro Gesso', 'Forro Madeira',
-  'Laje+Forro', 'Outros'
+  '(escolha)',
+  'Telha aparente',
+  'Forro',
+  'Laje',
+  'Laje+Forro',
+  'Outros'
 ];
 
 export const LISTA_COBERTURA = [
-  '(escolha)', 'Telha Cerâmica', 'Telha Concreto',
-  'Telha Metálica', 'Telha Fibrocimento',
-  'Laje Impermeabilizada', 'Outros'
+  '(escolha)',
+  'Telha Metálica c/ Platibanda',
+  'Telha Metálica s/ Platibanda',
+  'Telha de Fibrocimto. c/ Platibanda',
+  'Telha de Fibrocimto. s/ Platibanda',
+  'Telha de Barro/Concreto',
+  'Laje Impermeabilizada',
+  'Outros'
 ];
 
 export const LISTA_REVEST_PAREDES_EXT = [
-  '(escolha)', 'Pintura', 'Textura', 'Cerâmica',
-  'Porcelanato', 'Pedra Natural', 'Outros'
+  '(escolha)',
+  'Sem revestimento',
+  'Pintura/Textura/Grafiato',
+  'Pint./Text./Grafto. e det. em Pedra/Cerâmica',
+  'Cerâmica/Porcelanato',
+  'Outros'
 ];
 
 export const LISTA_ESQUADRIAS_EXT = [
-  '(escolha)', 'Alumínio', 'Ferro', 'PVC', 'Madeira', 'Aço', 'Outros'
+  '(escolha)', 'Alumínio', 'Ferro', 'Vidro Temperado', 'PVC', 'Madeira', 'Outros'
 ];
 
-export const LISTA_REVEST_PISO_MOLHADAS = [
-  '(escolha)', 'Cerâmica', 'Porcelanato', 'Pedra Natural',
-  'Cimento Desempenado', 'Outros'
+export const LISTA_ESQUADRIAS_INT = [
+  '(escolha)', 'Alumínio', 'Ferro', 'Vidro Temperado', 'PVC', 'Madeira', 'Outros'
+];
+
+export const LISTA_REVEST_PAREDES_MOLHADAS = [
+  '(escolha)',
+  'Cimentado',
+  'Cerâmica Comercial',
+  'São Tomé',
+  'Emborrachado',
+  'Granita',
+  'Formicado',
+  'Porcelanato 2ª',
+  'Granito/Mármore 2ª',
+  'Pintura/Textura',
+  'Grafiato',
+  'Cerâmica Extra',
+  'Porcelanato de 1ª'
 ];
 
 export const LISTA_REVEST_PISO_SECAS = [
-  '(escolha)', 'Cerâmica', 'Porcelanato', 'Madeira/Laminado',
-  'Vinílico', 'Carpete', 'Outros'
+  '(escolha)',
+  'Cimentado',
+  'Cerâmica Comercial',
+  'Pedra',
+  'Vinílico',
+  'Emborrachado',
+  'Porcelanato 1ª',
+  'Porcelanato 2ª',
+  'Laminado',
+  'Granito/Mármore',
+  'Outros'
 ];
 
 export const LISTA_PISO_AREAS_MOLHADAS = [
-  '(escolha)', 'Cerâmica', 'Porcelanato', 'Pedra Natural',
-  'Cimento Desempenado', 'Outros'
+  '(escolha)',
+  'Cimentado',
+  'Cerâmica Comercial',
+  'Pedra',
+  'Porcelanato 1ª',
+  'Porcelanato 2ª',
+  'Granito/Mármore',
+  'Outros'
 ];
 
 export const LISTA_LOUCAS_METAIS = [
-  '(escolha)', 'Padrão Mínimo', 'Padrão Médio', 'Padrão Superior'
+  '(escolha)', 'Linha Popular', 'Linha Média', 'Linha Luxo'
+];
+
+export const LISTA_AGUA = [
+  '(escolha)',
+  'Concessionária',
+  'Poço',
+  'Outra'
+];
+
+export const LISTA_DRENAGEM = [
+  '(escolha)',
+  'Rede de Água Pluvial',
+  'Interna ao terreno',
+  'Outra'
 ];
 
 export const LISTA_ESGOTO = [
-  '(escolha)', 'Rede Pública', 'Fossa Séptica/Filtro', 'Outros'
+  '(escolha)',
+  'Rede de Esgoto',
+  'Fossa e Filtro',
+  'Fossa e Sumidouro',
+  'Outra'
 ];
 
 export const LISTA_ENERGIA_ALT = [
-  '(escolha)', 'Não possui', 'Solar Fotovoltaica', 'Solar Térmica', 'Eólica', 'Outra'
+  '(escolha)',
+  'Nenhuma',
+  'Fotovoltaica',
+  'Eólica',
+  'Outra'
 ];
 
 export const LISTA_TIPO_VAGAS = [
-  '(escolha)', 'Descoberta', 'Coberta', 'Não possui'
+  '(escolha)', 'Coberta(s)', 'Descoberta(s)'
+];
+
+export const LISTA_AREA_SERVICO = [
+  '(escolha)', 'Não', 'Interna', 'Externa coberta', 'Externa descoberta'
 ];
 
 export const LISTA_COZINHA = [
-  '(escolha)', 'Tradicional', 'Americana', 'Integrada'
+  '(escolha)',
+  'Cozinha',
+  'Cozinha+A.Serviço',
+  'Cozinha+Copa',
+  'Cozinha americana'
 ];
 
 export const LISTA_AGUA_QUENTE = [
-  '(escolha)', 'Apenas Fria', 'Solar', 'Gás', 'Elétrico'
+  '(escolha)',
+  'Não',
+  'Aquecimento solar',
+  'Aquecimento à gás'
+];
+
+export const LISTA_PAINEIS_SECAS = [
+  '(escolha)',
+  'Alvenaria',
+  'Gesso',
+  'Madeira',
+  'Concreto',
+  'Aço',
+  'Outros'
+];
+
+export const LISTA_IMPLANTACAO = [
+  '(escolha)',
+  'Isolada',
+  'Isolada(parte empr.não-condom.)',
+  'Condomínio'
 ];
 
 export const LISTA_SISTEMA_CONSTRUTIVO = [
@@ -86,7 +179,7 @@ export const LISTA_CUSTO_REF = [
 ];
 
 export const LISTA_PADRAO = [
-  '(escolha)', 'Mínimo', 'Médio', 'Superior'
+  '(escolha)', 'Baixo', 'Normal', 'Alto'
 ];
 
 export const LISTA_FINALIDADE = [

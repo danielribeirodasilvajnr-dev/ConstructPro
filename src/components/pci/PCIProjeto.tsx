@@ -1,10 +1,12 @@
 import React from 'react';
 import {
   PCIFormData, LISTA_SISTEMA_CONSTRUTIVO, LISTA_COBERTURA, LISTA_TETO,
-  LISTA_REVEST_PAREDES_EXT, LISTA_ESQUADRIAS_EXT, LISTA_REVEST_PISO_MOLHADAS,
+  LISTA_REVEST_PAREDES_EXT, LISTA_ESQUADRIAS_EXT, LISTA_REVEST_PAREDES_MOLHADAS,
   LISTA_REVEST_PISO_SECAS, LISTA_PISO_AREAS_MOLHADAS, LISTA_LOUCAS_METAIS,
   LISTA_ESGOTO, LISTA_ENERGIA_ALT, LISTA_TIPO_VAGAS, LISTA_COZINHA,
-  LISTA_AGUA_QUENTE, LISTA_DESTINACAO, LISTA_PADRAO, LISTA_NUMEROS, LISTA_SIM_NAO
+  LISTA_AGUA_QUENTE, LISTA_DESTINACAO, LISTA_PADRAO, LISTA_NUMEROS, LISTA_SIM_NAO,
+  LISTA_AREA_SERVICO, LISTA_PAINEIS_SECAS, LISTA_IMPLANTACAO, LISTA_ESQUADRIAS_INT,
+  LISTA_AGUA, LISTA_DRENAGEM
 } from '../../lib/pciData';
 
 interface Props {
@@ -193,7 +195,7 @@ export function PCIProjeto({ data, onChange }: Props) {
           <tr>
             <S value={data.acabamento_paredes_ext} onChange={set('acabamento_paredes_ext')} options={LISTA_REVEST_PAREDES_EXT} colSpan={2} />
             <S value={data.loucas_metais} onChange={set('loucas_metais')} options={LISTA_LOUCAS_METAIS} colSpan={2} />
-            <S value={data.area_servico} onChange={set('area_servico')} options={LISTA_SIM_NAO} />
+            <S value={data.area_servico} onChange={set('area_servico')} options={LISTA_AREA_SERVICO} />
             <S value={data.cozinha} onChange={set('cozinha')} options={LISTA_COZINHA} />
             <S value={data.agua_quente} onChange={set('agua_quente')} options={LISTA_AGUA_QUENTE} colSpan={2} />
           </tr>
@@ -209,10 +211,10 @@ export function PCIProjeto({ data, onChange }: Props) {
           {/* Bloco 3: Dados */}
           <tr>
             <S value={data.acabamento_paredes_int} onChange={set('acabamento_paredes_int')} options={LISTA_REVEST_PAREDES_EXT} colSpan={2} />
-            <S value={data.paredes_areas_secas} onChange={set('paredes_areas_secas')} options={LISTA_SIM_NAO} colSpan={2} />
+            <S value={data.paredes_areas_secas} onChange={set('paredes_areas_secas')} options={LISTA_PAINEIS_SECAS} colSpan={2} />
             <S value={data.calefacao} onChange={set('calefacao')} options={LISTA_SIM_NAO} />
             <S value={data.sustentabilidade} onChange={set('sustentabilidade')} options={LISTA_SIM_NAO} />
-            <S value={data.implantacao} onChange={set('implantacao')} options={LISTA_SIM_NAO} colSpan={2} />
+            <S value={data.implantacao} onChange={set('implantacao')} options={LISTA_IMPLANTACAO} colSpan={2} />
           </tr>
 
           {/* Bloco 4: Labels */}
@@ -225,7 +227,7 @@ export function PCIProjeto({ data, onChange }: Props) {
           </tr>
           {/* Bloco 4: Dados */}
           <tr>
-            <S value={data.revest_paredes_molhadas} onChange={set('revest_paredes_molhadas')} options={LISTA_REVEST_PISO_MOLHADAS} />
+            <S value={data.revest_paredes_molhadas} onChange={set('revest_paredes_molhadas')} options={LISTA_REVEST_PAREDES_MOLHADAS} />
             <S value={data.revest_piso_secas} onChange={set('revest_piso_secas')} options={LISTA_REVEST_PISO_SECAS} />
             <S value={data.revest_piso_molhadas} onChange={set('revest_piso_molhadas')} options={LISTA_PISO_AREAS_MOLHADAS} />
             <S value={data.divisao_interna} onChange={set('divisao_interna')} options={LISTA_SIM_NAO} />
@@ -242,8 +244,8 @@ export function PCIProjeto({ data, onChange }: Props) {
           {/* Bloco 5: Dados */}
           <tr>
             <S value={data.esquadrias_ext} onChange={set('esquadrias_ext')} options={LISTA_ESQUADRIAS_EXT} />
-            <S value={data.esquadrias_int} onChange={set('esquadrias_int')} options={LISTA_SIM_NAO} />
-            <S value={data.abastecimento_agua} onChange={set('abastecimento_agua')} options={LISTA_SIM_NAO} />
+            <S value={data.esquadrias_int} onChange={set('esquadrias_int')} options={LISTA_ESQUADRIAS_INT} />
+            <S value={data.abastecimento_agua} onChange={set('abastecimento_agua')} options={LISTA_AGUA} />
             <L>Outros (Especificar)</L>
             <E value={data.outros_acabamento} onChange={set('outros_acabamento')} colSpan={4} />
           </tr>
@@ -257,7 +259,7 @@ export function PCIProjeto({ data, onChange }: Props) {
           </tr>
           {/* Bloco 6: Dados */}
           <tr>
-            <S value={data.drenagem} onChange={set('drenagem')} options={LISTA_SIM_NAO} />
+            <S value={data.drenagem} onChange={set('drenagem')} options={LISTA_DRENAGEM} />
             <S value={data.coleta_esgoto} onChange={set('coleta_esgoto')} options={LISTA_ESGOTO} />
             <S value={data.ger_energia} onChange={set('ger_energia')} options={LISTA_ENERGIA_ALT} />
             <td colSpan={5} className="bg-white border border-[#8ea0b4]"></td>
