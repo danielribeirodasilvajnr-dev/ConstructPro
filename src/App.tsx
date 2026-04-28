@@ -7,7 +7,6 @@ import { FinancialsView } from './pages/FinancialsView';
 import { LogsView } from './pages/LogsView';
 import { BudgetView } from './pages/BudgetView';
 import { ProjectsView } from './pages/ProjectsView';
-import { PCIView } from './pages/PCIView';
 import { ProprietorView } from './pages/ProprietorView';
 import { CalculatorView } from './pages/CalculatorView';
 import { AuthView } from './pages/AuthView';
@@ -140,8 +139,6 @@ export default function App() {
         return <LogsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'resources':
         return <CalculatorView />;
-      case 'pci':
-        return <PCIView />;
       case 'safety':
         return <ProprietorView selectedProjectId={selectedProjectId} />;
       default:
@@ -157,7 +154,6 @@ export default function App() {
       case 'financials': return 'Financeiro da Obra';
       case 'logs': return 'Diário de Obra';
       case 'resources': return 'Calculadora INSS';
-      case 'pci': return 'Planilha PCI';
       case 'safety': return 'Painel do Proprietário';
       default: return 'AevumPro';
     }
