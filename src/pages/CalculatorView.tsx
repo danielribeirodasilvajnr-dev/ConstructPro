@@ -659,19 +659,19 @@ export function CalculatorView() {
             <div className="space-y-4">
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-between border-b border-white/5 pb-4">
                 <label className="text-sm font-medium text-slate-300 w-1/2">Construção (m²):</label>
-                <input type="number" min="0" value={areaCon} onChange={e => setAreaCon(Number(e.target.value))} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
+                <input type="number" min="0" value={areaCon || ''} onChange={e => setAreaCon(e.target.value === '' ? 0 : Number(e.target.value))} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
               </div>
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-between border-b border-white/5 pb-4">
                 <label className="text-sm font-medium text-slate-300 w-1/2">Reforma (m²):</label>
-                <input type="number" min="0" value={areaRef} onChange={e => setAreaRef(Number(e.target.value))} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
+                <input type="number" min="0" value={areaRef || ''} onChange={e => setAreaRef(e.target.value === '' ? 0 : Number(e.target.value))} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
               </div>
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-between border-b border-white/5 pb-4">
                 <label className="text-sm font-medium text-slate-300 w-1/2">Demolição (m²):</label>
-                <input type="number" min="0" value={areaDem} onChange={e => setAreaDem(Number(e.target.value))} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
+                <input type="number" min="0" value={areaDem || ''} onChange={e => setAreaDem(e.target.value === '' ? 0 : Number(e.target.value))} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
               </div>
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-between">
                 <label className="text-sm font-medium text-slate-300 w-1/2">Piscina descoberta (m²):</label>
-                <input type="number" min="0" value={areaPisc} onChange={e => setAreaPisc(Number(e.target.value))} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
+                <input type="number" min="0" value={areaPisc || ''} onChange={e => setAreaPisc(e.target.value === '' ? 0 : Number(e.target.value))} className="flex-1 bg-[#1C232E] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-500 hover:border-white/20 transition-colors outline-none" />
               </div>
             </div>
           </section>

@@ -399,7 +399,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Efetivo</label>
-                  <input type="number" placeholder="Trabalhadores" value={formData.workers || 0} onChange={e => setFormData({ ...formData, workers: Number(e.target.value) })} className="w-full bg-[#1C232E] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none transition-all" />
+                  <input type="number" placeholder="Trabalhadores" value={formData.workers || ''} onChange={e => setFormData({ ...formData, workers: e.target.value === '' ? 0 : Number(e.target.value) })} className="w-full bg-[#1C232E] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none transition-all" />
                 </div>
               </div>
               

@@ -350,7 +350,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Área Total (m²)</label>
-                  <input type="number" placeholder="0.00" value={formData.area || 0} onChange={e => setFormData({ ...formData, area: Number(e.target.value) })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
+                  <input type="number" placeholder="0,00" value={formData.area || ''} onChange={e => setFormData({ ...formData, area: e.target.value === '' ? 0 : Number(e.target.value) })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Localização</label>

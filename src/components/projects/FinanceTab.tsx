@@ -637,8 +637,8 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                   <input
                     type="number"
                     placeholder="0,00"
-                    value={formData.amount || 0}
-                    onChange={e => setFormData({ ...formData, amount: Number(e.target.value) })}
+                    value={formData.amount || ''}
+                    onChange={e => setFormData({ ...formData, amount: e.target.value === '' ? undefined : Number(e.target.value) })}
                     className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none"
                   />
                 </div>
