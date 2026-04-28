@@ -416,6 +416,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         onConfirm={confirmDelete}
         title="Excluir Projeto?"
         message={`Tem certeza que deseja excluir o projeto "${deletingProject?.name}"? Esta ação não pode ser desfeita.`}
+        requireText="Excluir"
       />
 
       <AlertModal

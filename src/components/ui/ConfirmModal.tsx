@@ -15,6 +15,7 @@ interface ConfirmModalProps {
   onSecondary?: () => void;
   secondaryColor?: string;
   cancelText?: string;
+  requireText?: string;
 }
 
 export function ConfirmModal({ 
@@ -28,8 +29,17 @@ export function ConfirmModal({
   secondaryText,
   onSecondary,
   secondaryColor = 'bg-blue-600',
-  cancelText = 'Cancelar'
+  cancelText = 'Cancelar',
+  requireText
 }: ConfirmModalProps) {
+  const [inputValue, setInputValue] = React.useState('');
+
+  React.useEffect(() => {
+    if (!isOpen) setInputValue('');
+  }, [isOpen]);
+
+  const isConfirmDisabled = requireText ? inputValue !== requireText : false;
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -53,9 +63,23 @@ export function ConfirmModal({
           >
             <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-white mb-2 tracking-tight">{title}</h3>
-            <p className="text-sm text-slate-400 leading-relaxed mb-8 px-2">
+            <p className="text-sm text-slate-400 leading-relaxed mb-6 px-2">
               {message}
             </p>
+
+            {requireText && (
+              <div className="mb-6 space-y-2">
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Digite <span className="text-white">"{requireText}"</span> para confirmar</p>
+                <input
+                  type="text"
+                  autoFocus
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white text-center outline-none focus:border-red-500/50 transition-colors"
+                  placeholder={requireText}
+                />
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-3">
               <button 
@@ -78,11 +102,16 @@ export function ConfirmModal({
               )}
 
               <button 
+                disabled={isConfirmDisabled}
                 onClick={() => {
                   onConfirm();
                   onClose();
                 }} 
-                className={`flex-1 py-3.5 text-[11px] font-black uppercase tracking-[2px] text-white rounded-2xl ${confirmColor} hover:brightness-110 shadow-lg transition-all active:scale-95 order-1 sm:order-3`}
+                className={cn(
+                  "flex-1 py-3.5 text-[11px] font-black uppercase tracking-[2px] text-white rounded-2xl shadow-lg transition-all active:scale-95 order-1 sm:order-3",
+                  confirmColor,
+                  isConfirmDisabled ? "opacity-30 cursor-not-allowed grayscale" : "hover:brightness-110"
+                )}
               >
                 {confirmText}
               </button>
