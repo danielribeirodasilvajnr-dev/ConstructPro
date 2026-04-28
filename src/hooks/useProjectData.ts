@@ -10,6 +10,8 @@ export function useProjectData(projectId: string | null) {
   const [dailyLogs, setDailyLogs] = useState<DailyLog[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
   const [collaborators, setCollaborators] = useState<ProjectCollaborator[]>([]);
+  const [measurements, setMeasurements] = useState<any[]>([]);
+  const [bidGroups, setBidGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [userRole, setUserRole] = useState<'owner' | 'editor' | 'viewer' | 'proprietor' | null>(null);
   const { user } = useAuth();
@@ -29,7 +31,9 @@ export function useProjectData(projectId: string | null) {
         supabase.from('daily_logs').select('*, daily_log_photos(*)').eq('project_id', projectId).order('date', { ascending: false }).order('created_at', { ascending: false }),
         supabase.from('project_documents').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
         supabase.from('project_collaborators').select('role').eq('project_id', projectId).eq('user_id', user?.id).maybeSingle(),
-        supabase.from('project_collaborators').select('*, profile:profiles(*)').eq('project_id', projectId)
+        supabase.from('project_collaborators').select('*, profile:profiles(*)').eq('project_id', projectId),
+        supabase.from('measurements').select('*, measurement_items(*)').eq('project_id', projectId).order('date', { ascending: false }),
+        supabase.from('bid_groups').select('*, bid_quotes(*)').eq('project_id', projectId).order('created_at', { ascending: false })
       ]);
 
       let results: any[] = [];
@@ -79,7 +83,7 @@ export function useProjectData(projectId: string | null) {
         }
       }
 
-      const [budget, schedule, finance, logs, docs, collab, collabList] = results;
+      const [budget, schedule, finance, logs, docs, collab, collabList, measurementsData, bidsData] = results;
 
       setBudgetItems(budget?.data || []);
       setScheduleItems(schedule?.data || []);
@@ -87,6 +91,8 @@ export function useProjectData(projectId: string | null) {
       setDailyLogs(logs?.data || []);
       setDocuments(docs?.data || []);
       setCollaborators(collabList?.data || []);
+      setMeasurements(measurementsData?.data || []);
+      setBidGroups(bidsData?.data || []);
 
       // Determine user role
       try {
@@ -119,6 +125,8 @@ export function useProjectData(projectId: string | null) {
     dailyLogs,
     documents,
     collaborators,
+    measurements,
+    bidGroups,
     loading,
     userRole,
     isEditor: userRole === 'owner' || userRole === 'editor',

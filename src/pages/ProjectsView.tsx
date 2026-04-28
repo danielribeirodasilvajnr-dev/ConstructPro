@@ -16,6 +16,7 @@ import { useProjectData } from '../hooks/useProjectData';
 import { BudgetTab } from '../components/projects/BudgetTab';
 import { ScheduleTab } from '../components/projects/ScheduleTab';
 import { FinanceTab } from '../components/projects/FinanceTab';
+import { BidComparisonTab } from '../components/projects/BidComparisonTab';
 import { DailyLogTab } from '../components/projects/DailyLogTab';
 import { MeasurementsTab } from '../components/projects/MeasurementsTab';
 import { CollaboratorsModal } from '../components/projects/CollaboratorsModal';
@@ -56,7 +57,9 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
     budgetItems,
     scheduleItems,
     financialItems,
+    bidGroups,
     dailyLogs,
+    measurements,
     loading: loadingData,
     userRole,
     isEditor,
@@ -154,6 +157,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           {[
             { id: 'orcamento', label: 'Orçamento' },
             { id: 'financeiro', label: 'Financeiro' },
+            { id: 'concorrencia', label: 'Quadro de Concorrência' },
             { id: 'cronograma', label: 'Cronograma' },
             { id: 'medicoes', label: 'Medições' },
             { id: 'diario', label: 'Diário de Obra' },
@@ -182,14 +186,6 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             readOnly={!isEditor}
           />
         )}
-        {activeTab === 'cronograma' && (
-          <ScheduleTab
-            projectId={selectedProjectId}
-            scheduleItems={scheduleItems}
-            onRefresh={refreshData}
-            readOnly={!isEditor}
-          />
-        )}
         {activeTab === 'financeiro' && (
           <FinanceTab
             projectId={selectedProjectId}
@@ -199,10 +195,27 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             readOnly={!isEditor}
           />
         )}
+        {activeTab === 'concorrencia' && (
+          <BidComparisonTab
+            projectId={selectedProjectId}
+            bidGroups={bidGroups}
+            onRefresh={refreshData}
+            readOnly={!isEditor}
+          />
+        )}
+        {activeTab === 'cronograma' && (
+          <ScheduleTab
+            projectId={selectedProjectId}
+            scheduleItems={scheduleItems}
+            onRefresh={refreshData}
+            readOnly={!isEditor}
+          />
+        )}
         {activeTab === 'medicoes' && (
           <MeasurementsTab
             projectId={selectedProjectId}
             budgetItems={budgetItems}
+            measurements={measurements}
             onRefresh={refreshData}
             readOnly={!isEditor}
           />

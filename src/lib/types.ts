@@ -97,3 +97,45 @@ export interface ProjectCollaborator {
   created_at: string;
   profile?: Profile;
 }
+
+export interface Measurement {
+  id: string;
+  project_id: string;
+  date: string;
+  description: string;
+  status: 'pending' | 'authorized' | 'paid';
+  created_at?: string;
+  items?: MeasurementItem[];
+}
+
+export interface MeasurementItem {
+  id: string;
+  measurement_id: string;
+  budget_item_id: string;
+  quantity: number;
+  notes?: string;
+  created_at?: string;
+  budget_item?: BudgetItem;
+}
+
+export interface BidGroup {
+  id: string;
+  project_id: string;
+  title: string;
+  description?: string;
+  status: 'open' | 'completed' | 'cancelled';
+  created_at?: string;
+  quotes?: BidQuote[];
+}
+
+export interface BidQuote {
+  id: string;
+  bid_group_id: string;
+  supplier_name: string;
+  total_amount: number;
+  delivery_time?: string;
+  payment_terms?: string;
+  is_selected: boolean;
+  notes?: string;
+  created_at?: string;
+}
