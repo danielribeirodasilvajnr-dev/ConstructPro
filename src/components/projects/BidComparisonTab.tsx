@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Trophy, Save, X, Printer, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Trophy, Save, X, Printer, AlertCircle, RefreshCw, Search } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { BidGroup, BidQuote } from '../../lib/types';
 import { cn, formatCurrency } from '../../lib/utils';
@@ -18,6 +18,7 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [isFetchingIncc, setIsFetchingIncc] = useState(false);
 
   // Editable local states
   const [localItems, setLocalItems] = useState<any[]>([]);
@@ -61,6 +62,45 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
       setIsDirty(false);
     }
   }, [selectedGroup]);
+
+  const fetchIncc = async () => {
+    if (!inccIfDate || !inccIfDate.includes('/')) {
+      setAlertConfig({ isOpen: true, title: 'Aviso', message: 'Preencha o mês/ano (ex: 01/2025)', type: 'warning' });
+      return;
+    }
+
+    setIsFetchingIncc(true);
+    try {
+      // Fetch from our local database table which I pre-populated with SINDUSCON data
+      const { data, error } = await supabase
+        .from('incc_indices')
+        .select('index_value')
+        .eq('month_year', inccIfDate)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setInccIfIndex(data.index_value);
+        setIsDirty(true);
+        setAlertConfig({ 
+          isOpen: true, 
+          title: 'Dados Sincronizados', 
+          message: `INCC-DI (FGV) localizado para ${inccIfDate}: ${data.index_value.toLocaleString('pt-BR', { minimumFractionDigits: 3 })}`, 
+          type: 'success' 
+        });
+      }
+    } catch (err: any) {
+      setAlertConfig({ 
+        isOpen: true, 
+        title: 'Índice não localizado', 
+        message: 'O índice para este mês ainda não foi cadastrado ou divulgado. Você pode preenchê-lo manualmente para prosseguir.', 
+        type: 'error' 
+      });
+    } finally {
+      setIsFetchingIncc(false);
+    }
+  };
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -453,15 +493,23 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
                   );
                 })}
                 <td colSpan={2} className="bg-gray-50 align-top p-0 border-l border-black/10">
-                   <div className="h-10 flex items-center justify-center font-black text-[8px] border-b border-black/5 uppercase">VALOR ATUALIZADO</div>
+                   <div className="h-10 flex items-center justify-center font-black text-[8px] border-b border-black/5 uppercase text-center leading-none">VALOR ATUALIZADO</div>
                    <div className="p-2 border-b border-black/5">
-                      <div className="flex items-center gap-1 font-black text-[7px] uppercase mb-1">INCC IF = <input type="text" value={inccIfDate} onChange={e => { setInccIfDate(e.target.value); setIsDirty(true); }} placeholder="mês/ano" className="w-10 bg-transparent border-none outline-none font-bold text-[7px]" /></div>
-                      <input type="number" step="any" value={inccIfIndex} onChange={e => { setInccIfIndex(parseFloat(e.target.value) || 0); setIsDirty(true); }} className="w-full border-b border-black/10 outline-none font-bold text-center h-6 text-[10px] no-spinners" />
+                      <div className="flex items-center gap-1 font-black text-[7px] uppercase mb-1">INCC IF = </div>
+                      <div className="flex items-center gap-1">
+                        <input type="text" value={inccIfDate} onChange={e => { setInccIfDate(e.target.value); setIsDirty(true); }} placeholder="MM/AAAA" className="w-full bg-transparent border-b border-black/10 outline-none font-bold text-[8px] h-6" />
+                        {!readOnly && (
+                          <button onClick={fetchIncc} disabled={isFetchingIncc} className={cn("p-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors shadow-sm", isFetchingIncc && "animate-spin")}>
+                            <RefreshCw className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                      <input type="number" step="any" value={inccIfIndex} onChange={e => { setInccIfIndex(parseFloat(e.target.value) || 0); setIsDirty(true); }} className="w-full mt-2 outline-none font-bold text-center h-6 text-[10px] no-spinners bg-transparent border-b border-black/10" />
                    </div>
-                   <div className="p-3 mt-4 flex flex-col items-center gap-2">
+                   <div className="p-3 mt-2 flex flex-col items-center gap-2">
                      <span className="font-black uppercase text-[8px] opacity-40 leading-tight text-center">VALOR CORRIGIDO</span>
                      <span className="font-black text-[13px]">{formatCurrency(correctedValue)}</span>
-                     <div className="text-[6px] opacity-30 font-bold">(IF / Io) * Orçado</div>
+                     <div className="text-[6px] opacity-30 font-bold uppercase tracking-tighter">(IF / Io) * Orçado</div>
                    </div>
                 </td>
               </tr>
