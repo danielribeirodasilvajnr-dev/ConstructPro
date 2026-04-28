@@ -53,8 +53,19 @@ export function PCIView() {
         const wsName = wb.SheetNames.find(n => n.includes('Proposta')) || wb.SheetNames[0];
         const ws = wb.Sheets[wsName];
         const g = (cell: string) => ws[cell]?.v ?? '';
+        const gn = (cell: string) => {
+          const v = ws[cell]?.v;
+          return typeof v === 'number' ? v : parseFloat(String(v || '0').replace(',', '.'));
+        };
+
+        // Mapeamento de Custos (Itens 1 a 20)
+        const custosImportados = Array.from({ length: 20 }, (_, i) => gn(`AP${101 + i}`));
+        
+        // Mapeamento de Cronograma (Etapas 0 a 24)
+        const cronogramaImportado = Array.from({ length: 25 }, (_, i) => gn(`L${145 + i}`) * 100);
 
         handleChange({
+          // Identificação
           proponente_nome: String(g('G44')),
           proponente_email: String(g('Y44')),
           proponente_cpf_cnpj: String(g('AK44')),
@@ -71,6 +82,8 @@ export function PCIView() {
           rte_uf: String(g('AI50')),
           rte_cpf: String(g('AK50')),
           rte_telefone: String(g('AQ50')),
+          
+          // Imóvel e Documentação
           imovel_endereco: String(g('G54')),
           imovel_complemento: String(g('AJ54')),
           imovel_bairro: String(g('G56')),
@@ -80,13 +93,65 @@ export function PCIView() {
           imovel_matricula: String(g('G58')),
           imovel_ori: String(g('M58')),
           imovel_finalidade: String(g('AQ58')),
+          terreno_proprio: String(g('AJ58')),
+          doc_certidao: String(g('G64')),
+          doc_alvara: String(g('G67')),
+          doc_alvara_data: String(g('Y67')),
+          doc_art_proj: String(g('G70')),
+          doc_art_proj_num: String(g('U70')),
+          doc_art_exec: String(g('AB70')),
+          doc_art_exec_num: String(g('AQ70')),
+          doc_proj_legal: String(g('G68')),
+          doc_proj_arquit: String(g('G69')),
+
+          // Áreas
           area_coberta_padrao: String(g('G73')),
           area_permeavel: String(g('N73')),
           area_acessoria_coberta: String(g('U73')),
           area_terreno: String(g('AJ73')),
           valor_terreno: String(g('AQ73')),
+
+          // Projeto e Memorial
+          destinacao_imovel: String(g('G75')),
+          sistema_construtivo: String(g('N75')),
+          sistema_construtivo_outros: String(g('AG75')),
+          num_datec: String(g('G77')),
+          selo_casa_azul: String(g('G79')),
+          padrao_acabamento: String(g('AG80')),
+          cobertura_tipo: String(g('G83')),
+          teto: String(g('K83')),
+          pavtos: String(g('O83')),
+          quartos: String(g('Q83')),
+          suites: String(g('S83')),
+          salas: String(g('U83')),
+          vagas: String(g('W83')),
+          tipo_vagas: String(g('Y83')),
+          acabamento_paredes_ext: String(g('G87')),
+          loucas_metais: String(g('O87')),
+          area_servico: String(g('U87')),
+          cozinha: String(g('Y87')),
+          agua_quente: String(g('AC87')),
+          acabamento_paredes_int: String(g('G91')),
+          paredes_areas_secas: String(g('O91')),
+          calefacao: String(g('U91')),
+          sustentabilidade: String(g('Y91')),
+          implantacao: String(g('AC91')),
+          revest_paredes_molhadas: String(g('G95')),
+          revest_piso_secas: String(g('M95')),
+          revest_piso_molhadas: String(g('S95')),
+          divisao_interna: String(g('Y95')),
+
+          // Custos
+          custos: custosImportados,
+          bdi_pct: gn('AI122') * 100,
+          executor_obra: String(g('G122')),
+
+          // Cronograma
+          prazo_meses: String(g('O142')),
+          pct_pre_executado: String(g('AK142')),
+          cronograma_pct: cronogramaImportado,
         });
-        alert('Planilha importada com sucesso!');
+        alert('PCI completa importada com sucesso!');
       } catch (err) {
         console.error(err);
         alert('Erro ao processar o arquivo.');
