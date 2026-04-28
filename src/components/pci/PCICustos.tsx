@@ -177,7 +177,7 @@ export function PCICustos({ data, onChange }: Props) {
       </table>
 
       {/* SERVIÇOS ADICIONAIS E RESUMO DE PRODUÇÃO */}
-      <table className="w-full border-collapse mt-4 table-fixed" style={{ minWidth: '900px' }}>
+      <table className="w-full border-collapse table-fixed mt-4" style={{ minWidth: '900px' }}>
         <colgroup>
           <col style={{ width: '4%' }} />
           <col style={{ width: '40%' }} />
@@ -188,9 +188,16 @@ export function PCICustos({ data, onChange }: Props) {
           <col style={{ width: '10%' }} />
         </colgroup>
         <tbody>
-          <tr><td colSpan={7} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
-            <span className="text-[10px] font-black text-white uppercase tracking-wider">Serviços adicionais</span>
-          </td></tr>
+          <tr>
+            <td colSpan={7} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-white uppercase tracking-wider">Serviços adicionais</span>
+                <span className="text-[9px] italic text-slate-100 leading-normal mt-1">
+                  Quando houver custos adicionais, não contemplados nos custos referenciais (p.ex.: demolições, fundações especiais, cortes, aterros e contenções excepcionais, elevadores e equipamentos especiais, piscinas, quadras de esportes etc.), todos estes serviços devem ser inseridos no quadro "Serviços Adicionais" abaixo
+                </span>
+              </div>
+            </td>
+          </tr>
           <tr className="bg-[#D6DCE4]">
             <td className="border border-[#8ea0b4] px-1 py-1 text-[8px] font-black text-slate-600 text-center">Item</td>
             <td className="border border-[#8ea0b4] px-2 py-1 text-[8px] font-black text-slate-600">Serviços</td>
