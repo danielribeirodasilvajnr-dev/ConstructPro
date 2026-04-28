@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { BidGroup, BidQuote } from '../../lib/types';
 import { cn, formatCurrency } from '../../lib/utils';
 import { AlertModal } from '../ui/AlertModal';
+import { ConfirmModal } from '../ui/ConfirmModal';
 
 interface BidComparisonTabProps {
   projectId: string;
@@ -31,6 +32,13 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
   const [inccIfDate, setInccIfDate] = useState('');
 
   const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'success' as any });
+  const [confirmConfig, setConfirmConfig] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    confirmText: 'Excluir',
+    onConfirm: () => {} 
+  });
 
   useEffect(() => {
     if (selectedGroup) {
@@ -67,10 +75,16 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
 
   const handleClose = useCallback(() => {
     if (isDirty) {
-      if (confirm('Você tem alterações não salvas. Deseja realmente sair sem salvar?')) {
-        setSelectedGroup(null);
-        setIsDirty(false);
-      }
+      setConfirmConfig({
+        isOpen: true,
+        title: 'Alterações não salvas',
+        message: 'Você tem alterações que serão perdidas se sair agora. Deseja realmente sair?',
+        confirmText: 'Sair sem salvar',
+        onConfirm: () => {
+          setSelectedGroup(null);
+          setIsDirty(false);
+        }
+      });
     } else {
       setSelectedGroup(null);
     }
@@ -83,14 +97,34 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
   };
 
   const handleDeleteQuote = (quoteId: string) => {
-    if (confirm('Deseja realmente excluir este fornecedor e todas as suas cotações?')) {
-      setLocalQuotes(localQuotes.filter(q => q.id !== quoteId));
-      const newPrices = { ...localPrices };
-      Object.keys(newPrices).forEach(key => {
-        if (key.startsWith(`${quoteId}_`)) delete newPrices[key];
-      });
-      setLocalPrices(newPrices);
-      setIsDirty(true);
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Excluir Fornecedor',
+      message: 'Deseja realmente excluir este fornecedor e todas as suas cotações?',
+      confirmText: 'Excluir',
+      onConfirm: () => {
+        setLocalQuotes(localQuotes.filter(q => q.id !== quoteId));
+        const newPrices = { ...localPrices };
+        Object.keys(newPrices).forEach(key => {
+          if (key.startsWith(`${quoteId}_`)) delete newPrices[key];
+        });
+        setLocalPrices(newPrices);
+        setIsDirty(true);
+      }
+    });
+  };
+
+  const handleCreateGroup = async () => {
+    if (!groupTitle.trim()) return;
+    try {
+      const { data, error } = await supabase.from('bid_groups').insert([{ project_id: projectId, title: groupTitle, description: groupDesc }]).select().single();
+      if (error) throw error;
+      onRefresh();
+      setIsModalOpen(false);
+      setGroupTitle('');
+      setGroupDesc('');
+    } catch (err: any) {
+      setAlertConfig({ isOpen: true, title: 'Erro', message: err.message, type: 'error' });
     }
   };
 
@@ -104,14 +138,12 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
         original_budget_total: localBudgetItems.reduce((acc, bi) => acc + (bi.unit_price * bi.quantity), 0)
       }).eq('id', selectedGroup.id);
 
-      // Clean up deleted service items in DB
       const currentItemIds = localItems.filter(i => !i.id.startsWith('temp_')).map(i => i.id);
       if (selectedGroup.items) {
         const deletedItemIds = selectedGroup.items.filter(i => !currentItemIds.includes(i.id)).map(i => i.id);
         if (deletedItemIds.length > 0) await supabase.from('bid_group_items').delete().in('id', deletedItemIds);
       }
 
-      // Sync Service Items
       const existingItems = localItems.filter(item => !item.id.startsWith('temp_'));
       const newItems = localItems.filter(item => item.id.startsWith('temp_'));
       for (const item of existingItems) {
@@ -123,14 +155,12 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
         if (data) itemMapping[item.id] = data.id;
       }
 
-      // Clean up deleted budget items in DB
       const currentBudgetItemIds = localBudgetItems.filter(bi => !bi.id.startsWith('temp_')).map(bi => bi.id);
       if (selectedGroup.budget_items) {
         const deletedBudgetIds = selectedGroup.budget_items.filter(bi => !currentBudgetItemIds.includes(bi.id)).map(bi => bi.id);
         if (deletedBudgetIds.length > 0) await supabase.from('bid_budget_items').delete().in('id', deletedBudgetIds);
       }
 
-      // Sync Budget Items
       const existingBudget = localBudgetItems.filter(bi => !bi.id.startsWith('temp_'));
       const newBudget = localBudgetItems.filter(bi => bi.id.startsWith('temp_'));
       for (const bi of existingBudget) {
@@ -140,14 +170,12 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
         await supabase.from('bid_budget_items').insert([{ bid_group_id: selectedGroup.id, description: bi.description, quantity: bi.quantity, unit: bi.unit, unit_price: bi.unit_price, total_price: bi.unit_price * bi.quantity }]);
       }
 
-      // Clean up deleted quotes in DB
       const currentQuoteIds = localQuotes.filter(q => !q.id.startsWith('temp_')).map(q => q.id);
       if (selectedGroup.quotes) {
         const deletedQuoteIds = selectedGroup.quotes.filter(q => !currentQuoteIds.includes(q.id)).map(q => q.id);
         if (deletedQuoteIds.length > 0) await supabase.from('bid_quotes').delete().in('id', deletedQuoteIds);
       }
 
-      // Sync Quotes
       const existingQuotes = localQuotes.filter(q => !q.id.startsWith('temp_'));
       const newQuotes = localQuotes.filter(q => q.id.startsWith('temp_'));
       for (const q of existingQuotes) {
@@ -167,7 +195,6 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
         if (data) quoteMapping[q.id] = data.id;
       }
 
-      // Sync Prices
       const finalPrices = Object.entries(localPrices).map(([key, price]) => {
         let [qId, iId] = key.split('_');
         if (quoteMapping[qId]) qId = quoteMapping[qId];
@@ -183,7 +210,6 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
         await supabase.from('bid_quote_items').insert(validPrices);
       }
 
-      // Update total amounts
       for (const qId of allQuoteIds) {
         const currentLocalId = localQuotes.find(lq => lq.id === qId || quoteMapping[lq.id] === qId)?.id || qId;
         const total = localItems.reduce((acc, item) => acc + ((localPrices[`${currentLocalId}_${item.id}`] || 0) * item.quantity), 0);
@@ -218,7 +244,6 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
     const quoteCount = Math.max(localQuotes.length, 3);
     const budgetTotal = localBudgetItems.reduce((acc, bi) => acc + (bi.unit_price * bi.quantity), 0);
     const selectedQuote = localQuotes.find(q => q.is_selected);
-    const winnerTotal = localItems.reduce((acc, item) => acc + ((localPrices[`${selectedQuote?.id}_${item.id}`] || 0) * item.quantity), 0);
     const correctedValue = (inccIoIndex > 0) ? (inccIfIndex / inccIoIndex) * budgetTotal : 0;
 
     return (
@@ -313,7 +338,25 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
                   <td className="border-r border-black p-0"><input type="text" value={item.unit} onChange={e => { setLocalItems(localItems.map(li => li.id === item.id ? {...li, unit: e.target.value} : li)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center uppercase font-bold outline-none" /></td>
                   <td className="border-r border-black p-0 relative group">
                     <input type="text" value={item.description} onChange={e => { setLocalItems(localItems.map(li => li.id === item.id ? {...li, description: e.target.value} : li)); setIsDirty(true); }} className="w-full h-full bg-transparent px-3 font-bold uppercase outline-none" />
-                    {!readOnly && <button onClick={() => { setLocalItems(localItems.filter(li => li.id !== item.id)); setIsDirty(true); }} className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-red-500 opacity-0 group-hover:opacity-100 print:hidden"><Trash2 className="h-3 w-3" /></button>}
+                    {!readOnly && (
+                      <button 
+                        onClick={() => {
+                          setConfirmConfig({
+                            isOpen: true,
+                            title: 'Excluir Item',
+                            message: `Deseja realmente excluir o item "${item.description || idx + 1}"?`,
+                            confirmText: 'Excluir',
+                            onConfirm: () => {
+                              setLocalItems(localItems.filter(li => li.id !== item.id));
+                              setIsDirty(true);
+                            }
+                          });
+                        }} 
+                        className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-red-500 opacity-0 group-hover:opacity-100 print:hidden"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    )}
                   </td>
                   {[...Array(quoteCount)].map((_, i) => {
                     const q = localQuotes[i];
@@ -347,7 +390,25 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
                   <td className="border-r border-black p-0"><input type="text" value={bi.unit} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, unit: e.target.value} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center uppercase font-bold outline-none" /></td>
                   <td className="border-r border-black p-0 relative group">
                     <input type="text" value={bi.description} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, description: e.target.value} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent px-3 font-bold uppercase outline-none" />
-                    {!readOnly && <button onClick={() => { setLocalBudgetItems(localBudgetItems.filter(lbi => lbi.id !== bi.id)); setIsDirty(true); }} className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-red-500 opacity-0 group-hover:opacity-100 print:hidden"><Trash2 className="h-3 w-3" /></button>}
+                    {!readOnly && (
+                      <button 
+                        onClick={() => {
+                          setConfirmConfig({
+                            isOpen: true,
+                            title: 'Excluir Item do Orçamento',
+                            message: `Deseja realmente excluir o item do orçamento "${bi.description || idx + 1}"?`,
+                            confirmText: 'Excluir',
+                            onConfirm: () => {
+                              setLocalBudgetItems(localBudgetItems.filter(lbi => lbi.id !== bi.id));
+                              setIsDirty(true);
+                            }
+                          });
+                        }} 
+                        className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-red-500 opacity-0 group-hover:opacity-100 print:hidden"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    )}
                   </td>
                   {[...Array(quoteCount)].map((_, i) => ( <React.Fragment key={i}> <td className="border-r border-black/10 bg-gray-50/20"></td> <td className="border-r border-black/10 bg-gray-50/20"></td> </React.Fragment> ))}
                   <td className="border-r border-black/10 p-0 bg-blue-50/50">
@@ -419,6 +480,15 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
             </tbody>
           </table>
         </div>
+        
+        <ConfirmModal 
+          isOpen={confirmConfig.isOpen}
+          onClose={() => setConfirmConfig({ ...confirmConfig, isOpen: false })}
+          onConfirm={confirmConfig.onConfirm}
+          title={confirmConfig.title}
+          message={confirmConfig.message}
+          confirmText={confirmConfig.confirmText}
+        />
       </div>
     );
   }
@@ -441,7 +511,21 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
         {bidGroups.map((group) => (
           <div key={group.id} onClick={() => setSelectedGroup(group)} className="bg-[#1C232E] rounded-[32px] border border-white/5 p-8 cursor-pointer hover:border-blue-500/50 transition-all group relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={(e) => { e.stopPropagation(); if(confirm('Excluir?')) supabase.from('bid_groups').delete().eq('id', group.id).then(() => onRefresh()); }} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 transition-all"><Trash2 className="h-4 w-4" /></button>
+              <button 
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  setConfirmConfig({
+                    isOpen: true,
+                    title: 'Excluir Quadro',
+                    message: `Deseja realmente excluir o quadro "${group.title}"? Esta ação não pode ser desfeita.`,
+                    confirmText: 'Excluir',
+                    onConfirm: () => supabase.from('bid_groups').delete().eq('id', group.id).then(() => onRefresh())
+                  });
+                }} 
+                className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 transition-all"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
             <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tight">{group.title}</h3>
             <p className="text-sm text-slate-500 line-clamp-2">{group.description || 'Ver detalhes...'}</p>
@@ -465,6 +549,15 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
           </div>
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig({ ...confirmConfig, isOpen: false })}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+      />
 
       <AlertModal isOpen={alertConfig.isOpen} onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })} title={alertConfig.title} message={alertConfig.message} type={alertConfig.type} />
     </div>
