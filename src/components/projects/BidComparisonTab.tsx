@@ -64,36 +64,76 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
   }, [selectedGroup]);
 
   const fetchIncc = async () => {
-    const formattedDate = inccIfDate.trim();
-    if (!formattedDate || !formattedDate.includes('/')) {
+    let formattedDate = inccIfDate.trim();
+    
+    // If empty, start with current month/year
+    if (!formattedDate) {
+      const now = new Date();
+      formattedDate = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+      setInccIfDate(formattedDate);
+    }
+
+    if (!formattedDate.includes('/')) {
       setAlertConfig({ isOpen: true, title: 'Aviso', message: 'Preencha o mês/ano corretamente (ex: 03/2026)', type: 'warning' });
       return;
     }
 
     setIsFetchingIncc(true);
     try {
-      const { data, error } = await supabase
-        .from('incc_indices')
-        .select('index_value')
-        .eq('month_year', formattedDate)
-        .maybeSingle();
+      // Smart Fallback Logic: Try the requested month, if not found, try the previous one
+      let searchDate = formattedDate;
+      let data = null;
+      let attempts = 0;
 
-      if (error) throw error;
+      while (!data && attempts < 3) {
+        const { data: result, error } = await supabase
+          .from('incc_indices')
+          .select('index_value')
+          .eq('month_year', searchDate)
+          .maybeSingle();
+
+        if (error) throw error;
+        
+        if (result) {
+          data = result;
+        } else {
+          // Calculate previous month
+          const [m, y] = searchDate.split('/').map(Number);
+          let newM = m - 1;
+          let newY = y;
+          if (newM === 0) {
+            newM = 12;
+            newY -= 1;
+          }
+          searchDate = `${String(newM).padStart(2, '0')}/${newY}`;
+          attempts++;
+        }
+      }
 
       if (data) {
         setInccIfIndex(data.index_value);
+        if (searchDate !== formattedDate) {
+          setInccIfDate(searchDate);
+          setAlertConfig({ 
+            isOpen: true, 
+            title: 'Mês Ajustado', 
+            message: `O índice de ${formattedDate} ainda não saiu. Puxamos o último disponível (${searchDate}): ${data.index_value.toLocaleString('pt-BR', { minimumFractionDigits: 3 })}`, 
+            type: 'info' 
+          });
+        } else {
+          setAlertConfig({ 
+            isOpen: true, 
+            title: 'Dados Sincronizados', 
+            message: `INCC-DI (FGV) localizado para ${searchDate}: ${data.index_value.toLocaleString('pt-BR', { minimumFractionDigits: 3 })}`, 
+            type: 'success' 
+          });
+        }
         setIsDirty(true);
-        setAlertConfig({ 
-          isOpen: true, 
-          title: 'Dados Sincronizados', 
-          message: `INCC-DI (FGV) localizado para ${formattedDate}: ${data.index_value.toLocaleString('pt-BR', { minimumFractionDigits: 3 })}`, 
-          type: 'success' 
-        });
       } else {
         setAlertConfig({ 
           isOpen: true, 
           title: 'Índice não localizado', 
-          message: `O índice para "${formattedDate}" ainda não consta no sistema. Verifique se o mês já foi divulgado pelo Sinduscon ou preencha manualmente.`, 
+          message: `Não encontramos índices recentes para "${formattedDate}" nem para os meses anteriores na base.`, 
           type: 'warning' 
         });
       }
@@ -101,7 +141,7 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
       setAlertConfig({ 
         isOpen: true, 
         title: 'Erro de Conexão', 
-        message: 'Não foi possível consultar a base de índices. Tente novamente.', 
+        message: 'Não foi possível consultar a base de índices.', 
         type: 'error' 
       });
     } finally {
@@ -323,8 +363,7 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
             <thead>
               <tr className="border-b border-black h-20">
                 <th colSpan={4} className="border-r border-black bg-[#E5E1DB] p-4 text-center">
-                  <h1 className="text-2xl font-black text-[#1C232E]">AEVUM</h1>
-                  <p className="text-[7px] font-bold tracking-[3px] -mt-1 opacity-60 uppercase">Engenharia</p>
+                  <h1 className="text-2xl font-black text-[#1C232E]">AevumPro</h1>
                 </th>
                 <th colSpan={quoteCount * 2} className="border-r border-black p-4 text-center">
                   <input type="text" value={groupTitle} onChange={e => { setGroupTitle(e.target.value); setIsDirty(true); }} className="text-xl font-black uppercase text-center w-full bg-transparent outline-none border-none" />
