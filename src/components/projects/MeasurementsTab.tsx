@@ -545,12 +545,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                     />
                   </div>
                   <div className="col-span-3 p-3 flex flex-col justify-center items-end pr-8">
-                     <button
-                        onClick={() => setIsNewItemModalOpen(true)}
-                        className="px-4 py-2 bg-blue-600 text-white text-[10px] font-black rounded-lg flex items-center gap-2 hover:bg-blue-500 transition-all uppercase tracking-widest"
-                      >
-                        <Plus className="h-3 w-3" /> Adicionar Item Extra
-                      </button>
+                     {/* Button Removed */}
                   </div>
                </div>
             </div>
@@ -564,6 +559,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                       <th className="border-r border-black px-3 font-black uppercase text-left min-w-[250px]">Descrição do Serviço</th>
                       <th className="border-r border-black font-black uppercase text-[7px] text-center w-14">UNID</th>
                       <th className="border-r border-black font-black uppercase text-[7px] text-center w-24">QUANT. TOTAL</th>
+                      <th className="border-r border-black font-black uppercase text-[7px] text-center w-24 bg-slate-50">VALOR UNIT.</th>
                       
                       {/* Previous Measurements Columns */}
                       {previousMeasurements.map((pm, idx) => (
@@ -576,14 +572,15 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                       <th className="border-r border-black font-black uppercase text-[7px] text-center w-24 bg-emerald-500/10">
                         MEDIÇÃO {currentMeasurementNumber} (ATUAL)
                       </th>
-                      <th className="font-black uppercase text-[7px] text-center w-24 bg-amber-500/5">RESTANTE</th>
+                      <th className="border-r border-black font-black uppercase text-[7px] text-center w-24 bg-amber-500/5">RESTANTE</th>
+                      <th className="font-black uppercase text-[7px] text-center w-24 bg-slate-100">VALOR (R$)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {Object.entries(itemsByCategory).map(([category, items]: [any, any]) => (
                       <React.Fragment key={category}>
                         <tr className="bg-[#BDBDBD] border-b border-black h-8">
-                          <td colSpan={5 + previousMeasurements.length} className="px-4 font-black uppercase tracking-[3px] text-[9px]">{category}</td>
+                          <td colSpan={7 + previousMeasurements.length} className="px-4 font-black uppercase tracking-[3px] text-[9px]">{category}</td>
                         </tr>
                         {items.map((item: BudgetItem, idx: number) => {
                           const currentVal = editingItems[item.id] || 0;
@@ -596,6 +593,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
 
                           const totalMeasured = totalPrevious + currentVal;
                           const remaining = Math.max(0, item.quantity - totalMeasured);
+                          const currentValueMoney = currentVal * (item.unit_cost || 0);
 
                           return (
                             <tr key={item.id} className="border-b border-black h-10 group hover:bg-gray-50">
@@ -603,6 +601,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                               <td className="border-r border-black px-3 font-bold uppercase">{item.description}</td>
                               <td className="border-r border-black text-center font-bold uppercase">{item.unit}</td>
                               <td className="border-r border-black text-center font-bold">{item.quantity.toLocaleString()}</td>
+                              <td className="border-r border-black text-center font-bold bg-slate-50">{formatCurrency(item.unit_cost)}</td>
                               
                               {/* Previous Values */}
                               {previousMeasurements.map((pm) => {
@@ -624,12 +623,27 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                                   placeholder="0,00"
                                 />
                               </td>
-                              <td className="text-center font-bold text-amber-600 bg-amber-50/5">{remaining.toLocaleString()}</td>
+                              <td className="border-r border-black text-center font-bold text-amber-600 bg-amber-50/5">{remaining.toLocaleString()}</td>
+                              <td className="text-right px-3 font-black text-slate-900 bg-slate-50">{formatCurrency(currentValueMoney)}</td>
                             </tr>
                           );
                         })}
                       </React.Fragment>
                     ))}
+                    {/* Total Row */}
+                    <tr className="bg-[#1C232E] text-white border-t-2 border-black h-12">
+                       <td colSpan={6 + previousMeasurements.length} className="text-right px-6 font-black uppercase tracking-widest text-[10px]">Total Geral da Medição:</td>
+                       <td className="border-l border-white/10 bg-emerald-600 text-center font-black">
+                          {Object.values(editingItems).reduce((acc, val) => acc + (Number(val) || 0), 0).toLocaleString()}
+                       </td>
+                       <td className="border-l border-white/10"></td>
+                       <td className="bg-white text-[#1C232E] text-right px-3 font-black text-sm">
+                          {formatCurrency(Object.entries(editingItems).reduce((acc, [id, qty]) => {
+                            const item = budgetItems.find(bi => bi.id === id);
+                            return acc + (qty * (item?.unit_cost || 0));
+                          }, 0))}
+                       </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
