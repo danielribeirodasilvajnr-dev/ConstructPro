@@ -157,8 +157,8 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           {[
             { id: 'orcamento', label: 'Orçamento' },
             { id: 'financeiro', label: 'Financeiro' },
-            { id: 'concorrencia', label: 'Quadro de Concorrência' },
             { id: 'cronograma', label: 'Cronograma' },
+            { id: 'concorrencia', label: 'Quadro de Concorrência' },
             { id: 'medicoes', label: 'Medições' },
             { id: 'diario', label: 'Diário de Obra' },
           ].map((tab) => (
