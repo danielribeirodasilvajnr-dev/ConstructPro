@@ -118,17 +118,23 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
       setConfirmConfig({
         isOpen: true,
         title: 'Alterações não salvas',
-        message: 'Você tem alterações que serão perdidas se sair agora. Deseja realmente sair?',
+        message: 'Você tem alterações que serão perdidas se sair agora. Deseja salvar antes de sair?',
         confirmText: 'Sair sem salvar',
         onConfirm: () => {
           setSelectedGroup(null);
           setIsDirty(false);
+        },
+        secondaryText: 'Salvar e Sair',
+        onSecondary: async () => {
+          await handleSaveAll();
+          setSelectedGroup(null);
+          setIsDirty(false);
         }
-      });
+      } as any);
     } else {
       setSelectedGroup(null);
     }
-  }, [isDirty]);
+  }, [isDirty, handleSaveAll]);
 
   const handleSelectWinner = async (quoteId: string) => {
     if (readOnly || !selectedGroup) return;
@@ -536,6 +542,8 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
           title={confirmConfig.title}
           message={confirmConfig.message}
           confirmText={confirmConfig.confirmText}
+          secondaryText={(confirmConfig as any).secondaryText}
+          onSecondary={(confirmConfig as any).onSecondary}
         />
       </div>
     );
@@ -605,6 +613,8 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
         title={confirmConfig.title}
         message={confirmConfig.message}
         confirmText={confirmConfig.confirmText}
+        secondaryText={(confirmConfig as any).secondaryText}
+        onSecondary={(confirmConfig as any).onSecondary}
       />
 
       <AlertModal isOpen={alertConfig.isOpen} onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })} title={alertConfig.title} message={alertConfig.message} type={alertConfig.type} />

@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertCircle, X } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -10,6 +11,10 @@ interface ConfirmModalProps {
   message: string;
   confirmText?: string;
   confirmColor?: string;
+  secondaryText?: string;
+  onSecondary?: () => void;
+  secondaryColor?: string;
+  cancelText?: string;
 }
 
 export function ConfirmModal({ 
@@ -19,7 +24,11 @@ export function ConfirmModal({
   title, 
   message, 
   confirmText = 'Excluir',
-  confirmColor = 'bg-red-500' 
+  confirmColor = 'bg-red-500',
+  secondaryText,
+  onSecondary,
+  secondaryColor = 'bg-blue-600',
+  cancelText = 'Cancelar'
 }: ConfirmModalProps) {
   return (
     <AnimatePresence>
@@ -37,27 +46,43 @@ export function ConfirmModal({
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-sm overflow-hidden p-8 text-center"
+            className={cn(
+              "relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full overflow-hidden p-8 text-center",
+              secondaryText ? "max-w-md" : "max-w-sm"
+            )}
           >
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-white mb-2 tracking-tight">{title}</h3>
             <p className="text-sm text-slate-400 leading-relaxed mb-8 px-2">
               {message}
             </p>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button 
                 onClick={onClose} 
-                className="flex-1 py-3.5 text-[11px] font-black uppercase tracking-[2px] text-slate-400 border border-white/5 rounded-2xl hover:bg-white/5 transition-all"
+                className="flex-1 py-3.5 text-[11px] font-black uppercase tracking-[2px] text-slate-400 border border-white/5 rounded-2xl hover:bg-white/5 transition-all order-3 sm:order-1"
               >
-                Cancelar
+                {cancelText}
               </button>
+              
+              {secondaryText && onSecondary && (
+                <button 
+                  onClick={() => {
+                    onSecondary();
+                    onClose();
+                  }} 
+                  className={`flex-1 py-3.5 text-[11px] font-black uppercase tracking-[2px] text-white rounded-2xl ${secondaryColor} hover:brightness-110 shadow-lg transition-all active:scale-95 order-2 sm:order-2`}
+                >
+                  {secondaryText}
+                </button>
+              )}
+
               <button 
                 onClick={() => {
                   onConfirm();
                   onClose();
                 }} 
-                className={`flex-1 py-3.5 text-[11px] font-black uppercase tracking-[2px] text-white rounded-2xl ${confirmColor} hover:brightness-110 shadow-lg transition-all active:scale-95`}
+                className={`flex-1 py-3.5 text-[11px] font-black uppercase tracking-[2px] text-white rounded-2xl ${confirmColor} hover:brightness-110 shadow-lg transition-all active:scale-95 order-1 sm:order-3`}
               >
                 {confirmText}
               </button>
