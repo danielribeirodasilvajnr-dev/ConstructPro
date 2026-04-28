@@ -13,7 +13,8 @@ import {
   Wallet,
   Trash2,
   X,
-  Search
+  Search,
+  Ruler
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'motion/react';
@@ -66,10 +67,27 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
     );
   }
 
-  // Calculate real progress
-  const physicalProgress = scheduleItems.length > 0
-    ? Math.round(scheduleItems.reduce((acc, item) => acc + Number(item.progress || 0), 0) / scheduleItems.length)
-    : 0;
+  // Calculate real progress based on budget items medições
+  const calculatePhysicalProgress = () => {
+    if (!budgetItems || budgetItems.length === 0) {
+      return scheduleItems.length > 0
+        ? Math.round(scheduleItems.reduce((acc, item) => acc + Number(item.progress || 0), 0) / scheduleItems.length)
+        : 0;
+    }
+    
+    const totalValue = budgetItems.reduce((acc, item) => acc + (item.quantity * item.unit_cost), 0);
+    if (totalValue === 0) return 0;
+
+    const executedValue = budgetItems.reduce((acc, item) => {
+      const progress = item.quantity > 0 ? (item.executed_quantity / item.quantity) : 0;
+      const cappedProgress = Math.min(progress, 1);
+      return acc + (cappedProgress * item.quantity * item.unit_cost);
+    }, 0);
+
+    return Math.round((executedValue / totalValue) * 100);
+  };
+
+  const physicalProgress = calculatePhysicalProgress();
 
   const totalInvested = financialItems.reduce((acc, item) => acc + Number(item.amount), 0);
   const totalBudget = budgetItems.reduce((acc, item) => acc + (Number(item.quantity) * Number(item.unit_cost)), 0);
@@ -327,6 +345,43 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
               )}
             </div>
           </div>
+
+          {/* Physical Progress by Category */}
+          {budgetItems.length > 0 && (
+            <div className="bg-[#1C232E] rounded-2xl p-8 border border-white/5 shadow-sm">
+              <h3 className="text-xl font-bold flex items-center gap-2 mb-8">
+                <Ruler className="h-5 w-5 text-primary" />
+                Progresso por Etapa
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                {Object.entries(
+                  budgetItems.reduce((acc: any, item: any) => {
+                    if (!acc[item.category]) acc[item.category] = { total: 0, executed: 0 };
+                    acc[item.category].total += (item.quantity * item.unit_cost);
+                    const progress = item.quantity > 0 ? (item.executed_quantity / item.quantity) : 0;
+                    acc[item.category].executed += (Math.min(progress, 1) * item.quantity * item.unit_cost);
+                    return acc;
+                  }, {})
+                ).map(([category, data]: [string, any]) => {
+                  const progress = data.total > 0 ? (data.executed / data.total) * 100 : 0;
+                  return (
+                    <div key={category} className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{category}</span>
+                        <span className="text-xs font-black text-white">{Math.round(progress)}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary rounded-full transition-all duration-1000" 
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="col-span-12 lg:col-span-4 space-y-8">

@@ -17,6 +17,7 @@ import { BudgetTab } from '../components/projects/BudgetTab';
 import { ScheduleTab } from '../components/projects/ScheduleTab';
 import { FinanceTab } from '../components/projects/FinanceTab';
 import { DailyLogTab } from '../components/projects/DailyLogTab';
+import { MeasurementsTab } from '../components/projects/MeasurementsTab';
 import { CollaboratorsModal } from '../components/projects/CollaboratorsModal';
 import { CollaboratorsTab } from '../components/projects/CollaboratorsTab';
 import { cn } from '../lib/utils';
@@ -36,7 +37,7 @@ interface ProjectsViewProps {
 export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsViewProps) {
   const { user } = useAuth();
   const { projects, loading: loadingProjects, error, saveProject, deleteProject, refresh: refreshProjects } = useProjects();
-  const [activeTab, setActiveTab] = useState<'orcamento' | 'cronograma' | 'financeiro' | 'diario' | 'colaboradores'>('orcamento');
+  const [activeTab, setActiveTab] = useState<'orcamento' | 'cronograma' | 'financeiro' | 'diario' | 'colaboradores' | 'medicoes'>('orcamento');
 
   // Modals for Projects
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -152,8 +153,9 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         <div className="flex border-b border-slate-800 mb-6 md:mb-10 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
           {[
             { id: 'orcamento', label: 'Orçamento' },
-            { id: 'cronograma', label: 'Cronograma' },
             { id: 'financeiro', label: 'Financeiro' },
+            { id: 'cronograma', label: 'Cronograma' },
+            { id: 'medicoes', label: 'Medições' },
             { id: 'diario', label: 'Diário de Obra' },
           ].map((tab) => (
             <button
@@ -192,6 +194,14 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           <FinanceTab
             projectId={selectedProjectId}
             financialItems={financialItems}
+            budgetItems={budgetItems}
+            onRefresh={refreshData}
+            readOnly={!isEditor}
+          />
+        )}
+        {activeTab === 'medicoes' && (
+          <MeasurementsTab
+            projectId={selectedProjectId}
             budgetItems={budgetItems}
             onRefresh={refreshData}
             readOnly={!isEditor}

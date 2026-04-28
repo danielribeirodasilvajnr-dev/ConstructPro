@@ -161,7 +161,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                                       "text-[10px] font-bold",
                                       linePercent > 100 ? "text-red-500" : "text-slate-500"
                                     )}>
-                                      {linePercent.toFixed(0)}%
+                                      {linePercent.toFixed(0)}% <span className="text-[8px] opacity-50 ml-0.5">FIN</span>
                                     </span>
                                   </div>
                                 )}

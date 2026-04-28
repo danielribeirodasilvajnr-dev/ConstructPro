@@ -21,6 +21,7 @@ export interface BudgetItem {
   unit: string;
   quantity: number;
   unit_cost: number;
+  executed_quantity: number;
 }
 
 export interface ScheduleItem {
