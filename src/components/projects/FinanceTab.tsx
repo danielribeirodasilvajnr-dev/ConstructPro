@@ -41,47 +41,68 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
   const categories = VALID_CATEGORIES;
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    // FILE SIZE VALIDATION (Max 5MB)
-    const MAX_SIZE = 5 * 1024 * 1024;
-    if (file.size > MAX_SIZE) {
+    // Check how many slots are free
+    const currentUrls = [formData.receipt_url, formData.receipt_url_2, formData.receipt_url_3].filter(Boolean);
+    if (currentUrls.length + files.length > 3) {
       setAlertConfig({
         isOpen: true,
-        title: 'Arquivo muito grande',
-        message: 'O tamanho máximo permitido para comprovantes é de 5MB.',
-        type: 'error'
+        title: 'Limite atingido',
+        message: 'Você pode enviar no máximo 3 anexos por lançamento.',
+        type: 'warning' as any
       });
       return;
     }
 
     setUploading(true);
     try {
-      const sanitizedName = sanitizeFileName(file.name);
-      const fileName = `${projectId}/${Date.now()}-${sanitizedName}`;
-      const { data, error } = await supabase.storage
-        .from('receipts')
-        .upload(fileName, file);
+      const newUrls = { ...formData };
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const MAX_SIZE = 5 * 1024 * 1024;
+        if (file.size > MAX_SIZE) {
+          throw new Error(`O arquivo ${file.name} excede o limite de 5MB.`);
+        }
 
-      if (error) throw error;
+        const sanitizedName = sanitizeFileName(file.name);
+        const fileName = `${projectId}/${Date.now()}-${sanitizedName}`;
+        const { error } = await supabase.storage
+          .from('receipts')
+          .upload(fileName, file);
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('receipts')
-        .getPublicUrl(fileName);
+        if (error) throw error;
 
-      setFormData({ ...formData, receipt_url: publicUrl });
+        const { data: { publicUrl } } = supabase.storage
+          .from('receipts')
+          .getPublicUrl(fileName);
+
+        // Find next empty slot
+        if (!newUrls.receipt_url) newUrls.receipt_url = publicUrl;
+        else if (!newUrls.receipt_url_2) newUrls.receipt_url_2 = publicUrl;
+        else if (!newUrls.receipt_url_3) newUrls.receipt_url_3 = publicUrl;
+      }
+
+      setFormData(newUrls);
     } catch (err: any) {
       console.error(err);
       setAlertConfig({
         isOpen: true,
         title: 'Erro no Upload',
-        message: err.message || 'Não foi possível enviar o arquivo.',
+        message: err.message || 'Não foi possível enviar os arquivos.',
         type: 'error'
       });
     } finally {
       setUploading(false);
     }
+  };
+
+  const removeAttachment = (slot: 1 | 2 | 3) => {
+    if (slot === 1) setFormData({ ...formData, receipt_url: undefined });
+    if (slot === 2) setFormData({ ...formData, receipt_url_2: undefined });
+    if (slot === 3) setFormData({ ...formData, receipt_url_3: undefined });
   };
 
   const handleSave = async () => {
@@ -425,7 +446,18 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2 font-medium">
                       {item.description}
-                      {item.receipt_url && <Paperclip className="h-3.5 w-3.5 text-emerald-500 cursor-pointer hover:scale-110 transition-transform" onClick={() => window.open(item.receipt_url, '_blank')} />}
+                      <div className="flex gap-1.5">
+                        {[item.receipt_url, item.receipt_url_2, item.receipt_url_3].filter(Boolean).map((url, idx) => (
+                          <button 
+                            key={idx}
+                            onClick={() => window.open(url, '_blank')}
+                            title={`Ver anexo ${idx + 1}`}
+                            className="p-1 hover:bg-emerald-500/10 rounded transition-colors"
+                          >
+                            <Paperclip className="h-3.5 w-3.5 text-emerald-500 hover:scale-110 transition-transform" />
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     {item.budget_item_linked_id && (
                       <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
@@ -468,18 +500,19 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                 <h3 className="text-white font-bold text-lg leading-tight">
                   {item.description}
                 </h3>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-3">
                    <span className="px-2 py-0.5 bg-slate-800 rounded text-[10px] font-black uppercase text-slate-400">
                     {item.category}
                   </span>
-                  {item.receipt_url && (
+                  {[item.receipt_url, item.receipt_url_2, item.receipt_url_3].filter(Boolean).map((url, idx) => (
                     <button 
-                      onClick={() => window.open(item.receipt_url, '_blank')}
+                      key={idx}
+                      onClick={() => window.open(url, '_blank')}
                       className="flex items-center gap-1 text-[10px] font-black text-emerald-500 uppercase"
                     >
-                      <Paperclip className="h-3 w-3" /> Anexo
+                      <Paperclip className="h-3 w-3" /> Anexo {idx + 1}
                     </button>
-                  )}
+                  ))}
                 </div>
               </div>
               <div className="text-right">
@@ -620,24 +653,59 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                 />
               </div>
 
-              <div className="bg-[#1C232E] border border-slate-800 rounded-2xl p-6 space-y-3">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <Paperclip className="h-3 w-3" /> Anexo (Recibo/Nota)
-                </label>
-                <div className="relative group">
-                  <input
-                    type="file"
-                    onChange={handleFileUpload}
-                    disabled={uploading}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  />
-                  <div className="w-full border-2 border-dashed border-slate-800 rounded-xl py-6 flex flex-col items-center justify-center gap-2 group-hover:border-[#BCB5AC]/50 transition-colors">
-                    <Paperclip className="h-6 w-6 text-slate-600 group-hover:text-[#BCB5AC]" />
-                    <span className="text-xs text-slate-500">Clique ou arraste para anexar</span>
+              <div className="bg-[#1C232E] border border-slate-800 rounded-2xl p-6 space-y-4">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Paperclip className="h-3 w-3" /> Anexos (Máx: 3)
                   </div>
+                  <span className="text-[9px] text-slate-600 font-mono">
+                    {[formData.receipt_url, formData.receipt_url_2, formData.receipt_url_3].filter(Boolean).length}/3
+                  </span>
+                </label>
+
+                {/* Lista de Anexos já enviados */}
+                <div className="space-y-2">
+                  {[
+                    { url: formData.receipt_url, slot: 1 },
+                    { url: formData.receipt_url_2, slot: 2 },
+                    { url: formData.receipt_url_3, slot: 3 }
+                  ].filter(a => a.url).map((anexo, i) => (
+                    <div key={i} className="flex items-center justify-between bg-slate-900/50 rounded-xl px-4 py-2 border border-slate-800 group">
+                      <div className="flex items-center gap-3">
+                        <Paperclip className="h-4 w-4 text-emerald-500" />
+                        <span className="text-xs text-slate-400 font-medium">Anexo {i + 1}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => window.open(anexo.url, '_blank')} className="text-[10px] font-bold text-emerald-500 hover:underline">Ver</button>
+                        <button onClick={() => removeAttachment(anexo.slot as 1|2|3)} className="p-1.5 text-slate-600 hover:text-red-500 transition-colors"><X className="h-3.5 w-3.5" /></button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {uploading && <p className="text-center text-xs text-[#BCB5AC] font-black animate-pulse">Enviando arquivo...</p>}
-                {formData.receipt_url && <p className="text-center text-xs text-emerald-500 font-bold flex items-center justify-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Comprovante anexado!</p>}
+
+                {/* Botão de Upload se houver vaga */}
+                {[formData.receipt_url, formData.receipt_url_2, formData.receipt_url_3].filter(Boolean).length < 3 && (
+                  <div className="relative group">
+                    <input
+                      type="file"
+                      multiple
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div className="w-full border-2 border-dashed border-slate-800 rounded-xl py-6 flex flex-col items-center justify-center gap-2 group-hover:border-[#BCB5AC]/50 transition-colors bg-slate-900/20">
+                      <Plus className="h-5 w-5 text-slate-600 group-hover:text-[#BCB5AC]" />
+                      <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Adicionar comprovante</span>
+                    </div>
+                  </div>
+                )}
+
+                {uploading && (
+                  <div className="flex items-center justify-center gap-3 py-2">
+                    <div className="w-3 h-3 border-2 border-[#BCB5AC] border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-xs text-[#BCB5AC] font-black uppercase tracking-widest">Enviando arquivos...</p>
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 flex items-center justify-end gap-3">

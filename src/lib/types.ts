@@ -43,6 +43,8 @@ export interface FinancialItem {
   amount: number;
   budget_item_linked_id?: string;
   receipt_url?: string;
+  receipt_url_2?: string;
+  receipt_url_3?: string;
   observations: string;
   created_at?: string;
 }
