@@ -223,13 +223,23 @@ export function PCICustos({ data, onChange }: Props) {
                 <td className="bg-white border border-[#8ea0b4] px-2 text-[8px] font-bold text-right text-slate-500">{areaTerreno > 0 ? (valorTerreno / areaTerreno).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}</td>
               </>}
               {i === 1 && <>
+                <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 text-[8px] font-bold text-slate-600" colSpan={2}>Custo Total de Serviços</td>
+                <td className="bg-white border border-[#8ea0b4] px-2 text-[9px] font-bold text-right">{totalServicos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                <td className="bg-white border border-[#8ea0b4] px-2 text-[8px] font-bold text-right text-slate-500">{areaTotal > 0 ? (totalServicos / areaTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}</td>
+              </>}
+              {i === 2 && <>
+                <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 text-[8px] font-bold text-slate-600" colSpan={2}>Custo Total de Serviços c/ BDI</td>
+                <td className="bg-white border border-[#8ea0b4] px-2 text-[9px] font-bold text-right">{totalComBdi.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                <td className="bg-white border border-[#8ea0b4] px-2 text-[8px] font-bold text-right text-slate-500">{areaTotal > 0 ? (totalComBdi / areaTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}</td>
+              </>}
+              {i === 3 && <>
                 <td className="bg-[#D6DCE4] border border-[#8ea0b4] px-2 text-[8px] font-black text-slate-700" colSpan={2}>Custo Total de Produção</td>
                 <td className="bg-[#C6EFCE] border-2 border-[#006100] px-2 text-[10px] font-black text-[#006100] text-right">
                   {custoProducao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </td>
                 <td className="bg-white border border-[#8ea0b4] px-2 text-[8px] font-bold text-right text-slate-500">{areaTotal > 0 ? (custoProducao / areaTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}</td>
               </>}
-              {i > 1 && <><td className="border border-[#8ea0b4]" colSpan={2}></td><td className="border border-[#8ea0b4]"></td><td className="border border-[#8ea0b4]"></td></>}
+              {i > 3 && <><td className="border border-[#8ea0b4]" colSpan={2}></td><td className="border border-[#8ea0b4]"></td><td className="border border-[#8ea0b4]"></td></>}
             </tr>
           ))}
           <tr className="bg-[#D6DCE4]">
@@ -237,7 +247,7 @@ export function PCICustos({ data, onChange }: Props) {
             <td className="border border-[#8ea0b4] px-2 py-1 text-[9px] font-black text-slate-900 text-right bg-[#E2EFDA]">
               {totalAdicionais.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </td>
-            <td className="border border-[#8ea0b4]" colSpan={2}></td>
+            <td className="border border-[#8ea0b4]" colSpan={4}></td>
           </tr>
         </tbody>
       </table>

@@ -265,6 +265,68 @@ export function PCIProjeto({ data, onChange }: Props) {
           </tr>
         </tbody>
       </table>
+
+      {/* INSERIR POLIGONAL DO TERRENO */}
+      <table className="w-full border-collapse mt-4 table-fixed" style={{ minWidth: '950px' }}>
+        <tbody>
+          <tr>
+            <td colSpan={12} className="bg-[#2F528F] px-3 py-1 border border-[#1a3a6e]">
+              <span className="text-[10px] font-black text-white uppercase tracking-wider">Inserir Poligonal do Terreno</span>
+            </td>
+          </tr>
+          <tr>
+            <td colSpan={12} className="bg-white border border-[#8ea0b4] px-3 py-1">
+              <span className="text-[9px] font-medium text-slate-700 italic">A partir do Google Earth ou Planta do Loteamento</span>
+            </td>
+          </tr>
+          <tr>
+            <td colSpan={12} className="bg-[#D9E1F2] border border-[#8ea0b4] p-0 min-h-[150px]">
+              <div className="flex flex-col p-2 space-y-2">
+                <div className="flex items-center space-x-2">
+                  <span className="text-[9px] font-bold text-slate-500 italic">Descrever foto / Inserir descrição da poligonal</span>
+                </div>
+                <div className="flex space-x-4">
+                  {/* Área de Descrição */}
+                  <div className="flex-1">
+                    <textarea 
+                      value={data.poligonal_descricao}
+                      onChange={e => onChange({ poligonal_descricao: e.target.value })}
+                      placeholder="Descreva aqui os detalhes da poligonal..."
+                      className="w-full h-32 bg-white/50 border border-[#8ea0b4] text-[10px] p-2 outline-none resize-none"
+                    />
+                  </div>
+                  {/* Área de Foto */}
+                  <div className="w-64 h-32 border-2 border-dashed border-[#8ea0b4] bg-white/50 flex flex-col items-center justify-center cursor-pointer hover:bg-white transition-colors relative overflow-hidden">
+                    {data.poligonal_foto ? (
+                      <img src={data.poligonal_foto} alt="Poligonal" className="w-full h-full object-contain" />
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <span className="text-[20px] text-slate-400">📷</span>
+                        <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase">Clique para anexar foto</span>
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            onChange({ poligonal_foto: reader.result as string });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 }

@@ -353,11 +353,13 @@ export interface PCIFormData {
   infra: Record<string, string>;
   // Poligonal do terreno
   poligonal_descricao: string;
+  poligonal_foto: string;
   // Outros
   descricao_obras_executadas: string;
   observacoes: string;
   local_data: string;
   justificativas_incidencias: string;
+  justificativa_custos: string;
 }
 
 export const INITIAL_PCI_DATA: PCIFormData = {
@@ -454,8 +456,10 @@ export const INITIAL_PCI_DATA: PCIFormData = {
   pct_pre_executado: '',
   infra: {},
   poligonal_descricao: '',
+  poligonal_foto: '',
   descricao_obras_executadas: '',
   observacoes: '',
   local_data: '',
   justificativas_incidencias: '',
+  justificativa_custos: '',
 };
