@@ -71,7 +71,6 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
 
     setIsFetchingIncc(true);
     try {
-      // Fetch from our local database table which I pre-populated with SINDUSCON data
       const { data, error } = await supabase
         .from('incc_indices')
         .select('index_value')
@@ -99,78 +98,6 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
       });
     } finally {
       setIsFetchingIncc(false);
-    }
-  };
-
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isDirty) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
-
-  const handleClose = useCallback(() => {
-    if (isDirty) {
-      setConfirmConfig({
-        isOpen: true,
-        title: 'Alterações não salvas',
-        message: 'Você tem alterações que serão perdidas se sair agora. Deseja salvar antes de sair?',
-        confirmText: 'Sair sem salvar',
-        onConfirm: () => {
-          setSelectedGroup(null);
-          setIsDirty(false);
-        },
-        secondaryText: 'Salvar e Sair',
-        onSecondary: async () => {
-          await handleSaveAll();
-          setSelectedGroup(null);
-          setIsDirty(false);
-        }
-      } as any);
-    } else {
-      setSelectedGroup(null);
-    }
-  }, [isDirty, handleSaveAll]);
-
-  const handleSelectWinner = async (quoteId: string) => {
-    if (readOnly || !selectedGroup) return;
-    setLocalQuotes(prev => prev.map(q => ({ ...q, is_selected: q.id === quoteId })));
-    setIsDirty(true);
-  };
-
-  const handleDeleteQuote = (quoteId: string) => {
-    setConfirmConfig({
-      isOpen: true,
-      title: 'Excluir Fornecedor',
-      message: 'Deseja realmente excluir este fornecedor e todas as suas cotações?',
-      confirmText: 'Excluir',
-      onConfirm: () => {
-        setLocalQuotes(localQuotes.filter(q => q.id !== quoteId));
-        const newPrices = { ...localPrices };
-        Object.keys(newPrices).forEach(key => {
-          if (key.startsWith(`${quoteId}_`)) delete newPrices[key];
-        });
-        setLocalPrices(newPrices);
-        setIsDirty(true);
-      }
-    });
-  };
-
-  const handleCreateGroup = async () => {
-    if (!groupTitle.trim()) return;
-    try {
-      const { data, error } = await supabase.from('bid_groups').insert([{ project_id: projectId, title: groupTitle, description: groupDesc }]).select().single();
-      if (error) throw error;
-      onRefresh();
-      setIsModalOpen(false);
-      setGroupTitle('');
-      setGroupDesc('');
-    } catch (err: any) {
-      setAlertConfig({ isOpen: true, title: 'Erro', message: err.message, type: 'error' });
     }
   };
 
@@ -271,6 +198,78 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
       setAlertConfig({ isOpen: true, title: 'Erro', message: err.message, type: 'error' });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleClose = useCallback(() => {
+    if (isDirty) {
+      setConfirmConfig({
+        isOpen: true,
+        title: 'Alterações não salvas',
+        message: 'Você tem alterações que serão perdidas se sair agora. Deseja salvar antes de sair?',
+        confirmText: 'Sair sem salvar',
+        onConfirm: () => {
+          setSelectedGroup(null);
+          setIsDirty(false);
+        },
+        secondaryText: 'Salvar e Sair',
+        onSecondary: async () => {
+          await handleSaveAll();
+          setSelectedGroup(null);
+          setIsDirty(false);
+        }
+      } as any);
+    } else {
+      setSelectedGroup(null);
+    }
+  }, [isDirty, handleSaveAll]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  const handleSelectWinner = async (quoteId: string) => {
+    if (readOnly || !selectedGroup) return;
+    setLocalQuotes(prev => prev.map(q => ({ ...q, is_selected: q.id === quoteId })));
+    setIsDirty(true);
+  };
+
+  const handleDeleteQuote = (quoteId: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Excluir Fornecedor',
+      message: 'Deseja realmente excluir este fornecedor e todas as suas cotações?',
+      confirmText: 'Excluir',
+      onConfirm: () => {
+        setLocalQuotes(localQuotes.filter(q => q.id !== quoteId));
+        const newPrices = { ...localPrices };
+        Object.keys(newPrices).forEach(key => {
+          if (key.startsWith(`${quoteId}_`)) delete newPrices[key];
+        });
+        setLocalPrices(newPrices);
+        setIsDirty(true);
+      }
+    });
+  };
+
+  const handleCreateGroup = async () => {
+    if (!groupTitle.trim()) return;
+    try {
+      const { data, error } = await supabase.from('bid_groups').insert([{ project_id: projectId, title: groupTitle, description: groupDesc }]).select().single();
+      if (error) throw error;
+      onRefresh();
+      setIsModalOpen(false);
+      setGroupTitle('');
+      setGroupDesc('');
+    } catch (err: any) {
+      setAlertConfig({ isOpen: true, title: 'Erro', message: err.message, type: 'error' });
     }
   };
 
