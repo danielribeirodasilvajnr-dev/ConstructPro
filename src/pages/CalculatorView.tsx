@@ -28,10 +28,12 @@ export function CalculatorView() {
   const [showFatorAjuste, setShowFatorAjuste] = useState(false);
 
   // Fator de Ajuste Inputs
-  const [fatorInicioMes, setFatorInicioMes] = useState('10');
-  const [fatorInicioAno, setFatorInicioAno] = useState('2025');
-  const [fatorFimMes, setFatorFimMes] = useState('10');
-  const [fatorFimAno, setFatorFimAno] = useState('2026');
+  const [fatorInicioMes, setFatorInicioMes] = useState('');
+  const [fatorInicioAno, setFatorInicioAno] = useState('');
+  const [fatorFimMes, setFatorFimMes] = useState('');
+  const [fatorFimAno, setFatorFimAno] = useState('');
+
+  const isPeriodoCompleto = fatorInicioMes !== '' && fatorInicioAno !== '' && fatorFimMes !== '' && fatorFimAno !== '';
 
   const totalArea = areaCon + areaRef + areaDem + areaPisc;
 
@@ -424,18 +426,22 @@ export function CalculatorView() {
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Início:</span>
                         <select value={fatorInicioMes} onChange={e => setFatorInicioMes(e.target.value)} className="bg-[#1C232E] border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-green-500 transition-colors">
+                          <option value="">Mês</option>
                           {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0')).map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
                         <select value={fatorInicioAno} onChange={e => setFatorInicioAno(e.target.value)} className="bg-[#1C232E] border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-green-500 transition-colors">
+                          <option value="">Ano</option>
                           {Array.from({ length: 25 }, (_, i) => (2010 + i).toString()).map(a => <option key={a} value={a}>{a}</option>)}
                         </select>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fim:</span>
                         <select value={fatorFimMes} onChange={e => setFatorFimMes(e.target.value)} className="bg-[#1C232E] border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-green-500 transition-colors">
+                          <option value="">Mês</option>
                           {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0')).map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
                         <select value={fatorFimAno} onChange={e => setFatorFimAno(e.target.value)} className="bg-[#1C232E] border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-green-500 transition-colors">
+                          <option value="">Ano</option>
                           {Array.from({ length: 25 }, (_, i) => (2010 + i).toString()).map(a => <option key={a} value={a}>{a}</option>)}
                         </select>
                       </div>
@@ -445,128 +451,138 @@ export function CalculatorView() {
               </div>
 
               {/* Conteúdo do Fator de Ajuste */}
-              <div className="p-8 space-y-8">
-                {/* Economia */}
-                <div className="bg-[#10B981]/5 rounded-xl p-6 border border-[#10B981]/10 relative group">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-[#10B981] rounded-lg"><ShieldCheck className="h-6 w-6 text-white" /></div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <h4 className="text-lg font-bold text-white mb-2">Potencial de Economia: {formatCurrency(reducao)}</h4>
-                      </div>
-                      <p className="text-slate-400 text-sm leading-relaxed">
-                        Aplicando o Fator de Ajuste para o período de <b>{dMes.toString().padStart(2, '0')}/{dAno}</b> a <b>{fMes.toString().padStart(2, '0')}/{fAno}</b>, sua obra tem uma redução de <b>{percReducao}%</b> nos débitos de INSS.
-                      </p>
-                    </div>
+              <div className="p-8 space-y-8 min-h-[300px] flex flex-col items-center justify-center">
+                {!isPeriodoCompleto ? (
+                  <div className="text-center animate-pulse">
+                    <Clock className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+                    <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Aguardando definição do período da obra</p>
+                    <p className="text-slate-600 text-[9px] mt-2 italic">Selecione o início e o fim para visualizar a economia</p>
                   </div>
-                </div>
-
-                {/* Tabela Analítica */}
-                <div className="bg-white rounded-2xl p-6 md:p-8 text-slate-900">
-                  <div className="flex justify-between items-center mb-6">
-                    <h4 className="text-lg font-bold text-slate-800">Cálculo Analítico Mensal</h4>
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-tight bg-slate-100 px-3 py-1 rounded-full">Correção monetária média: 1,079%</span>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-[12px] text-slate-700 text-center border-collapse">
-                      <thead>
-                        <tr className="bg-[#D3E3F5] font-bold border-y border-slate-300">
-                          <th className="py-2 px-2 text-left pl-4">Mês</th>
-                          <th className="py-2 px-2">Rem.</th>
-                          <th className="py-2 px-2">Juros (%)</th>
-                          <th className="py-2 px-2">INSS</th>
-                          <th className="py-2 px-2">Multa</th>
-                          <th className="py-2 px-2">Juros</th>
-                          <th className="py-2 px-2">MAED</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rows.map((r, i) => (
-                          <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                            <td className="py-2.5 px-2 text-left pl-4 font-bold text-slate-800">{r.mesStr}</td>
-                            <td className="py-2.5 px-2">{formatCurrency(r.rem)}</td>
-                            <td className="py-2.5 px-2">{r.jurosPerc > 0 && r.isAtraso ? `${r.jurosPerc.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}%` : '-'}</td>
-                            <td className="py-2.5 px-2 font-medium">{formatCurrency(r.inss)}</td>
-                            <td className="py-2.5 px-2">{r.multa > 0 ? formatCurrency(r.multa) : '-'}</td>
-                            <td className="py-2.5 px-2">{r.juros > 0 ? formatCurrency(r.juros) : '-'}</td>
-                            <td className="py-2.5 px-2">{r.maed > 0 ? formatCurrency(r.maed) : '-'}</td>
-                          </tr>
-                        ))}
-                        <tr className="bg-slate-100 font-extrabold border-y border-slate-300 text-slate-800 uppercase tracking-tight">
-                          <td className="py-3 px-2 text-left pl-4">TOTAIS</td>
-                          <td className="py-3 px-2">{formatCurrency(totalRem)}</td>
-                          <td className="py-3 px-2">-</td>
-                          <td className="py-3 px-2">{formatCurrency(totalInss)}</td>
-                          <td className="py-3 px-2">{formatCurrency(totalMulta)}</td>
-                          <td className="py-3 px-2">{formatCurrency(totalJuros)}</td>
-                          <td className="py-3 px-2">{formatCurrency(totalMaed)}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Situação da obra */}
-                  <div className="pt-8">
-                    <h4 className="font-bold text-[13px] text-slate-800 mb-2 uppercase tracking-tight">Situação da obra</h4>
-                    <table className="w-full text-[13px] text-slate-800 text-center border-collapse">
-                      <thead>
-                        <tr className="bg-[#D3E3F5] font-bold border-y border-slate-300">
-                          <th className="py-2 px-2 w-1/3">Rem. Corrigida</th>
-                          <th className="py-2 px-2 w-1/3">INSS em atraso</th>
-                          <th className="py-2 px-2 w-1/3">A Pagar (futuro)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr className="border-b-2 border-slate-800">
-                          <td className="py-5 px-2 font-bold text-lg">{formatCurrency(remCorrigida)}</td>
-                          <td className="py-3 px-2">
-                            <div className="space-y-0.5">
-                              <p className="font-bold text-lg">{formatCurrency(inssEmAtrasoTotal)}</p>
-                              <p className="text-[11px] text-slate-500 font-medium">{lateMonths} x {formatCurrency(lateMonths > 0 ? inssEmAtrasoTotal / lateMonths : 0)}</p>
-                            </div>
-                          </td>
-                          <td className="py-3 px-2">
-                            <div className="space-y-0.5">
-                              <p className="font-bold text-lg">{formatCurrency(futureInss)}</p>
-                              <p className="text-[11px] text-slate-500 font-medium">{futureMonths} x {formatCurrency(inssMes)}</p>
-                            </div>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Resumo do Fator */}
-                  <div ref={summaryRef} className="mt-8 bg-[#FDF1D6] p-6 rounded-xl border border-[#F3C062]/30">
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="font-bold text-slate-800 flex items-center gap-2">
-                        <ShieldCheck className="h-4 w-4 text-orange-600" /> Resumo
-                      </h4>
-                      <button 
-                        onClick={() => handlePrint(summaryRef)}
-                        className="no-print p-2 bg-slate-800/10 hover:bg-slate-800/20 text-slate-800 rounded-lg transition-colors flex items-center gap-2 text-xs font-bold"
-                        title="Imprimir Resumo"
-                      >
-                        <Printer className="h-4 w-4" /> 
-                        <span>Imprimir Resumo</span>
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-                      <div className="p-4 bg-white/50 rounded-lg shadow-sm border border-white/20">
-                        <p className="text-slate-500 text-[10px] uppercase font-bold mb-1 tracking-wider">INSS (inicial)</p>
-                        <p className="font-black text-xl text-slate-800">{formatCurrency(inssInicial)}</p>
-                      </div>
-                      <div className="p-4 bg-green-500/10 rounded-lg shadow-sm border border-green-500/10">
-                        <p className="text-green-600 text-[10px] uppercase font-bold mb-1 tracking-wider">Redução</p>
-                        <p className="font-black text-xl text-green-700">{formatCurrency(reducao)} ({percReducao}%)</p>
-                      </div>
-                      <div className="p-4 bg-white/50 rounded-lg shadow-sm border border-white/20">
-                        <p className="text-slate-500 text-[10px] uppercase font-bold mb-1 tracking-wider">Total a pagar</p>
-                        <p className="font-black text-xl text-slate-800">{formatCurrency(inssFinal)}</p>
+                ) : (
+                  <>
+                    {/* Economia */}
+                    <div className="w-full bg-[#10B981]/5 rounded-xl p-6 border border-[#10B981]/10 relative group">
+                      <div className="flex items-start gap-4">
+                        <div className="p-3 bg-[#10B981] rounded-lg"><ShieldCheck className="h-6 w-6 text-white" /></div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <h4 className="text-lg font-bold text-white mb-2">Potencial de Economia: {formatCurrency(results.reducao)}</h4>
+                          </div>
+                          <p className="text-slate-400 text-sm leading-relaxed">
+                            Aplicando o Fator de Ajuste para o período de <b>{results.dMes.toString().padStart(2, '0')}/{results.dAno}</b> a <b>{results.fMes.toString().padStart(2, '0')}/{results.fAno}</b>, sua obra tem uma redução de <b>{results.percReducao}%</b> nos débitos de INSS.
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+
+                    {/* Tabela Analítica */}
+                    <div className="w-full bg-white rounded-2xl p-6 md:p-8 text-slate-900">
+                      <div className="flex justify-between items-center mb-6">
+                        <h4 className="text-lg font-bold text-slate-800">Cálculo Analítico Mensal</h4>
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-tight bg-slate-100 px-3 py-1 rounded-full">Correção monetária média: 1,079%</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-[12px] text-slate-700 text-center border-collapse">
+                          <thead>
+                            <tr className="bg-[#D3E3F5] font-bold border-y border-slate-300">
+                              <th className="py-2 px-2 text-left pl-4">Mês</th>
+                              <th className="py-2 px-2">Rem.</th>
+                              <th className="py-2 px-2">Juros (%)</th>
+                              <th className="py-2 px-2">INSS</th>
+                              <th className="py-2 px-2">Multa</th>
+                              <th className="py-2 px-2">Juros</th>
+                              <th className="py-2 px-2">MAED</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {results.rows.map((r, i) => (
+                              <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td className="py-2.5 px-2 text-left pl-4 font-bold text-slate-800">{r.mesStr}</td>
+                                <td className="py-2.5 px-2">{formatCurrency(r.rem)}</td>
+                                <td className="py-2.5 px-2">{r.jurosPerc > 0 && r.isAtraso ? `${r.jurosPerc.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}%` : '-'}</td>
+                                <td className="py-2.5 px-2 font-medium">{formatCurrency(r.inss)}</td>
+                                <td className="py-2.5 px-2">{r.multa > 0 ? formatCurrency(r.multa) : '-'}</td>
+                                <td className="py-2.5 px-2">{r.juros > 0 ? formatCurrency(r.juros) : '-'}</td>
+                                <td className="py-2.5 px-2">{r.maed > 0 ? formatCurrency(r.maed) : '-'}</td>
+                              </tr>
+                            ))}
+                            <tr className="bg-slate-100 font-extrabold border-y border-slate-300 text-slate-800 uppercase tracking-tight">
+                              <td className="py-3 px-2 text-left pl-4">TOTAIS</td>
+                              <td className="py-3 px-2">{formatCurrency(results.totalRem)}</td>
+                              <td className="py-3 px-2">-</td>
+                              <td className="py-3 px-2">{formatCurrency(results.totalInss)}</td>
+                              <td className="py-3 px-2">{formatCurrency(results.totalMulta)}</td>
+                              <td className="py-3 px-2">{formatCurrency(results.totalJuros)}</td>
+                              <td className="py-3 px-2">{formatCurrency(results.totalMaed)}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Situação da obra */}
+                      <div className="pt-8">
+                        <h4 className="font-bold text-[13px] text-slate-800 mb-2 uppercase tracking-tight">Situação da obra</h4>
+                        <table className="w-full text-[13px] text-slate-800 text-center border-collapse">
+                          <thead>
+                            <tr className="bg-[#D3E3F5] font-bold border-y border-slate-300">
+                              <th className="py-2 px-2 w-1/3">Rem. Corrigida</th>
+                              <th className="py-2 px-2 w-1/3">INSS em atraso</th>
+                              <th className="py-2 px-2 w-1/3">A Pagar (futuro)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="border-b-2 border-slate-800">
+                              <td className="py-5 px-2 font-bold text-lg">{formatCurrency(results.remCorrigida)}</td>
+                              <td className="py-3 px-2">
+                                <div className="space-y-0.5">
+                                  <p className="font-bold text-lg">{formatCurrency(results.inssEmAtrasoTotal)}</p>
+                                  <p className="text-[11px] text-slate-500 font-medium">{results.lateMonths} x {formatCurrency(results.lateMonths > 0 ? results.inssEmAtrasoTotal / results.lateMonths : 0)}</p>
+                                </div>
+                              </td>
+                              <td className="py-3 px-2">
+                                <div className="space-y-0.5">
+                                  <p className="font-bold text-lg">{formatCurrency(results.futureInss)}</p>
+                                  <p className="text-[11px] text-slate-500 font-medium">{results.futureMonths} x {formatCurrency(results.inssMes)}</p>
+                                </div>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Resumo do Fator */}
+                      <div ref={summaryRef} className="mt-8 bg-[#FDF1D6] p-6 rounded-xl border border-[#F3C062]/30">
+                        <div className="flex justify-between items-center mb-4">
+                          <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                            <ShieldCheck className="h-4 w-4 text-orange-600" /> Resumo
+                          </h4>
+                          <button 
+                            onClick={() => handlePrint(summaryRef)}
+                            className="no-print p-2 bg-slate-800/10 hover:bg-slate-800/20 text-slate-800 rounded-lg transition-colors flex items-center gap-2 text-xs font-bold"
+                            title="Imprimir Resumo"
+                          >
+                            <Printer className="h-4 w-4" /> 
+                            <span>Imprimir Resumo</span>
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                          <div className="p-4 bg-white/50 rounded-lg shadow-sm border border-white/20">
+                            <p className="text-slate-500 text-[10px] uppercase font-bold mb-1 tracking-wider">INSS (inicial)</p>
+                            <p className="font-black text-xl text-slate-800">{formatCurrency(inssInicial)}</p>
+                          </div>
+                          <div className="p-4 bg-green-500/10 rounded-lg shadow-sm border border-green-500/10">
+                            <p className="text-green-600 text-[10px] uppercase font-bold mb-1 tracking-wider">Redução</p>
+                            <p className="font-black text-xl text-green-700">{formatCurrency(results.reducao)} ({results.percReducao}%)</p>
+                          </div>
+                          <div className="p-4 bg-white/50 rounded-lg shadow-sm border border-white/20">
+                            <p className="text-slate-500 text-[10px] uppercase font-bold mb-1 tracking-wider">Total a pagar</p>
+                            <p className="font-black text-xl text-slate-800">{formatCurrency(results.inssFinal)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
