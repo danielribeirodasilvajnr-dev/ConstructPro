@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { BudgetItem, Measurement, MeasurementItem } from '../../lib/types';
 import { cn, formatCurrency, formatDate } from '../../lib/utils';
 import { AlertModal } from '../ui/AlertModal';
+import { ConfirmModal } from '../ui/ConfirmModal';
 
 interface MeasurementsTabProps {
   projectId: string;
@@ -36,6 +37,14 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
     isOpen: false,
     title: '',
     message: ''
+  });
+
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Excluir',
+    onConfirm: () => {}
   });
 
   // Organize budget items by category
@@ -180,14 +189,22 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
   };
 
   const handleDeleteMeasurement = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta medição?')) return;
-    try {
-      const { error } = await supabase.from('measurements').delete().eq('id', id);
-      if (error) throw error;
-      onRefresh();
-    } catch (err) {
-      console.error(err);
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Excluir Medição',
+      message: 'Tem certeza que deseja excluir esta medição? Todos os registros de quantidades executadas serão removidos.',
+      confirmText: 'Excluir',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase.from('measurements').delete().eq('id', id);
+          if (error) throw error;
+          onRefresh();
+          setIsDetailOpen(false);
+        } catch (err: any) {
+          setAlertConfig({ isOpen: true, title: 'Erro', message: err.message, type: 'error' });
+        }
+      }
+    });
   };
 
   const handlePrint = () => {
@@ -393,14 +410,6 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
           <h2 className="text-3xl font-black text-white">Medições de Obra</h2>
           <p className="text-slate-500 text-sm mt-1">Gerencie as medições e autorizações de pagamento de mão de obra</p>
         </div>
-        {!readOnly && (
-          <button
-            onClick={handleOpenNew}
-            className="px-6 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-black rounded-xl flex items-center gap-2 hover:bg-white transition-all shadow-xl uppercase tracking-widest"
-          >
-            <Plus className="h-4 w-4" /> Nova Medição
-          </button>
-        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -408,7 +417,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
           <div className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-[#1C232E] rounded-[32px] border border-dashed border-white/10">
             <Ruler className="h-12 w-12 text-slate-700 mb-4" />
             <h3 className="text-lg font-bold text-white mb-1">Nenhuma medição registrada</h3>
-            <p className="text-sm text-slate-500">Clique em "Nova Medição" para começar o controle físico e financeiro.</p>
+            <p className="text-sm text-slate-500">As medições aparecerão aqui conforme forem registradas no sistema.</p>
           </div>
         ) : (
           measurements.map((m) => {
@@ -621,9 +630,19 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, onRefres
         </div>
       )}
 
+      <ConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig({ ...confirmConfig, isOpen: false })}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+        requireText="Excluir"
+      />
+
       <AlertModal 
         isOpen={alertConfig.isOpen}
-        onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+        onClose={() => setAlertConfig({ ...alertConfig, onClose: () => setAlertConfig({ ...alertConfig, isOpen: false }), isOpen: false })}
         title={alertConfig.title}
         message={alertConfig.message}
         type={alertConfig.type as any}
