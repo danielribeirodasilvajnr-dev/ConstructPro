@@ -71,7 +71,7 @@ export function PCIDocumentacao({ data, onChange }: Props) {
             <L_DOC>Certidão de Matrícula do Imóvel</L_DOC>
             <S_STATUS value={data.doc_certidao} field="doc_certidao" />
             <L_GRAY>Projeto Legal/Arquit. c/ divisões</L_GRAY>
-            <S_STATUS value={data.doc_compl_selo} field="doc_compl_selo" />
+            <S_STATUS value={data.doc_proj_arquit} field="doc_proj_arquit" />
             <td className="bg-white border border-[#8ea0b4]" colSpan={2}></td>
           </tr>
 
@@ -121,7 +121,7 @@ export function PCIDocumentacao({ data, onChange }: Props) {
           {/* 5. Projeto Legal */}
           <tr>
             <L_DOC>Projeto Legal Aprovado</L_DOC>
-            <td className="border border-[#8ea0b4] px-0 py-0 relative bg-[#D9E1F2]">
+            <td className="border border-[#8ea0b4] px-0 py-0 relative bg-[#D9E1F2]" colSpan={2}>
               <div className="relative flex items-center h-full">
                 <select 
                   value={data.doc_proj_legal} 
@@ -141,7 +141,7 @@ export function PCIDocumentacao({ data, onChange }: Props) {
                 </div>
               </div>
             </td>
-            <td className="bg-white border border-[#8ea0b4]" colSpan={4}></td>
+            <td className="bg-white border border-[#8ea0b4]" colSpan={3}></td>
           </tr>
         </tbody>
       </table>

@@ -183,7 +183,11 @@ export const LISTA_PADRAO = [
 ];
 
 export const LISTA_FINALIDADE = [
-  '(escolha)', 'Aquisição de Terreno e Construção', 'Construção em Terreno Próprio', 'Reforma e Ampliação'
+  '(escolha)',
+  'Aq.Terreno e Constr. FGTS',
+  'Constr.Terr.Próprio FGTS',
+  'Aq.Terreno e Constr. SBPE',
+  'Constr.Terr.Próprio SBPE'
 ];
 
 export const LISTA_DESTINACAO = [
@@ -329,6 +333,7 @@ export interface PCIFormData {
   doc_art_exec: string;
   doc_art_exec_num: string;
   doc_proj_legal: string;
+  doc_proj_arquit: string;
   terreno_proprio: string;
   // Custos (20 itens)
   custos: number[];
@@ -434,6 +439,7 @@ export const INITIAL_PCI_DATA: PCIFormData = {
   doc_art_exec: '',
   doc_art_exec_num: '',
   doc_proj_legal: '',
+  doc_proj_arquit: '',
   terreno_proprio: '',
   custos: new Array(20).fill(0),
   bdi_pct: 0,

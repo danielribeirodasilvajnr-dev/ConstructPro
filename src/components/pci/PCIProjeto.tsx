@@ -115,7 +115,7 @@ export function PCIProjeto({ data, onChange }: Props) {
             <L>Sistema Construtivo</L>
             <S value={data.sistema_construtivo} onChange={set('sistema_construtivo')} options={LISTA_SISTEMA_CONSTRUTIVO} colSpan={3} />
             <L>Sist. Constr. Outros (Especificar)</L>
-            <E value={data.sistema_construtivo_outros} onChange={set('sistema_construtivo_outros')} colSpan={4} />
+            <E value={data.sistema_construtivo_outros} onChange={set('sistema_construtivo_outros')} colSpan={5} />
           </tr>
 
           {/* Row 3 Areas */}
@@ -139,130 +139,129 @@ export function PCIProjeto({ data, onChange }: Props) {
       {/* MEMORIAL DESCRITIVO */}
       <table className="w-full border-collapse mt-0 table-fixed" style={{ minWidth: '950px' }}>
         <colgroup>
-          <col style={{ width: '12.5%' }} />
-          <col style={{ width: '12.5%' }} />
-          <col style={{ width: '12.5%' }} />
-          <col style={{ width: '12.5%' }} />
-          <col style={{ width: '12.5%' }} />
-          <col style={{ width: '12.5%' }} />
-          <col style={{ width: '12.5%' }} />
-          <col style={{ width: '12.5%' }} />
+          <col style={{ width: '8.33%' }} />
+          <col style={{ width: '8.33%' }} />
+          <col style={{ width: '8.33%' }} />
+          <col style={{ width: '8.33%' }} />
+          <col style={{ width: '8.33%' }} />
+          <col style={{ width: '8.33%' }} />
+          <col style={{ width: '8.33%' }} />
+          <col style={{ width: '8.33%' }} />
+          <col style={{ width: '8.33%' }} />
+          <col style={{ width: '8.33%' }} />
+          <col style={{ width: '8.33%' }} />
+          <col style={{ width: '8.33%' }} />
         </colgroup>
         <tbody>
-          <tr><td colSpan={8} className="bg-[#2F528F]/80 px-3 py-0.5 border border-[#1a3a6e]">
+          <tr><td colSpan={12} className="bg-[#2F528F]/80 px-3 py-0.5 border border-[#1a3a6e]">
             <span className="text-[9px] font-bold text-white uppercase">Memorial Descritivo</span>
           </td></tr>
           <tr>
-            <td colSpan={6} className="bg-white border border-[#8ea0b4] px-2 py-1">
+            <td colSpan={9} className="bg-white border border-[#8ea0b4] px-2 py-1">
               <span className="text-[9px] font-medium text-slate-700 italic">Discriminar a solução prevista em projeto para caracterizar o padrão do acabamento</span>
             </td>
             <L>Padrão Acabamento</L>
-            <S value={data.padrao_acabamento} onChange={set('padrao_acabamento')} options={LISTA_PADRAO} />
+            <S value={data.padrao_acabamento} onChange={set('padrao_acabamento')} options={LISTA_PADRAO} colSpan={2} />
           </tr>
           
           {/* Bloco 1: Labels */}
           <tr>
-            <L>Cobertura</L>
-            <L>Teto</L>
+            <L colSpan={2}>Cobertura</L>
+            <L colSpan={2}>Teto</L>
             <L>Pavtos.</L>
             <L>Quartos</L>
             <L>Suítes</L>
             <L>Salas</L>
             <L>Vagas</L>
-            <L>Tipo de Vagas</L>
+            <L colSpan={2}>Tipo de Vagas</L>
           </tr>
           {/* Bloco 1: Dados */}
           <tr>
-            <S value={data.cobertura_tipo} onChange={set('cobertura_tipo')} options={LISTA_COBERTURA} />
-            <S value={data.teto} onChange={set('teto')} options={LISTA_TETO} />
+            <S value={data.cobertura_tipo} onChange={set('cobertura_tipo')} options={LISTA_COBERTURA} colSpan={2} />
+            <S value={data.teto} onChange={set('teto')} options={LISTA_TETO} colSpan={2} />
             <S value={data.pavtos} onChange={set('pavtos')} options={LISTA_NUMEROS} />
             <S value={data.quartos} onChange={set('quartos')} options={LISTA_NUMEROS} />
             <S value={data.suites} onChange={set('suites')} options={LISTA_NUMEROS} />
             <S value={data.salas} onChange={set('salas')} options={LISTA_NUMEROS} />
             <S value={data.vagas} onChange={set('vagas')} options={LISTA_NUMEROS} />
-            <S value={data.tipo_vagas} onChange={set('tipo_vagas')} options={LISTA_TIPO_VAGAS} />
+            <S value={data.tipo_vagas} onChange={set('tipo_vagas')} options={LISTA_TIPO_VAGAS} colSpan={2} />
           </tr>
 
           {/* Bloco 2: Labels */}
           <tr>
-            <L colSpan={2}>Acabamento Paredes Externas</L>
-            <L colSpan={2}>Louças e Metais</L>
-            <L>Á. Serviço</L>
-            <L>Cozinha</L>
+            <L colSpan={3}>Acabamento Paredes Externas</L>
+            <L colSpan={3}>Louças e Metais</L>
+            <L colSpan={2}>Á. Serviço</L>
+            <L colSpan={2}>Cozinha</L>
             <L colSpan={2}>Água Quente</L>
           </tr>
           {/* Bloco 2: Dados */}
           <tr>
-            <S value={data.acabamento_paredes_ext} onChange={set('acabamento_paredes_ext')} options={LISTA_REVEST_PAREDES_EXT} colSpan={2} />
-            <S value={data.loucas_metais} onChange={set('loucas_metais')} options={LISTA_LOUCAS_METAIS} colSpan={2} />
-            <S value={data.area_servico} onChange={set('area_servico')} options={LISTA_AREA_SERVICO} />
-            <S value={data.cozinha} onChange={set('cozinha')} options={LISTA_COZINHA} />
+            <S value={data.acabamento_paredes_ext} onChange={set('acabamento_paredes_ext')} options={LISTA_REVEST_PAREDES_EXT} colSpan={3} />
+            <S value={data.loucas_metais} onChange={set('loucas_metais')} options={LISTA_LOUCAS_METAIS} colSpan={3} />
+            <S value={data.area_servico} onChange={set('area_servico')} options={LISTA_AREA_SERVICO} colSpan={2} />
+            <S value={data.cozinha} onChange={set('cozinha')} options={LISTA_COZINHA} colSpan={2} />
             <S value={data.agua_quente} onChange={set('agua_quente')} options={LISTA_AGUA_QUENTE} colSpan={2} />
           </tr>
 
           {/* Bloco 3: Labels */}
           <tr>
-            <L colSpan={2}>Acabamento Paredes Internas</L>
-            <L colSpan={2}>Pards./Painéis Á. Secas</L>
-            <L>Calefação</L>
-            <L>Sustentabilidade</L>
+            <L colSpan={3}>Acabamento Paredes Internas</L>
+            <L colSpan={3}>Pards./Painéis Á. Secas</L>
+            <L colSpan={2}>Calefação</L>
+            <L colSpan={2}>Sustentabilidade</L>
             <L colSpan={2}>Implantação/Inserção</L>
           </tr>
           {/* Bloco 3: Dados */}
           <tr>
-            <S value={data.acabamento_paredes_int} onChange={set('acabamento_paredes_int')} options={LISTA_REVEST_PAREDES_EXT} colSpan={2} />
-            <S value={data.paredes_areas_secas} onChange={set('paredes_areas_secas')} options={LISTA_PAINEIS_SECAS} colSpan={2} />
-            <S value={data.calefacao} onChange={set('calefacao')} options={LISTA_SIM_NAO} />
-            <S value={data.sustentabilidade} onChange={set('sustentabilidade')} options={LISTA_SIM_NAO} />
+            <S value={data.acabamento_paredes_int} onChange={set('acabamento_paredes_int')} options={LISTA_REVEST_PAREDES_EXT} colSpan={3} />
+            <S value={data.paredes_areas_secas} onChange={set('paredes_areas_secas')} options={LISTA_PAINEIS_SECAS} colSpan={3} />
+            <S value={data.calefacao} onChange={set('calefacao')} options={LISTA_SIM_NAO} colSpan={2} />
+            <S value={data.sustentabilidade} onChange={set('sustentabilidade')} options={LISTA_SIM_NAO} colSpan={2} />
             <S value={data.implantacao} onChange={set('implantacao')} options={LISTA_IMPLANTACAO} colSpan={2} />
           </tr>
 
           {/* Bloco 4: Labels */}
           <tr>
-            <L>Revest.Pards.Á.Molhadas</L>
-            <L>Revest.Piso Á.Secas</L>
-            <L>Revest.Piso Á.Molhadas</L>
-            <L>Divisão Interna</L>
-            <td colSpan={4} className="bg-white border border-[#8ea0b4]"></td>
+            <L colSpan={3}>Revest.Pards.Á.Molhadas</L>
+            <L colSpan={3}>Revest.Piso Á.Secas</L>
+            <L colSpan={3}>Revest.Piso Á.Molhadas</L>
+            <L colSpan={3}>Divisão Interna</L>
           </tr>
           {/* Bloco 4: Dados */}
           <tr>
-            <S value={data.revest_paredes_molhadas} onChange={set('revest_paredes_molhadas')} options={LISTA_REVEST_PAREDES_MOLHADAS} />
-            <S value={data.revest_piso_secas} onChange={set('revest_piso_secas')} options={LISTA_REVEST_PISO_SECAS} />
-            <S value={data.revest_piso_molhadas} onChange={set('revest_piso_molhadas')} options={LISTA_PISO_AREAS_MOLHADAS} />
-            <S value={data.divisao_interna} onChange={set('divisao_interna')} options={LISTA_SIM_NAO} />
-            <td colSpan={4} className="bg-white border border-[#8ea0b4]"></td>
+            <S value={data.revest_paredes_molhadas} onChange={set('revest_paredes_molhadas')} options={LISTA_REVEST_PAREDES_MOLHADAS} colSpan={3} />
+            <S value={data.revest_piso_secas} onChange={set('revest_piso_secas')} options={LISTA_REVEST_PISO_SECAS} colSpan={3} />
+            <S value={data.revest_piso_molhadas} onChange={set('revest_piso_molhadas')} options={LISTA_PISO_AREAS_MOLHADAS} colSpan={3} />
+            <S value={data.divisao_interna} onChange={set('divisao_interna')} options={LISTA_SIM_NAO} colSpan={3} />
           </tr>
 
           {/* Bloco 5: Labels */}
           <tr>
-            <L>Esquadrias Externas</L>
-            <L>Esquadrias Internas</L>
-            <L>Abastecimento d'água</L>
-            <td colSpan={5} className="bg-white border border-[#8ea0b4]"></td>
+            <L colSpan={3}>Esquadrias Externas</L>
+            <L colSpan={3}>Esquadrias Internas</L>
+            <L colSpan={3}>Abastecimento d'água</L>
+            <L colSpan={3}>Outros (Especificar)</L>
           </tr>
           {/* Bloco 5: Dados */}
           <tr>
-            <S value={data.esquadrias_ext} onChange={set('esquadrias_ext')} options={LISTA_ESQUADRIAS_EXT} />
-            <S value={data.esquadrias_int} onChange={set('esquadrias_int')} options={LISTA_ESQUADRIAS_INT} />
-            <S value={data.abastecimento_agua} onChange={set('abastecimento_agua')} options={LISTA_AGUA} />
-            <L>Outros (Especificar)</L>
-            <E value={data.outros_acabamento} onChange={set('outros_acabamento')} colSpan={4} />
+            <S value={data.esquadrias_ext} onChange={set('esquadrias_ext')} options={LISTA_ESQUADRIAS_EXT} colSpan={3} />
+            <S value={data.esquadrias_int} onChange={set('esquadrias_int')} options={LISTA_ESQUADRIAS_INT} colSpan={3} />
+            <S value={data.abastecimento_agua} onChange={set('abastecimento_agua')} options={LISTA_AGUA} colSpan={3} />
+            <E value={data.outros_acabamento} onChange={set('outros_acabamento')} colSpan={3} />
           </tr>
 
           {/* Bloco 6: Labels */}
           <tr>
-            <L>Drenagem</L>
-            <L>Coleta/Tratmto. Esgoto</L>
-            <L>Ger. Alternt. de Energia</L>
-            <td colSpan={5} className="bg-white border border-[#8ea0b4]"></td>
+            <L colSpan={4}>Drenagem</L>
+            <L colSpan={4}>Coleta/Tratmto. Esgoto</L>
+            <L colSpan={4}>Ger. Alternt. de Energia</L>
           </tr>
           {/* Bloco 6: Dados */}
           <tr>
-            <S value={data.drenagem} onChange={set('drenagem')} options={LISTA_DRENAGEM} />
-            <S value={data.coleta_esgoto} onChange={set('coleta_esgoto')} options={LISTA_ESGOTO} />
-            <S value={data.ger_energia} onChange={set('ger_energia')} options={LISTA_ENERGIA_ALT} />
-            <td colSpan={5} className="bg-white border border-[#8ea0b4]"></td>
+            <S value={data.drenagem} onChange={set('drenagem')} options={LISTA_DRENAGEM} colSpan={4} />
+            <S value={data.coleta_esgoto} onChange={set('coleta_esgoto')} options={LISTA_ESGOTO} colSpan={4} />
+            <S value={data.ger_energia} onChange={set('ger_energia')} options={LISTA_ENERGIA_ALT} colSpan={4} />
           </tr>
         </tbody>
       </table>
