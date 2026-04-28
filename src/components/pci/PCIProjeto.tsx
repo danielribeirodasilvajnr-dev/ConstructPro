@@ -127,9 +127,9 @@ export function PCIProjeto({ data, onChange }: Props) {
           {/* Row 4 Areas */}
           <tr>
             <L colSpan={2}>Optante pelo Selo Casa Azul - Unidade Isolada?</L>
-            <S value={data.selo_casa_azul} onChange={set('selo_casa_azul')} options={['(escolha)', 'Sim', 'Não']} />
+            <S value={data.selo_casa_azul} onChange={set('selo_casa_azul')} options={['(escolha)', 'Sim', 'Não', 'Não se aplica']} />
             <L colSpan={2}>Documentação complementar Selo</L>
-            <E value={data.doc_compl_selo} onChange={set('doc_compl_selo')} colSpan={7} />
+            <S value={data.doc_compl_selo} onChange={set('doc_compl_selo')} options={['(escolha)', 'Sim', 'Não']} colSpan={7} />
           </tr>
         </tbody>
       </table>

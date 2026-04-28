@@ -94,7 +94,7 @@ export const LISTA_FINALIDADE = [
 ];
 
 export const LISTA_DESTINACAO = [
-  '(escolha)', 'Residencial', 'Condomínio'
+  '(escolha)', 'Residencial', 'Comercial'
 ];
 
 export const LISTA_UFS = [
