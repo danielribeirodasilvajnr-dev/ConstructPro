@@ -1089,7 +1089,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         </div>
       )}
 
-      {/* Editar Obra Modal */}
+      {/* Cadastrar Obra Modal (Copied from circled part) */}
       {isWorkModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
@@ -1105,27 +1105,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="p-6 space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Nome da obra</label>
+                <label className="text-xs font-medium text-slate-500">Nome</label>
                 <div className="relative">
-                  <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Nome proprietário</label>
-                <div className="relative">
-                  <input type="text" value={proprietarioNome} onChange={e => setProprietarioNome(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">CPF / CNPJ do Proprietário</label>
-                <div className="relative">
-                  <input type="text" value={proprietarioCpfCnpj} onChange={e => setProprietarioCpfCnpj(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
+                  <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="CASA / COMERCIO / GALPÃO" className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
                   <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
                 </div>
               </div>
@@ -1133,31 +1117,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-500">Área construída</label>
                 <div className="relative">
-                  <input type="number" value={areaConstruida} onChange={e => setAreaConstruida(Number(e.target.value))} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">CNO</label>
-                <div className="relative">
-                  <input type="text" value={cnoNumero} onChange={e => setCnoNumero(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">RMT inicial</label>
-                <div className="relative">
-                  <input type="number" value={rmtInicial} onChange={e => setRmtInicial(Number(e.target.value))} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Requisito (%)</label>
-                <div className="relative">
-                  <input type="number" value={requisitoPercent} onChange={e => setRequisitoPercent(Number(e.target.value))} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
+                  <input type="number" value={areaConstruida || ''} onChange={e => setAreaConstruida(Number(e.target.value))} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
                   <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
                 </div>
               </div>
@@ -1171,21 +1131,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Emitir NF, DAS ou recibo mensal?</label>
-                <div className="relative">
-                  <select value={emitirDocumento} onChange={e => setEmitirDocumento(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none appearance-none bg-white">
-                    <option value="Não">Não</option>
-                    <option value="Sim">Sim</option>
-                  </select>
-                  <Check className="absolute right-8 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                </div>
-              </div>
-
-              <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-500">OBS</label>
                 <div className="relative">
-                  <input type="text" value={observations} onChange={e => setObservations(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                  <textarea value={observations} onChange={e => setObservations(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none min-h-[80px]" />
+                  <Check className="absolute right-3 top-6 h-4 w-4 text-emerald-500" />
                 </div>
               </div>
             </div>
