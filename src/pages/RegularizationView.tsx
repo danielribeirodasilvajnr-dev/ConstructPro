@@ -14,9 +14,9 @@ export function RegularizationView() {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newClient, setNewClient] = useState('');
-  const [newPhone, setNewPhone] = useState('');
 
   const fetchRegularizations = async () => {
     setLoading(true);
@@ -49,7 +49,6 @@ export function RegularizationView() {
         .insert({
           name: newName,
           client: newClient,
-          phone: newPhone,
           user_id: user.id,
           responsavel: 'pessoa física',
           destinacao: 'Residencial unifamiliar',
@@ -71,7 +70,6 @@ export function RegularizationView() {
       setIsModalOpen(false);
       setNewName('');
       setNewClient('');
-      setNewPhone('');
     } catch (err) {
       console.error('Error creating regularization:', err);
       alert('Erro ao criar registro.');
@@ -204,16 +202,6 @@ export function RegularizationView() {
                   onChange={(e) => setNewClient(e.target.value)}
                   className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#BCB5AC] outline-none transition-all"
                   placeholder="Ex: João da Silva"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Telefone / WhatsApp</label>
-                <input
-                  type="text"
-                  value={newPhone}
-                  onChange={(e) => setNewPhone(e.target.value)}
-                  className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#BCB5AC] outline-none transition-all"
-                  placeholder="Ex: (11) 99999-9999"
                 />
               </div>
               <button

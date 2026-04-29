@@ -182,7 +182,6 @@ export interface INSSRegularization {
   user_id: string;
   name: string;
   client: string;
-  phone?: string;
   responsavel: string;
   destinacao: string;
   tipo_obra: string;
