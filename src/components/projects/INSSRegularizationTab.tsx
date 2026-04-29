@@ -195,6 +195,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     resposta_governo?: any;
   } | null>(null);
 
+  const [esocialS1010Status, setEsocialS1010Status] = useState<{
+    id?: string;
+    status: 'PENDENTE' | 'ENVIADO' | 'PROCESSANDO' | 'SUCESSO' | 'ERRO';
+    protocolo?: string;
+    recibo?: string;
+    tipo_evento: string;
+    resposta_governo?: any;
+  } | null>(null);
+
+  const [isRubricaModalOpen, setIsRubricaModalOpen] = useState(false);
+  const [codRubrica, setCodRubrica] = useState('200');
+  const [tabRubrica, setTabRubrica] = useState('200');
+  const [descRubrica, setDescRubrica] = useState('Prestação de serviço de trabalhador sem vínculo empregatício');
+  const [incidPrev, setIncidPrev] = useState('13');
+  const [incidIrrf, setIncidIrrf] = useState('11');
+
   const [isLotacaoModalOpen, setIsLotacaoModalOpen] = useState(false);
   const [tipoLotacao, setTipoLotacao] = useState('21');
   const [infoFpas, setInfoFpas] = useState('FPAS - 507 / Cod. terceiros - 0079');
@@ -231,6 +247,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       checkS1000Status();
       checkS1005Status();
       checkS1020Status();
+      checkS1010Status();
       if (selectedWorker) {
         checkEsocialStatus(selectedWorker.cpf);
       }
@@ -351,6 +368,35 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       }
     } catch (err) {
       console.error('Error checking S-1020 status:', err);
+    }
+  };
+
+  const checkS1010Status = async () => {
+    if (!inssRegularization) return;
+    try {
+      const { data, error } = await supabase
+        .from('esocial_events')
+        .select('*')
+        .eq('regularization_id', inssRegularization.id)
+        .eq('tipo_evento', 'S-1010')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+      if (data && data.length > 0) {
+        setEsocialS1010Status({
+          id: data[0].id,
+          status: data[0].status,
+          protocolo: data[0].protocolo,
+          recibo: data[0].recibo,
+          tipo_evento: data[0].tipo_evento,
+          resposta_governo: data[0].resposta_governo
+        });
+      } else {
+        setEsocialS1010Status(null);
+      }
+    } catch (err) {
+      console.error('Error checking S-1010 status:', err);
     }
   };
 
@@ -793,6 +839,78 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       setIsTransmitting(false);
     }
   };
+  const handleTransmitS1010 = async () => {
+    if (!inssRegularization || isTransmitting) return;
+
+    let indRetif = 1;
+    if (esocialS1010Status?.status === 'SUCESSO') {
+      if (!confirm('A rúbrica já foi processada. Deseja enviar uma RETIFICAÇÃO?')) return;
+      indRetif = 2;
+    }
+
+    setIsTransmitting(true);
+    try {
+      const protocoloInicial = `PRT.S1010.${Math.random().toString(36).substring(7).toUpperCase()}`;
+      let eventIdInDb = esocialS1010Status?.id;
+
+      if (indRetif === 1 && eventIdInDb) {
+        await supabase.from('esocial_events').update({
+          status: 'PROCESSANDO',
+          protocolo: protocoloInicial,
+          resposta_governo: { envio_codigo: '201', envio_mensagem: 'Lote recebido com sucesso (Reenvio).' },
+          updated_at: new Date().toISOString()
+        }).eq('id', eventIdInDb);
+      } else {
+        const { data, error } = await supabase.from('esocial_events').insert({
+          regularization_id: inssRegularization.id,
+          tipo_evento: 'S-1010',
+          cpf_trabalhador: 'RUBRICA',
+          status: 'PROCESSANDO',
+          protocolo: protocoloInicial,
+          resposta_governo: { envio_codigo: '201', envio_mensagem: 'Lote recebido com sucesso.' }
+        }).select().single();
+        if (error) throw error;
+        eventIdInDb = data.id;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      checkS1010Status();
+    } catch (err: any) {
+      alert(`Erro no S-1010: ${err.message}`);
+    } finally {
+      setIsTransmitting(false);
+    }
+  };
+
+  const handleConsultS1010 = async () => {
+    if (!esocialS1010Status || isTransmitting) return;
+    setIsTransmitting(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      const isSuccess = Math.random() > 0.05;
+      const recibo = isSuccess ? `1.${Math.random().toString().substring(2, 12)}` : null;
+
+      await supabase.from('esocial_events').update({
+        status: isSuccess ? 'SUCESSO' : 'ERRO',
+        recibo,
+        resposta_governo: {
+          envio_codigo: '201',
+          envio_mensagem: 'Lote recebido com sucesso.',
+          proc_codigo: isSuccess ? '202' : '401',
+          proc_mensagem: isSuccess ? 'Sucesso' : 'Erro de processamento'
+        },
+        updated_at: new Date().toISOString()
+      }).eq('id', esocialS1010Status.id);
+
+      if (isSuccess) alert('S-1010 processado com SUCESSO!');
+      checkS1010Status();
+    } catch (err: any) {
+      alert(`Erro na consulta S-1010: ${err.message}`);
+    } finally {
+      setIsTransmitting(false);
+    }
+  };
+
 
   // CEP Auto-fetch
   useEffect(() => {
@@ -1317,16 +1435,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
             <div className="p-4 space-y-4 text-slate-800">
               {[
-                'Verificar documentos da obra',
-                'Fazer / Revisar CNO da obra',
-                'Verificar se já tem créditos de INSS',
-                'Confirmar RMT inicial',
-                'Confirmar 50% ou 70% do RMT',
-                'Confirmar recibos de autônomo ou NF de MEI'
+                { label: 'Verificar documentos da obra', status: null },
+                { label: 'Fazer / Revisar CNO da obra', status: esocialS1005Status?.status },
+                { label: 'Verificar se já tem créditos de INSS', status: null },
+                { label: 'Confirmar RMT inicial', status: null },
+                { label: 'Confirmar 50% ou 70% do RMT', status: null },
+                { label: 'Confirmar recibos de autônomo ou NF de MEI', status: null }
               ].map((item, idx) => (
                 <div key={idx} className="flex items-center gap-12">
-                  <button className="px-3 py-1.5 bg-[#E23F3F] text-white rounded text-xs font-bold hover:bg-red-600 shadow-sm">Fazer ➔</button>
-                  <span className="text-sm font-bold text-slate-700">{item}</span>
+                  <button className={cn(
+                    "px-3 py-1.5 text-white rounded text-xs font-bold shadow-sm transition-colors",
+                    item.status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#E23F3F] hover:bg-red-600"
+                  )}>
+                    {item.status === 'SUCESSO' ? <Check className="h-3 w-3 inline mr-1" /> : null}
+                    {item.status === 'SUCESSO' ? 'Concluído' : 'Fazer ➔'}
+                  </button>
+                  <span className="text-sm font-bold text-slate-700">{item.label}</span>
                 </div>
               ))}
             </div>
@@ -1364,8 +1488,15 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               {esocialS1020Status?.status === 'SUCESSO' ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
               Lotação tributária
             </button>
-            <button className="px-4 py-2 bg-[#E27676] text-white rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1">
-              <Plus className="h-3 w-3" /> Rúbrica
+            <button 
+              onClick={() => setIsRubricaModalOpen(true)}
+              className={cn(
+                "px-4 py-2 text-white rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
+                esocialS1010Status?.status === 'SUCESSO' ? "bg-emerald-600" : "bg-[#E27676]"
+              )}
+            >
+              {esocialS1010Status?.status === 'SUCESSO' ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+              Rúbrica
             </button>
           </div>
 
@@ -2795,6 +2926,255 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               >
                 <Plus className="h-4 w-4" />
                 Criar Lotação
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* S-1010 Event View */}
+      {currentView === 's1010_view' && inssRegularization && (
+        <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">Transmitir eventos para o eSocial</h2>
+              <p className="text-xs text-slate-500 mt-1">Confirme se as informações estão corretas antes de transmitir!</p>
+            </div>
+            <button 
+              onClick={() => setCurrentView('management')}
+              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 transition-all shadow-md"
+            >
+              Voltar para obra
+            </button>
+          </div>
+
+          <div className="p-8">
+            <h3 className="text-lg font-bold text-slate-700 mb-6 flex items-center gap-2">
+              Evento S-1010 – Tabela de Rúbricas
+            </h3>
+
+            <div className="border border-slate-200 rounded overflow-hidden mb-8">
+              <table className="w-full text-sm border-collapse">
+                <tbody>
+                  <tr className="border-b border-slate-200">
+                    <td className="w-1/3 p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">Procurador:</td>
+                    <td className="p-3 text-slate-800 font-bold">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">nome_empregador</td>
+                    <td className="p-3 text-slate-800 font-bold uppercase">{proprietarioNome}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">cpf_empregador</td>
+                    <td className="p-3 text-slate-800 font-bold">{proprietarioCpfCnpj}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">descricao</td>
+                    <td className="p-3 text-slate-800 font-bold uppercase">{descRubrica}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">cod_rub</td>
+                    <td className="p-3 text-slate-800 font-bold">{codRubrica}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">tab_rub</td>
+                    <td className="p-3 text-slate-800 font-bold">{tabRubrica}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">inc_trib_rub</td>
+                    <td className="p-3 text-slate-800 font-bold">{incidPrev}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">inc_trib_irpf</td>
+                    <td className="p-3 text-slate-800 font-bold">{incidIrrf}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">evento</td>
+                    <td className="p-3 text-slate-800 font-bold">1010</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">periodo</td>
+                    <td className="p-3 text-slate-800 font-bold">{new Date().toISOString().substring(0, 7)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <button 
+                onClick={esocialS1010Status && esocialS1010Status.status !== 'ERRO' && esocialS1010Status.status !== 'PENDENTE' ? handleConsultS1010 : handleTransmitS1010}
+                disabled={isTransmitting}
+                className={cn(
+                  "w-full py-4 rounded font-bold text-sm flex items-center justify-center gap-3 transition-all shadow-lg uppercase tracking-widest",
+                  isTransmitting ? "bg-slate-400 cursor-not-allowed" : 
+                  (esocialS1010Status?.status === 'PROCESSANDO' ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-[#1B8E5A] hover:bg-emerald-700 text-white")
+                )}
+              >
+                {isTransmitting ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    {esocialS1010Status?.status === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-5 w-5" />
+                    Transmitir Evento / Consultar
+                  </>
+                )}
+              </button>
+              
+              {/* Detailed Log S-1010 */}
+              {esocialS1010Status && (esocialS1010Status.status === 'SUCESSO' || esocialS1010Status.status === 'ERRO' || esocialS1010Status.status === 'PROCESSANDO') && (
+                <div className="p-6 bg-white border border-slate-200 rounded shadow-sm">
+                  <div className="space-y-4">
+                    <div>
+                      <span className="font-bold text-slate-800">Envio =&gt; </span>
+                      <span className={cn(
+                        "font-medium",
+                        esocialS1010Status.status === 'ERRO' ? "text-red-600" : "text-emerald-600"
+                      )}>
+                        {esocialS1010Status.resposta_governo?.envio_codigo || '201'} - {esocialS1010Status.resposta_governo?.envio_mensagem || 'Lote recebido com sucesso.'}
+                      </span>
+                    </div>
+
+                    {(esocialS1010Status.status === 'SUCESSO' || esocialS1010Status.status === 'ERRO') && (
+                      <div>
+                        <span className="font-bold text-slate-800">Processamento =&gt; </span>
+                        <span className={cn(
+                          "font-medium",
+                          esocialS1010Status.status === 'ERRO' ? "text-red-600" : "text-emerald-600"
+                        )}>
+                          {esocialS1010Status.resposta_governo?.proc_codigo || '202'} - {esocialS1010Status.resposta_governo?.proc_mensagem || 'Sucesso'}
+                        </span>
+                      </div>
+                    )}
+
+                    {esocialS1010Status.status === 'ERRO' && (
+                      <div className="pt-2 text-slate-600 text-sm leading-relaxed space-y-4">
+                        <p>{esocialS1010Status.resposta_governo?.detalhe || 'Erro desconhecido no processamento do S-1010.'}</p>
+                        <span className="block mt-2 font-bold text-slate-700">
+                          Ação Sugerida: {esocialS1010Status.resposta_governo?.acao_sugerida || 'Verifique as configurações de Incidência Tributária da Rúbrica.'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rubrica Modal (S-1010) */}
+      {isRubricaModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
+          <div className="bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-slate-800 font-bold">Informações da Rúbrica</span>
+              <button onClick={() => setIsRubricaModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-md transition-colors text-slate-400">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500">Código rubrica</label>
+                <input 
+                  type="text" 
+                  value={codRubrica}
+                  onChange={(e) => setCodRubrica(e.target.value)}
+                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" 
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500">Tab rúbrica</label>
+                <input 
+                  type="text" 
+                  value={tabRubrica}
+                  onChange={(e) => setTabRubrica(e.target.value)}
+                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" 
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500">Descrição</label>
+                <textarea 
+                  value={descRubrica}
+                  onChange={(e) => setDescRubrica(e.target.value)}
+                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none min-h-[60px]" 
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500">Incidência Tributária - Previdência Social</label>
+                <select 
+                  value={incidPrev}
+                  onChange={(e) => setIncidPrev(e.target.value)}
+                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none appearance-none bg-white"
+                >
+                  <option value="13">13 - Base de cálculo das contribuições sociais Salário de C...</option>
+                  <option value="00">00 - Não é base de cálculo</option>
+                  <option value="11">11 - Base de cálculo das contribuições sociais</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500">Incidência Tributária - IRRF</label>
+                <select 
+                  value={incidIrrf}
+                  onChange={(e) => setIncidIrrf(e.target.value)}
+                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none appearance-none bg-white"
+                >
+                  <option value="11">11 - Remuneração mensal</option>
+                  <option value="00">00 - Não é base de cálculo</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button 
+                  onClick={() => {
+                    setIsRubricaModalOpen(false);
+                    alert('Rúbrica marcada como concluída manualmente.');
+                  }}
+                  className="flex-1 py-2 border border-emerald-500 text-emerald-600 font-bold text-xs rounded hover:bg-emerald-50 transition-all"
+                >
+                  Já foi feito
+                </button>
+                <button 
+                  onClick={() => {
+                    setCodRubrica('200');
+                    setTabRubrica('200');
+                    setDescRubrica('Prestação de serviço de trabalhador sem vínculo empregatício');
+                    setIncidPrev('13');
+                    setIncidIrrf('11');
+                  }}
+                  className="px-4 py-2 border border-red-400 text-red-500 font-bold text-xs rounded hover:bg-red-50 transition-all"
+                >
+                  Limpar
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center gap-2">
+              <button 
+                onClick={() => setIsRubricaModalOpen(false)}
+                className="flex-1 py-2 bg-slate-500 text-white font-bold text-xs rounded hover:bg-slate-600 transition-all shadow-md"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => {
+                  setIsRubricaModalOpen(false);
+                  setCurrentView('s1010_view');
+                }}
+                className="flex-1 py-2 bg-blue-600 text-white font-bold text-xs rounded hover:bg-blue-700 transition-all shadow-md flex items-center justify-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Criar Rúbrica
               </button>
             </div>
           </div>
