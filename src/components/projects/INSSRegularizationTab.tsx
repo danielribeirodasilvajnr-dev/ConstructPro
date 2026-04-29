@@ -23,7 +23,9 @@ import {
   Calculator,
   Target,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Info,
+  Calendar
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
@@ -212,6 +214,29 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [incidIrrf, setIncidIrrf] = useState('11');
 
   const [isLotacaoModalOpen, setIsLotacaoModalOpen] = useState(false);
+
+  // Remuneration Modal State
+  const [isRemunerationModalOpen, setIsRemunerationModalOpen] = useState(false);
+  const [remValue, setRemValue] = useState('1800,00');
+  const [remStartMonth, setRemStartMonth] = useState('3');
+  const [remStartYear, setRemStartYear] = useState('2026');
+  const [remEndMonth, setRemEndMonth] = useState('11');
+  const [remEndYear, setRemEndYear] = useState('2026');
+  const [targetWorkerForRem, setTargetWorkerForRem] = useState<any>(null);
+
+  const handleOpenRemunerationModal = (worker: any) => {
+    setTargetWorkerForRem(worker);
+    setIsRemunerationModalOpen(true);
+  };
+
+  const handleSaveRemuneration = async () => {
+    // Mock save logic for now
+    setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setIsSaving(false);
+    setIsRemunerationModalOpen(false);
+    alert(`Remuneração de R$ ${remValue} salva para ${targetWorkerForRem?.nome}`);
+  };
   const [tipoLotacao, setTipoLotacao] = useState('21');
   const [infoFpas, setInfoFpas] = useState('FPAS - 507 / Cod. terceiros - 0079');
 
@@ -1500,238 +1525,6 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </button>
           </div>
 
-          {/* Digital Certificate Section */}
-          <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-            <div className="p-4 bg-[#1C232E] text-white flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                <span className="text-sm font-bold uppercase tracking-widest">Configuração de Certificado Digital A1</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={cn(
-                  "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                  certificateUrl ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
-                )}>
-                  {certificateUrl ? 'Certificado Vinculado' : 'Sem Certificado'}
-                </span>
-              </div>
-            </div>
-            <div className="p-6 bg-slate-50/30">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Arquivo do Certificado (.pfx / .p12)</label>
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <input 
-                        type="file" 
-                        accept=".pfx,.p12"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          
-                          setIsUploadingCert(true);
-                          try {
-                            // Sanitiza o nome do arquivo para evitar problemas de caracteres
-                            const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-                            const filePath = `certificates/${projectId}/${sanitizedFileName}`;
-                            
-                            const { data, error } = await supabase.storage
-                              .from('project-documents')
-                              .upload(filePath, file, { 
-                                upsert: true,
-                                contentType: file.type || 'application/x-pkcs12'
-                              });
-                            
-                            if (error) {
-                              console.error('Storage Error:', error);
-                              throw new Error(error.message);
-                            }
-                            
-                            const { data: { publicUrl } } = supabase.storage
-                              .from('project-documents')
-                              .getPublicUrl(filePath);
-                            
-                            setCertificateUrl(publicUrl);
-                            
-                            // Salva no banco de dados
-                            const { error: dbError } = await supabase
-                              .from('inss_regularizations')
-                              .update({ certificate_url: publicUrl })
-                              .eq('id', inssRegularization?.id);
-                              
-                            if (dbError) throw dbError;
-                              
-                            alert('Certificado carregado com sucesso!');
-                          } catch (err: any) {
-                            console.error('Error uploading certificate:', err);
-                            alert(`Erro ao carregar certificado: ${err.message || 'Verifique sua conexão ou permissões.'}`);
-                          } finally {
-                            setIsUploadingCert(false);
-                          }
-                        }}
-                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                      />
-                      <div className={cn(
-                        "w-full border-2 border-dashed rounded-md p-3 flex flex-col items-center justify-center transition-colors",
-                        certificateUrl ? "border-emerald-200 bg-emerald-50/30" : "border-slate-200 bg-white hover:border-blue-300"
-                      )}>
-                        {isUploadingCert ? (
-                          <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-                        ) : certificateUrl ? (
-                          <div className="flex items-center gap-2 text-emerald-700">
-                            <CheckCircle2 className="h-4 w-4" />
-                            <span className="text-sm font-medium">Certificado pronto</span>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center gap-1">
-                            <Plus className="h-5 w-5 text-slate-400" />
-                            <span className="text-xs text-slate-500 font-medium">Clique para selecionar o arquivo</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {certificateUrl && (
-                      <button 
-                        onClick={() => { setCertificateUrl(''); setCertificatePassword(''); }}
-                        className="p-2 bg-red-50 text-red-500 rounded hover:bg-red-100 transition-colors"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Senha do Certificado</label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="password" 
-                      value={certificatePassword}
-                      onChange={(e) => setCertificatePassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="flex-1 border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Apelido</label>
-                  <input 
-                    type="text" 
-                    value={certificateApelido}
-                    onChange={(e) => setCertificateApelido(e.target.value)}
-                    placeholder="Ex: Sérgio"
-                    className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">CPF / CNPJ</label>
-                  <input 
-                    type="text" 
-                    value={certificateCpfCnpj}
-                    onChange={(e) => setCertificateCpfCnpj(e.target.value)}
-                    placeholder="000.000.000-00"
-                    className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <button 
-                    onClick={async () => {
-                      setIsSaving(true);
-                      try {
-                        const { error } = await supabase
-                          .from('inss_regularizations')
-                          .update({ 
-                            certificate_password: certificatePassword,
-                            certificate_info: {
-                              apelido: certificateApelido,
-                              cpf_cnpj: certificateCpfCnpj
-                            }
-                          })
-                          .eq('id', inssRegularization?.id);
-                        if (error) throw error;
-                        alert('Dados do certificado salvos com sucesso!');
-                        onRefresh();
-                      } catch (err) {
-                        console.error('Error saving cert data:', err);
-                        alert('Erro ao salvar dados.');
-                      } finally {
-                        setIsSaving(false);
-                      }
-                    }}
-                    disabled={isSaving}
-                    className="w-full px-6 py-2 bg-[#1B8E5A] text-white rounded text-sm font-bold hover:bg-emerald-700 transition-all shadow-md flex items-center justify-center gap-2"
-                  >
-                    <Save className="h-4 w-4" /> Salvar Certificado
-                  </button>
-                </div>
-              </div>
-
-              {/* Certificate Table (Mirroring reference) */}
-              {certificateUrl && (
-                <div className="mt-8 overflow-hidden rounded border border-slate-200">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                      <tr>
-                        <th className="p-3 w-16">#</th>
-                        <th className="p-3">Certificado</th>
-                        <th className="p-3">CPF / CNPJ</th>
-                        <th className="p-3 w-32 text-center">Padrão</th>
-                        <th className="p-3 w-24 text-center">Excluir</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white">
-                      <tr className="border-b border-slate-100">
-                        <td className="p-3 text-slate-400">01</td>
-                        <td className="p-3 font-bold text-slate-800">{certificateApelido || 'Sérgio'}</td>
-                        <td className="p-3">
-                          <div className="text-slate-600">{certificateCpfCnpj || '161.196.598-54'}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">
-                            {certificateUrl.split('/').pop()?.substring(0, 30)}...
-                          </div>
-                        </td>
-                        <td className="p-3 text-center">
-                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500 text-white rounded text-[10px] font-bold uppercase">
-                            <Check className="h-3 w-3" /> Padrão
-                          </div>
-                        </td>
-                        <td className="p-3 text-center">
-                          <button 
-                            onClick={async () => {
-                              if (!confirm('Excluir certificado?')) return;
-                              try {
-                                await supabase
-                                  .from('inss_regularizations')
-                                  .update({ 
-                                    certificate_url: null, 
-                                    certificate_password: null,
-                                    certificate_info: null 
-                                  })
-                                  .eq('id', inssRegularization?.id);
-                                onRefresh();
-                              } catch (err) {
-                                console.error('Error deleting cert:', err);
-                              }
-                            }}
-                            className="p-1.5 bg-[#D94141] text-white rounded hover:bg-red-700 transition-colors"
-                          >
-                            Excluir
-                          </button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              <p className="mt-4 text-[10px] text-slate-400 italic flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                Seu certificado é armazenado de forma segura e utilizado apenas para comunicação com o eSocial via WebService criptografado.
-              </p>
-            </div>
-          </div>
 
           <p className="text-slate-400 text-[10px] italic font-medium uppercase tracking-wider">Cadastre trabalhador e remunerações para liberar os botões acima.</p>
 
@@ -1773,7 +1566,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                      <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
+                      <button 
+                        onClick={() => handleOpenRemunerationModal(worker)}
+                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
+                      >
                         <DollarSign className="h-3 w-3" /> Add Remuneração
                       </button>
                       <button onClick={() => handleEditWorker(worker)} className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
@@ -3175,6 +2971,135 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               >
                 <Plus className="h-4 w-4" />
                 Criar Rúbrica
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Remuneration Modal */}
+      {isRemunerationModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-2 text-slate-800 font-bold">
+                <DollarSign className="h-4 w-4" />
+                <span>Cadastrar remunerações</span>
+              </div>
+              <button onClick={() => setIsRemunerationModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-md transition-colors text-slate-400">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* Info Alert */}
+              <div className="bg-sky-50 border border-sky-100 rounded-xl p-4 flex gap-3 shadow-sm">
+                <Info className="h-5 w-5 text-sky-600 flex-shrink-0" />
+                <div className="space-y-1">
+                  <h4 className="text-sky-900 font-bold text-sm">Informações</h4>
+                  <p className="text-sky-700 text-xs leading-relaxed">
+                    Você pode definir valores diferentes por período.<br />
+                    Para remover meses, informe valor <b>0</b> nos meses a remover.
+                  </p>
+                </div>
+              </div>
+
+              {/* Value Input */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Valor da remuneração</label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    value={remValue}
+                    onChange={(e) => setRemValue(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:border-emerald-500 outline-none transition-all shadow-inner font-bold"
+                  />
+                  <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                </div>
+              </div>
+
+              {/* Period Selectors */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>Período de vigência</span>
+                </div>
+
+                {/* Início */}
+                <div className="grid grid-cols-12 gap-3 items-center">
+                  <div className="col-span-2">
+                    <span className="text-xs font-medium text-slate-400">Início</span>
+                  </div>
+                  <div className="col-span-5 relative">
+                    <select 
+                      value={remStartMonth}
+                      onChange={(e) => setRemStartMonth(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-xl pl-3 pr-8 py-2.5 text-xs font-bold text-slate-700 focus:border-emerald-500 outline-none appearance-none"
+                    >
+                      {[...Array(12)].map((_, i) => (
+                        <option key={i + 1} value={i + 1}>{i + 1}</option>
+                      ))}
+                    </select>
+                    <Check className="absolute right-8 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-emerald-500" />
+                  </div>
+                  <div className="col-span-5 relative">
+                    <select 
+                      value={remStartYear}
+                      onChange={(e) => setRemStartYear(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-xl pl-3 pr-8 py-2.5 text-xs font-bold text-slate-700 focus:border-emerald-500 outline-none appearance-none"
+                    >
+                      {[2024, 2025, 2026, 2027].map(y => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                    <Check className="absolute right-8 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-emerald-500" />
+                  </div>
+                </div>
+
+                {/* Fim */}
+                <div className="grid grid-cols-12 gap-3 items-center">
+                  <div className="col-span-2">
+                    <span className="text-xs font-medium text-slate-400">Fim</span>
+                  </div>
+                  <div className="col-span-5 relative">
+                    <select 
+                      value={remEndMonth}
+                      onChange={(e) => setRemEndMonth(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-xl pl-3 pr-8 py-2.5 text-xs font-bold text-slate-700 focus:border-emerald-500 outline-none appearance-none"
+                    >
+                      {[...Array(12)].map((_, i) => (
+                        <option key={i + 1} value={i + 1}>{i + 1}</option>
+                      ))}
+                    </select>
+                    <Check className="absolute right-8 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-emerald-500" />
+                  </div>
+                  <div className="col-span-5 relative">
+                    <select 
+                      value={remEndYear}
+                      onChange={(e) => setRemEndYear(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-xl pl-3 pr-8 py-2.5 text-xs font-bold text-slate-700 focus:border-emerald-500 outline-none appearance-none"
+                    >
+                      {[2024, 2025, 2026, 2027].map(y => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                    <Check className="absolute right-8 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-emerald-500" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+              <button onClick={() => setIsRemunerationModalOpen(false)} className="px-6 py-2 bg-[#636E72] text-white text-xs font-bold rounded-lg hover:bg-slate-600 transition-all shadow-md">Close</button>
+              <button 
+                onClick={handleSaveRemuneration} 
+                disabled={isSaving}
+                className="px-8 py-2 bg-[#007AFF] text-white text-xs font-bold rounded-lg hover:bg-blue-600 transition-all shadow-md flex items-center gap-2"
+              >
+                {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                Submit
               </button>
             </div>
           </div>
