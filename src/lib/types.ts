@@ -175,3 +175,35 @@ export interface BidQuoteItem {
   bid_group_item_id: string;
   unit_price: number;
 }
+
+export interface INSSRegularization {
+  id: string;
+  project_id?: string;
+  user_id: string;
+  name: string;
+  client: string;
+  phone?: string;
+  responsavel: string;
+  destinacao: string;
+  tipo_obra: string;
+  concreto_usinado: string;
+  uf: string;
+  area_construcao: number;
+  area_reforma: number;
+  area_demolicao: number;
+  area_piscina: number;
+  fator_inicio_mes: string;
+  fator_inicio_ano: string;
+  fator_fim_mes: string;
+  fator_fim_ano: string;
+  certificate_url?: string;
+  certificate_password?: string;
+  certificate_info?: {
+    subject: string;
+    issuer: string;
+    valid_from: string;
+    valid_to: string;
+  };
+  created_at?: string;
+  updated_at?: string;
+}
