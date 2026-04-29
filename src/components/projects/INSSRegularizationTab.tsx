@@ -223,6 +223,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [remEndMonth, setRemEndMonth] = useState('11');
   const [remEndYear, setRemEndYear] = useState('2026');
   const [targetWorkerForRem, setTargetWorkerForRem] = useState<any>(null);
+  const [allRemunerations, setAllRemunerations] = useState<any[]>([]);
 
   const handleOpenRemunerationModal = (worker: any) => {
     setTargetWorkerForRem(worker);
@@ -230,15 +231,81 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   };
 
   const handleSaveRemuneration = async () => {
-    // Mock save logic for now
+    if (!targetWorkerForRem) return;
+    
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    setIsSaving(false);
-    setIsRemunerationModalOpen(false);
-    alert(`Remuneração de R$ ${remValue} salva para ${targetWorkerForRem?.nome}`);
+    try {
+      const val = parseFloat(remValue.replace('.', '').replace(',', '.'));
+      const startM = parseInt(remStartMonth);
+      const startY = parseInt(remStartYear);
+      const endM = parseInt(remEndMonth);
+      const endY = parseInt(remEndYear);
+
+      const newRems = [];
+      let currM = startM;
+      let currY = startY;
+
+      while (currY < endY || (currY === endY && currM <= endM)) {
+        newRems.push({
+          id: `${targetWorkerForRem.id}-${currM}-${currY}`,
+          workerId: targetWorkerForRem.id,
+          workerNome: targetWorkerForRem.nome,
+          month: currM,
+          year: currY,
+          value: val,
+          remStatus: 'PENDENTE',
+          pagStatus: 'PENDENTE'
+        });
+
+        currM++;
+        if (currM > 12) {
+          currM = 1;
+          currY++;
+        }
+      }
+
+      // Merge with existing (updating duplicates)
+      const existingMap = new Map(allRemunerations.map(r => [r.id, r]));
+      newRems.forEach(r => existingMap.set(r.id, r));
+      
+      setAllRemunerations(Array.from(existingMap.values()));
+      
+      setIsRemunerationModalOpen(false);
+      alert(`Remunerações geradas com sucesso para o período!`);
+    } catch (err) {
+      alert('Erro ao processar valores.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Requirement Summary Calculation
+  const totalRemuneration = allRemunerations.reduce((sum, rem) => sum + rem.value, 0);
+  const targetRequisito = (rmtInicial || 0) * ((requisitoPercent || 50) / 100);
+  const percentCompleted = targetRequisito > 0 ? (totalRemuneration / targetRequisito) * 100 : 0;
+
+  const toggleRemStatus = (remId: string, field: 'remStatus' | 'pagStatus') => {
+    setAllRemunerations(prev => prev.map(r => {
+      if (r.id === remId) {
+        const nextStatus = r[field] === 'SUCESSO' ? 'PENDENTE' : 'SUCESSO';
+        return { ...r, [field]: nextStatus };
+      }
+      return r;
+    }));
   };
   const [tipoLotacao, setTipoLotacao] = useState('21');
   const [infoFpas, setInfoFpas] = useState('FPAS - 507 / Cod. terceiros - 0079');
+
+  // Helper to get unique PA periods sorted
+  const getUniquePAs = () => {
+    const pas = new Set<string>();
+    allRemunerations.forEach(r => pas.add(`${String(r.month).padStart(2, '0')}-${r.year}`));
+    return Array.from(pas).sort((a, b) => {
+      const [ma, ya] = a.split('-').map(Number);
+      const [mb, yb] = b.split('-').map(Number);
+      return ya !== yb ? ya - yb : ma - mb;
+    });
+  };
 
   useEffect(() => {
     if (inssRegularization) {
@@ -1617,26 +1684,152 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
+            {/* Requirement Summary Dashboard */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Remunerações</p>
+                <p className="text-2xl font-black text-slate-800">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRemuneration)}
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div 
+                      className={cn("h-full transition-all duration-500", percentCompleted >= 100 ? "bg-emerald-500" : "bg-blue-500")}
+                      style={{ width: `${Math.min(percentCompleted, 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-500">{percentCompleted.toFixed(1)}%</span>
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Requisito ({requisitoPercent}%)</p>
+                <p className="text-2xl font-black text-blue-600">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(targetRequisito)}
+                </p>
+                <p className="text-[10px] text-slate-400 italic">Valor alvo baseado na RMT Inicial</p>
+              </div>
+
+              <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 shadow-sm space-y-2 flex flex-col justify-center">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Status Requisito</p>
+                  {percentCompleted >= 100 ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> : <AlertCircle className="h-5 w-5 text-blue-500" />}
+                </div>
+                <p className={cn("text-lg font-bold", percentCompleted >= 100 ? "text-emerald-700" : "text-blue-700")}>
+                  {percentCompleted >= 100 ? 'REQUISITO ATINGIDO' : 'EM PROCESSAMENTO'}
+                </p>
+                <p className="text-[10px] text-emerald-600/70 font-medium">
+                  {percentCompleted >= 100 ? 'Parabéns! O valor mínimo foi superado.' : `Faltam ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.max(0, targetRequisito - totalRemuneration))} para o alvo.`}
+                </p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+              <table className="w-full text-sm text-left border-collapse">
                 <thead className="bg-[#1C232E] text-white uppercase text-[10px] font-bold tracking-widest">
                   <tr>
-                    <th className="p-3">P.A.</th>
-                    <th className="p-3 text-center">Correção</th>
-                    <th className="p-3 text-center">Ações</th>
-                    <th className="p-3 text-center">Verificação</th>
-                    <th className="p-3 text-center">INSS Pago</th>
+                    <th className="p-4 border-r border-slate-700">P.A.</th>
+                    {workers.map(w => (
+                      <th key={w.id} className="p-4 border-r border-slate-700 text-center">
+                        #{w.nome.split(' ')[0]} <br/> <span className="opacity-60">Aut {w.categoria}</span>
+                      </th>
+                    ))}
+                    <th className="p-4 border-r border-slate-700 text-center">Correção</th>
+                    <th className="p-4 border-r border-slate-700 text-center">Ações</th>
+                    <th className="p-4 border-r border-slate-700 text-center">Verificação</th>
+                    <th className="p-4 text-center">INSS Pago</th>
                   </tr>
                 </thead>
-                <tbody className="text-slate-800">
-                  <tr className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                    <td colSpan={5} className="p-4">
-                      <div className="flex items-center gap-12">
-                        <button className="px-3 py-1.5 bg-[#E23F3F] text-white rounded text-xs font-bold shadow-sm">Fazer ➔</button>
-                        <span className="text-sm font-bold text-slate-700">eSocial - Desligar trabalhadores</span>
-                      </div>
-                    </td>
-                  </tr>
+                <tbody className="text-slate-800 bg-white">
+                  {getUniquePAs().length > 0 ? (
+                    getUniquePAs().map(pa => {
+                      const rowTotal = allRemunerations
+                        .filter(r => `${String(r.month).padStart(2, '0')}-${r.year}` === pa)
+                        .reduce((sum, r) => sum + r.value, 0);
+                      
+                      const correcaoPct = 4.37; // Mock percentage
+                      const correcaoVal = rowTotal * (correcaoPct / 100);
+
+                      return (
+                        <tr key={pa} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                          <td className="p-4 font-black text-slate-600 border-r border-slate-100 bg-slate-50/50">{pa}</td>
+                          {workers.map(w => {
+                            const rem = allRemunerations.find(r => r.workerId === w.id && `${String(r.month).padStart(2, '0')}-${r.year}` === pa);
+                            return (
+                              <td key={w.id} className="p-4 text-center border-r border-slate-100 font-bold text-slate-700">
+                                {rem ? (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-center gap-1">
+                                      <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rem.value)}</span>
+                                      <Printer className="h-3 w-3 text-slate-400 cursor-pointer" />
+                                    </div>
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      <button 
+                                        onClick={() => toggleRemStatus(rem.id, 'remStatus')}
+                                        className={cn(
+                                          "flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold text-white transition-all shadow-sm",
+                                          rem.remStatus === 'SUCESSO' ? "bg-emerald-500" : "bg-[#007AFF]"
+                                        )}
+                                      >
+                                        <Send className="h-2 w-2" /> Rem
+                                      </button>
+                                      <button 
+                                        onClick={() => toggleRemStatus(rem.id, 'pagStatus')}
+                                        className={cn(
+                                          "flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold text-white transition-all shadow-sm",
+                                          rem.pagStatus === 'SUCESSO' ? "bg-emerald-500" : "bg-[#007AFF]"
+                                        )}
+                                      >
+                                        <Send className="h-2 w-2" /> Pag
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : '-'}
+                              </td>
+                            );
+                          })}
+                          <td className="p-4 text-center border-r border-slate-100">
+                            <span className="text-[10px] font-bold text-emerald-600 block">{correcaoPct}%</span>
+                            <span className="text-xs font-black text-slate-800">
+                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(correcaoVal)}
+                            </span>
+                          </td>
+                          <td className="p-4 border-r border-slate-100">
+                            <div className="flex flex-col items-center gap-1.5">
+                              <button className="w-full px-2 py-1 bg-emerald-600 text-[9px] font-bold text-white rounded hover:bg-emerald-700 shadow-sm flex items-center justify-center gap-1">
+                                <Send className="h-2.5 w-2.5" /> DCTFWeb
+                              </button>
+                              <div className="flex items-center gap-1">
+                                <button className="p-1 bg-emerald-500/20 text-emerald-600 rounded">
+                                  <Copy className="h-3 w-3" />
+                                </button>
+                                <button className="px-2 py-1 bg-red-500 text-[9px] font-bold text-white rounded hover:bg-red-600 shadow-sm">
+                                  NF / RPA
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4 text-center border-r border-slate-100 min-w-[120px]">
+                            <p className="text-[10px] font-bold text-slate-500">RMT: <span className="text-slate-800">R$ 0,00</span></p>
+                            <p className="text-[10px] font-bold text-slate-500">Porc.: <span className="text-slate-800">0,00 %</span></p>
+                          </td>
+                          <td className="p-4 text-center">
+                            <div className="flex justify-center">
+                              <div className="w-5 h-5 bg-emerald-500 rounded flex items-center justify-center cursor-pointer shadow-sm">
+                                <Check className="h-3.5 w-3.5 text-white" />
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={workers.length + 5} className="p-12 text-center text-slate-400 italic bg-slate-50/30">
+                        Adicione remunerações aos trabalhadores para gerar os períodos de apuração.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
