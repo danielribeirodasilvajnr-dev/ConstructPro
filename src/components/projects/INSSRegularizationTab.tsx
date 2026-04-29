@@ -21,7 +21,8 @@ import {
   Eye,
   Eraser,
   Calculator,
-  Target
+  Target,
+  Loader2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
@@ -33,7 +34,25 @@ interface Worker {
   nome: string;
   cpf: string;
   cargo_nome: string;
+  cbo_cargo: string;
+  matricula_esocial: string;
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  uf: string;
+  cod_ibge: string;
+  cidade: string;
+  nascimento: string;
+  sexo: string;
+  escolaridade: string;
+  cor_pele: string;
+  pais_nascimento: string;
   categoria: string;
+  tab_rubrica: string;
+  cod_rubrica: string;
+  cod_lotacao: string;
 }
 
 interface INSSRegularizationTabProps {
@@ -44,12 +63,41 @@ interface INSSRegularizationTabProps {
   isStandalone?: boolean;
 }
 
+const ESCOLARIDADE_OPTIONS = [
+  { value: '1', label: '1 - Analfabeto' },
+  { value: '2', label: '2 - Até 4º ano' },
+  { value: '3', label: '3 - Até 5º ano' },
+  { value: '4', label: '4 - Do 6º ao 9º ano' },
+  { value: '5', label: '5 - Fundamental completo' },
+  { value: '6', label: '6 - Médio incompleto' },
+  { value: '7', label: '7 - Médio completo' },
+  { value: '8', label: '8 - Superior incompleto' },
+  { value: '9', label: '9 - Superior completo' },
+  { value: '10', label: '10 - Pós-graduação' },
+  { value: '11', label: '11 - Mestrado' },
+  { value: '12', label: '12 - Doutorado' }
+];
+
+const COR_PELE_OPTIONS = [
+  { value: '1', label: '1 - Branca' },
+  { value: '2', label: '2 - Preta' },
+  { value: '3', label: '3 - Parda' },
+  { value: '4', label: '4 - Amarela' },
+  { value: '5', label: '5 - Indígena' }
+];
+
+const CATEGORIA_OPTIONS = [
+  { value: '701', label: '701 - Autônomo' },
+  { value: '741', label: '741 - MEI' }
+];
+
 export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh, readOnly, isStandalone }: INSSRegularizationTabProps) {
   const { user } = useAuth();
   const [currentView, setCurrentView] = useState<'summary' | 'management' | 'worker_form'>('summary');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
   const [workers, setWorkers] = useState<Worker[]>([]);
+  const [editingWorkerId, setEditingWorkerId] = useState<string | null>(null);
   
   // Form State - Client
   const [name, setName] = useState('');
@@ -95,12 +143,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [workerEscolaridade, setWorkerEscolaridade] = useState('');
   const [workerCorPele, setWorkerCorPele] = useState('');
   const [workerPaisNascimento, setWorkerPaisNascimento] = useState('105');
-  const [workerCategoria, setWorkerCategoria] = useState('Autônomo - 701');
+  const [workerCategoria, setWorkerCategoria] = useState('701');
   const [workerTabRubrica, setWorkerTabRubrica] = useState('');
   const [workerCodRubrica, setWorkerCodRubrica] = useState('');
   const [workerCodLotacao, setWorkerCodLotacao] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isFetchingCep, setIsFetchingCep] = useState(false);
 
   useEffect(() => {
     if (inssRegularization) {
@@ -129,6 +178,34 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       fetchWorkers();
     }
   }, [inssRegularization]);
+
+  // CEP Auto-fetch
+  useEffect(() => {
+    const cleanCep = workerCep.replace(/\D/g, '');
+    if (cleanCep.length === 8) {
+      fetchAddressByCep(cleanCep);
+    }
+  }, [workerCep]);
+
+  const fetchAddressByCep = async (cep: string) => {
+    setIsFetchingCep(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json();
+      
+      if (!data.erro) {
+        setWorkerLogradouro(data.logradouro || '');
+        setWorkerBairro(data.bairro || '');
+        setWorkerUf(data.uf || '');
+        setWorkerCidade(data.localidade || '');
+        setWorkerCodIbge(data.ibge || '');
+      }
+    } catch (err) {
+      console.error('Error fetching CEP:', err);
+    } finally {
+      setIsFetchingCep(false);
+    }
+  };
 
   const fetchWorkers = async () => {
     if (!inssRegularization) return;
@@ -262,47 +339,108 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     }
   };
 
+  const handleEditWorker = (worker: Worker) => {
+    setEditingWorkerId(worker.id);
+    setWorkerCpf(worker.cpf || '');
+    setWorkerNome(worker.nome || '');
+    setWorkerCargo(worker.cargo_nome || '');
+    setWorkerCbo(worker.cbo_cargo || '');
+    setWorkerMatricula(worker.matricula_esocial || '');
+    setWorkerCep(worker.cep || '');
+    setWorkerLogradouro(worker.logradouro || '');
+    setWorkerNumero(worker.numero || '');
+    setWorkerComplemento(worker.complemento || '');
+    setWorkerBairro(worker.bairro || '');
+    setWorkerUf(worker.uf || '');
+    setWorkerCodIbge(worker.cod_ibge || '');
+    setWorkerCidade(worker.cidade || '');
+    setWorkerNascimento(worker.nascimento || '');
+    setWorkerSexo(worker.sexo || '');
+    setWorkerEscolaridade(worker.escolaridade || '');
+    setWorkerCorPele(worker.cor_pele || '');
+    setWorkerPaisNascimento(worker.pais_nascimento || '105');
+    setWorkerCategoria(worker.categoria || '701');
+    setWorkerTabRubrica(worker.tab_rubrica || '');
+    setWorkerCodRubrica(worker.cod_rubrica || '');
+    setWorkerCodLotacao(worker.cod_lotacao || '');
+    setCurrentView('worker_form');
+  };
+
+  const resetWorkerForm = () => {
+    setEditingWorkerId(null);
+    setWorkerCpf('');
+    setWorkerNome('');
+    setWorkerCargo('Pedreiro');
+    setWorkerCbo('715210');
+    setWorkerMatricula('');
+    setWorkerCep('');
+    setWorkerLogradouro('');
+    setWorkerNumero('');
+    setWorkerComplemento('');
+    setWorkerBairro('');
+    setWorkerUf('');
+    setWorkerCodIbge('');
+    setWorkerCidade('');
+    setWorkerNascimento('');
+    setWorkerSexo('');
+    setWorkerEscolaridade('');
+    setWorkerCorPele('');
+    setWorkerPaisNascimento('105');
+    setWorkerCategoria('701');
+    setWorkerTabRubrica('');
+    setWorkerCodRubrica('');
+    setWorkerCodLotacao('');
+  };
+
   const handleSaveWorker = async () => {
     if (!user || !inssRegularization) return;
     
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from('inss_regularization_workers')
-        .insert({
-          regularization_id: isStandalone ? projectId : inssRegularization.id,
-          cpf: workerCpf,
-          nome: workerNome,
-          cargo_nome: workerCargo,
-          cbo_cargo: workerCbo,
-          matricula_esocial: workerMatricula,
-          cep: workerCep,
-          logradouro: workerLogradouro,
-          numero: workerNumero,
-          complemento: workerComplemento,
-          bairro: workerBairro,
-          uf: workerUf,
-          cod_ibge: workerCodIbge,
-          cidade: workerCidade,
-          nascimento: workerNascimento || null,
-          sexo: workerSexo,
-          escolaridade: workerEscolaridade,
-          cor_pele: workerCorPele,
-          pais_nascimento: workerPaisNascimento,
-          categoria: workerCategoria,
-          tab_rubrica: workerTabRubrica,
-          cod_rubrica: workerCodRubrica,
-          cod_lotacao: workerCodLotacao
-        });
+      const workerData = {
+        regularization_id: isStandalone ? projectId : inssRegularization.id,
+        cpf: workerCpf,
+        nome: workerNome,
+        cargo_nome: workerCargo,
+        cbo_cargo: workerCbo,
+        matricula_esocial: workerMatricula,
+        cep: workerCep,
+        logradouro: workerLogradouro,
+        numero: workerNumero,
+        complemento: workerComplemento,
+        bairro: workerBairro,
+        uf: workerUf,
+        cod_ibge: workerCodIbge,
+        cidade: workerCidade,
+        nascimento: workerNascimento || null,
+        sexo: workerSexo,
+        escolaridade: workerEscolaridade,
+        cor_pele: workerCorPele,
+        pais_nascimento: workerPaisNascimento,
+        categoria: workerCategoria,
+        tab_rubrica: workerTabRubrica,
+        cod_rubrica: workerCodRubrica,
+        cod_lotacao: workerCodLotacao
+      };
 
-      if (error) throw error;
-      
-      alert('Trabalhador cadastrado com sucesso!');
+      if (editingWorkerId) {
+        const { error } = await supabase
+          .from('inss_regularization_workers')
+          .update(workerData)
+          .eq('id', editingWorkerId);
+        if (error) throw error;
+        alert('Trabalhador atualizado com sucesso!');
+      } else {
+        const { error } = await supabase
+          .from('inss_regularization_workers')
+          .insert(workerData);
+        if (error) throw error;
+        alert('Trabalhador cadastrado com sucesso!');
+      }
+
       await fetchWorkers();
       setCurrentView('management');
-      // Reset form
-      setWorkerCpf('');
-      setWorkerNome('');
+      resetWorkerForm();
     } catch (err) {
       console.error('Error saving worker:', err);
       alert('Erro ao salvar trabalhador.');
@@ -578,14 +716,16 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   <div key={worker.id} className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm space-y-6">
                     <div>
                       <h3 className="text-xl font-bold text-slate-800">{worker.nome}</h3>
-                      <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">{worker.categoria}</p>
+                      <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">
+                        {CATEGORIA_OPTIONS.find(opt => opt.value === worker.categoria)?.label || worker.categoria}
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
                         <DollarSign className="h-3 w-3" /> Add Remuneração
                       </button>
-                      <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
+                      <button onClick={() => handleEditWorker(worker)} className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
                         <Eye className="h-3 w-3" /> Ver / Editar
                       </button>
                       <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
@@ -615,7 +755,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
               <div className="flex justify-start pt-4">
                 <button 
-                  onClick={() => setCurrentView('worker_form')}
+                  onClick={() => { resetWorkerForm(); setCurrentView('worker_form'); }}
                   className="flex items-center gap-2 px-6 py-2 bg-white border border-blue-500 text-blue-500 rounded text-sm font-bold hover:bg-blue-50 transition-all shadow-sm uppercase tracking-wider"
                 >
                   <UserPlus className="h-4 w-4" /> Novo Trabalhador
@@ -661,8 +801,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       {currentView === 'worker_form' && (
         <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
           <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <h2 className="text-xl font-bold text-slate-800">Novo Trabalhador — Obra #{projectId.substring(0, 4)}</h2>
-            <button onClick={() => setCurrentView('management')} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+            <h2 className="text-xl font-bold text-slate-800">
+              {editingWorkerId ? 'Editar Trabalhador' : 'Novo Trabalhador'} — Obra #{projectId.substring(0, 4)}
+            </h2>
+            <button onClick={() => { resetWorkerForm(); setCurrentView('management'); }} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
               <X className="h-5 w-5 text-slate-500" />
             </button>
           </div>
@@ -696,8 +838,21 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">CEP</label>
-                <input type="text" value={workerCep} onChange={e => setWorkerCep(e.target.value)} placeholder="11222333" className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">CEP (apenas números)</label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    value={workerCep} 
+                    onChange={e => setWorkerCep(e.target.value.replace(/\D/g, '').substring(0, 8))} 
+                    placeholder="00000000" 
+                    className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none pr-10" 
+                  />
+                  {isFetchingCep && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="md:col-span-3 space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Logradouro</label>
@@ -749,20 +904,18 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Escolaridade</label>
                 <select value={workerEscolaridade} onChange={e => setWorkerEscolaridade(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white">
                   <option value="">--</option>
-                  <option value="Fundamental">Fundamental</option>
-                  <option value="Médio">Médio</option>
-                  <option value="Superior">Superior</option>
+                  {ESCOLARIDADE_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cor da Pele</label>
                 <select value={workerCorPele} onChange={e => setWorkerCorPele(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white">
                   <option value="">--</option>
-                  <option value="Branca">Branca</option>
-                  <option value="Preta">Preta</option>
-                  <option value="Parda">Parda</option>
-                  <option value="Amarela">Amarela</option>
-                  <option value="Indígena">Indígena</option>
+                  {COR_PELE_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -776,8 +929,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Categoria</label>
                 <select value={workerCategoria} onChange={e => setWorkerCategoria(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white">
                   <option value="">--</option>
-                  <option value="Autônomo - 701">Autônomo - 701</option>
-                  <option value="Empregado">Empregado</option>
+                  {CATEGORIA_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-1">
@@ -795,7 +949,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
 
             <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
-              <button onClick={() => setCurrentView('management')} className="px-6 py-2 bg-blue-600 text-white rounded text-sm font-bold hover:bg-blue-700 transition-colors">
+              <button onClick={() => { resetWorkerForm(); setCurrentView('management'); }} className="px-6 py-2 bg-blue-600 text-white rounded text-sm font-bold hover:bg-blue-700 transition-colors">
                 Voltar para obra
               </button>
               <button onClick={handleSaveWorker} disabled={isSaving} className="px-10 py-2 bg-[#007AFF] text-white rounded text-sm font-bold hover:bg-blue-600 transition-colors shadow-lg disabled:opacity-50">
