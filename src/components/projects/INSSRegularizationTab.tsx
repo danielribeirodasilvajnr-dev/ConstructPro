@@ -13,12 +13,28 @@ import {
   Undo2,
   DollarSign,
   UserPlus,
-  ArrowLeft
+  ArrowLeft,
+  Search,
+  Printer,
+  Trash2,
+  Send,
+  Eye,
+  Eraser,
+  Calculator,
+  Target
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
 import { INSSRegularization } from '../../lib/types';
 import { useAuth } from '../../contexts/AuthContext';
+
+interface Worker {
+  id: string;
+  nome: string;
+  cpf: string;
+  cargo_nome: string;
+  categoria: string;
+}
 
 interface INSSRegularizationTabProps {
   projectId: string;
@@ -33,6 +49,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [currentView, setCurrentView] = useState<'summary' | 'management' | 'worker_form'>('summary');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
+  const [workers, setWorkers] = useState<Worker[]>([]);
   
   // Form State - Client
   const [name, setName] = useState('');
@@ -78,7 +95,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [workerEscolaridade, setWorkerEscolaridade] = useState('');
   const [workerCorPele, setWorkerCorPele] = useState('');
   const [workerPaisNascimento, setWorkerPaisNascimento] = useState('105');
-  const [workerCategoria, setWorkerCategoria] = useState('');
+  const [workerCategoria, setWorkerCategoria] = useState('Autônomo - 701');
   const [workerTabRubrica, setWorkerTabRubrica] = useState('');
   const [workerCodRubrica, setWorkerCodRubrica] = useState('');
   const [workerCodLotacao, setWorkerCodLotacao] = useState('');
@@ -108,8 +125,26 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       setRmtInicial(inssRegularization.rmt_inicial || 0);
       setRequisitoPercent(inssRegularization.requisito_percent || 0);
       setEmitirDocumento(inssRegularization.emitir_documento || 'Não');
+      
+      fetchWorkers();
     }
   }, [inssRegularization]);
+
+  const fetchWorkers = async () => {
+    if (!inssRegularization) return;
+    try {
+      const { data, error } = await supabase
+        .from('inss_regularization_workers')
+        .select('*')
+        .eq('regularization_id', isStandalone ? projectId : inssRegularization.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setWorkers(data || []);
+    } catch (err) {
+      console.error('Error fetching workers:', err);
+    }
+  };
 
   const validateCPF = (cpf: string) => {
     const cleanCPF = cpf.replace(/[^\d]/g, '');
@@ -263,6 +298,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       if (error) throw error;
       
       alert('Trabalhador cadastrado com sucesso!');
+      await fetchWorkers();
       setCurrentView('management');
       // Reset form
       setWorkerCpf('');
@@ -272,6 +308,20 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       alert('Erro ao salvar trabalhador.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleRemoveWorker = async (id: string) => {
+    if (!confirm('Tem certeza que deseja remover este trabalhador?')) return;
+    try {
+      const { error } = await supabase
+        .from('inss_regularization_workers')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      fetchWorkers();
+    } catch (err) {
+      console.error('Error removing worker:', err);
     }
   };
 
@@ -432,7 +482,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <div className="flex-1 p-3 flex items-center gap-2">
                 <button className="p-1 bg-slate-100 rounded hover:bg-slate-200 transition-colors"><Copy className="h-3.5 w-3.5 text-slate-500" /></button>
                 <button className="p-1 bg-slate-100 rounded hover:bg-slate-200 transition-colors"><Copy className="h-3.5 w-3.5 text-slate-500" /></button>
-                <span className="px-2 py-0.5 bg-slate-500 text-white rounded text-[10px] font-bold">Não definido</span>
+                <span className="px-2 py-0.5 bg-slate-500 text-white rounded text-[10px] font-bold">{proprietarioNome || 'Não definido'}</span>
               </div>
             </div>
 
@@ -453,7 +503,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </div>
               <div className="flex-1 p-3 flex items-center gap-3">
                 <button className="p-1 bg-slate-100 rounded hover:bg-slate-200 transition-colors"><Copy className="h-3.5 w-3.5 text-slate-500" /></button>
-                <span className="text-sm font-bold text-slate-700">R$ 0,00 / Requisito: R$ %</span>
+                <span className="text-sm font-bold text-slate-700">{cnoNumero || '---'} / R$ {rmtInicial.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / Requisito: {requisitoPercent}%</span>
                 <span className="px-2 py-0.5 bg-red-500 text-white rounded text-[10px] font-bold flex items-center gap-1">F.A. <AlertCircle className="h-3 w-3" /></span>
               </div>
             </div>
@@ -515,22 +565,64 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           </div>
           <p className="text-slate-400 text-[10px] italic font-medium uppercase tracking-wider">Cadastre trabalhador e remunerações para liberar os botões acima.</p>
 
-          {/* New Worker Button */}
-          <div className="flex justify-start">
-            <button 
-              onClick={() => setCurrentView('worker_form')}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded text-sm font-bold hover:bg-emerald-700 transition-all shadow-md uppercase tracking-wider"
-            >
-              <UserPlus className="h-4 w-4" /> Novo Trabalhador
-            </button>
-          </div>
-
           {/* Workers Section */}
           <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
             <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
               <span className="text-sm font-bold text-slate-700">Trabalhadores</span>
               <X className="h-4 w-4 text-slate-400 cursor-pointer" />
             </div>
+            
+            <div className="p-6 space-y-6 bg-slate-50/50">
+              {workers.length > 0 ? (
+                workers.map(worker => (
+                  <div key={worker.id} className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm space-y-6">
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-800">{worker.nome}</h3>
+                      <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">{worker.categoria}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                      <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
+                        <DollarSign className="h-3 w-3" /> Add Remuneração
+                      </button>
+                      <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
+                        <Eye className="h-3 w-3" /> Ver / Editar
+                      </button>
+                      <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
+                        <Eraser className="h-3 w-3" /> Limpar remunerações
+                      </button>
+                      <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
+                        <Printer className="h-3 w-3" /> Gerar recibos
+                      </button>
+                      <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
+                        <Calculator className="h-3 w-3" /> Totalizar 1
+                      </button>
+                      <button onClick={() => handleRemoveWorker(worker.id)} className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 transition-all shadow-sm">
+                        <Trash2 className="h-3 w-3" /> Remover trabalhador
+                      </button>
+                      <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 rounded text-xs font-bold text-white hover:bg-emerald-700 transition-all shadow-md">
+                        <Send className="h-3 w-3" /> Cadastrar trab
+                      </button>
+                      <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 rounded text-xs font-bold text-white hover:bg-emerald-700 transition-all shadow-md">
+                        <Target className="h-3 w-3" /> Encerrar trab
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12 text-slate-400 font-medium italic">Nenhum trabalhador cadastrado.</div>
+              )}
+
+              <div className="flex justify-start pt-4">
+                <button 
+                  onClick={() => setCurrentView('worker_form')}
+                  className="flex items-center gap-2 px-6 py-2 bg-white border border-blue-500 text-blue-500 rounded text-sm font-bold hover:bg-blue-50 transition-all shadow-sm uppercase tracking-wider"
+                >
+                  <UserPlus className="h-4 w-4" /> Novo Trabalhador
+                </button>
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="bg-[#1C232E] text-white uppercase text-[10px] font-bold tracking-widest">
@@ -684,6 +776,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Categoria</label>
                 <select value={workerCategoria} onChange={e => setWorkerCategoria(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white">
                   <option value="">--</option>
+                  <option value="Autônomo - 701">Autônomo - 701</option>
                   <option value="Empregado">Empregado</option>
                 </select>
               </div>
@@ -845,7 +938,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       {/* Editar Obra Modal */}
       {isWorkModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
-          <div className="bg-white w-full max-md rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+          <div className="bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
             {/* Modal Header */}
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-2 text-slate-800 font-bold">
