@@ -164,7 +164,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     status: 'PENDENTE' | 'ENVIADO' | 'PROCESSANDO' | 'SUCESSO' | 'ERRO';
     protocolo?: string;
     recibo?: string;
-    tipo_evento?: string;
+    tipo_evento: string;
+    cpf_trabalhador: string; // Adicionado para facilitar consulta
+    resposta_governo?: any;
   } | null>(null);
 
   useEffect(() => {
@@ -221,7 +223,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           status: data[0].status,
           protocolo: data[0].protocolo,
           recibo: data[0].recibo,
-          tipo_evento: data[0].tipo_evento
+          tipo_evento: data[0].tipo_evento,
+          cpf_trabalhador: data[0].cpf_trabalhador,
+          resposta_governo: data[0].resposta_governo
         });
       } else {
         setEsocialStatus(null);
@@ -256,42 +260,75 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     // ETAPA 3 - CONTROLE DE DUPLICIDADE E RETIFICAÇÃO
     let indRetif = 1;
     let nrRecibo = null;
+    let forceDuplicityError = false;
 
     if (esocialStatus && esocialStatus.status === 'SUCESSO') {
-      if (!confirm('Este trabalhador já possui um cadastro processado com sucesso no eSocial. Deseja enviar uma RETIFICAÇÃO?')) {
-        return;
+      const wantRectify = confirm('Este trabalhador já possui um cadastro processado com sucesso no eSocial. Deseja enviar uma RETIFICAÇÃO?\n\n(Se clicar em CANCELAR, o sistema tentará enviar um novo registro e o eSocial retornará erro de DUPLICIDADE)');
+      
+      if (wantRectify) {
+        indRetif = 2;
+        nrRecibo = esocialStatus.recibo;
+      } else {
+        // O usuário escolheu enviar um novo registro (Original) mesmo já existindo. 
+        // Isso vai forçar o erro de duplicidade no simulador.
+        forceDuplicityError = true;
       }
-      indRetif = 2;
-      nrRecibo = esocialStatus.recibo;
     }
 
     setIsTransmitting(true);
     try {
       // ETAPA 4 - GERAR EVENTO (MOCKUP XML)
       const eventId = `ID${indRetif}${selectedWorker.cpf.replace(/\D/g, '')}${new Date().getTime()}`;
+      const protocoloInicial = `PRT.${Math.random().toString(36).substring(7).toUpperCase()}`;
       const xmlMockup = `<?xml version="1.0" encoding="UTF-8"?><eSocial xmlns="http://www.esocial.gov.br/schema/evt/evtTSVInicio/v_S_01_01_00"><evtTSVInicio Id="${eventId}"><ideEvento><indRetif>${indRetif}</indRetif>${nrRecibo ? `<nrRecibo>${nrRecibo}</nrRecibo>` : ''}</ideEvento></evtTSVInicio></eSocial>`;
 
-      // ETAPA 10 - LOGS / BANCO (Initial Save)
-      const { data: eventData, error: eventError } = await supabase
-        .from('esocial_events')
-        .insert({
-          regularization_id: inssRegularization.id,
-          tipo_evento: 'S-2300',
-          cpf_trabalhador: selectedWorker.cpf,
-          xml_enviado: xmlMockup,
-          status: 'PROCESSANDO'
-        })
-        .select()
-        .single();
+      let eventIdInDb = esocialStatus?.id;
 
-      if (eventError) throw eventError;
+      // Se NÃO for retificação e já temos um registro, vamos ATUALIZAR em vez de inserir novo
+      if (indRetif === 1 && eventIdInDb) {
+        const { error: updateError } = await supabase
+          .from('esocial_events')
+          .update({
+            xml_enviado: xmlMockup,
+            protocolo: protocoloInicial,
+            status: 'PROCESSANDO',
+            resposta_governo: {
+              envio_codigo: '201',
+              envio_mensagem: 'Lote recebido com sucesso (Reenvio).'
+            },
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', eventIdInDb);
+        
+        if (updateError) throw updateError;
+      } else {
+        // É retificação ou primeiro envio: Criamos um NOVO registro
+        const { data: eventData, error: eventError } = await supabase
+          .from('esocial_events')
+          .insert({
+            regularization_id: inssRegularization.id,
+            tipo_evento: 'S-2300',
+            cpf_trabalhador: selectedWorker.cpf,
+            xml_enviado: xmlMockup,
+            protocolo: protocoloInicial,
+            status: 'PROCESSANDO',
+            resposta_governo: {
+              envio_codigo: '201',
+              envio_mensagem: 'Lote recebido com sucesso.'
+            }
+          })
+          .select()
+          .single();
+
+        if (eventError) throw eventError;
+        eventIdInDb = eventData.id;
+      }
 
       // ETAPA 5, 6, 7 - ASSINATURA E ENVIO (SIMULAÇÃO)
-      // Simulando delay de comunicação com WebService
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Simulando retorno do governo
-      const isSuccess = Math.random() > 0.1; // 90% chance of success for demo
+      // Lógica de Sucesso ou Erro Fiscal
+      const isSuccess = !forceDuplicityError && Math.random() > 0.05; 
       const protocolo = `PRT.${Math.random().toString(36).substring(7).toUpperCase()}`;
       const recibo = isSuccess ? `1.${Math.random().toString().substring(2, 12)}` : null;
       
@@ -302,46 +339,102 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           protocolo,
           recibo,
           resposta_governo: { 
-            codigo: isSuccess ? 202 : 402, 
-            mensagem: isSuccess ? 'Evento processado com sucesso' : 'Erro na estrutura do XML',
-            ocorrencias: isSuccess ? [] : [{ codigo: '123', tipo: 1, descricao: 'Erro genérico de teste' }]
+            envio_codigo: '201',
+            envio_mensagem: 'Lote recebido com sucesso.',
+            proc_codigo: isSuccess ? '202' : '401',
+            proc_mensagem: isSuccess ? 'Sucesso' : 'Conteúdo do evento inválido.',
+            detalhe: forceDuplicityError ? 'Foi localizado no sistema um evento em duplicidade com o evento a ser enviado, mesmo Tipo de Inscrição, Número de Inscrição, CPF, Matrícula.' : (!isSuccess ? 'Erro de validação na estrutura do XML.' : null),
+            acao_sugerida: forceDuplicityError ? 'Verificar a matrícula informada e, se já utilizada em S-2190, S-2200, S-2300, S-2500 ou S-8200 de outro trabalhador, gerar uma nova matrícula.' : null
           },
           updated_at: new Date().toISOString()
         })
-        .eq('id', eventData.id);
+        .eq('id', eventIdInDb);
 
       if (updateError) throw updateError;
 
       // ETAPA 9 - FEEDBACK
       if (isSuccess) {
-        alert('Evento enviado e processado com sucesso no eSocial!');
+        alert('Consulta finalizada! O evento foi processado com SUCESSO.');
+        // Retorno automático após sucesso
+        setTimeout(() => {
+          setCurrentView('management');
+          fetchWorkers();
+        }, 1500);
       } else {
         alert('O eSocial rejeitou o evento. Verifique os detalhes no histórico.');
       }
 
       checkEsocialStatus(selectedWorker.cpf);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error in eSocial flow:', err);
-      alert('Erro técnico na comunicação com o eSocial.');
+      const errorMsg = err.message || err.details || 'Erro desconhecido';
+      alert(`Erro técnico na comunicação com o eSocial:\n\nDetalhamento: ${errorMsg}`);
     } finally {
       setIsTransmitting(false);
     }
   };
 
   const handleConsultESocial = async () => {
-    if (!esocialStatus || !esocialStatus.protocolo || isTransmitting) return;
+    if (!esocialStatus || isTransmitting || !inssRegularization) return;
 
     setIsTransmitting(true);
     try {
       // ETAPA 8 - CONSULTA (SIMULAÇÃO)
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Simula atualização de status no banco
-      alert(`Consulta realizada para o protocolo: ${esocialStatus.protocolo}\nStatus atual: ${esocialStatus.status}`);
+      // Verificação real de duplicidade na consulta
+      const { data: existingSuccess } = await supabase
+        .from('esocial_events')
+        .select('id')
+        .eq('regularization_id', inssRegularization.id)
+        .eq('cpf_trabalhador', esocialStatus.cpf_trabalhador)
+        .eq('status', 'SUCESSO')
+        .neq('id', esocialStatus.id)
+        .limit(1);
+
+      // Se já existe sucesso e este envio não é retificação (estamos simulando que indRetif=1 no XML se não houver recibo)
+      // Nota: Na nossa simulação, se indRetif fosse 2, o esocialStatus.recibo estaria preenchido
+      const isOriginal = !esocialStatus.recibo; 
+      const forceDuplicity = isOriginal && existingSuccess && existingSuccess.length > 0;
+
+      const isSuccess = !forceDuplicity && Math.random() > 0.05; 
+      const protocolo = esocialStatus.protocolo || `PRT.${Math.random().toString(36).substring(7).toUpperCase()}`;
+      const recibo = isSuccess ? (esocialStatus.recibo || `1.${Math.random().toString().substring(2, 12)}`) : null;
       
-      checkEsocialStatus(selectedWorker!.cpf);
-    } catch (err) {
+      const { error: updateError } = await supabase
+        .from('esocial_events')
+        .update({
+          status: isSuccess ? 'SUCESSO' : 'ERRO',
+          protocolo,
+          recibo,
+          resposta_governo: { 
+            envio_codigo: '201',
+            envio_mensagem: 'Lote recebido com sucesso.',
+            proc_codigo: isSuccess ? '202' : '401',
+            proc_mensagem: isSuccess ? 'Sucesso' : 'Conteúdo do evento inválido.',
+            detalhe: forceDuplicity ? 'Foi localizado no sistema um evento em duplicidade com o evento a ser enviado, mesmo Tipo de Inscrição, Número de Inscrição, CPF, Matrícula.' : (!isSuccess ? 'Erro de validação técnica na estrutura do XML.' : null),
+            acao_sugerida: forceDuplicity ? 'Verificar a matrícula informada e, se já utilizada em S-2190, S-2200, S-2300, S-2500 ou S-8200 de outro trabalhador, gerar uma nova matrícula.' : null
+          },
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', esocialStatus.id);
+          
+      if (updateError) throw updateError;
+
+      if (isSuccess) {
+        alert('Consulta finalizada! O evento foi processado com SUCESSO.');
+        setTimeout(() => {
+          setCurrentView('management');
+          fetchWorkers();
+        }, 1500);
+      } else {
+        alert('O eSocial rejeitou o evento. Verifique os detalhes no log de processamento.');
+      }
+      
+      checkEsocialStatus(esocialStatus.cpf_trabalhador);
+    } catch (err: any) {
       console.error('Error consulting eSocial:', err);
+      alert(`Erro na consulta: ${err.message || 'Erro de conexão'}`);
     } finally {
       setIsTransmitting(false);
     }
@@ -378,14 +471,34 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const fetchWorkers = async () => {
     if (!inssRegularization) return;
     try {
-      const { data, error } = await supabase
+      const { data: workersData, error: workersError } = await supabase
         .from('inss_regularization_workers')
         .select('*')
         .eq('regularization_id', isStandalone ? projectId : inssRegularization.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setWorkers(data || []);
+      if (workersError) throw workersError;
+
+      // Fetch esocial status for all workers
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('esocial_events')
+        .select('cpf_trabalhador, status')
+        .eq('regularization_id', inssRegularization.id)
+        .eq('tipo_evento', 'S-2300')
+        .order('created_at', { ascending: false });
+
+      if (eventsError) throw eventsError;
+
+      // Map status to workers
+      const workersWithStatus = (workersData || []).map(worker => {
+        const latestEvent = eventsData?.find(e => e.cpf_trabalhador === worker.cpf);
+        return {
+          ...worker,
+          esocial_status: latestEvent?.status || 'PENDENTE'
+        };
+      });
+
+      setWorkers(workersWithStatus);
     } catch (err) {
       console.error('Error fetching workers:', err);
     }
@@ -1112,7 +1225,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           {/* Workers Section */}
           <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
             <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-sm font-bold text-slate-700">Trabalhadores</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold text-slate-700">Trabalhadores</span>
+                <div className="flex items-center gap-2 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-500 uppercase tracking-tight shadow-sm">
+                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                  {workers.filter(w => w.esocial_status === 'SUCESSO').length} de {workers.length} Transmitidos
+                </div>
+              </div>
               <X className="h-4 w-4 text-slate-400 cursor-pointer" />
             </div>
             
@@ -1120,11 +1239,24 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               {workers.length > 0 ? (
                 workers.map(worker => (
                   <div key={worker.id} className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm space-y-6">
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-800">{worker.nome}</h3>
-                      <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">
-                        {CATEGORIA_OPTIONS.find(opt => opt.value === worker.categoria)?.label || worker.categoria}
-                      </p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-800">{worker.nome}</h3>
+                        <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">
+                          {CATEGORIA_OPTIONS.find(opt => opt.value === worker.categoria)?.label || worker.categoria}
+                        </p>
+                      </div>
+                      {/* Status eSocial Badge */}
+                      {worker.esocial_status === 'SUCESSO' && (
+                        <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase border border-emerald-200 shadow-sm">
+                          <CheckCircle2 className="h-3 w-3" /> eSocial Transmitido
+                        </div>
+                      )}
+                      {worker.esocial_status === 'ERRO' && (
+                        <div className="flex items-center gap-1.5 px-3 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-bold uppercase border border-red-200 shadow-sm">
+                          <AlertCircle className="h-3 w-3" /> Erro no eSocial
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
@@ -1148,9 +1280,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                       </button>
                       <button 
                         onClick={() => { setSelectedWorker(worker); setCurrentView('s2300_view'); }}
-                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 rounded text-xs font-bold text-white hover:bg-emerald-700 transition-all shadow-md"
+                        className={cn(
+                          "flex items-center justify-center gap-1.5 px-3 py-2 rounded text-xs font-bold text-white transition-all shadow-md",
+                          worker.esocial_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#1B8E5A] hover:bg-emerald-700"
+                        )}
                       >
-                        <Send className="h-3 w-3" /> Cadastrar trab
+                        <Send className="h-3 w-3" /> 
+                        {worker.esocial_status === 'SUCESSO' ? 'Evento Enviado' : 'Cadastrar trab'}
                       </button>
                       <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 rounded text-xs font-bold text-white hover:bg-emerald-700 transition-all shadow-md">
                         <Target className="h-3 w-3" /> Encerrar trab
@@ -1353,20 +1489,69 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 )}
               </button>
               
+              {/* Detailed Government Log (Mirroring reference) */}
+              {esocialStatus && (esocialStatus.status === 'SUCESSO' || esocialStatus.status === 'ERRO' || esocialStatus.status === 'PROCESSANDO') && (
+                <div className="mt-8 p-6 bg-white border border-slate-200 rounded shadow-sm">
+                  <div className="space-y-4">
+                    <div>
+                      <span className="font-bold text-slate-800">Envio =&gt; </span>
+                      <span className={cn(
+                        "font-medium",
+                        esocialStatus.status === 'ERRO' ? "text-red-600" : "text-emerald-600"
+                      )}>
+                        {esocialStatus.resposta_governo?.envio_codigo || '201'} - {esocialStatus.resposta_governo?.envio_mensagem || 'Lote recebido com sucesso.'}
+                      </span>
+                    </div>
+
+                    {(esocialStatus.status === 'SUCESSO' || esocialStatus.status === 'ERRO') && (
+                      <div>
+                        <span className="font-bold text-slate-800">Processamento =&gt; </span>
+                        <span className={cn(
+                          "font-medium",
+                          esocialStatus.status === 'ERRO' ? "text-red-600" : "text-emerald-600"
+                        )}>
+                          {esocialStatus.resposta_governo?.proc_codigo || (esocialStatus.status === 'SUCESSO' ? '202' : '401')} - {esocialStatus.resposta_governo?.proc_mensagem || (esocialStatus.status === 'SUCESSO' ? 'Sucesso' : 'Conteúdo do evento inválido.')}
+                        </span>
+                      </div>
+                    )}
+
+                    {esocialStatus.status === 'ERRO' && (
+                      <div className="pt-2 text-slate-600 text-sm leading-relaxed space-y-4">
+                        <p>
+                          {esocialStatus.resposta_governo?.detalhe || 'Foi localizado no sistema um evento em duplicidade com o evento a ser enviado, mesmo Tipo de Inscrição, Número de Inscrição, CPF, Matrícula, Data de ingresso no ogmo ou no Sindicato.'}
+                        </p>
+                        <p>
+                          O contrato de trabalho já se encontra cadastrado na base de dados do Ambiente Nacional do eSocial. CPF: {selectedWorker.cpf}. 
+                          <span className="block mt-2 font-bold text-slate-700">
+                            Ação Sugerida: {esocialStatus.resposta_governo?.acao_sugerida || 'Verificar a matrícula informada e, se já utilizada em S-2190, S-2200, S-2300, S-2500 ou S-8200 de outro trabalhador, gerar uma nova matrícula.'}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+
+                    {esocialStatus.status === 'SUCESSO' && (
+                      <div className="pt-2 text-emerald-700 text-sm font-medium">
+                        <p>O evento foi aceito e processado com sucesso pelo Ambiente Nacional do eSocial.</p>
+                        <p className="mt-1 text-slate-400 font-mono text-[10px]">Número do Recibo: {esocialStatus.recibo}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Status Badge (Simple) */}
               {esocialStatus && (
                 <div className={cn(
-                  "mt-4 p-4 rounded border flex items-start gap-3 animate-in fade-in slide-in-from-top-2",
-                  esocialStatus.status === 'SUCESSO' ? "bg-emerald-50 border-emerald-200 text-emerald-800" :
-                  esocialStatus.status === 'ERRO' ? "bg-red-50 border-red-200 text-red-800" :
-                  "bg-blue-50 border-blue-200 text-blue-800"
+                  "mt-6 p-4 rounded-md border",
+                  esocialStatus.status === 'SUCESSO' ? "bg-emerald-50 border-emerald-200" :
+                  esocialStatus.status === 'ERRO' ? "bg-red-50 border-red-200" :
+                  "bg-blue-50 border-blue-200"
                 )}>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold uppercase tracking-wider mb-1">Status eSocial: {esocialStatus.status}</p>
-                    <p className="text-xs font-mono opacity-80">Protocolo: {esocialStatus.protocolo || '---'}</p>
-                    {esocialStatus.recibo && <p className="text-xs font-mono opacity-80">Recibo: {esocialStatus.recibo}</p>}
-                  </div>
-                  {esocialStatus.status === 'SUCESSO' && <CheckCircle2 className="h-5 w-5 text-emerald-500" />}
-                  {esocialStatus.status === 'ERRO' && <AlertCircle className="h-5 w-5 text-red-500" />}
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Status eSocial: {esocialStatus.status}</p>
+                  <p className="text-[10px] text-slate-400">Protocolo: {esocialStatus.protocolo || '---'}</p>
+                  {esocialStatus.recibo && (
+                    <p className="text-[10px] text-slate-400">Recibo: {esocialStatus.recibo}</p>
+                  )}
                 </div>
               )}
             </div>
