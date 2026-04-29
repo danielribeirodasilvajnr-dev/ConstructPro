@@ -96,6 +96,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [currentView, setCurrentView] = useState<'summary' | 'management' | 'worker_form'>('summary');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
+  const [workModalMode, setWorkModalMode] = useState<'simple' | 'detailed'>('simple');
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [editingWorkerId, setEditingWorkerId] = useState<string | null>(null);
   
@@ -464,6 +465,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   };
 
   const copyToClipboard = (text: string) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
   };
 
@@ -562,7 +564,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <Edit2 className="h-4 w-4" /> Editar
             </button>
             <button 
-              onClick={() => setIsWorkModalOpen(true)}
+              onClick={() => { setWorkModalMode('simple'); setIsWorkModalOpen(true); }}
               className="flex items-center gap-2 px-4 py-2.5 bg-[#1B8E5A] text-white rounded-md text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm"
             >
               <Plus className="h-4 w-4" /> Cadastrar Obra
@@ -618,9 +620,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <span className="text-sm font-bold text-slate-700">Proprietário</span>
               </div>
               <div className="flex-1 p-3 flex items-center gap-2">
-                <button className="p-1 bg-slate-100 rounded hover:bg-slate-200 transition-colors"><Copy className="h-3.5 w-3.5 text-slate-500" /></button>
-                <button className="p-1 bg-slate-100 rounded hover:bg-slate-200 transition-colors"><Copy className="h-3.5 w-3.5 text-slate-500" /></button>
+                <button onClick={() => copyToClipboard(proprietarioNome)} className="p-1 bg-slate-100 rounded hover:bg-slate-200 transition-colors"><Copy className="h-3.5 w-3.5 text-slate-500" /></button>
+                <button onClick={() => copyToClipboard(proprietarioCpfCnpj)} className="p-1 bg-slate-100 rounded hover:bg-slate-200 transition-colors"><Copy className="h-3.5 w-3.5 text-slate-500" /></button>
                 <span className="px-2 py-0.5 bg-slate-500 text-white rounded text-[10px] font-bold">{proprietarioNome || 'Não definido'}</span>
+                {proprietarioCpfCnpj && (
+                  <span className="text-sm font-bold text-slate-700 ml-2">{proprietarioCpfCnpj}</span>
+                )}
               </div>
             </div>
 
@@ -640,7 +645,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <span className="text-sm font-bold text-slate-700">CNO / RMT</span>
               </div>
               <div className="flex-1 p-3 flex items-center gap-3">
-                <button className="p-1 bg-slate-100 rounded hover:bg-slate-200 transition-colors"><Copy className="h-3.5 w-3.5 text-slate-500" /></button>
+                <button onClick={() => copyToClipboard(cnoNumero)} className="p-1 bg-slate-100 rounded hover:bg-slate-200 transition-colors"><Copy className="h-3.5 w-3.5 text-slate-500" /></button>
                 <span className="text-sm font-bold text-slate-700">{cnoNumero || '---'} / R$ {rmtInicial.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / Requisito: {requisitoPercent}%</span>
                 <span className="px-2 py-0.5 bg-red-500 text-white rounded text-[10px] font-bold flex items-center gap-1">F.A. <AlertCircle className="h-3 w-3" /></span>
               </div>
@@ -659,7 +664,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
           {/* Management Buttons */}
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => setIsWorkModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-[#636E72] text-white rounded text-sm font-bold hover:bg-slate-600 transition-colors shadow-md">
+            <button onClick={() => { setWorkModalMode('detailed'); setIsWorkModalOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-[#636E72] text-white rounded text-sm font-bold hover:bg-slate-600 transition-colors shadow-md">
               <Edit2 className="h-4 w-4" /> Editar Obra
             </button>
             <button onClick={() => setCurrentView('summary')} className="flex items-center gap-2 px-4 py-2 bg-[#007AFF] text-white rounded text-sm font-bold hover:bg-blue-600 transition-colors shadow-md">
@@ -976,7 +981,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-500">Nome</label>
                 <div className="relative">
@@ -1089,7 +1094,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         </div>
       )}
 
-      {/* Cadastrar Obra Modal (Copied from circled part) */}
+      {/* Work Modal (Simple for Create, Detailed for Edit) */}
       {isWorkModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
@@ -1105,14 +1110,34 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Nome</label>
+                <label className="text-xs font-medium text-slate-500">Nome da obra</label>
                 <div className="relative">
                   <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="CASA / COMERCIO / GALPÃO" className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
                   <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
                 </div>
               </div>
+
+              {workModalMode === 'detailed' && (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500">Nome proprietário</label>
+                    <div className="relative">
+                      <input type="text" value={proprietarioNome} onChange={e => setProprietarioNome(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
+                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500">CPF / CNPJ do Proprietário</label>
+                    <div className="relative">
+                      <input type="text" value={proprietarioCpfCnpj} onChange={e => setProprietarioCpfCnpj(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
+                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-500">Área construída</label>
@@ -1122,6 +1147,34 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 </div>
               </div>
 
+              {workModalMode === 'detailed' && (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500">CNO</label>
+                    <div className="relative">
+                      <input type="text" value={cnoNumero} onChange={e => setCnoNumero(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
+                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500">RMT inicial</label>
+                    <div className="relative">
+                      <input type="number" value={rmtInicial || ''} onChange={e => setRmtInicial(Number(e.target.value))} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
+                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500">Requisito (%)</label>
+                    <div className="relative">
+                      <input type="number" value={requisitoPercent || ''} onChange={e => setRequisitoPercent(Number(e.target.value))} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
+                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                    </div>
+                  </div>
+                </>
+              )}
+
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-500">Endereço</label>
                 <div className="relative">
@@ -1129,6 +1182,19 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
                 </div>
               </div>
+
+              {workModalMode === 'detailed' && (
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-500">Emitir NF, DAS ou recibo mensal?</label>
+                  <div className="relative">
+                    <select value={emitirDocumento} onChange={e => setEmitirDocumento(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none appearance-none bg-white">
+                      <option value="Não">Não</option>
+                      <option value="Sim">Sim</option>
+                    </select>
+                    <Check className="absolute right-8 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-500">OBS</label>
