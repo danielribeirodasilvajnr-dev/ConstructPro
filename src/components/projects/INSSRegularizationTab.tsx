@@ -157,6 +157,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [isUploadingCert, setIsUploadingCert] = useState(false);
   const [certificateUrl, setCertificateUrl] = useState('');
   const [certificatePassword, setCertificatePassword] = useState('');
+  const [certificateApelido, setCertificateApelido] = useState('');
+  const [certificateCpfCnpj, setCertificateCpfCnpj] = useState('');
   const [esocialStatus, setEsocialStatus] = useState<{
     id?: string;
     status: 'PENDENTE' | 'ENVIADO' | 'PROCESSANDO' | 'SUCESSO' | 'ERRO';
@@ -190,6 +192,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       setEmitirDocumento(inssRegularization.emitir_documento || 'Não');
       setCertificateUrl(inssRegularization.certificate_url || '');
       setCertificatePassword(inssRegularization.certificate_password || '');
+      setCertificateApelido(inssRegularization.certificate_info?.apelido || '');
+      setCertificateCpfCnpj(inssRegularization.certificate_info?.cpf_cnpj || '');
       
       fetchWorkers();
       if (selectedWorker) {
@@ -981,31 +985,121 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                       placeholder="••••••••"
                       className="flex-1 border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none"
                     />
-                    <button 
-                      onClick={async () => {
-                        setIsSaving(true);
-                        try {
-                          const { error } = await supabase
-                            .from('inss_regularizations')
-                            .update({ certificate_password: certificatePassword })
-                            .eq('id', inssRegularization?.id);
-                          if (error) throw error;
-                          alert('Senha do certificado salva com sucesso!');
-                          onRefresh(); // Atualiza os dados da tela
-                        } catch (err) {
-                          console.error('Error saving password:', err);
-                          alert('Erro ao salvar senha.');
-                        } finally {
-                          setIsSaving(false);
-                        }
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 transition-colors"
-                    >
-                      Salvar Senha
-                    </button>
                   </div>
                 </div>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Apelido</label>
+                  <input 
+                    type="text" 
+                    value={certificateApelido}
+                    onChange={(e) => setCertificateApelido(e.target.value)}
+                    placeholder="Ex: Sérgio"
+                    className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">CPF / CNPJ</label>
+                  <input 
+                    type="text" 
+                    value={certificateCpfCnpj}
+                    onChange={(e) => setCertificateCpfCnpj(e.target.value)}
+                    placeholder="000.000.000-00"
+                    className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button 
+                    onClick={async () => {
+                      setIsSaving(true);
+                      try {
+                        const { error } = await supabase
+                          .from('inss_regularizations')
+                          .update({ 
+                            certificate_password: certificatePassword,
+                            certificate_info: {
+                              apelido: certificateApelido,
+                              cpf_cnpj: certificateCpfCnpj
+                            }
+                          })
+                          .eq('id', inssRegularization?.id);
+                        if (error) throw error;
+                        alert('Dados do certificado salvos com sucesso!');
+                        onRefresh();
+                      } catch (err) {
+                        console.error('Error saving cert data:', err);
+                        alert('Erro ao salvar dados.');
+                      } finally {
+                        setIsSaving(false);
+                      }
+                    }}
+                    disabled={isSaving}
+                    className="w-full px-6 py-2 bg-[#1B8E5A] text-white rounded text-sm font-bold hover:bg-emerald-700 transition-all shadow-md flex items-center justify-center gap-2"
+                  >
+                    <Save className="h-4 w-4" /> Salvar Certificado
+                  </button>
+                </div>
+              </div>
+
+              {/* Certificate Table (Mirroring reference) */}
+              {certificateUrl && (
+                <div className="mt-8 overflow-hidden rounded border border-slate-200">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                      <tr>
+                        <th className="p-3 w-16">#</th>
+                        <th className="p-3">Certificado</th>
+                        <th className="p-3">CPF / CNPJ</th>
+                        <th className="p-3 w-32 text-center">Padrão</th>
+                        <th className="p-3 w-24 text-center">Excluir</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white">
+                      <tr className="border-b border-slate-100">
+                        <td className="p-3 text-slate-400">01</td>
+                        <td className="p-3 font-bold text-slate-800">{certificateApelido || 'Sérgio'}</td>
+                        <td className="p-3">
+                          <div className="text-slate-600">{certificateCpfCnpj || '161.196.598-54'}</div>
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            {certificateUrl.split('/').pop()?.substring(0, 30)}...
+                          </div>
+                        </td>
+                        <td className="p-3 text-center">
+                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500 text-white rounded text-[10px] font-bold uppercase">
+                            <Check className="h-3 w-3" /> Padrão
+                          </div>
+                        </td>
+                        <td className="p-3 text-center">
+                          <button 
+                            onClick={async () => {
+                              if (!confirm('Excluir certificado?')) return;
+                              try {
+                                await supabase
+                                  .from('inss_regularizations')
+                                  .update({ 
+                                    certificate_url: null, 
+                                    certificate_password: null,
+                                    certificate_info: null 
+                                  })
+                                  .eq('id', inssRegularization?.id);
+                                onRefresh();
+                              } catch (err) {
+                                console.error('Error deleting cert:', err);
+                              }
+                            }}
+                            className="p-1.5 bg-[#D94141] text-white rounded hover:bg-red-700 transition-colors"
+                          >
+                            Excluir
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
               <p className="mt-4 text-[10px] text-slate-400 italic flex items-center gap-1">
                 <AlertCircle className="h-3 w-3" />
                 Seu certificado é armazenado de forma segura e utilizado apenas para comunicação com o eSocial via WebService criptografado.
