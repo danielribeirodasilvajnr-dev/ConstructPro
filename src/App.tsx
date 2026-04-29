@@ -9,6 +9,7 @@ import { BudgetView } from './pages/BudgetView';
 import { ProjectsView } from './pages/ProjectsView';
 import { ProprietorView } from './pages/ProprietorView';
 import { CalculatorView } from './pages/CalculatorView';
+import { RegularizationView } from './pages/RegularizationView';
 import { AuthView } from './pages/AuthView';
 import { FileSpreadsheet } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
@@ -44,10 +45,10 @@ export default function App() {
       if (!selectedProjectId) {
         const checkProprietor = async () => {
           try {
-            const timeoutPromise = new Promise<any>((_, reject) => 
+            const timeoutPromise = new Promise<any>((_, reject) =>
               setTimeout(() => reject(new Error('Timeout')), 2000)
             );
-            
+
             const supabaseCall = supabase.from('project_collaborators')
               .select('project_id')
               .eq('user_id', user.id)
@@ -66,9 +67,9 @@ export default function App() {
                 const token = sessionData?.access_token;
                 if (token) {
                   const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/project_collaborators?user_id=eq.${user.id}&role=eq.proprietor&select=project_id`, {
-                    headers: { 
-                      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 
-                      'Authorization': `Bearer ${token}` 
+                    headers: {
+                      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                      'Authorization': `Bearer ${token}`
                     }
                   });
                   if (res.ok) {
@@ -137,8 +138,10 @@ export default function App() {
         return <FinancialsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'logs':
         return <LogsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
-      case 'resources':
+      case 'calculator':
         return <CalculatorView />;
+      case 'regularization':
+        return <RegularizationView />;
       case 'safety':
         return <ProprietorView selectedProjectId={selectedProjectId} />;
       default:
@@ -153,7 +156,8 @@ export default function App() {
       case 'schedule': return 'Cronograma de Obra';
       case 'financials': return 'Financeiro da Obra';
       case 'logs': return 'Diário de Obra';
-      case 'resources': return 'Calculadora INSS';
+      case 'calculator': return 'Calculadora INSS';
+      case 'regularization': return 'Regularização INSS';
       case 'safety': return 'Painel do Proprietário';
       default: return 'AevumPro';
     }

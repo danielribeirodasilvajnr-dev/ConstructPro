@@ -5,6 +5,7 @@ import {
   Users,
   ShieldCheck,
   FileSpreadsheet,
+  Calculator,
   CircleHelp,
   LogOut
 } from 'lucide-react';
@@ -34,7 +35,8 @@ export function Sidebar({
   const allNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'projects', label: 'Projetos', icon: ClipboardList },
-    { id: 'resources', label: 'Calculadora INSS', icon: Users },
+    { id: 'calculator', label: 'Calculadora INSS', icon: Calculator },
+    { id: 'regularization', label: 'Regularização INSS', icon: FileSpreadsheet },
     { id: 'safety', label: 'Painel do Proprietário', icon: ShieldCheck },
   ];
 

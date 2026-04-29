@@ -20,7 +20,7 @@ export function useProjectData(projectId: string | null) {
     if (!projectId) return;
     setLoading(true);
     try {
-      const timeoutPromise = new Promise<any>((_, reject) => 
+      const timeoutPromise = new Promise<any>((_, reject) =>
         setTimeout(() => reject(new Error('Supabase timeout')), 2500)
       );
 
@@ -46,7 +46,7 @@ export function useProjectData(projectId: string | null) {
         results = raceResult;
       } catch (e) {
         console.warn('Supabase hung in useProjectData, triggering fallback');
-        
+
         // RAW FETCH FALLBACK for specific project data
         const sessionStr = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
         if (sessionStr) {
@@ -56,9 +56,9 @@ export function useProjectData(projectId: string | null) {
             const fetchTable = async (table: string, params: string = '') => {
               try {
                 const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/${table}?project_id=eq.${projectId}${params}`, {
-                  headers: { 
-                    'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 
-                    'Authorization': `Bearer ${token}` 
+                  headers: {
+                    'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${token}`
                   }
                 });
                 return res.ok ? await res.json() : [];
