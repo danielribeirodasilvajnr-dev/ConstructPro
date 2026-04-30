@@ -157,8 +157,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [isFetchingCep, setIsFetchingCep] = useState(false);
   const [isTransmitting, setIsTransmitting] = useState(false);
   const [isUploadingCert, setIsUploadingCert] = useState(false);
-  const [certificateUrl, setCertificateUrl] = useState('');
+  const [certificateUrl, setCertificateUrl] = useState<string | null>(null);
   const [certificatePassword, setCertificatePassword] = useState('');
+  const [allEvents, setAllEvents] = useState<any[]>([]);
+  const [esocialCredentials, setEsocialCredentials] = useState<any>(null);
   const [certificateApelido, setCertificateApelido] = useState('');
   const [certificateCpfCnpj, setCertificateCpfCnpj] = useState('');
   const [esocialStatus, setEsocialStatus] = useState<{
@@ -598,51 +600,48 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         eventIdInDb = eventData.id;
       }
 
-      // ETAPA 5, 6, 7 - ASSINATURA E ENVIO (SIMULAÇÃO)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // ETAPA 5, 6, 7 - ASSINATURA E ENVIO (REAL VIA BACKEND)
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: {
+          eventType: 'S-2300',
+          regularizationId: inssRegularization.id,
+          eventData: {
+            proprietarioCpfCnpj,
+            workerCpf,
+            workerNome,
+            workerSexo,
+            workerCorPele,
+            workerEscolaridade,
+            workerNascimento,
+            workerPaisNascimento,
+            workerLogradouro,
+            workerNumero,
+            workerComplemento,
+            workerBairro,
+            workerCep,
+            workerCodIbge,
+            workerUf,
+            workerMatricula,
+            workerCategoria,
+            workerCargo,
+            workerCbo
+          }
+        }
+      });
 
-      // Lógica de Sucesso ou Erro Fiscal
-      const isSuccess = !forceDuplicityError && Math.random() > 0.05; 
-      const protocolo = `PRT.${Math.random().toString(36).substring(7).toUpperCase()}`;
-      const recibo = isSuccess ? `1.${Math.random().toString().substring(2, 12)}` : null;
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
+
+      const { protocolo } = response;
       
-      const { error: updateError } = await supabase
-        .from('esocial_events')
-        .update({
-          status: isSuccess ? 'SUCESSO' : 'ERRO',
-          protocolo,
-          recibo,
-          resposta_governo: { 
-            envio_codigo: '201',
-            envio_mensagem: 'Lote recebido com sucesso.',
-            proc_codigo: isSuccess ? '202' : '401',
-            proc_mensagem: isSuccess ? 'Sucesso' : 'Conteúdo do evento inválido.',
-            detalhe: forceDuplicityError ? 'Foi localizado no sistema um evento em duplicidade com o evento a ser enviado, mesmo Tipo de Inscrição, Número de Inscrição, CPF, Matrícula.' : (!isSuccess ? 'Erro de validação na estrutura do XML.' : null),
-            acao_sugerida: forceDuplicityError ? 'Verificar a matrícula informada e, se já utilizada em S-2190, S-2200, S-2300, S-2500 ou S-8200 de outro trabalhador, gerar uma nova matrícula.' : null
-          },
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', eventIdInDb);
-
-      if (updateError) throw updateError;
+      alert(`Lote enviado com sucesso! Protocolo: ${protocolo}. O processamento no eSocial pode levar alguns segundos.`);
 
       // ETAPA 9 - FEEDBACK
-      if (isSuccess) {
-        alert('Consulta finalizada! O evento foi processado com SUCESSO.');
-        // Retorno automático após sucesso
-        setTimeout(() => {
-          setCurrentView('management');
-          fetchWorkers();
-        }, 1500);
-      } else {
-        alert('O eSocial rejeitou o evento. Verifique os detalhes no histórico.');
-      }
-
       checkEsocialStatus(selectedWorker.cpf);
     } catch (err: any) {
       console.error('Error in eSocial flow:', err);
       const errorMsg = err.message || err.details || 'Erro desconhecido';
-      alert(`Erro técnico na comunicação com o eSocial:\n\nDetalhamento: ${errorMsg}`);
+      alert(`Erro na integração com o eSocial:\n\n${errorMsg}`);
     } finally {
       setIsTransmitting(false);
     }
@@ -653,56 +652,25 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
     setIsTransmitting(true);
     try {
-      // ETAPA 8 - CONSULTA (SIMULAÇÃO)
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // ETAPA 8 - CONSULTA (REAL VIA BACKEND)
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: {
+          action: 'CONSULT',
+          protocolo: esocialStatus.protocolo
+        }
+      });
+
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
       
-      // Verificação real de duplicidade na consulta
-      const { data: existingSuccess } = await supabase
-        .from('esocial_events')
-        .select('id')
-        .eq('regularization_id', inssRegularization.id)
-        .eq('cpf_trabalhador', esocialStatus.cpf_trabalhador)
-        .eq('status', 'SUCESSO')
-        .neq('id', esocialStatus.id)
-        .limit(1);
-
-      // Se já existe sucesso e este envio não é retificação (estamos simulando que indRetif=1 no XML se não houver recibo)
-      // Nota: Na nossa simulação, se indRetif fosse 2, o esocialStatus.recibo estaria preenchido
-      const isOriginal = !esocialStatus.recibo; 
-      const forceDuplicity = isOriginal && existingSuccess && existingSuccess.length > 0;
-
-      const isSuccess = !forceDuplicity && Math.random() > 0.05; 
-      const protocolo = esocialStatus.protocolo || `PRT.${Math.random().toString(36).substring(7).toUpperCase()}`;
-      const recibo = isSuccess ? (esocialStatus.recibo || `1.${Math.random().toString().substring(2, 12)}`) : null;
-      
-      const { error: updateError } = await supabase
-        .from('esocial_events')
-        .update({
-          status: isSuccess ? 'SUCESSO' : 'ERRO',
-          protocolo,
-          recibo,
-          resposta_governo: { 
-            envio_codigo: '201',
-            envio_mensagem: 'Lote recebido com sucesso.',
-            proc_codigo: isSuccess ? '202' : '401',
-            proc_mensagem: isSuccess ? 'Sucesso' : 'Conteúdo do evento inválido.',
-            detalhe: forceDuplicity ? 'Foi localizado no sistema um evento em duplicidade com o evento a ser enviado, mesmo Tipo de Inscrição, Número de Inscrição, CPF, Matrícula.' : (!isSuccess ? 'Erro de validação técnica na estrutura do XML.' : null),
-            acao_sugerida: forceDuplicity ? 'Verificar a matrícula informada e, se já utilizada em S-2190, S-2200, S-2300, S-2500 ou S-8200 de outro trabalhador, gerar uma nova matrícula.' : null
-          },
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', esocialStatus.id);
-          
-      if (updateError) throw updateError;
-
-      if (isSuccess) {
+      if (response.status === 'SUCESSO') {
         alert('Consulta finalizada! O evento foi processado com SUCESSO.');
         setTimeout(() => {
           setCurrentView('management');
           fetchWorkers();
         }, 1500);
       } else {
-        alert('O eSocial rejeitou o evento. Verifique os detalhes no log de processamento.');
+        alert('O eSocial retornou erro no processamento. Verifique os detalhes no log.');
       }
       
       checkEsocialStatus(esocialStatus.cpf_trabalhador);
@@ -739,30 +707,23 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
     setIsTransmitting(true);
     try {
-      const protocoloInicial = `PRT.S1000.${Math.random().toString(36).substring(7).toUpperCase()}`;
-      let eventIdInDb = esocialS1000Status?.id;
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: {
+          eventType: 'S-1000',
+          regularizationId: inssRegularization.id,
+          indRetif,
+          nrRecibo,
+          eventData: {
+            proprietarioNome,
+            proprietarioCpfCnpj
+          }
+        }
+      });
 
-      if (indRetif === 1 && eventIdInDb) {
-        await supabase.from('esocial_events').update({
-          status: 'PROCESSANDO',
-          protocolo: protocoloInicial,
-          resposta_governo: { envio_codigo: '201', envio_mensagem: 'Lote recebido com sucesso (Reenvio).' },
-          updated_at: new Date().toISOString()
-        }).eq('id', eventIdInDb);
-      } else {
-        const { data, error } = await supabase.from('esocial_events').insert({
-          regularization_id: inssRegularization.id,
-          tipo_evento: 'S-1000',
-          cpf_trabalhador: 'EMPREGADOR',
-          status: 'PROCESSANDO',
-          protocolo: protocoloInicial,
-          resposta_governo: { envio_codigo: '201', envio_mensagem: 'Lote recebido com sucesso.' }
-        }).select().single();
-        if (error) throw error;
-        eventIdInDb = data.id;
-      }
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      alert(`Lote S-1000 enviado com sucesso! Protocolo: ${response.protocolo}`);
       checkS1000Status();
     } catch (err: any) {
       alert(`Erro no S-1000: ${err.message}`);
@@ -775,23 +736,17 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!esocialS1000Status || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const isSuccess = Math.random() > 0.05;
-      const recibo = isSuccess ? `1.${Math.random().toString().substring(2, 12)}` : null;
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: {
+          action: 'CONSULT',
+          protocolo: esocialS1000Status.protocolo
+        }
+      });
 
-      await supabase.from('esocial_events').update({
-        status: isSuccess ? 'SUCESSO' : 'ERRO',
-        recibo,
-        resposta_governo: {
-          envio_codigo: '201',
-          envio_mensagem: 'Lote recebido com sucesso.',
-          proc_codigo: isSuccess ? '202' : '401',
-          proc_mensagem: isSuccess ? 'Sucesso' : 'Erro de processamento'
-        },
-        updated_at: new Date().toISOString()
-      }).eq('id', esocialS1000Status.id);
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
 
-      if (isSuccess) alert('S-1000 processado com SUCESSO!');
+      if (response.status === 'SUCESSO') alert('S-1000 processado com SUCESSO!');
       checkS1000Status();
     } catch (err: any) {
       alert(`Erro na consulta S-1000: ${err.message}`);
@@ -802,44 +757,35 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
   const handleTransmitS1005 = async () => {
     if (!inssRegularization || isTransmitting) return;
-
     if (!cnoNumero) {
       alert('Número do CNO é obrigatório para o evento S-1005.');
       return;
     }
 
     let indRetif = 1;
+    let nrRecibo = null;
     if (esocialS1005Status?.status === 'SUCESSO') {
       if (!confirm('O cadastro da obra já foi processado. Deseja enviar uma RETIFICAÇÃO?')) return;
       indRetif = 2;
+      nrRecibo = esocialS1005Status.recibo;
     }
 
     setIsTransmitting(true);
     try {
-      const protocoloInicial = `PRT.S1005.${Math.random().toString(36).substring(7).toUpperCase()}`;
-      let eventIdInDb = esocialS1005Status?.id;
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: {
+          eventType: 'S-1005',
+          regularizationId: inssRegularization.id,
+          indRetif,
+          nrRecibo,
+          eventData: { proprietarioCpfCnpj, cnoNumero }
+        }
+      });
 
-      if (indRetif === 1 && eventIdInDb) {
-        await supabase.from('esocial_events').update({
-          status: 'PROCESSANDO',
-          protocolo: protocoloInicial,
-          resposta_governo: { envio_codigo: '201', envio_mensagem: 'Lote recebido com sucesso (Reenvio).' },
-          updated_at: new Date().toISOString()
-        }).eq('id', eventIdInDb);
-      } else {
-        const { data, error } = await supabase.from('esocial_events').insert({
-          regularization_id: inssRegularization.id,
-          tipo_evento: 'S-1005',
-          cpf_trabalhador: 'OBRA',
-          status: 'PROCESSANDO',
-          protocolo: protocoloInicial,
-          resposta_governo: { envio_codigo: '201', envio_mensagem: 'Lote recebido com sucesso.' }
-        }).select().single();
-        if (error) throw error;
-        eventIdInDb = data.id;
-      }
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      alert(`Lote S-1005 enviado! Protocolo: ${response.protocolo}`);
       checkS1005Status();
     } catch (err: any) {
       alert(`Erro no S-1005: ${err.message}`);
@@ -852,23 +798,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!esocialS1005Status || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const isSuccess = Math.random() > 0.05;
-      const recibo = isSuccess ? `1.${Math.random().toString().substring(2, 12)}` : null;
-
-      await supabase.from('esocial_events').update({
-        status: isSuccess ? 'SUCESSO' : 'ERRO',
-        recibo,
-        resposta_governo: {
-          envio_codigo: '201',
-          envio_mensagem: 'Lote recebido com sucesso.',
-          proc_codigo: isSuccess ? '202' : '401',
-          proc_mensagem: isSuccess ? 'Sucesso' : 'Erro de processamento'
-        },
-        updated_at: new Date().toISOString()
-      }).eq('id', esocialS1005Status.id);
-
-      if (isSuccess) alert('S-1005 processado com SUCESSO!');
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: { action: 'CONSULT', protocolo: esocialS1005Status.protocolo }
+      });
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
+      if (response.status === 'SUCESSO') alert('S-1005 processado com SUCESSO!');
       checkS1005Status();
     } catch (err: any) {
       alert(`Erro na consulta S-1005: ${err.message}`);
@@ -881,37 +816,29 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!inssRegularization || isTransmitting) return;
 
     let indRetif = 1;
+    let nrRecibo = null;
     if (esocialS1020Status?.status === 'SUCESSO') {
       if (!confirm('A lotação tributária já foi processada. Deseja enviar uma RETIFICAÇÃO?')) return;
       indRetif = 2;
+      nrRecibo = esocialS1020Status.recibo;
     }
 
     setIsTransmitting(true);
     try {
-      const protocoloInicial = `PRT.S1020.${Math.random().toString(36).substring(7).toUpperCase()}`;
-      let eventIdInDb = esocialS1020Status?.id;
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: {
+          eventType: 'S-1020',
+          regularizationId: inssRegularization.id,
+          indRetif,
+          nrRecibo,
+          eventData: { proprietarioCpfCnpj }
+        }
+      });
 
-      if (indRetif === 1 && eventIdInDb) {
-        await supabase.from('esocial_events').update({
-          status: 'PROCESSANDO',
-          protocolo: protocoloInicial,
-          resposta_governo: { envio_codigo: '201', envio_mensagem: 'Lote recebido com sucesso (Reenvio).' },
-          updated_at: new Date().toISOString()
-        }).eq('id', eventIdInDb);
-      } else {
-        const { data, error } = await supabase.from('esocial_events').insert({
-          regularization_id: inssRegularization.id,
-          tipo_evento: 'S-1020',
-          cpf_trabalhador: 'LOTACAO',
-          status: 'PROCESSANDO',
-          protocolo: protocoloInicial,
-          resposta_governo: { envio_codigo: '201', envio_mensagem: 'Lote recebido com sucesso.' }
-        }).select().single();
-        if (error) throw error;
-        eventIdInDb = data.id;
-      }
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      alert(`Lote S-1020 enviado! Protocolo: ${response.protocolo}`);
       checkS1020Status();
     } catch (err: any) {
       alert(`Erro no S-1020: ${err.message}`);
@@ -924,23 +851,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!esocialS1020Status || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const isSuccess = Math.random() > 0.05;
-      const recibo = isSuccess ? `1.${Math.random().toString().substring(2, 12)}` : null;
-
-      await supabase.from('esocial_events').update({
-        status: isSuccess ? 'SUCESSO' : 'ERRO',
-        recibo,
-        resposta_governo: {
-          envio_codigo: '201',
-          envio_mensagem: 'Lote recebido com sucesso.',
-          proc_codigo: isSuccess ? '202' : '401',
-          proc_mensagem: isSuccess ? 'Sucesso' : 'Erro de processamento'
-        },
-        updated_at: new Date().toISOString()
-      }).eq('id', esocialS1020Status.id);
-
-      if (isSuccess) alert('S-1020 processado com SUCESSO!');
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: { action: 'CONSULT', protocolo: esocialS1020Status.protocolo }
+      });
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
+      if (response.status === 'SUCESSO') alert('S-1020 processado com SUCESSO!');
       checkS1020Status();
     } catch (err: any) {
       alert(`Erro na consulta S-1020: ${err.message}`);
@@ -952,37 +868,29 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!inssRegularization || isTransmitting) return;
 
     let indRetif = 1;
+    let nrRecibo = null;
     if (esocialS1010Status?.status === 'SUCESSO') {
       if (!confirm('A rúbrica já foi processada. Deseja enviar uma RETIFICAÇÃO?')) return;
       indRetif = 2;
+      nrRecibo = esocialS1010Status.recibo;
     }
 
     setIsTransmitting(true);
     try {
-      const protocoloInicial = `PRT.S1010.${Math.random().toString(36).substring(7).toUpperCase()}`;
-      let eventIdInDb = esocialS1010Status?.id;
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: {
+          eventType: 'S-1010',
+          regularizationId: inssRegularization.id,
+          indRetif,
+          nrRecibo,
+          eventData: { proprietarioCpfCnpj }
+        }
+      });
 
-      if (indRetif === 1 && eventIdInDb) {
-        await supabase.from('esocial_events').update({
-          status: 'PROCESSANDO',
-          protocolo: protocoloInicial,
-          resposta_governo: { envio_codigo: '201', envio_mensagem: 'Lote recebido com sucesso (Reenvio).' },
-          updated_at: new Date().toISOString()
-        }).eq('id', eventIdInDb);
-      } else {
-        const { data, error } = await supabase.from('esocial_events').insert({
-          regularization_id: inssRegularization.id,
-          tipo_evento: 'S-1010',
-          cpf_trabalhador: 'RUBRICA',
-          status: 'PROCESSANDO',
-          protocolo: protocoloInicial,
-          resposta_governo: { envio_codigo: '201', envio_mensagem: 'Lote recebido com sucesso.' }
-        }).select().single();
-        if (error) throw error;
-        eventIdInDb = data.id;
-      }
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      alert(`Lote S-1010 enviado! Protocolo: ${response.protocolo}`);
       checkS1010Status();
     } catch (err: any) {
       alert(`Erro no S-1010: ${err.message}`);
@@ -995,23 +903,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!esocialS1010Status || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const isSuccess = Math.random() > 0.05;
-      const recibo = isSuccess ? `1.${Math.random().toString().substring(2, 12)}` : null;
-
-      await supabase.from('esocial_events').update({
-        status: isSuccess ? 'SUCESSO' : 'ERRO',
-        recibo,
-        resposta_governo: {
-          envio_codigo: '201',
-          envio_mensagem: 'Lote recebido com sucesso.',
-          proc_codigo: isSuccess ? '202' : '401',
-          proc_mensagem: isSuccess ? 'Sucesso' : 'Erro de processamento'
-        },
-        updated_at: new Date().toISOString()
-      }).eq('id', esocialS1010Status.id);
-
-      if (isSuccess) alert('S-1010 processado com SUCESSO!');
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: { action: 'CONSULT', protocolo: esocialS1010Status.protocolo }
+      });
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
+      if (response.status === 'SUCESSO') alert('S-1010 processado com SUCESSO!');
       checkS1010Status();
     } catch (err: any) {
       alert(`Erro na consulta S-1010: ${err.message}`);
@@ -1021,22 +918,40 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   };
 
   const handleTransmitS1200 = async () => {
-    if (!selectedRemForEvent || isTransmitting) return;
+    if (!selectedRemForEvent || isTransmitting || !inssRegularization) return;
+
+    const worker = workers.find(w => w.id === selectedRemForEvent.workerId);
+    if (worker?.esocial_status !== 'SUCESSO') {
+      alert('ERRO DE FLUXO: Você precisa transmitir o evento S-2300 deste trabalhador com sucesso antes de enviar a remuneração (S-1200).');
+      return;
+    }
 
     setIsTransmitting(true);
     try {
-      const protocoloInicial = `PRT.S1200.${Math.random().toString(36).substring(7).toUpperCase()}`;
-      
-      // Simulate API call and DB update
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: {
+          eventType: 'S-1200',
+          regularizationId: inssRegularization.id,
+          eventData: {
+            workerCpf: worker.cpf,
+            proprietarioCpfCnpj,
+            month: selectedRemForEvent.month,
+            year: selectedRemForEvent.year,
+            value: selectedRemForEvent.value
+          }
+        }
+      });
+
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
+
       // Update local state to PROCESSANDO
       setAllRemunerations(prev => prev.map(r => 
-        r.id === selectedRemForEvent.id ? { ...r, remStatus: 'PROCESSANDO', remProtocolo: protocoloInicial } : r
+        r.id === selectedRemForEvent.id ? { ...r, remStatus: 'PROCESSANDO', remProtocolo: response.protocolo } : r
       ));
       
-      setSelectedRemForEvent((prev: any) => ({ ...prev, remStatus: 'PROCESSANDO', remProtocolo: protocoloInicial }));
-      alert(`Evento S-1200 enviado! Protocolo: ${protocoloInicial}`);
+      setSelectedRemForEvent((prev: any) => ({ ...prev, remStatus: 'PROCESSANDO', remProtocolo: response.protocolo }));
+      alert(`Lote S-1200 enviado! Protocolo: ${response.protocolo}`);
     } catch (err: any) {
       alert(`Erro no S-1200: ${err.message}`);
     } finally {
@@ -1048,10 +963,17 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!selectedRemForEvent || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const isSuccess = Math.random() > 0.1; // 90% success rate
-      const recibo = isSuccess ? `1.${Math.random().toString().substring(2, 12)}` : null;
-      const status = isSuccess ? 'SUCESSO' : 'ERRO';
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: {
+          action: 'CONSULT',
+          protocolo: selectedRemForEvent.remProtocolo
+        }
+      });
+
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
+
+      const { status, recibo } = response;
 
       // Update local state
       setAllRemunerations(prev => prev.map(r => 
@@ -1060,8 +982,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       setSelectedRemForEvent((prev: any) => ({ ...prev, remStatus: status, remRecibo: recibo }));
       
-      if (isSuccess) alert('S-1200 processado com SUCESSO!');
-      else alert('Erro ao processar S-1200. Verifique os logs.');
+      if (status === 'SUCESSO') alert('S-1200 processado com SUCESSO!');
+      else alert('Erro ao processar S-1200. Verifique os detalhes no log.');
     } catch (err: any) {
       alert(`Erro na consulta S-1200: ${err.message}`);
     } finally {
@@ -1070,22 +992,33 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   };
 
   const handleTransmitS1210 = async () => {
-    if (!selectedRemForEvent || isTransmitting) return;
+    if (!selectedRemForEvent || isTransmitting || !inssRegularization) return;
+    const worker = workers.find(w => w.id === selectedRemForEvent.workerId);
 
     setIsTransmitting(true);
     try {
-      const protocoloInicial = `PRT.S1210.${Math.random().toString(36).substring(7).toUpperCase()}`;
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Update local state to PROCESSANDO
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: {
+          eventType: 'S-1210',
+          regularizationId: inssRegularization.id,
+          eventData: {
+            workerCpf: worker?.cpf,
+            proprietarioCpfCnpj,
+            month: selectedRemForEvent.month,
+            year: selectedRemForEvent.year,
+            value: selectedRemForEvent.value
+          }
+        }
+      });
+
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
+
       setAllRemunerations(prev => prev.map(r => 
-        r.id === selectedRemForEvent.id ? { ...r, pagStatus: 'PROCESSANDO', pagProtocolo: protocoloInicial } : r
+        r.id === selectedRemForEvent.id ? { ...r, pagStatus: 'PROCESSANDO', pagProtocolo: response.protocolo } : r
       ));
-      
-      setSelectedRemForEvent((prev: any) => ({ ...prev, pagStatus: 'PROCESSANDO', pagProtocolo: protocoloInicial }));
-      alert(`Evento S-1210 enviado! Protocolo: ${protocoloInicial}`);
+      setSelectedRemForEvent((prev: any) => ({ ...prev, pagStatus: 'PROCESSANDO', pagProtocolo: response.protocolo }));
+      alert(`Lote S-1210 enviado! Protocolo: ${response.protocolo}`);
     } catch (err: any) {
       alert(`Erro no S-1210: ${err.message}`);
     } finally {
@@ -1097,19 +1030,17 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!selectedRemForEvent || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const isSuccess = Math.random() > 0.1;
-      const recibo = isSuccess ? `1.${Math.random().toString().substring(2, 12)}` : null;
-      const status = isSuccess ? 'SUCESSO' : 'ERRO';
-
-      // Update local state
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: { action: 'CONSULT', protocolo: selectedRemForEvent.pagProtocolo }
+      });
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
+      const { status, recibo } = response;
       setAllRemunerations(prev => prev.map(r => 
         r.id === selectedRemForEvent.id ? { ...r, pagStatus: status, pagRecibo: recibo } : r
       ));
-
       setSelectedRemForEvent((prev: any) => ({ ...prev, pagStatus: status, pagRecibo: recibo }));
-      
-      if (isSuccess) alert('S-1210 processado com SUCESSO!');
+      if (status === 'SUCESSO') alert('S-1210 processado com SUCESSO!');
       else alert('Erro ao processar S-1210.');
     } catch (err: any) {
       alert(`Erro na consulta S-1210: ${err.message}`);
@@ -1120,22 +1051,26 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
 
   const handleTransmitS1298 = async () => {
-    if (!selectedPeriodForEvent || isTransmitting) return;
-
+    if (!selectedPeriodForEvent || isTransmitting || !inssRegularization) return;
     setIsTransmitting(true);
     try {
-      const protocoloInicial = `PRT.S1298.${Math.random().toString(36).substring(7).toUpperCase()}`;
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: {
+          eventType: 'S-1298',
+          regularizationId: inssRegularization.id,
+          eventData: { period: selectedPeriodForEvent }
+        }
+      });
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
       setPeriodStatuses(prev => ({
         ...prev,
         [selectedPeriodForEvent]: { 
           ...prev[selectedPeriodForEvent], 
           s1298Status: 'PROCESSANDO', 
-          s1298Protocolo: protocoloInicial 
+          s1298Protocolo: response.protocolo 
         }
       }));
-      
       alert(`Evento S-1298 enviado para o período ${selectedPeriodForEvent}!`);
     } catch (err: any) {
       alert(`Erro no S-1298: ${err.message}`);
@@ -1148,21 +1083,17 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!selectedPeriodForEvent || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const isSuccess = Math.random() > 0.05;
-      const recibo = isSuccess ? `1.${Math.random().toString().substring(2, 12)}` : null;
-      const status = isSuccess ? 'SUCESSO' : 'ERRO';
-
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: { action: 'CONSULT', protocolo: periodStatuses[selectedPeriodForEvent]?.s1298Protocolo }
+      });
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
+      const { status, recibo } = response;
       setPeriodStatuses(prev => ({
         ...prev,
-        [selectedPeriodForEvent]: { 
-          ...prev[selectedPeriodForEvent], 
-          s1298Status: status, 
-          s1298Recibo: recibo 
-        }
+        [selectedPeriodForEvent]: { ...prev[selectedPeriodForEvent], s1298Status: status, s1298Recibo: recibo }
       }));
-      
-      if (isSuccess) alert('S-1298 processado com SUCESSO!');
+      if (status === 'SUCESSO') alert('S-1298 processado com SUCESSO!');
       else alert('Erro ao processar reabertura.');
     } catch (err: any) {
       alert(`Erro na consulta S-1298: ${err.message}`);
@@ -1173,22 +1104,31 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
 
   const handleTransmitS1299 = async () => {
-    if (!selectedPeriodForEvent || isTransmitting) return;
-
+    if (!selectedPeriodForEvent || isTransmitting || !inssRegularization) return;
     setIsTransmitting(true);
     try {
-      const protocoloInicial = `PRT.S1299.${Math.random().toString(36).substring(7).toUpperCase()}`;
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: {
+          eventType: 'S-1299',
+          regularizationId: inssRegularization.id,
+          eventData: { 
+            period: selectedPeriodForEvent,
+            proprietarioCpfCnpj,
+            year: selectedPeriodForEvent.split('/')[1],
+            month: selectedPeriodForEvent.split('/')[0]
+          }
+        }
+      });
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
       setPeriodStatuses(prev => ({
         ...prev,
         [selectedPeriodForEvent]: { 
           ...prev[selectedPeriodForEvent], 
           s1299Status: 'PROCESSANDO', 
-          s1299Protocolo: protocoloInicial 
+          s1299Protocolo: response.protocolo 
         }
       }));
-      
       alert(`Folha de pagamento FECHADA para o período ${selectedPeriodForEvent}!`);
     } catch (err: any) {
       alert(`Erro no S-1299: ${err.message}`);
@@ -1259,6 +1199,98 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       setWorkers(workersWithStatus);
     } catch (err) {
       console.error('Error fetching workers:', err);
+    }
+  };
+
+  const fetchEventsHistory = async () => {
+    if (!inssRegularization) return;
+    try {
+      const { data, error } = await supabase
+        .from('esocial_events')
+        .select('*')
+        .eq('regularization_id', inssRegularization.id)
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      setAllEvents(data || []);
+    } catch (err) {
+      console.error('Error fetching event history:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (inssRegularization) {
+      fetchWorkers();
+      fetchCredentials();
+      fetchEventsHistory();
+    }
+  }, [inssRegularization]);
+
+  const fetchCredentials = async () => {
+    if (!inssRegularization) return;
+    const { data } = await supabase
+      .from('esocial_credentials')
+      .select('*')
+      .eq('regularization_id', inssRegularization.id)
+      .single();
+    
+    if (data) {
+      setEsocialCredentials(data);
+      setCertificateUrl(data.certificate_url);
+      // We don't set the password in the frontend state for security, 
+      // it will be handled by the Edge Function
+    }
+  };
+
+  const handleSaveCredentials = async () => {
+    if (!inssRegularization || !certificateUrl || !certificatePassword) {
+      alert('Preencha o certificado e a senha.');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('esocial_credentials').upsert({
+        regularization_id: inssRegularization.id,
+        certificate_url: certificateUrl,
+        certificate_password: certificatePassword, // Encrypted at rest in DB (Ideally)
+        updated_at: new Date().toISOString()
+      });
+
+      if (error) throw error;
+      alert('Configurações do certificado salvas com segurança no banco de dados!');
+      fetchCredentials();
+    } catch (err: any) {
+      alert(`Erro ao salvar credenciais: ${err.message}`);
+    }
+  };
+
+  const handleUploadCertificate = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !inssRegularization) return;
+
+    setIsUploadingCert(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${inssRegularization.id}_${Math.random()}.${fileExt}`;
+      const filePath = `certificates/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('esocial_files')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('esocial_files')
+        .getPublicUrl(filePath);
+
+      setCertificateUrl(publicUrl);
+      setCertificateApelido(file.name);
+      alert('Certificado enviado com sucesso! Agora informe a senha e clique em Salvar.');
+    } catch (err: any) {
+      alert(`Erro no upload: ${err.message}`);
+    } finally {
+      setIsUploadingCert(false);
     }
   };
 
@@ -1788,6 +1820,72 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
 
           <p className="text-slate-400 text-[10px] italic font-medium uppercase tracking-wider">Cadastre trabalhador e remunerações para liberar os botões acima.</p>
+
+          {/* Certificate Configuration */}
+          <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
+            <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-sm font-bold text-slate-700">Configuração do certificado</span>
+              <X className="h-4 w-4 text-slate-400 cursor-pointer" />
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Certificado Digital A1 - Procurador</label>
+                    <div className="flex gap-2">
+                      <div className="flex-1 relative">
+                        <input 
+                          type="text" 
+                          readOnly 
+                          value={certificateApelido || (certificateUrl ? 'Certificado Carregado' : '')} 
+                          placeholder="Clique em escolher arquivo"
+                          className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm text-slate-600 outline-none"
+                        />
+                        {certificateUrl && <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />}
+                      </div>
+                      <label className="px-4 py-2 bg-slate-100 text-slate-700 rounded text-xs font-bold hover:bg-slate-200 cursor-pointer transition-colors flex items-center gap-2 border border-slate-200">
+                        {isUploadingCert ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                        Escolher
+                        <input type="file" className="hidden" accept=".pfx,.p12" onChange={handleUploadCertificate} disabled={isUploadingCert} />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Senha do Certificado</label>
+                    <input 
+                      type="password" 
+                      value={certificatePassword}
+                      onChange={(e) => setCertificatePassword(e.target.value)}
+                      placeholder="Senha do arquivo .pfx"
+                      className="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none transition-all shadow-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col justify-end gap-3">
+                  <div className="bg-emerald-50 border border-emerald-100 rounded p-3 flex items-start gap-3">
+                    <div className="p-1.5 bg-emerald-500 rounded text-white shadow-sm"><CheckCircle2 className="h-4 w-4" /></div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-emerald-800 uppercase tracking-tight">Status da Credencial</p>
+                      <p className="text-[10px] text-emerald-600 font-medium leading-relaxed">
+                        {esocialCredentials 
+                          ? '✅ Credenciais salvas com segurança no banco de dados. Os eventos serão assinados no servidor.' 
+                          : '⚠️ Nenhuma credencial configurada. Necessário para transmitir eventos ao eSocial.'}
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={handleSaveCredentials}
+                    className="w-full py-3 bg-blue-600 text-white rounded font-bold text-sm hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2 uppercase tracking-widest"
+                  >
+                    <Save className="h-4 w-4" />
+                    Salvar Configurações
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Workers Section */}
           <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
@@ -2807,6 +2905,78 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cód. Lotação</label>
                 <input type="text" value={workerCodLotacao} onChange={e => setWorkerCodLotacao(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+              </div>
+            </div>
+
+            {/* Transmission History - PREMIUM AUDIT VIEW */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mb-8">
+              <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <History className="h-5 w-5 text-slate-500" />
+                  <h3 className="font-bold text-slate-700">Histórico de Transmissões (Auditoria)</h3>
+                </div>
+                <button 
+                  onClick={fetchEventsHistory}
+                  className="p-1.5 hover:bg-slate-200 rounded-md transition-colors text-slate-400"
+                  title="Atualizar Histórico"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 border-b border-slate-100">
+                      <th className="px-4 py-2 text-left font-bold">Evento</th>
+                      <th className="px-4 py-2 text-left font-bold">Identificador (CPF/CNO)</th>
+                      <th className="px-4 py-2 text-left font-bold">Data/Hora</th>
+                      <th className="px-4 py-2 text-left font-bold">Protocolo</th>
+                      <th className="px-4 py-2 text-left font-bold">Recibo</th>
+                      <th className="px-4 py-2 text-center font-bold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allEvents && allEvents.length > 0 ? (
+                      allEvents.map((event: any) => (
+                        <tr key={event.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                          <td className="px-4 py-3">
+                            <span className="font-black text-slate-700">{event.tipo_evento}</span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 font-mono text-xs">
+                            {event.cpf_trabalhador}
+                          </td>
+                          <td className="px-4 py-3 text-slate-400 text-xs">
+                            {new Date(event.updated_at).toLocaleString('pt-BR')}
+                          </td>
+                          <td className="px-4 py-3 text-slate-400 font-mono text-[10px]">
+                            {event.protocolo || '---'}
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 font-bold">
+                            {event.recibo || (
+                              <span className="text-[10px] text-slate-300 italic font-normal">Aguardando...</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={cn(
+                              "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter",
+                              event.status === 'SUCESSO' ? "bg-emerald-100 text-emerald-700" :
+                              event.status === 'ERRO' ? "bg-red-100 text-red-700" :
+                              "bg-blue-100 text-blue-700 animate-pulse"
+                            )}>
+                              {event.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-slate-400 italic">
+                          Nenhum evento transmitido até o momento para esta obra.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
 
