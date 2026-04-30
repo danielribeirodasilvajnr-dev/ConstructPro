@@ -681,7 +681,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
         body: {
           action: 'CONSULT',
-          protocolo: esocialStatus.protocolo
+          protocolo: esocialStatus.protocolo,
+          regularizationId: inssRegularization.id
         }
       });
 
@@ -765,7 +766,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
         body: {
           action: 'CONSULT',
-          protocolo: esocialS1000Status.protocolo
+          protocolo: esocialS1000Status.protocolo,
+          regularizationId: inssRegularization.id
         }
       });
 
@@ -829,7 +831,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     setIsTransmitting(true);
     try {
       const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
-        body: { action: 'CONSULT', protocolo: esocialS1005Status.protocolo }
+        body: { action: 'CONSULT', protocolo: esocialS1005Status.protocolo, regularizationId: inssRegularization.id }
       });
       if (fnError) throw fnError;
       if (!response.success) throw new Error(response.error);
@@ -882,7 +884,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     setIsTransmitting(true);
     try {
       const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
-        body: { action: 'CONSULT', protocolo: esocialS1020Status.protocolo }
+        body: { action: 'CONSULT', protocolo: esocialS1020Status.protocolo, regularizationId: inssRegularization.id }
       });
       if (fnError) throw fnError;
       if (!response.success) throw new Error(response.error);
@@ -934,7 +936,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     setIsTransmitting(true);
     try {
       const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
-        body: { action: 'CONSULT', protocolo: esocialS1010Status.protocolo }
+        body: { action: 'CONSULT', protocolo: esocialS1010Status.protocolo, regularizationId: inssRegularization.id }
       });
       if (fnError) throw fnError;
       if (!response.success) throw new Error(response.error);
@@ -996,7 +998,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
         body: {
           action: 'CONSULT',
-          protocolo: selectedRemForEvent.remProtocolo
+          protocolo: selectedRemForEvent.remProtocolo,
+          regularizationId: inssRegularization.id
         }
       });
 
@@ -1061,7 +1064,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     setIsTransmitting(true);
     try {
       const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
-        body: { action: 'CONSULT', protocolo: selectedRemForEvent.pagProtocolo }
+        body: { action: 'CONSULT', protocolo: selectedRemForEvent.pagProtocolo, regularizationId: inssRegularization.id }
       });
       if (fnError) throw fnError;
       if (!response.success) throw new Error(response.error);
@@ -1114,7 +1117,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     setIsTransmitting(true);
     try {
       const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
-        body: { action: 'CONSULT', protocolo: periodStatuses[selectedPeriodForEvent]?.s1298Protocolo }
+        body: { action: 'CONSULT', protocolo: periodStatuses[selectedPeriodForEvent]?.s1298Protocolo, regularizationId: inssRegularization.id }
       });
       if (fnError) throw fnError;
       if (!response.success) throw new Error(response.error);
@@ -1403,7 +1406,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     setIsTransmitting(true);
     try {
       const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
-        body: { action: 'CONSULT', protocolo: selectedWorker.s2399_protocolo }
+        body: { action: 'CONSULT', protocolo: selectedWorker.s2399_protocolo, regularizationId: inssRegularization.id }
       });
       if (fnError) throw fnError;
       if (!response.success) throw new Error(response.error);
