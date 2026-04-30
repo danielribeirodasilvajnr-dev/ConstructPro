@@ -34,50 +34,38 @@ app.post('/esocial', async (req, res) => {
     const httpsAgent = new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: false, minVersion: 'TLSv1.2' });
 
     if (action === 'CONSULT') {
-      // Tentativa com HTTPS no SOAPAction e XML super limpo
+      const actions = [
+        '"http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos/ConsultarLoteEventos"',
+        '"http://www.esocial.gov.br/servicos/empregador/loteeventos/ServicoConsultarLoteEventos/ConsultarLoteEventos"',
+        '"ConsultarLoteEventos"'
+      ];
+
       const soapRequest = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos"><soapenv:Body><ws:ConsultarLoteEventos><ws:consulta><protocolo xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0">${protocolo}</protocolo></ws:consulta></ws:ConsultarLoteEventos></soapenv:Body></soapenv:Envelope>`;
-      
-      try {
-        // Tentamos primeiro com o padrão oficial
-        const response = await axios.post(URL_CONSULTA, soapRequest, {
-          headers: { 
-            'Content-Type': 'text/xml; charset=utf-8', 
-            'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos/ConsultarLoteEventos"' 
-          },
-          httpsAgent
-        });
-        
-        const result = response.data;
-        const reciboMatch = result.match(/<nrRecibo>(.*?)<\/nrRecibo>/);
-        const isSuccess = result.includes('sucesso') || result.includes('201') || result.includes('202');
-        
-        return res.json({ 
-          success: true, 
-          status: isSuccess ? 'SUCESSO' : 'PROCESSANDO', 
-          recibo: reciboMatch ? reciboMatch[1] : null 
-        });
-      } catch (err) {
-        // Se falhar o oficial, tentamos com HTTPS no Action (Truque de mestre para alguns servidores IIS)
+
+      let lastError;
+      for (const soapAction of actions) {
         try {
-          const response2 = await axios.post(URL_CONSULTA, soapRequest, {
-            headers: { 
-              'Content-Type': 'text/xml; charset=utf-8', 
-              'SOAPAction': '"https://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos/ConsultarLoteEventos"' 
-            },
-            httpsAgent
+          console.log(`Tentando SOAPAction: ${soapAction}`);
+          const response = await axios.post(URL_CONSULTA, soapRequest, {
+            headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': soapAction },
+            httpsAgent,
+            timeout: 10000
           });
-          const result2 = response2.data;
-          const reciboMatch2 = result2.match(/<nrRecibo>(.*?)<\/nrRecibo>/);
-          const isSuccess2 = result2.includes('sucesso') || result2.includes('201') || result2.includes('202');
-          return res.json({ success: true, status: isSuccess2 ? 'SUCESSO' : 'PROCESSANDO', recibo: reciboMatch2 ? reciboMatch2[1] : null });
-        } catch (err2) {
-          const errorDetail = err2.response?.data ? err2.response.data.toString().replace(/<[^>]*>/g, ' ').substring(0, 300) : err2.message;
-          return res.json({ success: false, error: `eSocial rejeitou consulta: ${errorDetail}` });
+          
+          const result = response.data;
+          const reciboMatch = result.match(/<nrRecibo>(.*?)<\/nrRecibo>/);
+          const isSuccess = result.includes('sucesso') || result.includes('201') || result.includes('202');
+          
+          return res.json({ success: true, status: isSuccess ? 'SUCESSO' : 'PROCESSANDO', recibo: reciboMatch ? reciboMatch[1] : null });
+        } catch (err) {
+          lastError = err.response?.data ? err.response.data.toString().replace(/<[^>]*>/g, ' ').substring(0, 200) : err.message;
+          console.log(`Falhou com ${soapAction}: ${lastError.substring(0, 50)}...`);
         }
       }
+      return res.json({ success: false, error: `eSocial rejeitou todas as variações de consulta. Último erro: ${lastError}` });
     }
 
-    // TRANSMISSÃO (O que já está funcionando!)
+    // TRANSMISSÃO (Validada e Funcionando!)
     const empCpfCnpj = (eventData.proprietarioCpfCnpj || eventData.cpf_cnpj || "").replace(/\D/g, '');
     const workerCpf = (eventData.workerCpf || eventData.cpf || "").replace(/\D/g, '');
     const workerNome = eventData.workerNome || eventData.nome || "";
@@ -126,4 +114,4 @@ function signXML(xml, privateKeyPem, certificatePem, eventId) {
   return sig.getSignedXml();
 }
 
-app.listen(3005, () => console.log("🚀 Proxy Automático v3 Online"));
+app.listen(3005, () => console.log("🚀 Proxy Inteligente v4 Online"));
