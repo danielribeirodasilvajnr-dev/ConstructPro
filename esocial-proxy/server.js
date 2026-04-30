@@ -34,13 +34,14 @@ app.post('/esocial', async (req, res) => {
     const httpsAgent = new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: false, minVersion: 'TLSv1.2' });
 
     if (action === 'CONSULT') {
-      // FORMATO "PRECISÃO CIRÚRGICA" (Sem prefixo na consulta, namespace direto nela)
-      const soapRequest = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos">
+      // TENTATIVA COM A BARRA FINAL (Truque de mestre para servidores IIS/WCF específicos)
+      const soapRequest = `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos">
   <soapenv:Body>
     <ws:ConsultarLoteEventos>
-      <consulta xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0">
-        <protocolo>${protocolo}</protocolo>
-      </consulta>
+      <ws:consulta>
+        <protocolo xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0">${protocolo}</protocolo>
+      </ws:consulta>
     </ws:ConsultarLoteEventos>
   </soapenv:Body>
 </soapenv:Envelope>`;
@@ -49,27 +50,43 @@ app.post('/esocial', async (req, res) => {
         const response = await axios.post(URL_CONSULTA, soapRequest, {
           headers: { 
             'Content-Type': 'text/xml; charset=utf-8', 
-            'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos/ConsultarLoteEventos"' 
+            // Note a barra no final da URI da ação
+            'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos/ConsultarLoteEventos/"' 
           },
           httpsAgent
         });
         
         const result = response.data;
         const reciboMatch = result.match(/<nrRecibo>(.*?)<\/nrRecibo>/);
-        // Em caso de erro de negócio (ex: trabalhador já existe), o governo manda o erro dentro do XML
-        const erroMatch = result.match(/<descResposta>(.*?)<\/descResposta>/);
-        
-        const isSuccess = result.includes('sucesso') || result.includes('201') || result.includes('202');
-        
-        return res.json({ 
-          success: true, 
-          status: isSuccess ? 'SUCESSO' : 'PROCESSANDO', 
-          recibo: reciboMatch ? reciboMatch[1] : null,
-          error: !isSuccess && erroMatch ? erroMatch[1] : null
-        });
+        return res.json({ success: true, status: result.includes('sucesso') ? 'SUCESSO' : 'PROCESSANDO', recibo: reciboMatch ? reciboMatch[1] : null });
       } catch (err) {
-        const errorDetail = err.response?.data ? err.response.data.toString().replace(/<[^>]*>/g, ' ').substring(0, 300) : err.message;
-        return res.json({ success: false, error: `eSocial rejeitou consulta: ${errorDetail}` });
+        // Se falhar com barra, tentamos SEM barra mas com o namespace da consulta na tag BODY
+        const soapRequest2 = `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+  <soapenv:Body>
+    <ConsultarLoteEventos xmlns="http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos">
+      <consulta xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0">
+        <protocolo>${protocolo}</protocolo>
+      </consulta>
+    </ConsultarLoteEventos>
+  </soapenv:Body>
+</soapenv:Envelope>`;
+
+        try {
+          const response2 = await axios.post(URL_CONSULTA, soapRequest2, {
+            headers: { 
+              'Content-Type': 'text/xml; charset=utf-8', 
+              'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos/ConsultarLoteEventos"' 
+            },
+            httpsAgent
+          });
+          const result2 = response2.data;
+          const reciboMatch2 = result2.match(/<nrRecibo>(.*?)<\/nrRecibo>/);
+          return res.json({ success: true, status: result2.includes('sucesso') ? 'SUCESSO' : 'PROCESSANDO', recibo: reciboMatch2 ? reciboMatch2[1] : null });
+        } catch (err2) {
+          const errorDetail = err2.response?.data ? err2.response.data.toString().replace(/<[^>]*>/g, ' ').substring(0, 300) : err2.message;
+          return res.json({ success: false, error: `eSocial rejeitou consulta final: ${errorDetail}` });
+        }
       }
     }
 
@@ -77,12 +94,10 @@ app.post('/esocial', async (req, res) => {
     const empCpfCnpj = (eventData.proprietarioCpfCnpj || eventData.cpf_cnpj || "").replace(/\D/g, '');
     const workerCpf = (eventData.workerCpf || eventData.cpf || "").replace(/\D/g, '');
     const workerNome = eventData.workerNome || eventData.nome || "";
-
     const tpInscEmpregador = empCpfCnpj.length === 11 ? '2' : '1';
     const timestamp = new Date().toISOString().replace(/[-:T.Z]/g, '').substring(0, 14);
     const eventId = `ID${tpInscEmpregador}${empCpfCnpj.padEnd(14, '0')}${timestamp}${Math.floor(Math.random()*10000).toString().padStart(5, '0')}`;
     let eventXml = `<evtTSVInicio xmlns="http://www.esocial.gov.br/schema/evt/evtTSVInicio/v_S_01_02_00" Id="${eventId}"><ideEvento><indRetif>1</indRetif><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>AevumPro1.0</verProc></ideEvento><ideEmpregador><tpInsc>${tpInscEmpregador}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><trabalhador><cpfTrab>${workerCpf}</cpfTrab><nmTrab>${workerNome}</nmTrab></trabalhador></evtTSVInicio>`;
-
     let privateKeyPem, certificatePem;
     const pfxAsn1 = forge.asn1.fromDer(forge.util.createBuffer(pfxBuffer).getBytes());
     const pfx = forge.pkcs12.pkcs12FromAsn1(pfxAsn1, credentials.certificate_password);
@@ -90,19 +105,15 @@ app.post('/esocial', async (req, res) => {
         if (e.key) privateKeyPem = forge.pki.privateKeyToPem(e.key);
         if (e.cert) certificatePem = forge.pki.certificateToPem(e.cert);
     }));
-
     const signedXml = signXML(eventXml, privateKeyPem, certificatePem, eventId);
     const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://www.esocial.gov.br/servicos/empregador/loteeventos/WsEnviarLoteEventos"><soapenv:Header/><soapenv:Body><ws:EnviarLoteEventos><ws:loteEventos><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/v1_1_1"><envioLoteEventos><ideEmpregador><tpInsc>${tpInscEmpregador}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTransmissor><tpInsc>${tpInscEmpregador}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideTransmissor><eventos><evento Id="${eventId}">${signedXml}</evento></eventos></envioLoteEventos></eSocial></ws:loteEventos></ws:EnviarLoteEventos></soapenv:Body></soapenv:Envelope>`;
-
     const response = await axios.post(URL_ENVIO, soapRequest, {
       headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/loteeventos/WsEnviarLoteEventos/EnviarLoteEventos"' },
       httpsAgent
     });
-    
     const protocoloMatch = response.data.match(/<protocolo>(.*?)<\/protocolo>/);
     if (!protocoloMatch) throw new Error('eSocial erro: ' + response.data.substring(0, 300));
     res.json({ success: true, protocolo: protocoloMatch[1] });
-
   } catch (error) {
     const errorMsg = error.response?.data ? error.response.data.toString().replace(/<[^>]*>/g, ' ').substring(0, 300) : error.message;
     res.status(200).json({ success: false, error: errorMsg });
@@ -122,4 +133,4 @@ function signXML(xml, privateKeyPem, certificatePem, eventId) {
   return sig.getSignedXml();
 }
 
-app.listen(3005, () => console.log("🚀 Proxy de Alta Precisão Online"));
+app.listen(3005, () => console.log("🚀 Proxy de Última Instância Online"));
