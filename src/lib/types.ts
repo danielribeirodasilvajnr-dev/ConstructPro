@@ -224,6 +224,7 @@ export interface INSSRegularization {
     apelido?: string;
     cpf_cnpj?: string;
   };
+  checklist_data?: Record<string, string>;
   created_at?: string;
   updated_at?: string;
 }

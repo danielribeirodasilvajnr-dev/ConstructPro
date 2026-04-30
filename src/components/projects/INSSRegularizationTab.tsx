@@ -62,7 +62,11 @@ interface Worker {
   tab_rubrica: string;
   cod_rubrica: string;
   cod_lotacao: string;
-  esocial_status?: string;
+  esocial_status?: 'PENDENTE' | 'ENVIADO' | 'PROCESSANDO' | 'SUCESSO' | 'ERRO';
+  s2399_status?: 'PENDENTE' | 'ENVIADO' | 'PROCESSANDO' | 'SUCESSO' | 'ERRO';
+  s2399_protocolo?: string;
+  s2399_recibo?: string;
+  s2399_date?: string;
 }
 
 interface INSSRegularizationTabProps {
@@ -103,7 +107,7 @@ const CATEGORIA_OPTIONS = [
 
 export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh, readOnly, isStandalone }: INSSRegularizationTabProps) {
   const { user } = useAuth();
-  const [currentView, setCurrentView] = useState<'summary' | 'management' | 'worker_form' | 's2300_view' | 's1200_view' | 's1210_view' | 's1298_view' | 's1000_view' | 's1005_view' | 's1010_view' | 's1020_view'>('summary');
+  const [currentView, setCurrentView] = useState<'summary' | 'management' | 'worker_form' | 's2300_view' | 's1200_view' | 's1210_view' | 's1298_view' | 's1000_view' | 's1005_view' | 's1010_view' | 's1020_view' | 's2399_view'>('summary');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
   const [workModalMode, setWorkModalMode] = useState<'simple' | 'detailed'>('simple');
@@ -126,6 +130,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [password, setPassword] = useState('');
   const [maedDate, setMaedDate] = useState('');
   const [parcelarDate, setParcelarDate] = useState('');
+  const [terminationDate, setTerminationDate] = useState(new Date().toISOString().split('T')[0]);
   
   // Form State - Work
   const [address, setAddress] = useState('');
@@ -239,6 +244,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [selectedRemForEvent, setSelectedRemForEvent] = useState<any>(null);
   const [selectedPeriodForEvent, setSelectedPeriodForEvent] = useState<string | null>(null);
   const [periodStatuses, setPeriodStatuses] = useState<Record<string, any>>({});
+  const [checklistData, setChecklistData] = useState<Record<string, string>>({});
   const [allRemunerations, setAllRemunerations] = useState<any[]>(() => {
     const saved = localStorage.getItem(`remunerations_${projectId}`);
     return saved ? JSON.parse(saved) : [];
@@ -366,6 +372,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       setRmtInicial(inssRegularization.rmt_inicial || 0);
       setRequisitoPercent(inssRegularization.requisito_percent || 0);
       setEmitirDocumento(inssRegularization.emitir_documento || 'Não');
+      setChecklistData(inssRegularization.checklist_data || {});
       setCertificateUrl(inssRegularization.certificate_url || '');
       setCertificatePassword(inssRegularization.certificate_password || '');
       setCertificateApelido(inssRegularization.certificate_info?.apelido || '');
@@ -1310,6 +1317,90 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       setIsUploadingCert(false);
     }
   };
+  const handleTransmitS2399 = async () => {
+    if (!selectedWorker || isTransmitting || !inssRegularization) return;
+
+    if (selectedWorker.esocial_status !== 'SUCESSO') {
+      alert('ERRO: Você precisa transmitir o evento S-2300 (Início) deste trabalhador antes de encerrar (S-2399).');
+      return;
+    }
+
+    setIsTransmitting(true);
+    try {
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: {
+          eventType: 'S-2399',
+          regularizationId: inssRegularization.id,
+          eventData: {
+            workerCpf: selectedWorker.cpf,
+            proprietarioCpfCnpj,
+            matricula: selectedWorker.matricula_esocial,
+            dtTerm: terminationDate
+          }
+        }
+      });
+
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
+
+      // Update worker with S2399 status locally
+      setWorkers(prev => prev.map(w => 
+        w.id === selectedWorker.id ? { ...w, s2399_status: 'PROCESSANDO', s2399_protocolo: response.protocolo } : w
+      ));
+      
+      setSelectedWorker((prev: any) => prev ? { ...prev, s2399_status: 'PROCESSANDO', s2399_protocolo: response.protocolo } : null);
+
+      alert(`Lote S-2399 enviado! Protocolo: ${response.protocolo}`);
+    } catch (err: any) {
+      alert(`Erro no S-2399: ${err.message}`);
+    } finally {
+      setIsTransmitting(false);
+    }
+  };
+
+  const handleConsultS2399 = async () => {
+    if (!selectedWorker || !selectedWorker.s2399_protocolo || isTransmitting) return;
+    setIsTransmitting(true);
+    try {
+      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission', {
+        body: { action: 'CONSULT', protocolo: selectedWorker.s2399_protocolo }
+      });
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
+      const { status, recibo } = response;
+
+      setWorkers(prev => prev.map(w => 
+        w.id === selectedWorker.id ? { ...w, s2399_status: status, s2399_recibo: recibo } : w
+      ));
+      setSelectedWorker((prev: any) => prev ? { ...prev, s2399_status: status, s2399_recibo: recibo } : null);
+
+      if (status === 'SUCESSO') alert('S-2399 processado com SUCESSO!');
+      else alert('Erro ao processar S-2399.');
+    } catch (err: any) {
+      alert(`Erro na consulta S-2399: ${err.message}`);
+    } finally {
+      setIsTransmitting(false);
+    }
+  };
+
+  const toggleChecklistItem = async (key: string) => {
+    if (!inssRegularization || readOnly) return;
+    
+    const currentStatus = checklistData[key] || 'PENDENTE';
+    const newStatus = currentStatus === 'SUCESSO' ? 'PENDENTE' : 'SUCESSO';
+    const newChecklist = { ...checklistData, [key]: newStatus };
+    
+    setChecklistData(newChecklist);
+    
+    try {
+      await supabase
+        .from('inss_regularizations')
+        .update({ checklist_data: newChecklist })
+        .eq('id', inssRegularization.id);
+    } catch (err) {
+      console.error('Error updating checklist:', err);
+    }
+  };
 
   const validateCPF = (cpf: string) => {
     const cleanCPF = cpf.replace(/[^\d]/g, '');
@@ -1813,20 +1904,23 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
             <div className="p-8 space-y-6">
               {[
-                { label: 'Verificar documentos da obra', status: null },
-                { label: 'Fazer / Revisar CNO da obra', status: esocialS1005Status?.status },
-                { label: 'Verificar se já tem créditos de INSS', status: null },
-                { label: 'Confirmar RMT inicial', status: null },
-                { label: 'Confirmar 50% ou 70% do RMT', status: null },
-                { label: 'Confirmar recibos de autônomo ou NF de MEI', status: null }
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between group">
+                { id: 'documentos', label: 'Verificar documentos da obra' },
+                { id: 'cno', label: 'Fazer / Revisar CNO da obra' },
+                { id: 'creditos', label: 'Verificar se já tem créditos de INSS' },
+                { id: 'rmt_inicial', label: 'Confirmar RMT inicial' },
+                { id: 'rmt_percent', label: 'Confirmar 50% ou 70% do RMT' },
+                { id: 'recibos', label: 'Confirmar recibos de autônomo ou NF de MEI' }
+              ].map((item) => (
+                <div key={item.id} className="flex items-center justify-between group">
                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">{item.label}</span>
-                  <button className={cn(
-                    "px-6 py-2 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all",
-                    item.status === 'SUCESSO' ? "bg-emerald-600 shadow-emerald-500/20" : "bg-[#E23F3F] hover:bg-red-600 shadow-red-500/10"
-                  )}>
-                    {item.status === 'SUCESSO' ? (
+                  <button 
+                    onClick={() => toggleChecklistItem(item.id)}
+                    className={cn(
+                      "px-6 py-2 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all",
+                      checklistData[item.id] === 'SUCESSO' ? "bg-emerald-600 shadow-emerald-500/20" : "bg-[#E23F3F] hover:bg-red-600 shadow-red-500/10"
+                    )}
+                  >
+                    {checklistData[item.id] === 'SUCESSO' ? (
                       <div className="flex items-center gap-2">
                         <Check className="h-3.5 w-3.5" /> Concluído
                       </div>
@@ -1955,7 +2049,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                         <Send className="h-4 w-4" /> 
                         {worker.esocial_status === 'SUCESSO' ? 'Evento Enviado' : 'Cadastrar trab'}
                       </button>
-                      <button className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 rounded-xl text-xs font-black text-white hover:bg-emerald-700 transition-all shadow-xl uppercase tracking-widest">
+                      <button 
+                        onClick={() => { setSelectedWorker(worker); setCurrentView('s2399_view'); }}
+                        className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 rounded-xl text-xs font-black text-white hover:bg-emerald-700 transition-all shadow-xl uppercase tracking-widest"
+                      >
                         <Target className="h-4 w-4" /> Encerrar trab
                       </button>
                     </div>
@@ -2735,6 +2832,147 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                       <div className="pt-6 border-t border-white/5 space-y-2">
                         <p className="text-emerald-500 text-sm font-black uppercase tracking-tight">O evento foi aceito e processado com sucesso pelo eSocial.</p>
                         <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">RECIBO: {esocialStatus.recibo}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* S-2399 Event View */}
+      {currentView === 's2399_view' && selectedWorker && (
+        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+            <div>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter">
+                Evento S-2399 – Término do Trabalhador Sem Vínculo
+              </h2>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                Finalização de prestação de serviço
+              </p>
+            </div>
+            <button 
+              onClick={() => { setSelectedWorker(null); setCurrentView('management'); }}
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+            >
+              Voltar para obra
+            </button>
+          </div>
+
+          <div className="p-8">
+            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02]">
+              <table className="w-full text-sm border-collapse">
+                <tbody>
+                  <tr className="border-b border-white/5">
+                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Trabalhador:</td>
+                    <td className="p-4 text-primary font-black uppercase tracking-tight">{selectedWorker.nome}</td>
+                  </tr>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Trabalhador:</td>
+                    <td className="p-4 text-white font-black font-mono">{selectedWorker.cpf}</td>
+                  </tr>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Matrícula:</td>
+                    <td className="p-4 text-white font-black font-mono">{selectedWorker.matricula_esocial}</td>
+                  </tr>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Data de Término:</td>
+                    <td className="p-4">
+                      <input 
+                        type="date" 
+                        value={terminationDate} 
+                        onChange={(e) => setTerminationDate(e.target.value)} 
+                        className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white font-black outline-none focus:border-primary transition-all"
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                    <td className="p-4 text-primary font-black">2399</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-8 space-y-6">
+              <button 
+                onClick={selectedWorker.s2399_status && selectedWorker.s2399_status !== 'ERRO' && selectedWorker.s2399_status !== 'PENDENTE' ? handleConsultS2399 : handleTransmitS2399}
+                disabled={isTransmitting}
+                className={cn(
+                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
+                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
+                  selectedWorker.s2399_status === 'SUCESSO' ? "bg-primary hover:bg-blue-700 text-white shadow-primary/20" :
+                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                )}
+              >
+                {isTransmitting ? (
+                  <>
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    {selectedWorker.s2399_status === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-6 w-6" />
+                    {selectedWorker.s2399_status === 'SUCESSO' 
+                      ? 'Consultar Status / Recibo' 
+                      : selectedWorker.s2399_status === 'ERRO' 
+                        ? 'Tentar Transmitir Novamente'
+                        : 'Transmitir Evento S-2399'}
+                  </>
+                )}
+              </button>
+              
+              {/* Detailed Government Log - S-2399 */}
+              {selectedWorker.s2399_status && selectedWorker.s2399_status !== 'PENDENTE' && (
+                <div className="p-8 bg-white/5 border border-white/5 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Resposta do eSocial (S-2399)</h4>
+                      <div className={cn(
+                        "w-3 h-3 rounded-full shadow-[0_0_8px]",
+                        selectedWorker.s2399_status === 'SUCESSO' ? "bg-emerald-500 shadow-emerald-500/50" : 
+                        selectedWorker.s2399_status === 'ERRO' ? "bg-red-500 shadow-red-500/50" : "bg-blue-500 shadow-blue-500/50"
+                      )}></div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Lote Envio</span>
+                        <p className={cn(
+                          "font-black text-sm",
+                          selectedWorker.s2399_status === 'ERRO' ? "text-red-500" : "text-emerald-600"
+                        )}>
+                          201 - Lote recebido com sucesso.
+                        </p>
+                      </div>
+
+                      {(selectedWorker.s2399_status === 'SUCESSO' || selectedWorker.s2399_status === 'ERRO') && (
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Processamento</span>
+                          <p className={cn(
+                            "font-black text-sm",
+                            selectedWorker.s2399_status === 'ERRO' ? "text-red-500" : "text-emerald-600"
+                          )}>
+                            {selectedWorker.s2399_status === 'SUCESSO' ? '202 - Sucesso' : '401 - Erro na validação do término.'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedWorker.s2399_status === 'SUCESSO' && (
+                      <div className="pt-6 border-t border-white/5 space-y-2">
+                        <p className="text-emerald-500 text-sm font-black uppercase tracking-tight">O desligamento/término foi processado com sucesso.</p>
+                        <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">RECIBO: {selectedWorker.s2399_recibo}</p>
+                      </div>
+                    )}
+
+                    {selectedWorker.s2399_status === 'PROCESSANDO' && (
+                      <div className="pt-6 border-t border-white/5 space-y-2">
+                        <p className="text-blue-500 text-sm font-black uppercase tracking-tight animate-pulse">Aguardando processamento pelo eSocial...</p>
+                        <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">PROTOCOLO: {selectedWorker.s2399_protocolo}</p>
                       </div>
                     )}
                   </div>
