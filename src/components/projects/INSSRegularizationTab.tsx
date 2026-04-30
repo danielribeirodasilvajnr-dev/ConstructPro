@@ -105,6 +105,22 @@ const CATEGORIA_OPTIONS = [
   { value: '741', label: '741 - MEI' }
 ];
 
+
+// FUNÇÃO PROXY LOCAL PARA MTLS NO NODE.JS
+async function invokeProxy(options: any) {
+  try {
+    const response = await fetch('http://localhost:3005/esocial', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options.body)
+    });
+    const data = await response.json();
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
 export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh, readOnly, isStandalone }: INSSRegularizationTabProps) {
   const { user } = useAuth();
   const [currentView, setCurrentView] = useState<'summary' | 'management' | 'worker_form' | 's2300_view' | 's1200_view' | 's1210_view' | 's1298_view' | 's1000_view' | 's1005_view' | 's1010_view' | 's1020_view' | 's2399_view'>('summary');
@@ -625,7 +641,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       }
 
       // ETAPA 5, 6, 7 - ASSINATURA E ENVIO (REAL VIA BACKEND)
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: {
           eventType: 'S-2300',
           regularizationId: inssRegularization.id,
@@ -678,7 +694,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     setIsTransmitting(true);
     try {
       // ETAPA 8 - CONSULTA (REAL VIA BACKEND)
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: {
           action: 'CONSULT',
           protocolo: esocialStatus.protocolo,
@@ -733,7 +749,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: {
           eventType: 'S-1000',
           regularizationId: inssRegularization.id,
@@ -763,7 +779,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!esocialS1000Status || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: {
           action: 'CONSULT',
           protocolo: esocialS1000Status.protocolo,
@@ -800,7 +816,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: {
           eventType: 'S-1005',
           regularizationId: inssRegularization.id,
@@ -830,7 +846,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!esocialS1005Status || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: { action: 'CONSULT', protocolo: esocialS1005Status.protocolo, regularizationId: inssRegularization.id }
       });
       if (fnError) throw fnError;
@@ -857,7 +873,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: {
           eventType: 'S-1020',
           regularizationId: inssRegularization.id,
@@ -883,7 +899,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!esocialS1020Status || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: { action: 'CONSULT', protocolo: esocialS1020Status.protocolo, regularizationId: inssRegularization.id }
       });
       if (fnError) throw fnError;
@@ -909,7 +925,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: {
           eventType: 'S-1010',
           regularizationId: inssRegularization.id,
@@ -935,7 +951,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!esocialS1010Status || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: { action: 'CONSULT', protocolo: esocialS1010Status.protocolo, regularizationId: inssRegularization.id }
       });
       if (fnError) throw fnError;
@@ -960,7 +976,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: {
           eventType: 'S-1200',
           regularizationId: inssRegularization.id,
@@ -995,7 +1011,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!selectedRemForEvent || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: {
           action: 'CONSULT',
           protocolo: selectedRemForEvent.remProtocolo,
@@ -1030,7 +1046,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: {
           eventType: 'S-1210',
           regularizationId: inssRegularization.id,
@@ -1063,7 +1079,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!selectedRemForEvent || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: { action: 'CONSULT', protocolo: selectedRemForEvent.pagProtocolo, regularizationId: inssRegularization.id }
       });
       if (fnError) throw fnError;
@@ -1087,7 +1103,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!selectedPeriodForEvent || isTransmitting || !inssRegularization) return;
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: {
           eventType: 'S-1298',
           regularizationId: inssRegularization.id,
@@ -1116,7 +1132,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!selectedPeriodForEvent || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: { action: 'CONSULT', protocolo: periodStatuses[selectedPeriodForEvent]?.s1298Protocolo, regularizationId: inssRegularization.id }
       });
       if (fnError) throw fnError;
@@ -1140,7 +1156,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!selectedPeriodForEvent || isTransmitting || !inssRegularization) return;
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: {
           eventType: 'S-1299',
           regularizationId: inssRegularization.id,
@@ -1370,7 +1386,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: {
           eventType: 'S-2399',
           regularizationId: inssRegularization.id,
@@ -1405,7 +1421,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!selectedWorker || !selectedWorker.s2399_protocolo || isTransmitting) return;
     setIsTransmitting(true);
     try {
-      const { data: response, error: fnError } = await supabase.functions.invoke('esocial-transmission-v3-real', {
+      const { data: response, error: fnError } = await invokeProxy({
         body: { action: 'CONSULT', protocolo: selectedWorker.s2399_protocolo, regularizationId: inssRegularization.id }
       });
       if (fnError) throw fnError;
