@@ -1,0 +1,20 @@
+{
+  "action": "TRANSMIT_S2300",
+  "regularizationId": "a762e663-14e4-422b-b320-47af29eeb94a",
+  "eventData": {
+    "proprietarioCpfCnpj": "25502713865",
+    "workerCpf": "57996156204",
+    "workerNome": "RONALDO MIRANDA CORREA",
+    "sexo": "M",
+    "racaCor": "1",
+    "estCiv": "1",
+    "grauInstr": "07",
+    "nascimento": "1978-10-15",
+    "codMunic": "4205407",
+    "uf": "SC",
+    "nmMae": "MARIA MIRANDA CORREA",
+    "codCateg": "701",
+    "dtInicio": "2024-04-01",
+    "vrSalFx": "2200.00"
+  }
+}

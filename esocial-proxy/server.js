@@ -34,9 +34,9 @@ app.post('/esocial', async (req, res) => {
     const transCpfCnpj = commonName.split(':').pop(); 
     const empCpfCnpj = (eventData.proprietarioCpfCnpj || "25502713865").replace(/\D/g, '');
 
-    // VOLTANDO PARA O PADRÃO S-1000 (padEnd)
+    // TAMANHO DO ID CORRIGIDO PARA 36 CARACTERES (Sequencial de 5 dígitos)
     const timestamp = new Date().toISOString().replace(/[-:T.Z]/g, '').substring(0, 14);
-    const eventId = `ID2${empCpfCnpj.padEnd(14, '0')}${timestamp}00001`;
+    const eventId = `ID2${empCpfCnpj.padEnd(14, '0')}${timestamp}${Math.floor(Math.random()*100000).toString().padStart(5, '0')}`;
     
     let eventXml = '';
     let rootTag = '';
@@ -48,7 +48,7 @@ app.post('/esocial', async (req, res) => {
       rootTag = "evtTSVInicio";
       const workerCpf = (eventData.workerCpf || "").replace(/\D/g, '');
       const workerNome = (eventData.workerNome || "").toUpperCase();
-      eventXml = `<evtTSVInicio xmlns="http://www.esocial.gov.br/schema/evt/evtTSVInicio/v_S_01_02_00" Id="${eventId}"><ideEvento><indRetif>1</indRetif><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><trabalhador><cpfTrab>${workerCpf}</cpfTrab><nmTrab>${workerNome}</nmTrab><sexo>${eventData.sexo || 'M'}</sexo><racaCor>${eventData.racaCor || '1'}</racaCor><estCiv>${eventData.estCiv || '1'}</estCiv><grauInstr>${eventData.grauInstr || '07'}</grauInstr><nascimento><dtNascto>${eventData.nascimento || '1985-05-20'}</dtNascto><codMunic>${eventData.codMunic || '3304557'}</codMunic><uf>${eventData.uf || 'SP'}</uf><paisNascto>105</paisNascto></nascimento></trabalhador><infoTSVInicio><cadIni>1</cadIni><infoComplementares><nmMae>${(eventData.nmMae || 'MARIA DA SILVA').toUpperCase()}</nmMae></infoComplementares><infoRegimeTrab><infoAutonomo><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></infoAutonomo></infoRegimeTrab><infoContrato><codCateg>${eventData.codCateg || '701'}</codCateg><dtInicio>${eventData.dtInicio || '2024-04-01'}</dtInicio><remuneracao><vrSalFx>${eventData.vrSalFx || '2500.00'}</vrSalFx><undSalFixo>5</undSalFixo></remuneracao></infoContrato></infoTSVInicio></evtTSVInicio>`;
+      eventXml = `<evtTSVInicio xmlns="http://www.esocial.gov.br/schema/evt/evtTSVInicio/v_S_01_02_00" Id="${eventId}"><ideEvento><indRetif>1</indRetif><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><trabalhador><cpfTrab>${workerCpf}</cpfTrab><nmTrab>${workerNome}</nmTrab><sexo>${eventData.sexo || 'M'}</sexo><racaCor>${eventData.racaCor || '1'}</racaCor><estCiv>${eventData.estCiv || '1'}</estCiv><grauInstr>${eventData.grauInstr || '07'}</grauInstr><nascimento><dtNascto>${eventData.nascimento || '1978-10-15'}</dtNascto><codMunic>${eventData.codMunic || '4205407'}</codMunic><uf>${eventData.uf || 'SC'}</uf><paisNascto>105</paisNascto></nascimento></trabalhador><infoTSVInicio><cadIni>1</cadIni><infoComplementares><nmMae>${(eventData.nmMae || 'MARIA DA SILVA').toUpperCase()}</nmMae></infoComplementares><infoRegimeTrab><infoAutonomo><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></infoAutonomo></infoRegimeTrab><infoContrato><codCateg>${eventData.codCateg || '701'}</codCateg><dtInicio>${eventData.dtInicio || '2024-04-01'}</dtInicio><remuneracao><vrSalFx>${eventData.vrSalFx || '2200.00'}</vrSalFx><undSalFixo>5</undSalFixo></remuneracao></infoContrato></infoTSVInicio></evtTSVInicio>`;
     }
 
     const md = forge.md.sha256.create();
