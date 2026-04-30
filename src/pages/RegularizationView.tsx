@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { INSSRegularization } from '../lib/types';
 import { INSSRegularizationTab } from '../components/projects/INSSRegularizationTab';
-import { ClipboardList, Search, ArrowRight, Calculator as CalculatorIcon, Plus, UserPlus, X, CheckCircle2, AlertCircle, Loader2, Trash2 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { Search, ArrowRight, Calculator as CalculatorIcon, Plus, UserPlus, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export function RegularizationView() {
@@ -12,21 +11,6 @@ export function RegularizationView() {
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Global Certificate State (with localStorage persistence)
-  const [globalCertUrl, setGlobalCertUrl] = useState(() => localStorage.getItem('aevum_global_cert_url') || '');
-  const [globalCertName, setGlobalCertName] = useState(() => localStorage.getItem('aevum_global_cert_name') || '');
-  const [globalCertPassword, setGlobalCertPassword] = useState(() => localStorage.getItem('aevum_global_cert_pass') || '');
-  const [isUploadingGlobalCert, setIsUploadingGlobalCert] = useState(false);
-
-  useEffect(() => {
-    localStorage.setItem('aevum_global_cert_url', globalCertUrl);
-    localStorage.setItem('aevum_global_cert_name', globalCertName);
-  }, [globalCertUrl, globalCertName]);
-
-  useEffect(() => {
-    localStorage.setItem('aevum_global_cert_pass', globalCertPassword);
-  }, [globalCertPassword]);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -64,8 +48,6 @@ export function RegularizationView() {
           name: newName,
           client: newClient,
           user_id: user.id,
-          certificate_url: globalCertUrl,
-          certificate_password: globalCertPassword,
           responsavel: 'pessoa física',
           destinacao: 'Residencial unifamiliar',
           tipo_obra: 'Alvenaria',
@@ -139,104 +121,6 @@ export function RegularizationView() {
         >
           <Plus className="h-5 w-5" /> Novo Cliente/Obra
         </button>
-      </div>
-
-      {/* Global Certificate Configuration Area (Red Line Area) */}
-      <div className="bg-[#1C232E] border border-white/10 rounded-2xl p-6 shadow-xl overflow-hidden relative group">
-        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-          <ClipboardList className="h-24 w-24 text-white" />
-        </div>
-        
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className={cn(
-              "p-3 rounded-xl transition-all",
-              globalCertUrl ? "bg-emerald-500/20 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]" : "bg-red-500/20 text-red-400"
-            )}>
-              {globalCertUrl ? <CheckCircle2 className="h-6 w-6" /> : <AlertCircle className="h-6 w-6" />}
-            </div>
-            <div>
-              <h3 className="text-white font-bold text-sm tracking-tight">Certificado Digital A1 - Procurador</h3>
-              <p className="text-slate-500 text-[10px] mt-0.5 uppercase font-medium tracking-wider">
-                {globalCertUrl ? `Ativo: ${globalCertName}` : 'Configure o certificado para novos clientes.'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center gap-3 flex-1 max-w-xl">
-            <div className="relative flex-1 w-full">
-              <input 
-                type="file" 
-                accept=".pfx,.p12"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file || !user) return;
-                  
-                  setIsUploadingGlobalCert(true);
-                  try {
-                    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-                    const filePath = `global_certificates/${user.id}/${Date.now()}_${sanitizedFileName}`;
-                    
-                    const { data, error } = await supabase.storage
-                      .from('project-documents')
-                      .upload(filePath, file, { 
-                        upsert: true,
-                        contentType: 'application/x-pkcs12'
-                      });
-                    
-                    if (error) throw error;
-                    
-                    if (data) {
-                      const { data: { publicUrl } } = supabase.storage
-                        .from('project-documents')
-                        .getPublicUrl(filePath);
-                      
-                      setGlobalCertUrl(publicUrl);
-                      setGlobalCertName(file.name);
-                      alert('Certificado Validado e Carregado com Sucesso!');
-                    }
-                  } catch (err: any) {
-                    alert(`Erro na validação do arquivo: ${err.message}`);
-                  } finally {
-                    setIsUploadingGlobalCert(false);
-                  }
-                }}
-                className="absolute inset-0 opacity-0 cursor-pointer z-10"
-              />
-              <div className={cn(
-                "w-full border border-dashed rounded-xl p-3 flex flex-col items-center justify-center transition-all bg-slate-900/40",
-                globalCertUrl ? "border-emerald-500/50" : "border-slate-700 hover:border-[#BCB5AC]"
-              )}>
-                {isUploadingGlobalCert ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-[#BCB5AC]" />
-                ) : (
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                    {globalCertUrl ? 'Substituir Certificado' : 'Selecionar Arquivo A1'}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="w-full sm:w-48">
-              <input 
-                type="password" 
-                value={globalCertPassword}
-                onChange={(e) => setGlobalCertPassword(e.target.value)}
-                placeholder="Senha do Certificado"
-                className="w-full bg-slate-900/60 border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-[#BCB5AC] outline-none transition-all placeholder:text-slate-600 shadow-inner"
-              />
-            </div>
-
-            {globalCertUrl && (
-              <button 
-                onClick={() => { setGlobalCertUrl(''); setGlobalCertName(''); setGlobalCertPassword(''); }}
-                className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 transition-all border border-red-500/20 shadow-lg"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </div>
       </div>
 
       <div className="relative">

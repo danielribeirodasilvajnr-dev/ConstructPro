@@ -1739,6 +1739,72 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </button>
           </div>
 
+          {/* Certificate Configuration - DARK THEME */}
+          <div className="bg-[#1C232E] rounded-2xl shadow-xl border border-white/5 overflow-hidden">
+            <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+              <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Configuração do certificado</span>
+              <X className="h-4 w-4 text-slate-500 cursor-pointer hover:text-white" />
+            </div>
+            <div className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Certificado Digital A1 - Procurador</label>
+                    <div className="flex gap-3">
+                      <div className="flex-1 relative">
+                        <input 
+                          type="text" 
+                          readOnly 
+                          value={certificateApelido || (certificateUrl ? 'Certificado Carregado' : '')} 
+                          placeholder="Clique em escolher arquivo"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-primary transition-all"
+                        />
+                        {certificateUrl && <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />}
+                      </div>
+                      <label className="px-5 py-3 bg-white/5 text-white rounded-xl text-xs font-black hover:bg-white/10 cursor-pointer transition-all flex items-center gap-2 border border-white/10 shadow-lg uppercase tracking-widest">
+                        {isUploadingCert ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-4 w-4" />}
+                        Escolher
+                        <input type="file" className="hidden" accept=".pfx,.p12" onChange={handleUploadCertificate} disabled={isUploadingCert} />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Senha do Certificado</label>
+                    <input 
+                      type="password" 
+                      value={certificatePassword}
+                      onChange={(e) => setCertificatePassword(e.target.value)}
+                      placeholder="Senha do arquivo .pfx"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-lg"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col justify-end gap-4">
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-start gap-4">
+                    <div className="p-2 bg-emerald-500 rounded-lg text-white shadow-lg shadow-emerald-500/20"><CheckCircle2 className="h-5 w-5" /></div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-black text-emerald-500 uppercase tracking-widest">Status da Credencial</p>
+                      <p className="text-[11px] text-emerald-500/80 font-medium leading-relaxed">
+                        {esocialCredentials 
+                          ? '✅ Credenciais salvas com segurança no banco de dados. Os eventos serão assinados no servidor.' 
+                          : '⚠️ Nenhuma credencial configurada. Necessário para transmitir eventos ao eSocial.'}
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={handleSaveCredentials}
+                    className="w-full py-4 bg-primary text-white rounded-xl font-black text-sm hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 uppercase tracking-[2px]"
+                  >
+                    <Save className="h-4 w-4" />
+                    Salvar Configurações
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Checklist Section - DARK THEME PREMIUM */}
           <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden">
             <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
@@ -1815,74 +1881,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </button>
           </div>
 
-
           <p className="text-slate-400 text-[10px] italic font-medium uppercase tracking-wider">Cadastre trabalhador e remunerações para liberar os botões acima.</p>
-
-          {/* Certificate Configuration - DARK THEME */}
-          <div className="bg-[#1C232E] rounded-2xl shadow-xl border border-white/5 overflow-hidden">
-            <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
-              <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Configuração do certificado</span>
-              <X className="h-4 w-4 text-slate-500 cursor-pointer hover:text-white" />
-            </div>
-            <div className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Certificado Digital A1 - Procurador</label>
-                    <div className="flex gap-3">
-                      <div className="flex-1 relative">
-                        <input 
-                          type="text" 
-                          readOnly 
-                          value={certificateApelido || (certificateUrl ? 'Certificado Carregado' : '')} 
-                          placeholder="Clique em escolher arquivo"
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-primary transition-all"
-                        />
-                        {certificateUrl && <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />}
-                      </div>
-                      <label className="px-5 py-3 bg-white/5 text-white rounded-xl text-xs font-black hover:bg-white/10 cursor-pointer transition-all flex items-center gap-2 border border-white/10 shadow-lg uppercase tracking-widest">
-                        {isUploadingCert ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-4 w-4" />}
-                        Escolher
-                        <input type="file" className="hidden" accept=".pfx,.p12" onChange={handleUploadCertificate} disabled={isUploadingCert} />
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Senha do Certificado</label>
-                    <input 
-                      type="password" 
-                      value={certificatePassword}
-                      onChange={(e) => setCertificatePassword(e.target.value)}
-                      placeholder="Senha do arquivo .pfx"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-lg"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col justify-end gap-4">
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-start gap-4">
-                    <div className="p-2 bg-emerald-500 rounded-lg text-white shadow-lg shadow-emerald-500/20"><CheckCircle2 className="h-5 w-5" /></div>
-                    <div className="space-y-1">
-                      <p className="text-xs font-black text-emerald-500 uppercase tracking-widest">Status da Credencial</p>
-                      <p className="text-[11px] text-emerald-500/80 font-medium leading-relaxed">
-                        {esocialCredentials 
-                          ? '✅ Credenciais salvas com segurança no banco de dados. Os eventos serão assinados no servidor.' 
-                          : '⚠️ Nenhuma credencial configurada. Necessário para transmitir eventos ao eSocial.'}
-                      </p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={handleSaveCredentials}
-                    className="w-full py-4 bg-primary text-white rounded-xl font-black text-sm hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 uppercase tracking-[2px]"
-                  >
-                    <Save className="h-4 w-4" />
-                    Salvar Configurações
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Workers Section - DARK THEME */}
           <div className="bg-[#1C232E] rounded-2xl shadow-xl border border-white/5 overflow-hidden">
