@@ -648,7 +648,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             workerMatricula,
             workerCategoria,
             workerCargo,
-            workerCbo
+            workerCbo,
+            transmissorCpfCnpj: certificateCpfCnpj
           }
         }
       });
@@ -739,7 +740,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           nrRecibo,
           eventData: {
             proprietarioNome,
-            proprietarioCpfCnpj
+            proprietarioCpfCnpj,
+            transmissorCpfCnpj: certificateCpfCnpj
           }
         }
       });
@@ -802,7 +804,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           regularizationId: inssRegularization.id,
           indRetif,
           nrRecibo,
-          eventData: { proprietarioCpfCnpj, cnoNumero }
+          eventData: { 
+            proprietarioCpfCnpj, 
+            cnoNumero,
+            transmissorCpfCnpj: certificateCpfCnpj
+          }
         }
       });
 
@@ -1317,6 +1323,40 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       setIsUploadingCert(false);
     }
   };
+  const handleMarkAsDone = async (tipo: string, cpf?: string) => {
+    if (!inssRegularization) return;
+    const recibo = prompt(`Informe o Número do Recibo do evento ${tipo} obtido no portal eSocial:`);
+    if (!recibo) return;
+
+    setIsTransmitting(true);
+    try {
+      const { error } = await supabase
+        .from('esocial_events')
+        .insert({
+          regularization_id: inssRegularization.id,
+          tipo_evento: tipo,
+          cpf_trabalhador: cpf || null,
+          status: 'SUCESSO',
+          recibo: recibo,
+          resposta_governo: { manual: true, message: 'Marcado manualmente como concluído.' }
+        });
+
+      if (error) throw error;
+      
+      alert('Evento marcado como concluído com sucesso!');
+      
+      if (tipo === 'S-1000') checkS1000Status();
+      else if (tipo === 'S-1005') checkS1005Status();
+      else if (tipo === 'S-1020') checkS1020Status();
+      else if (cpf) checkEsocialStatus(cpf);
+      
+    } catch (err: any) {
+      alert(`Erro ao marcar como concluído: ${err.message}`);
+    } finally {
+      setIsTransmitting(false);
+    }
+  };
+
   const handleTransmitS2399 = async () => {
     if (!selectedWorker || isTransmitting || !inssRegularization) return;
 
@@ -2281,7 +2321,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <tbody>
                   <tr className="border-b border-white/5">
                     <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
-                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: 161.196.598-54</td>
+                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
                   </tr>
                   <tr className="border-b border-white/5">
                     <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
@@ -2328,7 +2368,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 </div>
                 
                 <div className="flex flex-wrap items-center justify-center gap-4">
-                  <button className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest">
+                  <button 
+                    onClick={() => handleMarkAsDone('S-1298')}
+                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
+                  >
                     Já foi feito!
                   </button>
                   <button className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest">
@@ -2381,7 +2424,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <tbody>
                   <tr className="border-b border-white/5">
                     <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
-                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: 161.196.598-54</td>
+                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
                   </tr>
                   <tr className="border-b border-white/5">
                     <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
@@ -2510,6 +2553,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </div>
                 </div>
               )}
+              <div className="flex flex-col items-center gap-6 mt-8">
+                <div className="flex items-center gap-4 w-full">
+                  <div className="h-px flex-1 bg-white/5"></div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
+                  <div className="h-px flex-1 bg-white/5"></div>
+                </div>
+                
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <button 
+                    onClick={() => handleMarkAsDone('S-1210')}
+                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
+                  >
+                    Já foi feito!
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2541,7 +2600,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <tbody>
                   <tr className="border-b border-white/5">
                     <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
-                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: 161.196.598-54</td>
+                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
                   </tr>
                   <tr className="border-b border-white/5">
                     <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
@@ -2670,6 +2729,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </div>
                 </div>
               )}
+              <div className="flex flex-col items-center gap-6 mt-8">
+                <div className="flex items-center gap-4 w-full">
+                  <div className="h-px flex-1 bg-white/5"></div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
+                  <div className="h-px flex-1 bg-white/5"></div>
+                </div>
+                
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <button 
+                    onClick={() => handleMarkAsDone('S-1200')}
+                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
+                  >
+                    Já foi feito!
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2695,7 +2770,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <tbody>
                   <tr className="border-b border-white/5">
                     <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
-                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: 161.196.598-54</td>
+                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
                   </tr>
                   <tr className="border-b border-white/5">
                     <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
@@ -2837,6 +2912,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </div>
                 </div>
               )}
+              <div className="flex flex-col items-center gap-6 mt-8">
+                <div className="flex items-center gap-4 w-full">
+                  <div className="h-px flex-1 bg-white/5"></div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
+                  <div className="h-px flex-1 bg-white/5"></div>
+                </div>
+                
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <button 
+                    onClick={() => handleMarkAsDone('S-2300', selectedWorker.cpf)}
+                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
+                  >
+                    Já foi feito!
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -3569,10 +3660,28 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </div>
                 </div>
               )}
+
+              <div className="flex flex-col items-center gap-6 mt-8">
+                <div className="flex items-center gap-4 w-full">
+                  <div className="h-px flex-1 bg-white/5"></div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
+                  <div className="h-px flex-1 bg-white/5"></div>
+                </div>
+                
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <button 
+                    onClick={() => handleMarkAsDone('S-1000')}
+                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
+                  >
+                    Já foi feito!
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
+
 
 
       {/* S-1005 Event View - DARK */}
@@ -3695,10 +3804,28 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </div>
                 </div>
               )}
+
+              <div className="flex flex-col items-center gap-6 mt-8">
+                <div className="flex items-center gap-4 w-full">
+                  <div className="h-px flex-1 bg-white/5"></div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
+                  <div className="h-px flex-1 bg-white/5"></div>
+                </div>
+                
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <button 
+                    onClick={() => handleMarkAsDone('S-1005')}
+                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
+                  >
+                    Já foi feito!
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
+
 
       {/* S-1020 Event View - DARK */}
       {currentView === 's1020_view' && inssRegularization && (
@@ -3770,6 +3897,24 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </>
                 )}
               </button>
+
+              <div className="flex flex-col items-center gap-6 mt-8">
+                <div className="flex items-center gap-4 w-full">
+                  <div className="h-px flex-1 bg-white/5"></div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
+                  <div className="h-px flex-1 bg-white/5"></div>
+                </div>
+                
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <button 
+                    onClick={() => handleMarkAsDone('S-1020')}
+                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
+                  >
+                    Já foi feito!
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -3895,6 +4040,23 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </>
                 )}
               </button>
+
+              <div className="flex flex-col items-center gap-6 mt-8">
+                <div className="flex items-center gap-4 w-full">
+                  <div className="h-px flex-1 bg-white/5"></div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
+                  <div className="h-px flex-1 bg-white/5"></div>
+                </div>
+                
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <button 
+                    onClick={() => handleMarkAsDone('S-1010')}
+                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
+                  >
+                    Já foi feito!
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
