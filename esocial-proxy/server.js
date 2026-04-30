@@ -34,35 +34,43 @@ app.post('/esocial', async (req, res) => {
     const httpsAgent = new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: false, minVersion: 'TLSv1.2' });
 
     if (action === 'CONSULT') {
-      const actions = [
-        '"http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos/ConsultarLoteEventos"',
-        '"http://www.esocial.gov.br/servicos/empregador/loteeventos/ServicoConsultarLoteEventos/ConsultarLoteEventos"',
-        '"ConsultarLoteEventos"'
-      ];
+      // FORMATO "PRECISÃO CIRÚRGICA" (Sem prefixo na consulta, namespace direto nela)
+      const soapRequest = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos">
+  <soapenv:Body>
+    <ws:ConsultarLoteEventos>
+      <consulta xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0">
+        <protocolo>${protocolo}</protocolo>
+      </consulta>
+    </ws:ConsultarLoteEventos>
+  </soapenv:Body>
+</soapenv:Envelope>`;
 
-      const soapRequest = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos"><soapenv:Body><ws:ConsultarLoteEventos><ws:consulta><protocolo xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0">${protocolo}</protocolo></ws:consulta></ws:ConsultarLoteEventos></soapenv:Body></soapenv:Envelope>`;
-
-      let lastError;
-      for (const soapAction of actions) {
-        try {
-          console.log(`Tentando SOAPAction: ${soapAction}`);
-          const response = await axios.post(URL_CONSULTA, soapRequest, {
-            headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': soapAction },
-            httpsAgent,
-            timeout: 10000
-          });
-          
-          const result = response.data;
-          const reciboMatch = result.match(/<nrRecibo>(.*?)<\/nrRecibo>/);
-          const isSuccess = result.includes('sucesso') || result.includes('201') || result.includes('202');
-          
-          return res.json({ success: true, status: isSuccess ? 'SUCESSO' : 'PROCESSANDO', recibo: reciboMatch ? reciboMatch[1] : null });
-        } catch (err) {
-          lastError = err.response?.data ? err.response.data.toString().replace(/<[^>]*>/g, ' ').substring(0, 200) : err.message;
-          console.log(`Falhou com ${soapAction}: ${lastError.substring(0, 50)}...`);
-        }
+      try {
+        const response = await axios.post(URL_CONSULTA, soapRequest, {
+          headers: { 
+            'Content-Type': 'text/xml; charset=utf-8', 
+            'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos/ConsultarLoteEventos"' 
+          },
+          httpsAgent
+        });
+        
+        const result = response.data;
+        const reciboMatch = result.match(/<nrRecibo>(.*?)<\/nrRecibo>/);
+        // Em caso de erro de negócio (ex: trabalhador já existe), o governo manda o erro dentro do XML
+        const erroMatch = result.match(/<descResposta>(.*?)<\/descResposta>/);
+        
+        const isSuccess = result.includes('sucesso') || result.includes('201') || result.includes('202');
+        
+        return res.json({ 
+          success: true, 
+          status: isSuccess ? 'SUCESSO' : 'PROCESSANDO', 
+          recibo: reciboMatch ? reciboMatch[1] : null,
+          error: !isSuccess && erroMatch ? erroMatch[1] : null
+        });
+      } catch (err) {
+        const errorDetail = err.response?.data ? err.response.data.toString().replace(/<[^>]*>/g, ' ').substring(0, 300) : err.message;
+        return res.json({ success: false, error: `eSocial rejeitou consulta: ${errorDetail}` });
       }
-      return res.json({ success: false, error: `eSocial rejeitou todas as variações de consulta. Último erro: ${lastError}` });
     }
 
     // TRANSMISSÃO (Validada e Funcionando!)
@@ -114,4 +122,4 @@ function signXML(xml, privateKeyPem, certificatePem, eventId) {
   return sig.getSignedXml();
 }
 
-app.listen(3005, () => console.log("🚀 Proxy Inteligente v4 Online"));
+app.listen(3005, () => console.log("🚀 Proxy de Alta Precisão Online"));
