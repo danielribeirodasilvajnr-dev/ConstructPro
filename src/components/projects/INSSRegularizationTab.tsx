@@ -223,7 +223,24 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [remEndMonth, setRemEndMonth] = useState('11');
   const [remEndYear, setRemEndYear] = useState('2026');
   const [targetWorkerForRem, setTargetWorkerForRem] = useState<any>(null);
-  const [allRemunerations, setAllRemunerations] = useState<any[]>([]);
+  const [selectedRemForEvent, setSelectedRemForEvent] = useState<any>(null);
+  const [selectedPeriodForEvent, setSelectedPeriodForEvent] = useState<string | null>(null);
+  const [periodStatuses, setPeriodStatuses] = useState<Record<string, any>>({});
+  const [allRemunerations, setAllRemunerations] = useState<any[]>(() => {
+    const saved = localStorage.getItem(`remunerations_${projectId}`);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Save remunerations whenever they change
+  useEffect(() => {
+    localStorage.setItem(`remunerations_${projectId}`, JSON.stringify(allRemunerations));
+  }, [allRemunerations, projectId]);
+
+  const handleClearRemunerations = (workerId: string) => {
+    if (confirm('Deseja realmente limpar todas as remunerações deste trabalhador?')) {
+      setAllRemunerations(prev => prev.filter(r => r.workerId !== workerId));
+    }
+  };
 
   const handleOpenRemunerationModal = (worker: any) => {
     setTargetWorkerForRem(worker);
@@ -1003,6 +1020,183 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     }
   };
 
+  const handleTransmitS1200 = async () => {
+    if (!selectedRemForEvent || isTransmitting) return;
+
+    setIsTransmitting(true);
+    try {
+      const protocoloInicial = `PRT.S1200.${Math.random().toString(36).substring(7).toUpperCase()}`;
+      
+      // Simulate API call and DB update
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Update local state to PROCESSANDO
+      setAllRemunerations(prev => prev.map(r => 
+        r.id === selectedRemForEvent.id ? { ...r, remStatus: 'PROCESSANDO', remProtocolo: protocoloInicial } : r
+      ));
+      
+      setSelectedRemForEvent((prev: any) => ({ ...prev, remStatus: 'PROCESSANDO', remProtocolo: protocoloInicial }));
+      alert(`Evento S-1200 enviado! Protocolo: ${protocoloInicial}`);
+    } catch (err: any) {
+      alert(`Erro no S-1200: ${err.message}`);
+    } finally {
+      setIsTransmitting(false);
+    }
+  };
+
+  const handleConsultS1200 = async () => {
+    if (!selectedRemForEvent || isTransmitting) return;
+    setIsTransmitting(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      const isSuccess = Math.random() > 0.1; // 90% success rate
+      const recibo = isSuccess ? `1.${Math.random().toString().substring(2, 12)}` : null;
+      const status = isSuccess ? 'SUCESSO' : 'ERRO';
+
+      // Update local state
+      setAllRemunerations(prev => prev.map(r => 
+        r.id === selectedRemForEvent.id ? { ...r, remStatus: status, remRecibo: recibo } : r
+      ));
+
+      setSelectedRemForEvent((prev: any) => ({ ...prev, remStatus: status, remRecibo: recibo }));
+      
+      if (isSuccess) alert('S-1200 processado com SUCESSO!');
+      else alert('Erro ao processar S-1200. Verifique os logs.');
+    } catch (err: any) {
+      alert(`Erro na consulta S-1200: ${err.message}`);
+    } finally {
+      setIsTransmitting(false);
+    }
+  };
+
+  const handleTransmitS1210 = async () => {
+    if (!selectedRemForEvent || isTransmitting) return;
+
+    setIsTransmitting(true);
+    try {
+      const protocoloInicial = `PRT.S1210.${Math.random().toString(36).substring(7).toUpperCase()}`;
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Update local state to PROCESSANDO
+      setAllRemunerations(prev => prev.map(r => 
+        r.id === selectedRemForEvent.id ? { ...r, pagStatus: 'PROCESSANDO', pagProtocolo: protocoloInicial } : r
+      ));
+      
+      setSelectedRemForEvent((prev: any) => ({ ...prev, pagStatus: 'PROCESSANDO', pagProtocolo: protocoloInicial }));
+      alert(`Evento S-1210 enviado! Protocolo: ${protocoloInicial}`);
+    } catch (err: any) {
+      alert(`Erro no S-1210: ${err.message}`);
+    } finally {
+      setIsTransmitting(false);
+    }
+  };
+
+  const handleConsultS1210 = async () => {
+    if (!selectedRemForEvent || isTransmitting) return;
+    setIsTransmitting(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      const isSuccess = Math.random() > 0.1;
+      const recibo = isSuccess ? `1.${Math.random().toString().substring(2, 12)}` : null;
+      const status = isSuccess ? 'SUCESSO' : 'ERRO';
+
+      // Update local state
+      setAllRemunerations(prev => prev.map(r => 
+        r.id === selectedRemForEvent.id ? { ...r, pagStatus: status, pagRecibo: recibo } : r
+      ));
+
+      setSelectedRemForEvent((prev: any) => ({ ...prev, pagStatus: status, pagRecibo: recibo }));
+      
+      if (isSuccess) alert('S-1210 processado com SUCESSO!');
+      else alert('Erro ao processar S-1210.');
+    } catch (err: any) {
+      alert(`Erro na consulta S-1210: ${err.message}`);
+    } finally {
+      setIsTransmitting(false);
+    }
+  };
+
+
+  const handleTransmitS1298 = async () => {
+    if (!selectedPeriodForEvent || isTransmitting) return;
+
+    setIsTransmitting(true);
+    try {
+      const protocoloInicial = `PRT.S1298.${Math.random().toString(36).substring(7).toUpperCase()}`;
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setPeriodStatuses(prev => ({
+        ...prev,
+        [selectedPeriodForEvent]: { 
+          ...prev[selectedPeriodForEvent], 
+          s1298Status: 'PROCESSANDO', 
+          s1298Protocolo: protocoloInicial 
+        }
+      }));
+      
+      alert(`Evento S-1298 enviado para o período ${selectedPeriodForEvent}!`);
+    } catch (err: any) {
+      alert(`Erro no S-1298: ${err.message}`);
+    } finally {
+      setIsTransmitting(false);
+    }
+  };
+
+  const handleConsultS1298 = async () => {
+    if (!selectedPeriodForEvent || isTransmitting) return;
+    setIsTransmitting(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      const isSuccess = Math.random() > 0.05;
+      const recibo = isSuccess ? `1.${Math.random().toString().substring(2, 12)}` : null;
+      const status = isSuccess ? 'SUCESSO' : 'ERRO';
+
+      setPeriodStatuses(prev => ({
+        ...prev,
+        [selectedPeriodForEvent]: { 
+          ...prev[selectedPeriodForEvent], 
+          s1298Status: status, 
+          s1298Recibo: recibo 
+        }
+      }));
+      
+      if (isSuccess) alert('S-1298 processado com SUCESSO!');
+      else alert('Erro ao processar reabertura.');
+    } catch (err: any) {
+      alert(`Erro na consulta S-1298: ${err.message}`);
+    } finally {
+      setIsTransmitting(false);
+    }
+  };
+
+
+  const handleTransmitS1299 = async () => {
+    if (!selectedPeriodForEvent || isTransmitting) return;
+
+    setIsTransmitting(true);
+    try {
+      const protocoloInicial = `PRT.S1299.${Math.random().toString(36).substring(7).toUpperCase()}`;
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setPeriodStatuses(prev => ({
+        ...prev,
+        [selectedPeriodForEvent]: { 
+          ...prev[selectedPeriodForEvent], 
+          s1299Status: 'PROCESSANDO', 
+          s1299Protocolo: protocoloInicial 
+        }
+      }));
+      
+      alert(`Folha de pagamento FECHADA para o período ${selectedPeriodForEvent}!`);
+    } catch (err: any) {
+      alert(`Erro no S-1299: ${err.message}`);
+    } finally {
+      setIsTransmitting(false);
+    }
+  };
+
 
   // CEP Auto-fetch
   useEffect(() => {
@@ -1642,7 +1836,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                       <button onClick={() => handleEditWorker(worker)} className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
                         <Eye className="h-3 w-3" /> Ver / Editar
                       </button>
-                      <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
+                      <button 
+                        onClick={() => handleClearRemunerations(worker.id)}
+                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 transition-all shadow-sm"
+                      >
                         <Eraser className="h-3 w-3" /> Limpar remunerações
                       </button>
                       <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
@@ -1765,7 +1962,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                                     </div>
                                     <div className="flex items-center justify-center gap-1.5">
                                       <button 
-                                        onClick={() => toggleRemStatus(rem.id, 'remStatus')}
+                                        onClick={() => {
+                                          setSelectedWorker(w);
+                                          setSelectedRemForEvent(rem);
+                                          setCurrentView('s1200_view');
+                                        }}
                                         className={cn(
                                           "flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold text-white transition-all shadow-sm",
                                           rem.remStatus === 'SUCESSO' ? "bg-emerald-500" : "bg-[#007AFF]"
@@ -1774,7 +1975,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                                         <Send className="h-2 w-2" /> Rem
                                       </button>
                                       <button 
-                                        onClick={() => toggleRemStatus(rem.id, 'pagStatus')}
+                                        onClick={() => {
+                                          setSelectedWorker(w);
+                                          setSelectedRemForEvent(rem);
+                                          setCurrentView('s1210_view');
+                                        }}
                                         className={cn(
                                           "flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold text-white transition-all shadow-sm",
                                           rem.pagStatus === 'SUCESSO' ? "bg-emerald-500" : "bg-[#007AFF]"
@@ -1796,7 +2001,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                           </td>
                           <td className="p-4 border-r border-slate-100">
                             <div className="flex flex-col items-center gap-1.5">
-                              <button className="w-full px-2 py-1 bg-emerald-600 text-[9px] font-bold text-white rounded hover:bg-emerald-700 shadow-sm flex items-center justify-center gap-1">
+                              <button 
+                                onClick={() => {
+                                  setSelectedPeriodForEvent(pa);
+                                  setCurrentView('s1298_view');
+                                }}
+                                className="w-full px-2 py-1 bg-emerald-600 text-[9px] font-bold text-white rounded hover:bg-emerald-700 shadow-sm flex items-center justify-center gap-1"
+                              >
                                 <Send className="h-2.5 w-2.5" /> DCTFWeb
                               </button>
                               <div className="flex items-center gap-1">
@@ -1844,7 +2055,394 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         </div>
       )}
 
-      {/* S-2300 Event View */}
+      {/* S-1298 Event View */}
+      {currentView === 's1298_view' && selectedPeriodForEvent && (
+        <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">
+                Transmitir eventos para o eSocial
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">Confirme se as informações estão corretas antes de transmitir!</p>
+            </div>
+            <button 
+              onClick={() => { setSelectedPeriodForEvent(null); setCurrentView('management'); }}
+              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 transition-all shadow-md"
+            >
+              Voltar para obra
+            </button>
+          </div>
+
+          <div className="p-8">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">
+              Evento S-1298 – Reabertura dos Eventos Periódicos
+            </h3>
+
+            <div className="border border-slate-200 rounded overflow-hidden mb-8">
+              <table className="w-full text-sm border-collapse">
+                <tbody>
+                  <tr className="border-b border-slate-200">
+                    <td className="w-1/3 p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">Procurador:</td>
+                    <td className="p-3 text-slate-800 font-bold">CPF/CNPJ: 161.196.598-54</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">nome_empregador</td>
+                    <td className="p-3 text-slate-800 font-bold uppercase">{proprietarioNome}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cpf_empregador</td>
+                    <td className="p-3 text-slate-800 font-bold">{proprietarioCpfCnpj}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">evento</td>
+                    <td className="p-3 text-slate-800 font-bold">1298</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">periodo</td>
+                    <td className="p-3 text-slate-800 font-bold">{selectedPeriodForEvent.split('-')[1]}-{selectedPeriodForEvent.split('-')[0]}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="space-y-6">
+              <button 
+                onClick={periodStatuses[selectedPeriodForEvent]?.s1298Status === 'SUCESSO' || periodStatuses[selectedPeriodForEvent]?.s1298Status === 'PROCESSANDO' ? handleConsultS1298 : handleTransmitS1298}
+                disabled={isTransmitting}
+                className={cn(
+                  "w-full flex items-center justify-center gap-2 px-6 py-4 rounded-md font-bold transition-all shadow-lg text-lg",
+                  isTransmitting ? "bg-slate-400 cursor-not-allowed" : "bg-[#1B8E5A] hover:bg-emerald-700 text-white"
+                )}
+              >
+                {isTransmitting ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <ExternalLink className="h-5 w-5" />
+                )}
+                {isTransmitting ? 'Processando...' : 'Transmitir Evento / Consultar'}
+              </button>
+
+              <div className="flex flex-col items-center gap-4">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Outras opções!</p>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <button className="px-4 py-2 border border-slate-300 rounded text-xs font-bold text-slate-600 hover:bg-slate-50 shadow-sm">
+                    Já foi feito!
+                  </button>
+                  <button className="px-4 py-2 border border-slate-300 rounded text-xs font-bold text-slate-600 hover:bg-slate-50 shadow-sm">
+                    Limpar registro!
+                  </button>
+                  <button 
+                    onClick={handleTransmitS1299}
+                    disabled={isTransmitting}
+                    className="px-4 py-2 border border-red-200 rounded text-xs font-bold text-red-500 hover:bg-red-50 shadow-sm"
+                  >
+                    Fechar folha de pagamento
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-8 text-center">
+                <p className="text-xs text-slate-400 mb-4 italic">Sem resposta? Clique aqui apenas se o sistema não der nenhuma resposta.</p>
+                <button className="px-6 py-2 border border-slate-300 rounded text-xs font-bold text-slate-600 hover:bg-slate-50 shadow-sm">
+                  Consultar erros
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* S-1210 Event View */}
+      {currentView === 's1210_view' && selectedWorker && selectedRemForEvent && (
+        <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">
+                Evento S-1210 – Pagamentos de Rendimentos do Trabalho
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">Data do Pagamento: {new Date(selectedRemForEvent.year, selectedRemForEvent.month, 5).toLocaleDateString('pt-BR')}</p>
+            </div>
+            <button 
+              onClick={() => { setSelectedRemForEvent(null); setCurrentView('management'); }}
+              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 transition-all shadow-md"
+            >
+              Voltar para obra
+            </button>
+          </div>
+
+          <div className="p-8">
+            <div className="border border-slate-200 rounded overflow-hidden">
+              <table className="w-full text-sm border-collapse">
+                <tbody>
+                  <tr className="border-b border-slate-200">
+                    <td className="w-1/3 p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">Procurador:</td>
+                    <td className="p-2 text-slate-800 font-bold">CPF/CNPJ: 161.196.598-54</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">nome_empregador</td>
+                    <td className="p-2 text-slate-800 font-bold uppercase">{proprietarioNome}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cpf_empregador</td>
+                    <td className="p-2 text-slate-800 font-bold">{proprietarioCpfCnpj}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">perApur</td>
+                    <td className="p-2 text-slate-800 font-bold">{selectedRemForEvent.year}-{String(selectedRemForEvent.month).padStart(2, '0')}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">beneficiario</td>
+                    <td className="p-2 text-slate-800 font-bold uppercase">{selectedWorker.nome}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cpftrab</td>
+                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.cpf}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">dtPagto</td>
+                    <td className="p-2 text-slate-800 font-bold">{new Date(selectedRemForEvent.year, selectedRemForEvent.month, 5).toLocaleDateString('pt-BR')}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">tpPgto</td>
+                    <td className="p-2 text-slate-800 font-bold">1 - Pagamento de rendimentos do trabalho</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">vrLiq</td>
+                    <td className="p-2 text-slate-800 font-black text-lg">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedRemForEvent.value)}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">evento</td>
+                    <td className="p-2 text-slate-800 font-bold">1210</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">data_transmissao</td>
+                    <td className="p-2 text-slate-800 font-bold">{new Date().toLocaleDateString('pt-BR')}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-8">
+              <button 
+                onClick={selectedRemForEvent.pagStatus === 'SUCESSO' || selectedRemForEvent.pagStatus === 'PROCESSANDO' ? handleConsultS1210 : handleTransmitS1210}
+                disabled={isTransmitting}
+                className={cn(
+                  "w-full flex items-center justify-center gap-2 px-6 py-3 rounded-md font-bold transition-all shadow-lg text-lg",
+                  isTransmitting ? "bg-slate-400 cursor-not-allowed" : 
+                  selectedRemForEvent.pagStatus === 'SUCESSO' ? "bg-[#007AFF] hover:bg-blue-700 text-white" :
+                  "bg-emerald-600 hover:bg-emerald-700 text-white"
+                )}
+              >
+                {isTransmitting ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    {selectedRemForEvent.pagStatus === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
+                  </>
+                ) : (
+                  <>
+                    <ExternalLink className="h-5 w-5" />
+                    {selectedRemForEvent.pagStatus === 'SUCESSO' 
+                      ? 'Consultar Status / Recibo' 
+                      : selectedRemForEvent.pagStatus === 'ERRO' 
+                        ? 'Tentar Transmitir Novamente'
+                        : 'Transmitir Evento S-1210'}
+                  </>
+                )}
+              </button>
+              
+              {/* Government Response Log */}
+              {selectedRemForEvent.pagStatus && selectedRemForEvent.pagStatus !== 'PENDENTE' && (
+                <div className="mt-8 p-6 bg-white border border-slate-200 rounded shadow-sm animate-in fade-in slide-in-from-top-2">
+                  <div className="space-y-4">
+                    <div>
+                      <span className="font-bold text-slate-800">Envio =&gt; </span>
+                      <span className={cn(
+                        "font-medium",
+                        selectedRemForEvent.pagStatus === 'ERRO' ? "text-red-600" : "text-emerald-600"
+                      )}>
+                        201 - Lote recebido com sucesso.
+                      </span>
+                    </div>
+
+                    {(selectedRemForEvent.pagStatus === 'SUCESSO' || selectedRemForEvent.pagStatus === 'ERRO') && (
+                      <div>
+                        <span className="font-bold text-slate-800">Processamento =&gt; </span>
+                        <span className={cn(
+                          "font-medium",
+                          selectedRemForEvent.pagStatus === 'ERRO' ? "text-red-600" : "text-emerald-600"
+                        )}>
+                          {selectedRemForEvent.pagStatus === 'SUCESSO' ? '202 - Sucesso' : '401 - Erro na estrutura do evento.'}
+                        </span>
+                      </div>
+                    )}
+
+                    {selectedRemForEvent.pagStatus === 'SUCESSO' && (
+                      <div className="pt-2 text-emerald-700 text-sm font-medium border-t border-slate-100 mt-2">
+                        <p>O pagamento foi registrado e processado com sucesso pelo eSocial.</p>
+                        <p className="mt-1 text-slate-400 font-mono text-[10px]">Número do Recibo: {selectedRemForEvent.pagRecibo}</p>
+                      </div>
+                    )}
+
+                    {selectedRemForEvent.pagStatus === 'PROCESSANDO' && (
+                      <div className="pt-2 text-blue-700 text-sm font-medium border-t border-slate-100 mt-2">
+                        <p>Aguardando processamento do pagamento...</p>
+                        <p className="mt-1 text-slate-400 font-mono text-[10px]">Protocolo: {selectedRemForEvent.pagProtocolo}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* S-1200 Event View */}
+      {currentView === 's1200_view' && selectedWorker && selectedRemForEvent && (
+        <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">
+                Evento S-1200 – Remuneração de Trabalhador
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">Período de Apuração: {selectedRemForEvent.month}/{selectedRemForEvent.year}</p>
+            </div>
+            <button 
+              onClick={() => { setSelectedRemForEvent(null); setCurrentView('management'); }}
+              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 transition-all shadow-md"
+            >
+              Voltar para obra
+            </button>
+          </div>
+
+          <div className="p-8">
+            <div className="border border-slate-200 rounded overflow-hidden">
+              <table className="w-full text-sm border-collapse">
+                <tbody>
+                  <tr className="border-b border-slate-200">
+                    <td className="w-1/3 p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">Procurador:</td>
+                    <td className="p-2 text-slate-800 font-bold">CPF/CNPJ: 161.196.598-54</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">nome_empregador</td>
+                    <td className="p-2 text-slate-800 font-bold uppercase">{proprietarioNome}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cpf_empregador</td>
+                    <td className="p-2 text-slate-800 font-bold">{proprietarioCpfCnpj}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">perApur</td>
+                    <td className="p-2 text-slate-800 font-bold">{selectedRemForEvent.year}-{String(selectedRemForEvent.month).padStart(2, '0')}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">nome_trabalhador</td>
+                    <td className="p-2 text-slate-800 font-bold uppercase">{selectedWorker.nome}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cpftrab</td>
+                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.cpf}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">matricula</td>
+                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.matricula_esocial}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">codCateg</td>
+                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.categoria}</td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">vrSalar</td>
+                    <td className="p-2 text-slate-800 font-black text-lg">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedRemForEvent.value)}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">evento</td>
+                    <td className="p-2 text-slate-800 font-bold">1200</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">data_transmissao</td>
+                    <td className="p-2 text-slate-800 font-bold">{new Date().toLocaleDateString('pt-BR')}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-8">
+              <button 
+                onClick={selectedRemForEvent.remStatus === 'SUCESSO' || selectedRemForEvent.remStatus === 'PROCESSANDO' ? handleConsultS1200 : handleTransmitS1200}
+                disabled={isTransmitting}
+                className={cn(
+                  "w-full flex items-center justify-center gap-2 px-6 py-3 rounded-md font-bold transition-all shadow-lg text-lg",
+                  isTransmitting ? "bg-slate-400 cursor-not-allowed" : 
+                  selectedRemForEvent.remStatus === 'SUCESSO' ? "bg-[#007AFF] hover:bg-blue-700 text-white" :
+                  "bg-emerald-600 hover:bg-emerald-700 text-white"
+                )}
+              >
+                {isTransmitting ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    {selectedRemForEvent.remStatus === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
+                  </>
+                ) : (
+                  <>
+                    <ExternalLink className="h-5 w-5" />
+                    {selectedRemForEvent.remStatus === 'SUCESSO' 
+                      ? 'Consultar Status / Recibo' 
+                      : selectedRemForEvent.remStatus === 'ERRO' 
+                        ? 'Tentar Transmitir Novamente'
+                        : 'Transmitir Evento S-1200'}
+                  </>
+                )}
+              </button>
+              
+              {/* Government Response Log */}
+              {selectedRemForEvent.remStatus && selectedRemForEvent.remStatus !== 'PENDENTE' && (
+                <div className="mt-8 p-6 bg-white border border-slate-200 rounded shadow-sm animate-in fade-in slide-in-from-top-2">
+                  <div className="space-y-4">
+                    <div>
+                      <span className="font-bold text-slate-800">Envio =&gt; </span>
+                      <span className={cn(
+                        "font-medium",
+                        selectedRemForEvent.remStatus === 'ERRO' ? "text-red-600" : "text-emerald-600"
+                      )}>
+                        201 - Lote recebido com sucesso.
+                      </span>
+                    </div>
+
+                    {(selectedRemForEvent.remStatus === 'SUCESSO' || selectedRemForEvent.remStatus === 'ERRO') && (
+                      <div>
+                        <span className="font-bold text-slate-800">Processamento =&gt; </span>
+                        <span className={cn(
+                          "font-medium",
+                          selectedRemForEvent.remStatus === 'ERRO' ? "text-red-600" : "text-emerald-600"
+                        )}>
+                          {selectedRemForEvent.remStatus === 'SUCESSO' ? '202 - Sucesso' : '401 - Conteúdo do evento inválido.'}
+                        </span>
+                      </div>
+                    )}
+
+                    {selectedRemForEvent.remStatus === 'SUCESSO' && (
+                      <div className="pt-2 text-emerald-700 text-sm font-medium border-t border-slate-100 mt-2">
+                        <p>O evento foi aceito e processado com sucesso pelo Ambiente Nacional do eSocial.</p>
+                        <p className="mt-1 text-slate-400 font-mono text-[10px]">Número do Recibo: {selectedRemForEvent.remRecibo}</p>
+                      </div>
+                    )}
+
+                    {selectedRemForEvent.remStatus === 'PROCESSANDO' && (
+                      <div className="pt-2 text-blue-700 text-sm font-medium border-t border-slate-100 mt-2">
+                        <p>Aguardando processamento pelo eSocial...</p>
+                        <p className="mt-1 text-slate-400 font-mono text-[10px]">Protocolo: {selectedRemForEvent.remProtocolo}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {currentView === 's2300_view' && selectedWorker && (
         <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
           <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
