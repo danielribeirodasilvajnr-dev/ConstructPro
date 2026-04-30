@@ -10,127 +10,86 @@ require('dotenv').config({ path: '../.env' });
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json());
 
-let supabase;
-try {
-  supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY);
-} catch(e) {}
-
-const URL_ENVIO = 'https://webservices.envio.esocial.gov.br/servicos/empregador/enviarloteeventos/WsEnviarLoteEventos.svc';
-const URL_CONSULTA = 'https://webservices.consulta.esocial.gov.br/servicos/empregador/consultarloteeventos/WsConsultarLoteEventos.svc';
+const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 app.post('/esocial', async (req, res) => {
   try {
-    const { action, eventType, eventData, regularizationId, protocolo } = req.body;
+    const regularizationId = "a762e663-14e4-422b-b320-47af29eeb94a";
+    const empCpfCnpj = "25502713865";
+    const tpInscEmpregador = '2';
+
+    console.log(`[DESTRAVAMENTO] Extraindo chaves do certificado do Marcelino...`);
 
     const { data: credentials } = await supabase.from('esocial_credentials').select('*').eq('regularization_id', regularizationId).single();
-    if (!credentials) throw new Error('Certificado não encontrado.');
+    if (!credentials) throw new Error("Credenciais não encontradas.");
 
     const pfxPath = credentials.certificate_url.split('esocial_files/')[1];
     const { data: pfxBlob } = await supabase.storage.from('esocial_files').download(pfxPath);
     const pfxBuffer = Buffer.from(await pfxBlob.arrayBuffer());
-
-    const httpsAgent = new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: false, minVersion: 'TLSv1.2' });
-
-    if (action === 'CONSULT') {
-      // TENTATIVA COM A BARRA FINAL (Truque de mestre para servidores IIS/WCF específicos)
-      const soapRequest = `<?xml version="1.0" encoding="utf-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos">
-  <soapenv:Body>
-    <ws:ConsultarLoteEventos>
-      <ws:consulta>
-        <protocolo xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0">${protocolo}</protocolo>
-      </ws:consulta>
-    </ws:ConsultarLoteEventos>
-  </soapenv:Body>
-</soapenv:Envelope>`;
-
-      try {
-        const response = await axios.post(URL_CONSULTA, soapRequest, {
-          headers: { 
-            'Content-Type': 'text/xml; charset=utf-8', 
-            // Note a barra no final da URI da ação
-            'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos/ConsultarLoteEventos/"' 
-          },
-          httpsAgent
-        });
-        
-        const result = response.data;
-        const reciboMatch = result.match(/<nrRecibo>(.*?)<\/nrRecibo>/);
-        return res.json({ success: true, status: result.includes('sucesso') ? 'SUCESSO' : 'PROCESSANDO', recibo: reciboMatch ? reciboMatch[1] : null });
-      } catch (err) {
-        // Se falhar com barra, tentamos SEM barra mas com o namespace da consulta na tag BODY
-        const soapRequest2 = `<?xml version="1.0" encoding="utf-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-  <soapenv:Body>
-    <ConsultarLoteEventos xmlns="http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos">
-      <consulta xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0">
-        <protocolo>${protocolo}</protocolo>
-      </consulta>
-    </ConsultarLoteEventos>
-  </soapenv:Body>
-</soapenv:Envelope>`;
-
-        try {
-          const response2 = await axios.post(URL_CONSULTA, soapRequest2, {
-            headers: { 
-              'Content-Type': 'text/xml; charset=utf-8', 
-              'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/loteeventos/WsConsultarLoteEventos/ConsultarLoteEventos"' 
-            },
-            httpsAgent
-          });
-          const result2 = response2.data;
-          const reciboMatch2 = result2.match(/<nrRecibo>(.*?)<\/nrRecibo>/);
-          return res.json({ success: true, status: result2.includes('sucesso') ? 'SUCESSO' : 'PROCESSANDO', recibo: reciboMatch2 ? reciboMatch2[1] : null });
-        } catch (err2) {
-          const errorDetail = err2.response?.data ? err2.response.data.toString().replace(/<[^>]*>/g, ' ').substring(0, 300) : err2.message;
-          return res.json({ success: false, error: `eSocial rejeitou consulta final: ${errorDetail}` });
-        }
-      }
-    }
-
-    // TRANSMISSÃO (Validada e Funcionando!)
-    const empCpfCnpj = (eventData.proprietarioCpfCnpj || eventData.cpf_cnpj || "").replace(/\D/g, '');
-    const workerCpf = (eventData.workerCpf || eventData.cpf || "").replace(/\D/g, '');
-    const workerNome = eventData.workerNome || eventData.nome || "";
-    const tpInscEmpregador = empCpfCnpj.length === 11 ? '2' : '1';
-    const timestamp = new Date().toISOString().replace(/[-:T.Z]/g, '').substring(0, 14);
-    const eventId = `ID${tpInscEmpregador}${empCpfCnpj.padEnd(14, '0')}${timestamp}${Math.floor(Math.random()*10000).toString().padStart(5, '0')}`;
-    let eventXml = `<evtTSVInicio xmlns="http://www.esocial.gov.br/schema/evt/evtTSVInicio/v_S_01_02_00" Id="${eventId}"><ideEvento><indRetif>1</indRetif><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>AevumPro1.0</verProc></ideEvento><ideEmpregador><tpInsc>${tpInscEmpregador}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><trabalhador><cpfTrab>${workerCpf}</cpfTrab><nmTrab>${workerNome}</nmTrab></trabalhador></evtTSVInicio>`;
-    let privateKeyPem, certificatePem;
+    
     const pfxAsn1 = forge.asn1.fromDer(forge.util.createBuffer(pfxBuffer).getBytes());
     const pfx = forge.pkcs12.pkcs12FromAsn1(pfxAsn1, credentials.certificate_password);
-    pfx.safeContents.forEach(sc => (sc.safeEntries || []).forEach(e => {
-        if (e.key) privateKeyPem = forge.pki.privateKeyToPem(e.key);
-        if (e.cert) certificatePem = forge.pki.certificateToPem(e.cert);
-    }));
-    const signedXml = signXML(eventXml, privateKeyPem, certificatePem, eventId);
-    const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://www.esocial.gov.br/servicos/empregador/loteeventos/WsEnviarLoteEventos"><soapenv:Header/><soapenv:Body><ws:EnviarLoteEventos><ws:loteEventos><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/v1_1_1"><envioLoteEventos><ideEmpregador><tpInsc>${tpInscEmpregador}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTransmissor><tpInsc>${tpInscEmpregador}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideTransmissor><eventos><evento Id="${eventId}">${signedXml}</evento></eventos></envioLoteEventos></eSocial></ws:loteEventos></ws:EnviarLoteEventos></soapenv:Body></soapenv:Envelope>`;
-    const response = await axios.post(URL_ENVIO, soapRequest, {
+    
+    let privateKeyPem, certificatePem;
+    
+    // Método getBags (O mais seguro)
+    const certBags = pfx.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag];
+    if (certBags && certBags.length > 0) {
+      certificatePem = forge.pki.certificateToPem(certBags[0].cert);
+    }
+    
+    const keyBags = pfx.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[forge.pki.oids.pkcs8ShroudedKeyBag];
+    if (keyBags && keyBags.length > 0) {
+      privateKeyPem = forge.pki.privateKeyToPem(keyBags[0].key);
+    }
+
+    if (!certificatePem || !privateKeyPem) throw new Error("Falha ao extrair chaves do PFX.");
+
+    const timestamp = new Date().toISOString().replace(/[-:T.Z]/g, '').substring(0, 14);
+    const eventId = `ID${tpInscEmpregador}${empCpfCnpj.padEnd(14, '0')}${timestamp}00001`;
+    
+    const eventXml = `<?xml version="1.0" encoding="UTF-8"?>
+<eSocial xmlns="http://www.esocial.gov.br/schema/evt/evtInfoEmpregador/v_S_01_02_00">
+  <evtInfoEmpregador Id="${eventId}">
+    <ideEvento><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>AevumPro1.0</verProc></ideEvento>
+    <ideEmpregador><tpInsc>${tpInscEmpregador}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador>
+    <infoEmpregador>
+      <inclusao>
+        <idePeriodo><iniValid>2024-01</iniValid></idePeriodo>
+        <infoCadastro>
+          <classTrib>21</classTrib><natJurid>4081</natJurid><indCoop>0</indCoop><indConstr>0</indConstr><indDesFolha>0</indDesFolha><indOptRegEletron>0</indOptRegEletron>
+          <contato><nmCont>MARCELINO BASTOS</nmCont><cpfCont>${empCpfCnpj}</cpfCont></contato>
+        </infoCadastro>
+      </inclusao>
+    </infoEmpregador>
+  </evtInfoEmpregador>
+</eSocial>`;
+
+    const sig = new SignedXml();
+    sig.addReference(`//*[local-name(.)='evtInfoEmpregador']`, ["http://www.w3.org/2000/09/xmldsig#enveloped-signature", "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"], "http://www.w3.org/2001/04/xmlenc#sha256");
+    const cleanCert = certificatePem.replace(/-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\n|\r/g, '');
+    sig.keyInfoProvider = { getKeyInfo: () => `<X509Data><X509Certificate>${cleanCert}</X509Certificate></X509Data>`, getKey: () => privateKeyPem };
+    sig.signatureAlgorithm = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
+    sig.canonicalizationAlgorithm = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315";
+    sig.computeSignature(eventXml);
+    const signedXml = sig.getSignedXml();
+
+    const soapRequest = `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://www.esocial.gov.br/servicos/empregador/loteeventos/WsEnviarLoteEventos">
+  <soapenv:Body><ws:EnviarLoteEventos><ws:loteEventos><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/v1_1_1"><envioLoteEventos><ideEmpregador><tpInsc>${tpInscEmpregador}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTransmissor><tpInsc>${tpInscEmpregador}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideTransmissor><eventos><evento Id="${eventId}">${signedXml}</evento></eventos></envioLoteEventos></eSocial></ws:loteEventos></ws:EnviarLoteEventos></soapenv:Body></soapenv:Envelope>`;
+
+    const response = await axios.post('https://webservices.envio.esocial.gov.br/servicos/empregador/enviarloteeventos/WsEnviarLoteEventos.svc', soapRequest, {
       headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/loteeventos/WsEnviarLoteEventos/EnviarLoteEventos"' },
       httpsAgent
     });
-    const protocoloMatch = response.data.match(/<protocolo>(.*?)<\/protocolo>/);
-    if (!protocoloMatch) throw new Error('eSocial erro: ' + response.data.substring(0, 300));
-    res.json({ success: true, protocolo: protocoloMatch[1] });
+    
+    res.json({ success: true, protocolo: response.data });
+
   } catch (error) {
-    const errorMsg = error.response?.data ? error.response.data.toString().replace(/<[^>]*>/g, ' ').substring(0, 300) : error.message;
-    res.status(200).json({ success: false, error: errorMsg });
+    res.status(200).json({ success: false, error: error.message });
   }
 });
 
-function signXML(xml, privateKeyPem, certificatePem, eventId) {
-  const sig = new SignedXml();
-  const doc = new DOMParser().parseFromString(xml, 'text/xml');
-  const rootTag = doc.documentElement.localName;
-  sig.addReference(`//*[local-name(.)='${rootTag}']`, ["http://www.w3.org/2000/09/xmldsig#enveloped-signature", "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"], "http://www.w3.org/2001/04/xmlenc#sha256");
-  const cleanCert = certificatePem.replace(/-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\n|\r/g, '');
-  sig.keyInfoProvider = { getKeyInfo: () => `<X509Data><X509Certificate>${cleanCert}</X509Certificate></X509Data>`, getKey: () => privateKeyPem };
-  sig.signatureAlgorithm = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
-  sig.canonicalizationAlgorithm = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315";
-  sig.computeSignature(xml);
-  return sig.getSignedXml();
-}
-
-app.listen(3005, () => console.log("🚀 Proxy de Última Instância Online"));
+app.listen(3005, () => console.log("🚀 Proxy de EXTRAÇÃO DEFINITIVA Online"));
