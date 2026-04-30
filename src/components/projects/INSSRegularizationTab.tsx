@@ -25,7 +25,13 @@ import {
   Loader2,
   ExternalLink,
   Info,
-  Calendar
+  Calendar,
+  ChevronDown,
+  Lock,
+  Wallet,
+  History,
+  Building2,
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
@@ -56,6 +62,7 @@ interface Worker {
   tab_rubrica: string;
   cod_rubrica: string;
   cod_lotacao: string;
+  esocial_status?: string;
 }
 
 interface INSSRegularizationTabProps {
@@ -96,7 +103,7 @@ const CATEGORIA_OPTIONS = [
 
 export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh, readOnly, isStandalone }: INSSRegularizationTabProps) {
   const { user } = useAuth();
-  const [currentView, setCurrentView] = useState<'summary' | 'management' | 'worker_form' | 's2300_view'>('summary');
+  const [currentView, setCurrentView] = useState<'summary' | 'management' | 'worker_form' | 's2300_view' | 's1200_view' | 's1210_view' | 's1298_view' | 's1000_view' | 's1005_view' | 's1010_view' | 's1020_view'>('summary');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
   const [workModalMode, setWorkModalMode] = useState<'simple' | 'detailed'>('simple');
@@ -108,6 +115,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [name, setName] = useState('');
   const [client, setClient] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [status, setStatus] = useState('Negociando');
   const [cpfCnpj, setCpfCnpj] = useState('');
   const [prazos, setPrazos] = useState('MAED: | Parcelar:');
@@ -128,6 +136,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [rmtInicial, setRmtInicial] = useState(0);
   const [requisitoPercent, setRequisitoPercent] = useState(0);
   const [emitirDocumento, setEmitirDocumento] = useState('Não');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [categoria, setCategoria] = useState('');
 
   // Form State - Worker
   const [workerCpf, setWorkerCpf] = useState('');
@@ -273,7 +284,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           year: currY,
           value: val,
           remStatus: 'PENDENTE',
-          pagStatus: 'PENDENTE'
+          pagStatus: 'PENDENTE',
+          isLocked: true
         });
 
         currM++;
@@ -285,7 +297,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       // Merge with existing (updating duplicates)
       const existingMap = new Map(allRemunerations.map(r => [r.id, r]));
-      newRems.forEach(r => existingMap.set(r.id, r));
+      newRems.forEach(r => {
+        // If it's already locked and exists, don't overwrite unless we want to allow it
+        // User said "travar os dados mensais", so we set locked: true
+        existingMap.set(r.id, { ...r, isLocked: true });
+      });
       
       setAllRemunerations(Array.from(existingMap.values()));
       
@@ -331,6 +347,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       setName(inssRegularization.name || '');
       setClient(inssRegularization.client || '');
       setPhone(inssRegularization.phone || '');
+      setEmail(inssRegularization.email || '');
       setStatus(inssRegularization.status || 'Negociando');
       setCpfCnpj(inssRegularization.cpf_cnpj || '');
       setPrazos(inssRegularization.prazos || 'MAED: | Parcelar:');
@@ -1541,63 +1558,33 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
   return (
     <div className="max-w-[1000px] mx-auto space-y-6 pb-32 animate-in fade-in duration-500">
-      {/* Summary View */}
+      {/* Summary View - DARK THEME PREVIEW */}
       {currentView === 'summary' && (
         <div className="space-y-6 animate-in fade-in duration-500">
-          {/* Header Info Card */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden border border-slate-200">
-            {/* Name and Copy */}
-            <div className="p-4 flex items-center gap-3 border-b border-slate-100">
-              <h2 className="text-3xl font-bold text-slate-800">{client}</h2>
-              <button onClick={() => copyToClipboard(client)} className="p-1.5 bg-slate-100 rounded-md hover:bg-slate-200 transition-colors">
-                <Copy className="h-4 w-4 text-slate-600" />
-              </button>
+          {/* Header Summary Card - DARK THEME */}
+          <div className="bg-[#1C232E] rounded-2xl shadow-sm border border-white/5 overflow-hidden text-white mb-6">
+            <div className="p-8 border-b border-white/5 bg-gradient-to-r from-primary/10 to-transparent">
+              <h3 className="text-3xl font-black tracking-tight">{client}</h3>
+              <p className="text-slate-400 text-sm mt-1 font-medium">{phone} | {email}</p>
             </div>
-
-            {/* Phone and WhatsApp */}
-            <div className="p-4 flex items-center gap-2 border-b border-slate-100 bg-slate-50/50">
-              <MessageSquare className="h-4 w-4 text-emerald-600 fill-emerald-600/20" />
-              <span className="text-slate-600 font-medium">{phone} |</span>
-            </div>
-
-            {/* Status Row */}
-            <div className="flex border-b border-slate-100">
-              <div className="w-32 p-3 bg-slate-50 border-r border-slate-100 flex items-center">
-                <span className="text-sm font-bold text-slate-700">Status</span>
+            
+            {/* CPF/CNPJ Row */}
+            <div className="flex border-b border-white/5">
+              <div className="w-40 p-4 bg-white/5 border-r border-white/5 flex items-center">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">CPF / CNPJ:</span>
               </div>
-              <div className="flex-1 p-3 flex items-center gap-2">
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white rounded text-xs font-bold">
-                  <MessageSquare className="h-3 w-3" />
-                  {status} ➔ {status} ➔
-                </div>
+              <div className="flex-1 p-4 flex items-center">
+                <span className="text-white font-bold">{proprietarioCpfCnpj || 'Não informado'}</span>
               </div>
-            </div>
-
-            {/* CPF / CNPJ Row */}
-            <div className="flex border-b border-slate-100">
-              <div className="w-32 p-3 bg-slate-50 border-r border-slate-100 flex items-center">
-                <span className="text-sm font-bold text-slate-700">CPF / CNPJ</span>
-              </div>
-              <div className="flex-1 p-3 flex items-center gap-2">
-                <button onClick={() => copyToClipboard(cpfCnpj)} className="p-1.5 bg-slate-100 rounded-md hover:bg-slate-200 transition-colors">
-                  <Copy className="h-4 w-4 text-slate-600" />
-                </button>
-                <span className="text-slate-400 font-medium">|| {cpfCnpj}</span>
-              </div>
-            </div>
-
-            {/* Detalhes Header */}
-            <div className="p-3 bg-slate-50 border-b border-slate-100">
-              <span className="text-sm font-bold text-slate-700">Detalhes</span>
             </div>
 
             {/* Obras Row */}
-            <div className="flex border-b border-slate-100">
-              <div className="w-32 p-3 bg-slate-50 border-r border-slate-100 flex items-center">
-                <span className="text-sm font-bold text-slate-700">Obras</span>
+            <div className="flex border-b border-white/5">
+              <div className="w-40 p-4 bg-white/5 border-r border-white/5 flex items-center">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Obras:</span>
               </div>
-              <div className="flex-1 p-3">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#D94141] text-white rounded text-xs font-bold uppercase tracking-wider">
+              <div className="flex-1 p-4 flex items-center gap-2">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#D94141] text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg shadow-red-500/20">
                   <Hammer className="h-3.5 w-3.5 fill-white" />
                   {name} / {areaConstruida.toFixed(2)}m²
                 </div>
@@ -1605,22 +1592,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
 
             {/* Prazos Row */}
-            <div className="flex border-b border-slate-100">
-              <div className="w-32 p-3 bg-slate-50 border-r border-slate-100 flex items-center">
-                <span className="text-sm font-bold text-slate-700">Prazos:</span>
+            <div className="flex border-b border-white/5">
+              <div className="w-40 p-4 bg-white/5 border-r border-white/5 flex items-center">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Prazos:</span>
               </div>
-              <div className="flex-1 p-3 flex items-center">
-                <span className="text-slate-600 text-sm">{prazos}</span>
+              <div className="flex-1 p-4 flex items-center">
+                <span className="text-slate-300 text-sm font-medium">{prazos}</span>
               </div>
             </div>
 
             {/* OBS Row */}
             <div className="flex">
-              <div className="w-32 p-3 bg-slate-50 border-r border-slate-100 flex items-center">
-                <span className="text-sm font-bold text-slate-700">OBS:</span>
+              <div className="w-40 p-4 bg-white/5 border-r border-white/5 flex items-center">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">OBS:</span>
               </div>
-              <div className="flex-1 p-3">
-                <span className="text-slate-600 text-sm">{observations}</span>
+              <div className="flex-1 p-4">
+                <span className="text-slate-400 text-sm leading-relaxed italic">{observations}</span>
               </div>
             </div>
           </div>
@@ -1652,82 +1639,89 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       {/* Management View (Screen from 2nd photo) - Inline */}
       {currentView === 'management' && (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-          {/* Management Header Card */}
-          <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden text-slate-800">
-            {/* Row 1: Nosso Contato */}
-            <div className="flex border-b border-slate-100">
-              <div className="w-40 p-3 bg-slate-50 border-r border-slate-100 flex items-center">
-                <span className="text-sm font-bold text-slate-700">Nosso Contato</span>
+          {/* Management Header Card - DARK THEME PREMIUM */}
+          <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden text-white">
+            {/* Header: Name and Phone */}
+            <div className="p-8 border-b border-white/5 bg-gradient-to-r from-primary/10 to-transparent">
+              <div className="flex items-center gap-3 mb-2">
+                <h2 className="text-4xl font-black tracking-tight">{client}</h2>
+                <button onClick={() => copyToClipboard(client)} className="p-1.5 bg-white/5 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white">
+                  <Copy className="h-4 w-4" />
+                </button>
               </div>
-              <div className="flex-1 p-3 flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold text-slate-800">{client}</span>
-                  <button onClick={() => copyToClipboard(client)} className="p-1 bg-slate-100 rounded hover:bg-slate-200 transition-colors"><Copy className="h-3 w-3 text-slate-500" /></button>
-                </div>
-                <div className="flex items-center gap-1 text-slate-500 text-xs">
-                  <MessageSquare className="h-3 w-3 text-emerald-600" />
-                  <span>{phone} |</span>
-                </div>
+              <div className="flex items-center gap-2 text-primary font-mono text-lg font-bold">
+                <MessageSquare className="h-5 w-5" />
+                <span>{phone} |</span>
               </div>
             </div>
 
             {/* Row 2: Status */}
-            <div className="flex border-b border-slate-100">
-              <div className="w-40 p-3 bg-slate-50 border-r border-slate-100 flex items-center">
-                <span className="text-sm font-bold text-slate-700">Status</span>
+            <div className="flex border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+              <div className="w-48 p-4 bg-white/5 border-r border-white/5 flex items-center">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Status</span>
               </div>
-              <div className="flex-1 p-3">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white rounded text-xs font-bold">
-                  <MessageSquare className="h-3 w-3" />
+              <div className="flex-1 p-4">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20">
+                  <MessageSquare className="h-4 w-4" />
                   {status} ➔ {status} ➔
                 </div>
               </div>
             </div>
 
-            {/* Row 3: Proprietário */}
-            <div className="flex border-b border-slate-100">
-              <div className="w-40 p-3 bg-slate-50 border-r border-slate-100 flex items-center">
-                <span className="text-sm font-bold text-slate-700">Proprietário</span>
+            {/* Row 3: CPF / CNPJ */}
+            <div className="flex border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+              <div className="w-48 p-4 bg-white/5 border-r border-white/5 flex items-center">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">CPF / CNPJ</span>
               </div>
-              <div className="flex-1 p-3 flex items-center gap-2">
-                <button onClick={() => copyToClipboard(proprietarioNome)} className="p-1 bg-slate-100 rounded hover:bg-slate-200 transition-colors"><Copy className="h-3.5 w-3.5 text-slate-500" /></button>
-                <button onClick={() => copyToClipboard(proprietarioCpfCnpj)} className="p-1 bg-slate-100 rounded hover:bg-slate-200 transition-colors"><Copy className="h-3.5 w-3.5 text-slate-500" /></button>
-                <span className="px-2 py-0.5 bg-slate-500 text-white rounded text-[10px] font-bold">{proprietarioNome || 'Não definido'}</span>
-                {proprietarioCpfCnpj && (
-                  <span className="text-sm font-bold text-slate-700 ml-2">{proprietarioCpfCnpj}</span>
-                )}
-              </div>
-            </div>
-
-            {/* Row 4: Dados / Endereço */}
-            <div className="flex border-b border-slate-100">
-              <div className="w-40 p-3 bg-slate-50 border-r border-slate-100 flex items-center">
-                <span className="text-sm font-bold text-slate-700">Dados / Endereço</span>
-              </div>
-              <div className="flex-1 p-3">
-                <span className="text-sm font-bold uppercase text-slate-700">{name} / {areaConstruida.toFixed(2)}m² / {address}</span>
+              <div className="flex-1 p-4 flex items-center gap-3">
+                <button onClick={() => copyToClipboard(proprietarioCpfCnpj)} className="p-1.5 bg-white/5 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white">
+                  <Copy className="h-4 w-4" />
+                </button>
+                <span className="text-slate-400 font-bold">||</span>
+                <span className="text-xl font-bold text-slate-300 tracking-wider font-mono">{proprietarioCpfCnpj}</span>
               </div>
             </div>
 
-            {/* Row 5: CNO / RMT */}
-            <div className="flex border-b border-slate-100">
-              <div className="w-40 p-3 bg-slate-50 border-r border-slate-100 flex items-center">
-                <span className="text-sm font-bold text-slate-700">CNO / RMT</span>
+            {/* Row 4: Detalhes */}
+            <div className="flex border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+              <div className="w-48 p-4 bg-white/5 border-r border-white/5 flex items-center">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Detalhes</span>
               </div>
-              <div className="flex-1 p-3 flex items-center gap-3">
-                <button onClick={() => copyToClipboard(cnoNumero)} className="p-1 bg-slate-100 rounded hover:bg-slate-200 transition-colors"><Copy className="h-3.5 w-3.5 text-slate-500" /></button>
-                <span className="text-sm font-bold text-slate-700">{cnoNumero || '---'} / R$ {rmtInicial.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / Requisito: {requisitoPercent}%</span>
-                <span className="px-2 py-0.5 bg-red-500 text-white rounded text-[10px] font-bold flex items-center gap-1">F.A. <AlertCircle className="h-3 w-3" /></span>
+              <div className="flex-1 p-4 flex items-center">
+                <span className="text-slate-500 italic text-sm">--</span>
               </div>
             </div>
 
-            {/* Row 6: Observações */}
-            <div className="flex">
-              <div className="w-40 p-3 bg-slate-50 border-r border-slate-100 flex items-center">
-                <span className="text-sm font-bold text-slate-700">Observações</span>
+            {/* Row 5: Obras */}
+            <div className="flex border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+              <div className="w-48 p-4 bg-white/5 border-r border-white/5 flex items-center">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Obras</span>
               </div>
-              <div className="flex-1 p-3">
-                <span className="text-sm font-bold text-slate-700">Tempo da obra (meses): 0 / 0 :: {observations}</span>
+              <div className="flex-1 p-4 flex items-center gap-3">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#D94141] text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-red-500/20">
+                  <Hammer className="h-4 w-4 fill-white" />
+                  {name} / {areaConstruida.toFixed(2)}m²
+                </div>
+              </div>
+            </div>
+
+            {/* Row 6: Prazos */}
+            <div className="flex border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+              <div className="w-48 p-4 bg-white/5 border-r border-white/5 flex items-center">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Prazos:</span>
+              </div>
+              <div className="flex-1 p-4 flex items-center">
+                <span className="text-slate-300 text-base font-bold tracking-tight">{prazos}</span>
+              </div>
+            </div>
+
+            {/* Row 7: OBS */}
+            <div className="flex hover:bg-white/[0.02] transition-colors">
+              <div className="w-48 p-4 bg-white/5 border-r border-white/5 flex items-center">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">OBS:</span>
+              </div>
+              <div className="flex-1 p-4">
+                <span className="text-slate-400 text-sm leading-relaxed italic">{observations}</span>
               </div>
             </div>
           </div>
@@ -1745,13 +1739,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </button>
           </div>
 
-          {/* Checklist Section */}
-          <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-            <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-sm font-bold text-slate-700">Checklist Inicial</span>
-              <X className="h-4 w-4 text-slate-400 cursor-pointer" />
+          {/* Checklist Section - DARK THEME PREMIUM */}
+          <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden">
+            <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Checklist Inicial</span>
+              <X className="h-4 w-4 text-slate-500 cursor-pointer hover:text-white transition-colors" />
             </div>
-            <div className="p-4 space-y-4 text-slate-800">
+            <div className="p-8 space-y-6">
               {[
                 { label: 'Verificar documentos da obra', status: null },
                 { label: 'Fazer / Revisar CNO da obra', status: esocialS1005Status?.status },
@@ -1760,15 +1754,18 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 { label: 'Confirmar 50% ou 70% do RMT', status: null },
                 { label: 'Confirmar recibos de autônomo ou NF de MEI', status: null }
               ].map((item, idx) => (
-                <div key={idx} className="flex items-center gap-12">
+                <div key={idx} className="flex items-center justify-between group">
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">{item.label}</span>
                   <button className={cn(
-                    "px-3 py-1.5 text-white rounded text-xs font-bold shadow-sm transition-colors",
-                    item.status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#E23F3F] hover:bg-red-600"
+                    "px-6 py-2 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all",
+                    item.status === 'SUCESSO' ? "bg-emerald-600 shadow-emerald-500/20" : "bg-[#E23F3F] hover:bg-red-600 shadow-red-500/10"
                   )}>
-                    {item.status === 'SUCESSO' ? <Check className="h-3 w-3 inline mr-1" /> : null}
-                    {item.status === 'SUCESSO' ? 'Concluído' : 'Fazer ➔'}
+                    {item.status === 'SUCESSO' ? (
+                      <div className="flex items-center gap-2">
+                        <Check className="h-3.5 w-3.5" /> Concluído
+                      </div>
+                    ) : 'Pendente ➔'}
                   </button>
-                  <span className="text-sm font-bold text-slate-700">{item.label}</span>
                 </div>
               ))}
             </div>
@@ -1821,54 +1818,54 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
           <p className="text-slate-400 text-[10px] italic font-medium uppercase tracking-wider">Cadastre trabalhador e remunerações para liberar os botões acima.</p>
 
-          {/* Certificate Configuration */}
-          <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-            <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-sm font-bold text-slate-700">Configuração do certificado</span>
-              <X className="h-4 w-4 text-slate-400 cursor-pointer" />
+          {/* Certificate Configuration - DARK THEME */}
+          <div className="bg-[#1C232E] rounded-2xl shadow-xl border border-white/5 overflow-hidden">
+            <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+              <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Configuração do certificado</span>
+              <X className="h-4 w-4 text-slate-500 cursor-pointer hover:text-white" />
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Certificado Digital A1 - Procurador</label>
-                    <div className="flex gap-2">
+            <div className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Certificado Digital A1 - Procurador</label>
+                    <div className="flex gap-3">
                       <div className="flex-1 relative">
                         <input 
                           type="text" 
                           readOnly 
                           value={certificateApelido || (certificateUrl ? 'Certificado Carregado' : '')} 
                           placeholder="Clique em escolher arquivo"
-                          className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm text-slate-600 outline-none"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-primary transition-all"
                         />
-                        {certificateUrl && <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />}
+                        {certificateUrl && <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />}
                       </div>
-                      <label className="px-4 py-2 bg-slate-100 text-slate-700 rounded text-xs font-bold hover:bg-slate-200 cursor-pointer transition-colors flex items-center gap-2 border border-slate-200">
-                        {isUploadingCert ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                      <label className="px-5 py-3 bg-white/5 text-white rounded-xl text-xs font-black hover:bg-white/10 cursor-pointer transition-all flex items-center gap-2 border border-white/10 shadow-lg uppercase tracking-widest">
+                        {isUploadingCert ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-4 w-4" />}
                         Escolher
                         <input type="file" className="hidden" accept=".pfx,.p12" onChange={handleUploadCertificate} disabled={isUploadingCert} />
                       </label>
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Senha do Certificado</label>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Senha do Certificado</label>
                     <input 
                       type="password" 
                       value={certificatePassword}
                       onChange={(e) => setCertificatePassword(e.target.value)}
                       placeholder="Senha do arquivo .pfx"
-                      className="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none transition-all shadow-sm"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-lg"
                     />
                   </div>
                 </div>
 
-                <div className="flex flex-col justify-end gap-3">
-                  <div className="bg-emerald-50 border border-emerald-100 rounded p-3 flex items-start gap-3">
-                    <div className="p-1.5 bg-emerald-500 rounded text-white shadow-sm"><CheckCircle2 className="h-4 w-4" /></div>
+                <div className="flex flex-col justify-end gap-4">
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-start gap-4">
+                    <div className="p-2 bg-emerald-500 rounded-lg text-white shadow-lg shadow-emerald-500/20"><CheckCircle2 className="h-5 w-5" /></div>
                     <div className="space-y-1">
-                      <p className="text-xs font-bold text-emerald-800 uppercase tracking-tight">Status da Credencial</p>
-                      <p className="text-[10px] text-emerald-600 font-medium leading-relaxed">
+                      <p className="text-xs font-black text-emerald-500 uppercase tracking-widest">Status da Credencial</p>
+                      <p className="text-[11px] text-emerald-500/80 font-medium leading-relaxed">
                         {esocialCredentials 
                           ? '✅ Credenciais salvas com segurança no banco de dados. Os eventos serão assinados no servidor.' 
                           : '⚠️ Nenhuma credencial configurada. Necessário para transmitir eventos ao eSocial.'}
@@ -1877,7 +1874,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </div>
                   <button 
                     onClick={handleSaveCredentials}
-                    className="w-full py-3 bg-blue-600 text-white rounded font-bold text-sm hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2 uppercase tracking-widest"
+                    className="w-full py-4 bg-primary text-white rounded-xl font-black text-sm hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 uppercase tracking-[2px]"
                   >
                     <Save className="h-4 w-4" />
                     Salvar Configurações
@@ -1887,155 +1884,161 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
           </div>
 
-          {/* Workers Section */}
-          <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-            <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-bold text-slate-700">Trabalhadores</span>
-                <div className="flex items-center gap-2 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-500 uppercase tracking-tight shadow-sm">
-                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+          {/* Workers Section - DARK THEME */}
+          <div className="bg-[#1C232E] rounded-2xl shadow-xl border border-white/5 overflow-hidden">
+            <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Trabalhadores</span>
+                <div className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black text-slate-400 uppercase tracking-widest shadow-lg">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                   {workers.filter(w => w.esocial_status === 'SUCESSO').length} de {workers.length} Transmitidos
                 </div>
               </div>
-              <X className="h-4 w-4 text-slate-400 cursor-pointer" />
+              <X className="h-4 w-4 text-slate-500 cursor-pointer hover:text-white" />
             </div>
             
-            <div className="p-6 space-y-6 bg-slate-50/50">
+            <div className="p-8 space-y-6 bg-[#1C232E]">
               {workers.length > 0 ? (
                 workers.map(worker => (
-                  <div key={worker.id} className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm space-y-6">
+                  <div key={worker.id} className="bg-white/5 p-8 rounded-2xl border border-white/5 shadow-2xl space-y-8 group hover:border-primary/30 transition-all">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-xl font-bold text-slate-800">{worker.nome}</h3>
-                        <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">
+                        <h3 className="text-3xl font-black text-white tracking-tight">{worker.nome}</h3>
+                        <p className="text-primary font-black uppercase tracking-[2px] text-xs mt-1">
                           {CATEGORIA_OPTIONS.find(opt => opt.value === worker.categoria)?.label || worker.categoria}
                         </p>
                       </div>
                       {/* Status eSocial Badge */}
                       {worker.esocial_status === 'SUCESSO' && (
-                        <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase border border-emerald-200 shadow-sm">
-                          <CheckCircle2 className="h-3 w-3" /> eSocial Transmitido
+                        <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/20 text-emerald-500 rounded-xl text-[10px] font-black uppercase border border-emerald-500/20 shadow-lg tracking-widest">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> eSocial Transmitido
                         </div>
                       )}
                       {worker.esocial_status === 'ERRO' && (
-                        <div className="flex items-center gap-1.5 px-3 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-bold uppercase border border-red-200 shadow-sm">
-                          <AlertCircle className="h-3 w-3" /> Erro no eSocial
+                        <div className="flex items-center gap-2 px-4 py-1.5 bg-red-500/20 text-red-500 rounded-xl text-[10px] font-black uppercase border border-red-500/20 shadow-lg tracking-widest">
+                          <AlertCircle className="h-3.5 w-3.5" /> Erro no eSocial
                         </div>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                       <button 
                         onClick={() => handleOpenRemunerationModal(worker)}
-                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
+                        className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-white/10 transition-all shadow-lg uppercase tracking-widest"
                       >
-                        <DollarSign className="h-3 w-3" /> Add Remuneração
+                        <DollarSign className="h-4 w-4 text-emerald-500" /> Add Remuneração
                       </button>
-                      <button onClick={() => handleEditWorker(worker)} className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
-                        <Eye className="h-3 w-3" /> Ver / Editar
+                      <button onClick={() => handleEditWorker(worker)} className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-white/10 transition-all shadow-lg uppercase tracking-widest">
+                        <Eye className="h-4 w-4 text-primary" /> Ver / Editar
                       </button>
                       <button 
                         onClick={() => handleClearRemunerations(worker.id)}
-                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 transition-all shadow-sm"
+                        className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-red-500/20 hover:text-red-500 transition-all shadow-lg uppercase tracking-widest"
                       >
-                        <Eraser className="h-3 w-3" /> Limpar remunerações
+                        <Eraser className="h-4 w-4" /> Limpar remunerações
                       </button>
-                      <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
-                        <Printer className="h-3 w-3" /> Gerar recibos
+                      <button className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-white/10 transition-all shadow-lg uppercase tracking-widest">
+                        <Printer className="h-4 w-4 text-slate-400" /> Gerar recibos
                       </button>
-                      <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
-                        <Calculator className="h-3 w-3" /> Totalizar 1
+                      <button className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-white/10 transition-all shadow-lg uppercase tracking-widest">
+                        <Calculator className="h-4 w-4 text-slate-400" /> Totalizar 1
                       </button>
-                      <button onClick={() => handleRemoveWorker(worker.id)} className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 transition-all shadow-sm">
-                        <Trash2 className="h-3 w-3" /> Remover trabalhador
+                      <button onClick={() => handleRemoveWorker(worker.id)} className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-red-500/20 hover:text-red-500 transition-all shadow-lg uppercase tracking-widest">
+                        <Trash2 className="h-4 w-4" /> Remover trabalhador
                       </button>
                       <button 
                         onClick={() => { setSelectedWorker(worker); setCurrentView('s2300_view'); }}
                         className={cn(
-                          "flex items-center justify-center gap-1.5 px-3 py-2 rounded text-xs font-bold text-white transition-all shadow-md",
-                          worker.esocial_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#1B8E5A] hover:bg-emerald-700"
+                          "flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black text-white transition-all shadow-xl uppercase tracking-widest",
+                          worker.esocial_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-primary hover:bg-primary/90"
                         )}
                       >
-                        <Send className="h-3 w-3" /> 
+                        <Send className="h-4 w-4" /> 
                         {worker.esocial_status === 'SUCESSO' ? 'Evento Enviado' : 'Cadastrar trab'}
                       </button>
-                      <button className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 rounded text-xs font-bold text-white hover:bg-emerald-700 transition-all shadow-md">
-                        <Target className="h-3 w-3" /> Encerrar trab
+                      <button className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 rounded-xl text-xs font-black text-white hover:bg-emerald-700 transition-all shadow-xl uppercase tracking-widest">
+                        <Target className="h-4 w-4" /> Encerrar trab
                       </button>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-12 text-slate-400 font-medium italic">Nenhum trabalhador cadastrado.</div>
+                <div className="text-center py-16 text-slate-600 font-black uppercase tracking-widest italic text-xs">Nenhum trabalhador cadastrado.</div>
               )}
 
-              <div className="flex justify-start pt-4">
+              <div className="flex justify-start pt-6">
                 <button 
                   onClick={() => { resetWorkerForm(); setCurrentView('worker_form'); }}
-                  className="flex items-center gap-2 px-6 py-2 bg-white border border-blue-500 text-blue-500 rounded text-sm font-bold hover:bg-blue-50 transition-all shadow-sm uppercase tracking-wider"
+                  className="flex items-center gap-3 px-8 py-4 bg-white/5 border border-primary text-primary rounded-xl text-xs font-black hover:bg-primary/10 transition-all shadow-xl shadow-primary/10 uppercase tracking-[2px]"
                 >
-                  <UserPlus className="h-4 w-4" /> Novo Trabalhador
+                  <UserPlus className="h-5 w-5" /> Novo Trabalhador
                 </button>
               </div>
             </div>
-
-            {/* Requirement Summary Dashboard */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Remunerações</p>
-                <p className="text-2xl font-black text-slate-800">
+          </div>
+          
+          {/* Requirement Summary Dashboard - DARK THEME */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-8">
+              <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-2xl space-y-4 hover:border-primary/20 transition-all">
+                <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Total Remunerações</p>
+                <p className="text-3xl font-black text-white">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRemuneration)}
                 </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
                     <div 
-                      className={cn("h-full transition-all duration-500", percentCompleted >= 100 ? "bg-emerald-500" : "bg-blue-500")}
+                      className={cn("h-full transition-all duration-700 ease-out", percentCompleted >= 100 ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(0,122,255,0.5)]")}
                       style={{ width: `${Math.min(percentCompleted, 100)}%` }}
                     />
                   </div>
-                  <span className="text-[10px] font-bold text-slate-500">{percentCompleted.toFixed(1)}%</span>
+                  <span className="text-xs font-black text-slate-400">{percentCompleted.toFixed(1)}%</span>
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Requisito ({requisitoPercent}%)</p>
-                <p className="text-2xl font-black text-blue-600">
+              <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-2xl space-y-4 hover:border-primary/20 transition-all">
+                <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Requisito ({requisitoPercent}%)</p>
+                <p className="text-3xl font-black text-primary">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(targetRequisito)}
                 </p>
-                <p className="text-[10px] text-slate-400 italic">Valor alvo baseado na RMT Inicial</p>
+                <p className="text-[10px] text-slate-500 italic font-medium uppercase tracking-widest">Valor alvo baseado na RMT Inicial</p>
               </div>
 
-              <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 shadow-sm space-y-2 flex flex-col justify-center">
+              <div className={cn(
+                "p-6 rounded-2xl border shadow-2xl space-y-4 flex flex-col justify-center transition-all",
+                percentCompleted >= 100 
+                  ? "bg-emerald-500/10 border-emerald-500/20" 
+                  : "bg-primary/10 border-primary/20"
+              )}>
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Status Requisito</p>
-                  {percentCompleted >= 100 ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> : <AlertCircle className="h-5 w-5 text-blue-500" />}
+                  <p className={cn("text-[11px] font-black uppercase tracking-[2px]", percentCompleted >= 100 ? "text-emerald-500" : "text-primary")}>Status Requisito</p>
+                  {percentCompleted >= 100 ? <CheckCircle2 className="h-6 w-6 text-emerald-500" /> : <AlertCircle className="h-6 w-6 text-primary" />}
                 </div>
-                <p className={cn("text-lg font-bold", percentCompleted >= 100 ? "text-emerald-700" : "text-blue-700")}>
+                <p className={cn("text-xl font-black tracking-tighter", percentCompleted >= 100 ? "text-emerald-500" : "text-primary")}>
                   {percentCompleted >= 100 ? 'REQUISITO ATINGIDO' : 'EM PROCESSAMENTO'}
                 </p>
-                <p className="text-[10px] text-emerald-600/70 font-medium">
+                <p className={cn("text-[11px] font-medium leading-relaxed uppercase tracking-widest", percentCompleted >= 100 ? "text-emerald-500/70" : "text-primary/70")}>
                   {percentCompleted >= 100 ? 'Parabéns! O valor mínimo foi superado.' : `Faltam ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.max(0, targetRequisito - totalRemuneration))} para o alvo.`}
                 </p>
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+            <div className="overflow-x-auto rounded-2xl border border-white/5 shadow-2xl mx-8 mb-8">
               <table className="w-full text-sm text-left border-collapse">
-                <thead className="bg-[#1C232E] text-white uppercase text-[10px] font-bold tracking-widest">
+                <thead className="bg-[#1C232E] text-slate-500 uppercase text-[10px] font-black tracking-[2px] border-b border-white/5">
                   <tr>
-                    <th className="p-4 border-r border-slate-700">P.A.</th>
+                    <th className="p-6 border-r border-white/5">P.A.</th>
                     {workers.map(w => (
-                      <th key={w.id} className="p-4 border-r border-slate-700 text-center">
-                        #{w.nome.split(' ')[0]} <br/> <span className="opacity-60">Aut {w.categoria}</span>
+                      <th key={w.id} className="p-6 border-r border-white/5 text-center">
+                        <span className="text-white">#{w.nome.split(' ')[0]}</span> <br/> <span className="opacity-60">Aut {w.categoria}</span>
                       </th>
                     ))}
-                    <th className="p-4 border-r border-slate-700 text-center">Correção</th>
-                    <th className="p-4 border-r border-slate-700 text-center">Ações</th>
-                    <th className="p-4 border-r border-slate-700 text-center">Verificação</th>
-                    <th className="p-4 text-center">INSS Pago</th>
+                    <th className="p-6 border-r border-white/5 text-center">Correção</th>
+                    <th className="p-6 border-r border-white/5 text-center">Ações</th>
+                    <th className="p-6 border-r border-white/5 text-center">Verificação</th>
+                    <th className="p-6 text-center">INSS Pago</th>
                   </tr>
                 </thead>
-                <tbody className="text-slate-800 bg-white">
+                <tbody className="text-white bg-[#1C232E]">
                   {getUniquePAs().length > 0 ? (
                     getUniquePAs().map(pa => {
                       const rowTotal = allRemunerations
@@ -2046,19 +2049,20 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                       const correcaoVal = rowTotal * (correcaoPct / 100);
 
                       return (
-                        <tr key={pa} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                          <td className="p-4 font-black text-slate-600 border-r border-slate-100 bg-slate-50/50">{pa}</td>
+                        <tr key={pa} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                          <td className="p-6 font-black text-slate-300 border-r border-white/5 bg-white/5">{pa}</td>
                           {workers.map(w => {
                             const rem = allRemunerations.find(r => r.workerId === w.id && `${String(r.month).padStart(2, '0')}-${r.year}` === pa);
                             return (
-                              <td key={w.id} className="p-4 text-center border-r border-slate-100 font-bold text-slate-700">
+                              <td key={w.id} className="p-6 text-center border-r border-white/5 font-black text-white">
                                 {rem ? (
-                                  <div className="space-y-2">
-                                    <div className="flex items-center justify-center gap-1">
-                                      <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rem.value)}</span>
-                                      <Printer className="h-3 w-3 text-slate-400 cursor-pointer" />
+                                  <div className="space-y-4">
+                                    <div className="flex items-center justify-center gap-2">
+                                      <span className="text-lg tracking-tighter text-white">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rem.value)}</span>
+                                      {rem.isLocked && <Lock className="h-3.5 w-3.5 text-primary animate-pulse" />}
+                                      <Printer className="h-4 w-4 text-slate-500 cursor-pointer hover:text-white transition-colors" />
                                     </div>
-                                    <div className="flex items-center justify-center gap-1.5">
+                                    <div className="flex items-center justify-center gap-2">
                                       <button 
                                         onClick={() => {
                                           setSelectedWorker(w);
@@ -2066,11 +2070,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                                           setCurrentView('s1200_view');
                                         }}
                                         className={cn(
-                                          "flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold text-white transition-all shadow-sm",
-                                          rem.remStatus === 'SUCESSO' ? "bg-emerald-500" : "bg-[#007AFF]"
+                                          "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black text-white transition-all shadow-xl uppercase tracking-widest",
+                                          rem.remStatus === 'SUCESSO' ? "bg-emerald-600" : "bg-primary hover:bg-blue-700 shadow-primary/20"
                                         )}
                                       >
-                                        <Send className="h-2 w-2" /> Rem
+                                        <Send className="h-3 w-3" /> Rem
                                       </button>
                                       <button 
                                         onClick={() => {
@@ -2079,11 +2083,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                                           setCurrentView('s1210_view');
                                         }}
                                         className={cn(
-                                          "flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold text-white transition-all shadow-sm",
-                                          rem.pagStatus === 'SUCESSO' ? "bg-emerald-500" : "bg-[#007AFF]"
+                                          "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black text-white transition-all shadow-xl uppercase tracking-widest",
+                                          rem.pagStatus === 'SUCESSO' ? "bg-emerald-600" : "bg-slate-700 hover:bg-slate-600 shadow-black/20"
                                         )}
                                       >
-                                        <Send className="h-2 w-2" /> Pag
+                                        <Wallet className="h-3 w-3" /> Pag
                                       </button>
                                     </div>
                                   </div>
@@ -2091,41 +2095,41 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                               </td>
                             );
                           })}
-                          <td className="p-4 text-center border-r border-slate-100">
-                            <span className="text-[10px] font-bold text-emerald-600 block">{correcaoPct}%</span>
-                            <span className="text-xs font-black text-slate-800">
+                          <td className="p-6 text-center border-r border-white/5">
+                            <span className="text-[10px] font-black text-emerald-500 block mb-1 uppercase tracking-widest">{correcaoPct}%</span>
+                            <span className="text-sm font-black text-white tracking-tight">
                               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(correcaoVal)}
                             </span>
                           </td>
-                          <td className="p-4 border-r border-slate-100">
-                            <div className="flex flex-col items-center gap-1.5">
+                          <td className="p-6 border-r border-white/5">
+                            <div className="flex flex-col items-center gap-2">
                               <button 
                                 onClick={() => {
                                   setSelectedPeriodForEvent(pa);
                                   setCurrentView('s1298_view');
                                 }}
-                                className="w-full px-2 py-1 bg-emerald-600 text-[9px] font-bold text-white rounded hover:bg-emerald-700 shadow-sm flex items-center justify-center gap-1"
+                                className="w-full px-3 py-2 bg-emerald-600 text-[9px] font-black text-white rounded-lg hover:bg-emerald-700 shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-1.5 uppercase tracking-widest"
                               >
-                                <Send className="h-2.5 w-2.5" /> DCTFWeb
+                                <Send className="h-3 w-3" /> DCTFWeb
                               </button>
-                              <div className="flex items-center gap-1">
-                                <button className="p-1 bg-emerald-500/20 text-emerald-600 rounded">
-                                  <Copy className="h-3 w-3" />
+                              <div className="flex items-center gap-2 w-full">
+                                <button className="p-2 bg-white/5 text-slate-400 rounded-lg hover:text-white border border-white/10 transition-colors">
+                                  <Copy className="h-3.5 w-3.5" />
                                 </button>
-                                <button className="px-2 py-1 bg-red-500 text-[9px] font-bold text-white rounded hover:bg-red-600 shadow-sm">
+                                <button className="flex-1 px-3 py-2 bg-red-500 text-[9px] font-black text-white rounded-lg hover:bg-red-600 shadow-lg shadow-red-500/10 uppercase tracking-widest">
                                   NF / RPA
                                 </button>
                               </div>
                             </div>
                           </td>
-                          <td className="p-4 text-center border-r border-slate-100 min-w-[120px]">
-                            <p className="text-[10px] font-bold text-slate-500">RMT: <span className="text-slate-800">R$ 0,00</span></p>
-                            <p className="text-[10px] font-bold text-slate-500">Porc.: <span className="text-slate-800">0,00 %</span></p>
+                          <td className="p-6 text-center border-r border-white/5 min-w-[140px]">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">RMT: <span className="text-white">R$ 0,00</span></p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Porc.: <span className="text-white">0,00 %</span></p>
                           </td>
-                          <td className="p-4 text-center">
+                          <td className="p-6 text-center">
                             <div className="flex justify-center">
-                              <div className="w-5 h-5 bg-emerald-500 rounded flex items-center justify-center cursor-pointer shadow-sm">
-                                <Check className="h-3.5 w-3.5 text-white" />
+                              <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center cursor-pointer shadow-lg shadow-emerald-500/20 hover:scale-110 transition-transform">
+                                <Check className="h-4 w-4 text-white" />
                               </div>
                             </div>
                           </td>
@@ -2134,7 +2138,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     })
                   ) : (
                     <tr>
-                      <td colSpan={workers.length + 5} className="p-12 text-center text-slate-400 italic bg-slate-50/30">
+                      <td colSpan={workers.length + 5} className="p-16 text-center text-slate-600 font-black uppercase tracking-widest text-xs italic bg-white/2">
                         Adicione remunerações aos trabalhadores para gerar os períodos de apuração.
                       </td>
                     </tr>
@@ -2142,8 +2146,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 </tbody>
               </table>
             </div>
-          </div>
-
+          
           {/* Delete Button */}
           <div className="pt-4">
             <button className="px-4 py-2 border border-red-500 text-red-500 rounded text-xs font-bold hover:bg-red-50 transition-colors uppercase tracking-widest">
@@ -2155,49 +2158,50 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       {/* S-1298 Event View */}
       {currentView === 's1298_view' && selectedPeriodForEvent && (
-        <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
             <div>
-              <h2 className="text-xl font-bold text-slate-800">
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter">
                 Transmitir eventos para o eSocial
               </h2>
-              <p className="text-xs text-slate-500 mt-1">Confirme se as informações estão corretas antes de transmitir!</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Confirme se as informações estão corretas antes de transmitir!</p>
             </div>
             <button 
               onClick={() => { setSelectedPeriodForEvent(null); setCurrentView('management'); }}
-              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 transition-all shadow-md"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <h3 className="text-lg font-bold text-slate-800 mb-4">
+            <h3 className="text-lg font-black text-white mb-6 uppercase tracking-tight flex items-center gap-2">
+              <RefreshCw className="h-5 w-5 text-emerald-500" />
               Evento S-1298 – Reabertura dos Eventos Periódicos
             </h3>
 
-            <div className="border border-slate-200 rounded overflow-hidden mb-8">
+            <div className="border border-white/5 rounded-2xl overflow-hidden mb-8 shadow-inner bg-white/[0.02]">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-slate-200">
-                    <td className="w-1/3 p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">Procurador:</td>
-                    <td className="p-3 text-slate-800 font-bold">CPF/CNPJ: 161.196.598-54</td>
+                  <tr className="border-b border-white/5">
+                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
+                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: 161.196.598-54</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">nome_empregador</td>
-                    <td className="p-3 text-slate-800 font-bold uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
+                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cpf_empregador</td>
-                    <td className="p-3 text-slate-800 font-bold">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
+                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">evento</td>
-                    <td className="p-3 text-slate-800 font-bold">1298</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                    <td className="p-4 text-primary font-black">1298</td>
                   </tr>
                   <tr>
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">periodo</td>
-                    <td className="p-3 text-slate-800 font-bold">{selectedPeriodForEvent.split('-')[1]}-{selectedPeriodForEvent.split('-')[0]}</td>
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período:</td>
+                    <td className="p-4 text-white font-black font-mono">{selectedPeriodForEvent.split('-')[1]}-{selectedPeriodForEvent.split('-')[0]}</td>
                   </tr>
                 </tbody>
               </table>
@@ -2208,138 +2212,146 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 onClick={periodStatuses[selectedPeriodForEvent]?.s1298Status === 'SUCESSO' || periodStatuses[selectedPeriodForEvent]?.s1298Status === 'PROCESSANDO' ? handleConsultS1298 : handleTransmitS1298}
                 disabled={isTransmitting}
                 className={cn(
-                  "w-full flex items-center justify-center gap-2 px-6 py-4 rounded-md font-bold transition-all shadow-lg text-lg",
-                  isTransmitting ? "bg-slate-400 cursor-not-allowed" : "bg-[#1B8E5A] hover:bg-emerald-700 text-white"
+                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
+                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
                 {isTransmitting ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 ) : (
-                  <ExternalLink className="h-5 w-5" />
+                  <Send className="h-6 w-6" />
                 )}
                 {isTransmitting ? 'Processando...' : 'Transmitir Evento / Consultar'}
               </button>
 
-              <div className="flex flex-col items-center gap-4">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Outras opções!</p>
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  <button className="px-4 py-2 border border-slate-300 rounded text-xs font-bold text-slate-600 hover:bg-slate-50 shadow-sm">
+              <div className="flex flex-col items-center gap-6">
+                <div className="flex items-center gap-4 w-full">
+                  <div className="h-px flex-1 bg-white/5"></div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
+                  <div className="h-px flex-1 bg-white/5"></div>
+                </div>
+                
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <button className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest">
                     Já foi feito!
                   </button>
-                  <button className="px-4 py-2 border border-slate-300 rounded text-xs font-bold text-slate-600 hover:bg-slate-50 shadow-sm">
+                  <button className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest">
                     Limpar registro!
                   </button>
                   <button 
                     onClick={handleTransmitS1299}
                     disabled={isTransmitting}
-                    className="px-4 py-2 border border-red-200 rounded text-xs font-bold text-red-500 hover:bg-red-50 shadow-sm"
+                    className="px-6 py-2.5 border border-red-500/30 bg-red-500/10 rounded-xl text-[10px] font-black text-red-400 hover:bg-red-500 hover:text-white transition-all uppercase tracking-widest"
                   >
                     Fechar folha de pagamento
                   </button>
                 </div>
               </div>
 
-              <div className="pt-8 text-center">
-                <p className="text-xs text-slate-400 mb-4 italic">Sem resposta? Clique aqui apenas se o sistema não der nenhuma resposta.</p>
-                <button className="px-6 py-2 border border-slate-300 rounded text-xs font-bold text-slate-600 hover:bg-slate-50 shadow-sm">
-                  Consultar erros
+              <div className="pt-12 text-center border-t border-white/5">
+                <p className="text-[11px] text-slate-500 mb-6 italic font-medium">Sem resposta? Utilize a consulta de erros se o processamento exceder 30 segundos.</p>
+                <button className="px-8 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-slate-400 hover:text-white transition-all uppercase tracking-[2px]">
+                  Consultar Logs do eSocial
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
       {/* S-1210 Event View */}
       {currentView === 's1210_view' && selectedWorker && selectedRemForEvent && (
-        <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
             <div>
-              <h2 className="text-xl font-bold text-slate-800">
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter">
                 Evento S-1210 – Pagamentos de Rendimentos do Trabalho
               </h2>
-              <p className="text-xs text-slate-500 mt-1">Data do Pagamento: {new Date(selectedRemForEvent.year, selectedRemForEvent.month, 5).toLocaleDateString('pt-BR')}</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 italic">
+                Data Estimada do Pagamento: {new Date(selectedRemForEvent.year, selectedRemForEvent.month, 5).toLocaleDateString('pt-BR')}
+              </p>
             </div>
             <button 
               onClick={() => { setSelectedRemForEvent(null); setCurrentView('management'); }}
-              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 transition-all shadow-md"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <div className="border border-slate-200 rounded overflow-hidden">
+            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02]">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-slate-200">
-                    <td className="w-1/3 p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">Procurador:</td>
-                    <td className="p-2 text-slate-800 font-bold">CPF/CNPJ: 161.196.598-54</td>
+                  <tr className="border-b border-white/5">
+                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
+                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: 161.196.598-54</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">nome_empregador</td>
-                    <td className="p-2 text-slate-800 font-bold uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
+                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cpf_empregador</td>
-                    <td className="p-2 text-slate-800 font-bold">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
+                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">perApur</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedRemForEvent.year}-{String(selectedRemForEvent.month).padStart(2, '0')}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período Apuração:</td>
+                    <td className="p-4 text-white font-black font-mono">{selectedRemForEvent.year}-{String(selectedRemForEvent.month).padStart(2, '0')}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">beneficiario</td>
-                    <td className="p-2 text-slate-800 font-bold uppercase">{selectedWorker.nome}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Beneficiário:</td>
+                    <td className="p-4 text-primary font-black uppercase tracking-tight">{selectedWorker.nome}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cpftrab</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.cpf}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Beneficiário:</td>
+                    <td className="p-4 text-white font-black font-mono">{selectedWorker.cpf}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">dtPagto</td>
-                    <td className="p-2 text-slate-800 font-bold">{new Date(selectedRemForEvent.year, selectedRemForEvent.month, 5).toLocaleDateString('pt-BR')}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Data Pagto:</td>
+                    <td className="p-4 text-white font-black">{new Date(selectedRemForEvent.year, selectedRemForEvent.month, 5).toLocaleDateString('pt-BR')}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">tpPgto</td>
-                    <td className="p-2 text-slate-800 font-bold">1 - Pagamento de rendimentos do trabalho</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Tipo Pagto:</td>
+                    <td className="p-4 text-white font-medium">1 - Pagamento de rendimentos do trabalho</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">vrLiq</td>
-                    <td className="p-2 text-slate-800 font-black text-lg">
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Valor Líquido:</td>
+                    <td className="p-4 text-emerald-500 font-black text-2xl tracking-tighter">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedRemForEvent.value)}
                     </td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">evento</td>
-                    <td className="p-2 text-slate-800 font-bold">1210</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                    <td className="p-4 text-primary font-black">1210</td>
                   </tr>
                   <tr>
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">data_transmissao</td>
-                    <td className="p-2 text-slate-800 font-bold">{new Date().toLocaleDateString('pt-BR')}</td>
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Transmissão:</td>
+                    <td className="p-4 text-slate-400 font-bold font-mono">{new Date().toLocaleDateString('pt-BR')}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-8 space-y-6">
               <button 
                 onClick={selectedRemForEvent.pagStatus === 'SUCESSO' || selectedRemForEvent.pagStatus === 'PROCESSANDO' ? handleConsultS1210 : handleTransmitS1210}
                 disabled={isTransmitting}
                 className={cn(
-                  "w-full flex items-center justify-center gap-2 px-6 py-3 rounded-md font-bold transition-all shadow-lg text-lg",
-                  isTransmitting ? "bg-slate-400 cursor-not-allowed" : 
-                  selectedRemForEvent.pagStatus === 'SUCESSO' ? "bg-[#007AFF] hover:bg-blue-700 text-white" :
-                  "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
+                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
+                  selectedRemForEvent.pagStatus === 'SUCESSO' ? "bg-primary hover:bg-blue-700 text-white shadow-primary/20" :
+                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
                 {isTransmitting ? (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-6 w-6 animate-spin" />
                     {selectedRemForEvent.pagStatus === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
                   </>
                 ) : (
                   <>
-                    <ExternalLink className="h-5 w-5" />
+                    <Send className="h-6 w-6" />
                     {selectedRemForEvent.pagStatus === 'SUCESSO' 
                       ? 'Consultar Status / Recibo' 
                       : selectedRemForEvent.pagStatus === 'ERRO' 
@@ -2349,43 +2361,54 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 )}
               </button>
               
-              {/* Government Response Log */}
+              {/* Government Response Log - DARK */}
               {selectedRemForEvent.pagStatus && selectedRemForEvent.pagStatus !== 'PENDENTE' && (
-                <div className="mt-8 p-6 bg-white border border-slate-200 rounded shadow-sm animate-in fade-in slide-in-from-top-2">
-                  <div className="space-y-4">
-                    <div>
-                      <span className="font-bold text-slate-800">Envio =&gt; </span>
-                      <span className={cn(
-                        "font-medium",
-                        selectedRemForEvent.pagStatus === 'ERRO' ? "text-red-600" : "text-emerald-600"
-                      )}>
-                        201 - Lote recebido com sucesso.
-                      </span>
+                <div className="p-8 bg-white/5 border border-white/5 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Resposta do Governo</h4>
+                      <div className={cn(
+                        "w-3 h-3 rounded-full shadow-[0_0_8px]",
+                        selectedRemForEvent.pagStatus === 'SUCESSO' ? "bg-emerald-500 shadow-emerald-500/50" : 
+                        selectedRemForEvent.pagStatus === 'ERRO' ? "bg-red-500 shadow-red-500/50" : "bg-blue-500 shadow-blue-500/50"
+                      )}></div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Status do Envio</span>
+                        <p className={cn(
+                          "font-black text-sm",
+                          selectedRemForEvent.pagStatus === 'ERRO' ? "text-red-500" : "text-emerald-500"
+                        )}>
+                          201 - Lote recebido com sucesso.
+                        </p>
+                      </div>
+
+                      {(selectedRemForEvent.pagStatus === 'SUCESSO' || selectedRemForEvent.pagStatus === 'ERRO') && (
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Processamento</span>
+                          <p className={cn(
+                            "font-black text-sm",
+                            selectedRemForEvent.pagStatus === 'ERRO' ? "text-red-500" : "text-emerald-500"
+                          )}>
+                            {selectedRemForEvent.pagStatus === 'SUCESSO' ? '202 - Sucesso' : '401 - Erro na estrutura do evento.'}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
-                    {(selectedRemForEvent.pagStatus === 'SUCESSO' || selectedRemForEvent.pagStatus === 'ERRO') && (
-                      <div>
-                        <span className="font-bold text-slate-800">Processamento =&gt; </span>
-                        <span className={cn(
-                          "font-medium",
-                          selectedRemForEvent.pagStatus === 'ERRO' ? "text-red-600" : "text-emerald-600"
-                        )}>
-                          {selectedRemForEvent.pagStatus === 'SUCESSO' ? '202 - Sucesso' : '401 - Erro na estrutura do evento.'}
-                        </span>
-                      </div>
-                    )}
-
                     {selectedRemForEvent.pagStatus === 'SUCESSO' && (
-                      <div className="pt-2 text-emerald-700 text-sm font-medium border-t border-slate-100 mt-2">
-                        <p>O pagamento foi registrado e processado com sucesso pelo eSocial.</p>
-                        <p className="mt-1 text-slate-400 font-mono text-[10px]">Número do Recibo: {selectedRemForEvent.pagRecibo}</p>
+                      <div className="pt-6 border-t border-white/5 space-y-2">
+                        <p className="text-emerald-500 text-sm font-black uppercase tracking-tight">O pagamento foi registrado e processado com sucesso pelo eSocial.</p>
+                        <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">RECIBO: {selectedRemForEvent.pagRecibo}</p>
                       </div>
                     )}
 
                     {selectedRemForEvent.pagStatus === 'PROCESSANDO' && (
-                      <div className="pt-2 text-blue-700 text-sm font-medium border-t border-slate-100 mt-2">
-                        <p>Aguardando processamento do pagamento...</p>
-                        <p className="mt-1 text-slate-400 font-mono text-[10px]">Protocolo: {selectedRemForEvent.pagProtocolo}</p>
+                      <div className="pt-6 border-t border-white/5 space-y-2">
+                        <p className="text-blue-500 text-sm font-black uppercase tracking-tight animate-pulse">Aguardando processamento do pagamento...</p>
+                        <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">PROTOCOLO: {selectedRemForEvent.pagProtocolo}</p>
                       </div>
                     )}
                   </div>
@@ -2395,97 +2418,100 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           </div>
         </div>
       )}
+
       {/* S-1200 Event View */}
       {currentView === 's1200_view' && selectedWorker && selectedRemForEvent && (
-        <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
             <div>
-              <h2 className="text-xl font-bold text-slate-800">
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter">
                 Evento S-1200 – Remuneração de Trabalhador
               </h2>
-              <p className="text-xs text-slate-500 mt-1">Período de Apuração: {selectedRemForEvent.month}/{selectedRemForEvent.year}</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                Período de Apuração: <span className="text-primary font-black">{selectedRemForEvent.month}/{selectedRemForEvent.year}</span>
+              </p>
             </div>
             <button 
               onClick={() => { setSelectedRemForEvent(null); setCurrentView('management'); }}
-              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 transition-all shadow-md"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <div className="border border-slate-200 rounded overflow-hidden">
+            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02]">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-slate-200">
-                    <td className="w-1/3 p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">Procurador:</td>
-                    <td className="p-2 text-slate-800 font-bold">CPF/CNPJ: 161.196.598-54</td>
+                  <tr className="border-b border-white/5">
+                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
+                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: 161.196.598-54</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">nome_empregador</td>
-                    <td className="p-2 text-slate-800 font-bold uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
+                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cpf_empregador</td>
-                    <td className="p-2 text-slate-800 font-bold">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
+                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">perApur</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedRemForEvent.year}-{String(selectedRemForEvent.month).padStart(2, '0')}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período Apuração:</td>
+                    <td className="p-4 text-white font-black font-mono">{selectedRemForEvent.year}-{String(selectedRemForEvent.month).padStart(2, '0')}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">nome_trabalhador</td>
-                    <td className="p-2 text-slate-800 font-bold uppercase">{selectedWorker.nome}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Trabalhador:</td>
+                    <td className="p-4 text-primary font-black uppercase tracking-tight">{selectedWorker.nome}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cpftrab</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.cpf}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Trabalhador:</td>
+                    <td className="p-4 text-white font-black font-mono">{selectedWorker.cpf}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">matricula</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.matricula_esocial}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Matrícula:</td>
+                    <td className="p-4 text-white font-black font-mono">{selectedWorker.matricula_esocial}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">codCateg</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.categoria}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Categoria:</td>
+                    <td className="p-4 text-white font-bold">{selectedWorker.categoria}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">vrSalar</td>
-                    <td className="p-2 text-slate-800 font-black text-lg">
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Remuneração:</td>
+                    <td className="p-4 text-emerald-500 font-black text-2xl tracking-tighter">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedRemForEvent.value)}
                     </td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">evento</td>
-                    <td className="p-2 text-slate-800 font-bold">1200</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                    <td className="p-4 text-primary font-black">1200</td>
                   </tr>
                   <tr>
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">data_transmissao</td>
-                    <td className="p-2 text-slate-800 font-bold">{new Date().toLocaleDateString('pt-BR')}</td>
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Transmissão:</td>
+                    <td className="p-4 text-slate-400 font-bold font-mono">{new Date().toLocaleDateString('pt-BR')}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-8 space-y-6">
               <button 
                 onClick={selectedRemForEvent.remStatus === 'SUCESSO' || selectedRemForEvent.remStatus === 'PROCESSANDO' ? handleConsultS1200 : handleTransmitS1200}
                 disabled={isTransmitting}
                 className={cn(
-                  "w-full flex items-center justify-center gap-2 px-6 py-3 rounded-md font-bold transition-all shadow-lg text-lg",
-                  isTransmitting ? "bg-slate-400 cursor-not-allowed" : 
-                  selectedRemForEvent.remStatus === 'SUCESSO' ? "bg-[#007AFF] hover:bg-blue-700 text-white" :
-                  "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
+                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
+                  selectedRemForEvent.remStatus === 'SUCESSO' ? "bg-primary hover:bg-blue-700 text-white shadow-primary/20" :
+                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
                 {isTransmitting ? (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-6 w-6 animate-spin" />
                     {selectedRemForEvent.remStatus === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
                   </>
                 ) : (
                   <>
-                    <ExternalLink className="h-5 w-5" />
+                    <Send className="h-6 w-6" />
                     {selectedRemForEvent.remStatus === 'SUCESSO' 
                       ? 'Consultar Status / Recibo' 
                       : selectedRemForEvent.remStatus === 'ERRO' 
@@ -2495,43 +2521,54 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 )}
               </button>
               
-              {/* Government Response Log */}
+              {/* Government Response Log - DARK */}
               {selectedRemForEvent.remStatus && selectedRemForEvent.remStatus !== 'PENDENTE' && (
-                <div className="mt-8 p-6 bg-white border border-slate-200 rounded shadow-sm animate-in fade-in slide-in-from-top-2">
-                  <div className="space-y-4">
-                    <div>
-                      <span className="font-bold text-slate-800">Envio =&gt; </span>
-                      <span className={cn(
-                        "font-medium",
-                        selectedRemForEvent.remStatus === 'ERRO' ? "text-red-600" : "text-emerald-600"
-                      )}>
-                        201 - Lote recebido com sucesso.
-                      </span>
+                <div className="p-8 bg-white/5 border border-white/5 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Resposta do eSocial</h4>
+                      <div className={cn(
+                        "w-3 h-3 rounded-full shadow-[0_0_8px]",
+                        selectedRemForEvent.remStatus === 'SUCESSO' ? "bg-emerald-500 shadow-emerald-500/50" : 
+                        selectedRemForEvent.remStatus === 'ERRO' ? "bg-red-500 shadow-red-500/50" : "bg-blue-500 shadow-blue-500/50"
+                      )}></div>
                     </div>
 
-                    {(selectedRemForEvent.remStatus === 'SUCESSO' || selectedRemForEvent.remStatus === 'ERRO') && (
-                      <div>
-                        <span className="font-bold text-slate-800">Processamento =&gt; </span>
-                        <span className={cn(
-                          "font-medium",
-                          selectedRemForEvent.remStatus === 'ERRO' ? "text-red-600" : "text-emerald-600"
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Lote Envio</span>
+                        <p className={cn(
+                          "font-black text-sm",
+                          selectedRemForEvent.remStatus === 'ERRO' ? "text-red-500" : "text-emerald-600"
                         )}>
-                          {selectedRemForEvent.remStatus === 'SUCESSO' ? '202 - Sucesso' : '401 - Conteúdo do evento inválido.'}
-                        </span>
+                          201 - Lote recebido com sucesso.
+                        </p>
                       </div>
-                    )}
+
+                      {(selectedRemForEvent.remStatus === 'SUCESSO' || selectedRemForEvent.remStatus === 'ERRO') && (
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Processamento</span>
+                          <p className={cn(
+                            "font-black text-sm",
+                            selectedRemForEvent.remStatus === 'ERRO' ? "text-red-500" : "text-emerald-600"
+                          )}>
+                            {selectedRemForEvent.remStatus === 'SUCESSO' ? '202 - Sucesso' : '401 - Conteúdo do evento inválido.'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
 
                     {selectedRemForEvent.remStatus === 'SUCESSO' && (
-                      <div className="pt-2 text-emerald-700 text-sm font-medium border-t border-slate-100 mt-2">
-                        <p>O evento foi aceito e processado com sucesso pelo Ambiente Nacional do eSocial.</p>
-                        <p className="mt-1 text-slate-400 font-mono text-[10px]">Número do Recibo: {selectedRemForEvent.remRecibo}</p>
+                      <div className="pt-6 border-t border-white/5 space-y-2">
+                        <p className="text-emerald-500 text-sm font-black uppercase tracking-tight">O evento foi aceito e processado com sucesso pelo Ambiente Nacional.</p>
+                        <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">RECIBO: {selectedRemForEvent.remRecibo}</p>
                       </div>
                     )}
 
                     {selectedRemForEvent.remStatus === 'PROCESSANDO' && (
-                      <div className="pt-2 text-blue-700 text-sm font-medium border-t border-slate-100 mt-2">
-                        <p>Aguardando processamento pelo eSocial...</p>
-                        <p className="mt-1 text-slate-400 font-mono text-[10px]">Protocolo: {selectedRemForEvent.remProtocolo}</p>
+                      <div className="pt-6 border-t border-white/5 space-y-2">
+                        <p className="text-blue-500 text-sm font-black uppercase tracking-tight animate-pulse">Aguardando processamento pelo eSocial...</p>
+                        <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">PROTOCOLO: {selectedRemForEvent.remProtocolo}</p>
                       </div>
                     )}
                   </div>
@@ -2541,143 +2578,100 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           </div>
         </div>
       )}
+
       {currentView === 's2300_view' && selectedWorker && (
-        <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <h2 className="text-xl font-bold text-slate-800">
-              Evento S-2300 – Trabalhador Sem Vínculo de Emprego/Estatutário – Início
+        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+            <h2 className="text-xl font-black text-white uppercase tracking-tighter">
+              Evento S-2300 – Início do Trabalhador Sem Vínculo
             </h2>
             <button 
               onClick={() => { setSelectedWorker(null); setCurrentView('management'); }}
-              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 transition-all shadow-md"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <div className="border border-slate-200 rounded overflow-hidden">
+            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02]">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-slate-200">
-                    <td className="w-1/3 p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">Procurador:</td>
-                    <td className="p-2 text-slate-800 font-bold">CPF/CNPJ: 161.196.598-54</td>
+                  <tr className="border-b border-white/5">
+                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
+                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: 161.196.598-54</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">nome_empregador</td>
-                    <td className="p-2 text-slate-800 font-bold uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
+                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cpf_empregador</td>
-                    <td className="p-2 text-slate-800 font-bold">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
+                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">nome</td>
-                    <td className="p-2 text-slate-800 font-bold uppercase">{selectedWorker.nome}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Trabalhador:</td>
+                    <td className="p-4 text-primary font-black uppercase tracking-tight">{selectedWorker.nome}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cpftrab</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.cpf}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Trabalhador:</td>
+                    <td className="p-4 text-white font-black font-mono">{selectedWorker.cpf}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">matricula</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.matricula_esocial}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Matrícula:</td>
+                    <td className="p-4 text-white font-black font-mono">{selectedWorker.matricula_esocial}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cep</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.cep}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CEP:</td>
+                    <td className="p-4 text-white font-black font-mono">{selectedWorker.cep}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">nascimento</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.nascimento}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Nascimento:</td>
+                    <td className="p-4 text-white font-black">{selectedWorker.nascimento}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">escolaridade</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.escolaridade}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Escolaridade:</td>
+                    <td className="p-4 text-white font-bold">{selectedWorker.escolaridade}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cordapele</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.cor_pele}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Cargo:</td>
+                    <td className="p-4 text-white font-black uppercase">{selectedWorker.cargo_nome}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">end_tplograd</td>
-                    <td className="p-2 text-slate-800 font-bold">R</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CBO Cargo:</td>
+                    <td className="p-4 text-white font-black font-mono">{selectedWorker.cbo_cargo}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">endereco</td>
-                    <td className="p-2 text-slate-800 font-bold uppercase">{selectedWorker.logradouro}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">end_nrlograd</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.numero}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">end_complemento</td>
-                    <td className="p-2 text-slate-800 font-bold uppercase">{selectedWorker.complemento || '---'}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">end_bairro</td>
-                    <td className="p-2 text-slate-800 font-bold uppercase">{selectedWorker.bairro}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">end_codmunic</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.cod_ibge}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">end_uf</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.uf}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">pais_nasc</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.pais_nascimento}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">cargo</td>
-                    <td className="p-2 text-slate-800 font-bold uppercase">{selectedWorker.cargo_nome}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">CBOCargo</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.cbo_cargo}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">sexo</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.sexo}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">evento</td>
-                    <td className="p-2 text-slate-800 font-bold">2300</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">codCateg</td>
-                    <td className="p-2 text-slate-800 font-bold">{selectedWorker.categoria}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Categoria:</td>
+                    <td className="p-4 text-white font-black font-mono">{selectedWorker.categoria}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 bg-slate-50 text-slate-500 font-medium border-r border-slate-200">periodo</td>
-                    <td className="p-2 text-slate-800 font-bold">{new Date().toISOString().split('T')[0]}</td>
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Data Evento:</td>
+                    <td className="p-4 text-slate-400 font-bold font-mono">{new Date().toISOString().split('T')[0]}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-8 space-y-6">
               <button 
                 onClick={esocialStatus && esocialStatus.status !== 'ERRO' ? handleConsultESocial : handleTransmitESocial}
                 disabled={isTransmitting}
                 className={cn(
-                  "w-full flex items-center justify-center gap-2 px-6 py-3 rounded-md font-bold transition-all shadow-lg text-lg",
-                  isTransmitting ? "bg-slate-400 cursor-not-allowed" : 
-                  esocialStatus && esocialStatus.status === 'SUCESSO' ? "bg-[#007AFF] hover:bg-blue-700 text-white" :
-                  "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
+                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
+                  esocialStatus && esocialStatus.status === 'SUCESSO' ? "bg-primary hover:bg-blue-700 text-white shadow-primary/20" :
+                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
                 {isTransmitting ? (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-6 w-6 animate-spin" />
                     {esocialStatus && esocialStatus.status !== 'ERRO' ? 'Consultando...' : 'Transmitindo...'}
                   </>
                 ) : (
                   <>
-                    <ExternalLink className="h-5 w-5" />
+                    <Send className="h-6 w-6" />
                     {esocialStatus && esocialStatus.status === 'SUCESSO' 
                       ? 'Consultar Status / Recibo' 
                       : esocialStatus && esocialStatus.status === 'ERRO' 
@@ -2687,69 +2681,64 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 )}
               </button>
               
-              {/* Detailed Government Log (Mirroring reference) */}
+              {/* Detailed Government Log - DARK */}
               {esocialStatus && (esocialStatus.status === 'SUCESSO' || esocialStatus.status === 'ERRO' || esocialStatus.status === 'PROCESSANDO') && (
-                <div className="mt-8 p-6 bg-white border border-slate-200 rounded shadow-sm">
-                  <div className="space-y-4">
-                    <div>
-                      <span className="font-bold text-slate-800">Envio =&gt; </span>
-                      <span className={cn(
-                        "font-medium",
-                        esocialStatus.status === 'ERRO' ? "text-red-600" : "text-emerald-600"
-                      )}>
-                        {esocialStatus.resposta_governo?.envio_codigo || '201'} - {esocialStatus.resposta_governo?.envio_mensagem || 'Lote recebido com sucesso.'}
-                      </span>
+                <div className="p-8 bg-white/5 border border-white/5 rounded-2xl shadow-2xl">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Histórico de Processamento</h4>
+                      <div className={cn(
+                        "w-3 h-3 rounded-full shadow-[0_0_8px]",
+                        esocialStatus.status === 'SUCESSO' ? "bg-emerald-500 shadow-emerald-500/50" : 
+                        esocialStatus.status === 'ERRO' ? "bg-red-500 shadow-red-500/50" : "bg-blue-500 shadow-blue-500/50"
+                      )}></div>
                     </div>
 
-                    {(esocialStatus.status === 'SUCESSO' || esocialStatus.status === 'ERRO') && (
-                      <div>
-                        <span className="font-bold text-slate-800">Processamento =&gt; </span>
-                        <span className={cn(
-                          "font-medium",
-                          esocialStatus.status === 'ERRO' ? "text-red-600" : "text-emerald-600"
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Envio Lote</span>
+                        <p className={cn(
+                          "font-black text-sm",
+                          esocialStatus.status === 'ERRO' ? "text-red-500" : "text-emerald-500"
                         )}>
-                          {esocialStatus.resposta_governo?.proc_codigo || (esocialStatus.status === 'SUCESSO' ? '202' : '401')} - {esocialStatus.resposta_governo?.proc_mensagem || (esocialStatus.status === 'SUCESSO' ? 'Sucesso' : 'Conteúdo do evento inválido.')}
-                        </span>
+                          {esocialStatus.resposta_governo?.envio_codigo || '201'} - {esocialStatus.resposta_governo?.envio_mensagem || 'Lote recebido com sucesso.'}
+                        </p>
                       </div>
-                    )}
+
+                      {(esocialStatus.status === 'SUCESSO' || esocialStatus.status === 'ERRO') && (
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Processamento eSocial</span>
+                          <p className={cn(
+                            "font-black text-sm",
+                            esocialStatus.status === 'ERRO' ? "text-red-500" : "text-emerald-600"
+                          )}>
+                            {esocialStatus.resposta_governo?.proc_codigo || (esocialStatus.status === 'SUCESSO' ? '202' : '401')} - {esocialStatus.resposta_governo?.proc_mensagem || (esocialStatus.status === 'SUCESSO' ? 'Sucesso' : 'Conteúdo do evento inválido.')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
 
                     {esocialStatus.status === 'ERRO' && (
-                      <div className="pt-2 text-slate-600 text-sm leading-relaxed space-y-4">
-                        <p>
-                          {esocialStatus.resposta_governo?.detalhe || 'Foi localizado no sistema um evento em duplicidade com o evento a ser enviado, mesmo Tipo de Inscrição, Número de Inscrição, CPF, Matrícula, Data de ingresso no ogmo ou no Sindicato.'}
+                      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl space-y-4">
+                        <p className="text-red-400 text-xs leading-relaxed font-medium">
+                          {esocialStatus.resposta_governo?.detalhe || 'Foi localizado no sistema um evento em duplicidade com o evento a ser enviado.'}
                         </p>
-                        <p>
-                          O contrato de trabalho já se encontra cadastrado na base de dados do Ambiente Nacional do eSocial. CPF: {selectedWorker.cpf}. 
-                          <span className="block mt-2 font-bold text-slate-700">
-                            Ação Sugerida: {esocialStatus.resposta_governo?.acao_sugerida || 'Verificar a matrícula informada e, se já utilizada em S-2190, S-2200, S-2300, S-2500 ou S-8200 de outro trabalhador, gerar uma nova matrícula.'}
-                          </span>
-                        </p>
+                        <div className="pt-2 border-t border-red-500/10">
+                          <span className="text-[9px] font-black text-red-500 uppercase tracking-widest block mb-1">Ação Sugerida</span>
+                          <p className="text-white text-[11px] font-bold">
+                            {esocialStatus.resposta_governo?.acao_sugerida || 'Verificar a matrícula informada e gerar uma nova se necessário.'}
+                          </p>
+                        </div>
                       </div>
                     )}
 
                     {esocialStatus.status === 'SUCESSO' && (
-                      <div className="pt-2 text-emerald-700 text-sm font-medium">
-                        <p>O evento foi aceito e processado com sucesso pelo Ambiente Nacional do eSocial.</p>
-                        <p className="mt-1 text-slate-400 font-mono text-[10px]">Número do Recibo: {esocialStatus.recibo}</p>
+                      <div className="pt-6 border-t border-white/5 space-y-2">
+                        <p className="text-emerald-500 text-sm font-black uppercase tracking-tight">O evento foi aceito e processado com sucesso pelo eSocial.</p>
+                        <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">RECIBO: {esocialStatus.recibo}</p>
                       </div>
                     )}
                   </div>
-                </div>
-              )}
-
-              {/* Status Badge (Simple) */}
-              {esocialStatus && (
-                <div className={cn(
-                  "mt-6 p-4 rounded-md border",
-                  esocialStatus.status === 'SUCESSO' ? "bg-emerald-50 border-emerald-200" :
-                  esocialStatus.status === 'ERRO' ? "bg-red-50 border-red-200" :
-                  "bg-blue-50 border-blue-200"
-                )}>
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Status eSocial: {esocialStatus.status}</p>
-                  <p className="text-[10px] text-slate-400">Protocolo: {esocialStatus.protocolo || '---'}</p>
-                  {esocialStatus.recibo && (
-                    <p className="text-[10px] text-slate-400">Recibo: {esocialStatus.recibo}</p>
-                  )}
                 </div>
               )}
             </div>
@@ -2757,42 +2746,43 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         </div>
       )}
 
-      {/* New Worker Form View */}
+
+      {/* New Worker Form View - DARK */}
       {currentView === 'worker_form' && (
-        <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <h2 className="text-xl font-bold text-slate-800">
+        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+            <h2 className="text-xl font-black text-white uppercase tracking-tighter">
               {editingWorkerId ? 'Editar Trabalhador' : 'Novo Trabalhador'} — Obra #{projectId.substring(0, 4)}
             </h2>
-            <button onClick={() => { resetWorkerForm(); setCurrentView('management'); }} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-              <X className="h-5 w-5 text-slate-500" />
+            <button onClick={() => { resetWorkerForm(); setCurrentView('management'); }} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <X className="h-5 w-5 text-slate-400 hover:text-white" />
             </button>
           </div>
 
-          <div className="p-8 space-y-8 text-slate-700">
+          <div className="p-8 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">CPF</label>
-                <input type="text" value={workerCpf} onChange={e => setWorkerCpf(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">CPF</label>
+                <input type="text" value={workerCpf} onChange={e => setWorkerCpf(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" placeholder="000.000.000-00" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nome</label>
-                <input type="text" value={workerNome} onChange={e => setWorkerNome(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Nome Completo</label>
+                <input type="text" value={workerNome} onChange={e => setWorkerNome(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner uppercase" placeholder="Nome do Trabalhador" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nome do cargo</label>
-                <input type="text" value={workerCargo} onChange={e => setWorkerCargo(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="text" value={workerCargo} onChange={e => setWorkerCargo(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">CBO Cargo IBGE (pedreiro = 715210)</label>
-                <input type="text" value={workerCbo} onChange={e => setWorkerCbo(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="text" value={workerCbo} onChange={e => setWorkerCbo(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Matricula (eSocial)</label>
-                <input type="text" value={workerMatricula} onChange={e => setWorkerMatricula(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="text" value={workerMatricula} onChange={e => setWorkerMatricula(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
             </div>
 
@@ -2805,76 +2795,76 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     value={workerCep} 
                     onChange={e => setWorkerCep(e.target.value.replace(/\D/g, '').substring(0, 8))} 
                     placeholder="00000000" 
-                    className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none pr-10" 
+                    className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none pr-10" 
                   />
                   {isFetchingCep && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     </div>
                   )}
                 </div>
               </div>
               <div className="md:col-span-3 space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Logradouro</label>
-                <input type="text" value={workerLogradouro} onChange={e => setWorkerLogradouro(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="text" value={workerLogradouro} onChange={e => setWorkerLogradouro(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nº</label>
-                <input type="text" value={workerNumero} onChange={e => setWorkerNumero(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="text" value={workerNumero} onChange={e => setWorkerNumero(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Complemento</label>
-                <input type="text" value={workerComplemento} onChange={e => setWorkerComplemento(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="text" value={workerComplemento} onChange={e => setWorkerComplemento(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="md:col-span-1 space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Bairro</label>
-                <input type="text" value={workerBairro} onChange={e => setWorkerBairro(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="text" value={workerBairro} onChange={e => setWorkerBairro(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">UF</label>
-                <input type="text" value={workerUf} onChange={e => setWorkerUf(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="text" value={workerUf} onChange={e => setWorkerUf(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cod IBGE</label>
-                <input type="text" value={workerCodIbge} onChange={e => setWorkerCodIbge(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="text" value={workerCodIbge} onChange={e => setWorkerCodIbge(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cidade</label>
-                <input type="text" value={workerCidade} onChange={e => setWorkerCidade(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="text" value={workerCidade} onChange={e => setWorkerCidade(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nascimento</label>
-                <input type="date" value={workerNascimento} onChange={e => setWorkerNascimento(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="date" value={workerNascimento} onChange={e => setWorkerNascimento(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sexo</label>
-                <select value={workerSexo} onChange={e => setWorkerSexo(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white">
-                  <option value="">--</option>
-                  <option value="M">Masculino</option>
-                  <option value="F">Feminino</option>
+                <select value={workerSexo} onChange={e => setWorkerSexo(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none">
+                  <option value="" className="bg-[#1C232E]">--</option>
+                  <option value="M" className="bg-[#1C232E]">Masculino</option>
+                  <option value="F" className="bg-[#1C232E]">Feminino</option>
                 </select>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Escolaridade</label>
-                <select value={workerEscolaridade} onChange={e => setWorkerEscolaridade(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white">
-                  <option value="">--</option>
+                <select value={workerEscolaridade} onChange={e => setWorkerEscolaridade(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none">
+                  <option value="" className="bg-[#1C232E]">--</option>
                   {ESCOLARIDADE_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    <option key={opt.value} value={opt.value} className="bg-[#1C232E]">{opt.label}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cor da Pele</label>
-                <select value={workerCorPele} onChange={e => setWorkerCorPele(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white">
-                  <option value="">--</option>
+                <select value={workerCorPele} onChange={e => setWorkerCorPele(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none">
+                  <option value="" className="bg-[#1C232E]">--</option>
                   {COR_PELE_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    <option key={opt.value} value={opt.value} className="bg-[#1C232E]">{opt.label}</option>
                   ))}
                 </select>
               </div>
@@ -2883,41 +2873,41 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">País nascimento (Brasil = 105)</label>
-                <input type="text" value={workerPaisNascimento} onChange={e => setWorkerPaisNascimento(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="text" value={workerPaisNascimento} onChange={e => setWorkerPaisNascimento(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Categoria</label>
-                <select value={workerCategoria} onChange={e => setWorkerCategoria(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white">
-                  <option value="">--</option>
+                <select value={workerCategoria} onChange={e => setWorkerCategoria(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none">
+                  <option value="" className="bg-[#1C232E]">--</option>
                   {CATEGORIA_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    <option key={opt.value} value={opt.value} className="bg-[#1C232E]">{opt.label}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tab. Rúbrica</label>
-                <input type="text" value={workerTabRubrica} onChange={e => setWorkerTabRubrica(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="text" value={workerTabRubrica} onChange={e => setWorkerTabRubrica(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cód. Rúbrica</label>
-                <input type="text" value={workerCodRubrica} onChange={e => setWorkerCodRubrica(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="text" value={workerCodRubrica} onChange={e => setWorkerCodRubrica(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cód. Lotação</label>
-                <input type="text" value={workerCodLotacao} onChange={e => setWorkerCodLotacao(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 outline-none" />
+                <input type="text" value={workerCodLotacao} onChange={e => setWorkerCodLotacao(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
               </div>
             </div>
 
-            {/* Transmission History - PREMIUM AUDIT VIEW */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mb-8">
-              <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            {/* Transmission History - PREMIUM AUDIT VIEW (DARK) */}
+            <div className="bg-[#1C232E] rounded-2xl shadow-xl border border-white/5 overflow-hidden mb-8">
+              <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <History className="h-5 w-5 text-slate-500" />
-                  <h3 className="font-bold text-slate-700">Histórico de Transmissões (Auditoria)</h3>
+                  <History className="h-5 w-5 text-primary" />
+                  <h3 className="font-bold text-white uppercase tracking-widest text-xs">Histórico de Transmissões (Auditoria)</h3>
                 </div>
                 <button 
                   onClick={fetchEventsHistory}
-                  className="p-1.5 hover:bg-slate-200 rounded-md transition-colors text-slate-400"
+                  className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-slate-400"
                   title="Atualizar Histórico"
                 >
                   <RefreshCw className="h-4 w-4" />
@@ -2926,42 +2916,42 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50 text-slate-500 border-b border-slate-100">
-                      <th className="px-4 py-2 text-left font-bold">Evento</th>
-                      <th className="px-4 py-2 text-left font-bold">Identificador (CPF/CNO)</th>
-                      <th className="px-4 py-2 text-left font-bold">Data/Hora</th>
-                      <th className="px-4 py-2 text-left font-bold">Protocolo</th>
-                      <th className="px-4 py-2 text-left font-bold">Recibo</th>
-                      <th className="px-4 py-2 text-center font-bold">Status</th>
+                    <tr className="bg-white/5 text-slate-500 border-b border-white/5">
+                      <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-widest">Evento</th>
+                      <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-widest">Identificador</th>
+                      <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-widest">Data/Hora</th>
+                      <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-widest">Protocolo</th>
+                      <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-widest">Recibo</th>
+                      <th className="px-4 py-3 text-center font-bold text-[10px] uppercase tracking-widest">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {allEvents && allEvents.length > 0 ? (
                       allEvents.map((event: any) => (
-                        <tr key={event.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                          <td className="px-4 py-3">
-                            <span className="font-black text-slate-700">{event.tipo_evento}</span>
+                        <tr key={event.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                          <td className="px-4 py-4">
+                            <span className="font-black text-white">{event.tipo_evento}</span>
                           </td>
-                          <td className="px-4 py-3 text-slate-500 font-mono text-xs">
+                          <td className="px-4 py-4 text-slate-400 font-mono text-xs">
                             {event.cpf_trabalhador}
                           </td>
-                          <td className="px-4 py-3 text-slate-400 text-xs">
+                          <td className="px-4 py-4 text-slate-500 text-xs">
                             {new Date(event.updated_at).toLocaleString('pt-BR')}
                           </td>
-                          <td className="px-4 py-3 text-slate-400 font-mono text-[10px]">
+                          <td className="px-4 py-4 text-slate-500 font-mono text-[10px]">
                             {event.protocolo || '---'}
                           </td>
-                          <td className="px-4 py-3 text-slate-500 font-bold">
+                          <td className="px-4 py-4 text-slate-300 font-bold">
                             {event.recibo || (
-                              <span className="text-[10px] text-slate-300 italic font-normal">Aguardando...</span>
+                              <span className="text-[10px] text-slate-600 italic font-normal">Aguardando...</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-center">
+                          <td className="px-4 py-4 text-center">
                             <span className={cn(
-                              "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter",
-                              event.status === 'SUCESSO' ? "bg-emerald-100 text-emerald-700" :
-                              event.status === 'ERRO' ? "bg-red-100 text-red-700" :
-                              "bg-blue-100 text-blue-700 animate-pulse"
+                              "px-3 py-1 rounded text-[10px] font-black uppercase tracking-tighter",
+                              event.status === 'SUCESSO' ? "bg-emerald-500/20 text-emerald-500" :
+                              event.status === 'ERRO' ? "bg-red-500/20 text-red-500" :
+                              "bg-blue-500/20 text-blue-500 animate-pulse"
                             )}>
                               {event.status}
                             </span>
@@ -2970,8 +2960,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-slate-400 italic">
-                          Nenhum evento transmitido até o momento para esta obra.
+                        <td colSpan={6} className="px-4 py-12 text-center text-slate-600 italic text-xs">
+                          Nenhum evento transmitido até o momento.
                         </td>
                       </tr>
                     )}
@@ -2980,12 +2970,23 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
-              <button onClick={() => { resetWorkerForm(); setCurrentView('management'); }} className="px-6 py-2 bg-blue-600 text-white rounded text-sm font-bold hover:bg-blue-700 transition-colors">
+            <div className="flex justify-end gap-3 pt-6 border-t border-white/5 bg-white/5 p-6 -mx-8 -mb-8">
+              <button 
+                onClick={() => { resetWorkerForm(); setCurrentView('management'); }} 
+                className="px-6 py-2.5 bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-600 transition-all shadow-lg"
+              >
                 Voltar para obra
               </button>
-              <button onClick={handleSaveWorker} disabled={isSaving} className="px-10 py-2 bg-[#007AFF] text-white rounded text-sm font-bold hover:bg-blue-600 transition-colors shadow-lg disabled:opacity-50">
-                {isSaving ? 'Salvando...' : 'Salvar'}
+              <button 
+                onClick={handleSaveWorker} 
+                disabled={isSaving} 
+                className="px-10 py-2.5 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all shadow-xl shadow-primary/20 disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Salvando...
+                  </div>
+                ) : 'Salvar Trabalhador'}
               </button>
             </div>
           </div>
@@ -2994,51 +2995,51 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       {/* Edit Client Modal */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
-          <div className="bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1C232E] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-white/10">
             {/* Modal Header */}
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-2 text-slate-800 font-bold">
-                <Edit2 className="h-4 w-4" />
-                <span>Editar</span>
+            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+              <div className="flex items-center gap-2 text-white font-black uppercase tracking-widest text-xs">
+                <Edit2 className="h-4 w-4 text-primary" />
+                <span>Editar Cliente</span>
               </div>
-              <button onClick={() => setIsEditModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-md transition-colors text-slate-400">
+              <button onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
+            <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Nome</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Nome</label>
                 <div className="relative">
-                  <input type="text" value={client} onChange={e => setClient(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                  <input type="text" value={client} onChange={e => setClient(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                  <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Fone</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Fone</label>
                 <div className="relative">
-                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                  <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Parceiro</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Parceiro</label>
                 <div className="relative">
-                  <select value={parceiro} onChange={e => setParceiro(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none appearance-none bg-white">
-                    <option value="- nenhum -">- nenhum -</option>
-                    <option value="Parceiro 1">Parceiro 1</option>
-                    <option value="Parceiro 2">Parceiro 2</option>
+                  <select value={parceiro} onChange={e => setParceiro(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    <option value="- nenhum -" className="bg-[#1C232E]">- nenhum -</option>
+                    <option value="Parceiro 1" className="bg-[#1C232E]">Parceiro 1</option>
+                    <option value="Parceiro 2" className="bg-[#1C232E]">Parceiro 2</option>
                   </select>
-                  <Check className="absolute right-8 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">CPF / CNPJ <span className="text-red-500">*</span></label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">CPF / CNPJ <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <input 
                     type="text" 
@@ -3046,13 +3047,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     onChange={e => setCpfCnpj(e.target.value)} 
                     placeholder="Obrigatório"
                     className={cn(
-                      "w-full border rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none",
-                      !cpfCnpj ? "border-red-200 bg-red-50/10" : "border-slate-300"
+                      "w-full bg-white/5 border rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner",
+                      !cpfCnpj ? "border-red-500/30" : "border-white/10"
                     )} 
                   />
                   {cpfCnpj && (
                     <Check className={cn(
-                      "absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4",
+                      "absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4",
                       (cpfCnpj.replace(/[^\d]/g, '').length <= 11 ? validateCPF(cpfCnpj) : validateCNPJ(cpfCnpj)) 
                         ? "text-emerald-500" 
                         : "text-red-400"
@@ -3062,59 +3063,42 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">link</label>
-                <div className="relative">
-                  <input type="text" value={link} onChange={e => setLink(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                </div>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">link</label>
+                <input type="text" value={link} onChange={e => setLink(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">cod</label>
-                <div className="relative">
-                  <input type="text" value={cod} onChange={e => setCod(e.target.value)} autoComplete="off" className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                </div>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">cod</label>
+                <input type="text" value={cod} onChange={e => setCod(e.target.value)} autoComplete="off" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">senha</label>
-                <div className="relative">
-                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                </div>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">senha</label>
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" title="Senha" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">obs</label>
-                <div className="relative">
-                  <input type="text" value={observations} onChange={e => setObservations(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                </div>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">obs</label>
+                <textarea value={observations} onChange={e => setObservations(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner min-h-[80px]" />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">MAED</label>
-                <div className="relative">
-                  <input type="date" value={maedDate} onChange={e => setMaedDate(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-8 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">MAED</label>
+                  <input type="date" value={maedDate} onChange={e => setMaedDate(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
                 </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Parcelar</label>
-                <div className="relative">
-                  <input type="date" value={parcelarDate} onChange={e => setParcelarDate(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-8 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Parcelar</label>
+                  <input type="date" value={parcelarDate} onChange={e => setParcelarDate(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
                 </div>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
-              <button onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 bg-[#636E72] text-white text-xs font-bold rounded hover:bg-slate-600 transition-colors">Close</button>
-              <button onClick={handleSave} disabled={isSaving} className="px-4 py-2 bg-[#007AFF] text-white text-xs font-bold rounded hover:bg-blue-600 transition-colors disabled:opacity-50">
-                {isSaving ? 'Saving...' : 'Submit'}
+            <div className="p-6 bg-white/5 border-t border-white/5 flex justify-end gap-3">
+              <button onClick={() => setIsEditModalOpen(false)} className="px-6 py-2.5 bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Fechar</button>
+              <button onClick={handleSave} disabled={isSaving} className="px-6 py-2.5 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all shadow-lg shadow-primary/20 disabled:opacity-50">
+                {isSaving ? 'Salvando...' : 'Salvar Alterações'}
               </button>
             </div>
           </div>
@@ -3123,120 +3107,109 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       {/* Work Modal (Simple for Create, Detailed for Edit) */}
       {isWorkModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
-          <div className="bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1C232E] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-white/10">
             {/* Modal Header */}
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-2 text-slate-800 font-bold">
-                <Edit2 className="h-4 w-4" />
-                <span>Editar</span>
+            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+              <div className="flex items-center gap-2 text-white font-black uppercase tracking-widest text-xs">
+                <Building2 className="h-4 w-4 text-primary" />
+                <span>Dados da Obra (eSocial)</span>
               </div>
-              <button onClick={() => setIsWorkModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-md transition-colors text-slate-400">
+              <button onClick={() => setIsWorkModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
+            <div className="p-8 space-y-6 max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Nome da obra</label>
-                <div className="relative">
-                  <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="CASA / COMERCIO / GALPÃO" className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                </div>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Nome da obra</label>
+                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="CASA / COMERCIO / GALPÃO" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner uppercase" />
               </div>
 
               {workModalMode === 'detailed' && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-slate-500">Nome proprietário</label>
-                    <div className="relative">
-                      <input type="text" value={proprietarioNome} onChange={e => setProprietarioNome(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                    </div>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Nome proprietário</label>
+                    <input type="text" value={proprietarioNome} onChange={e => setProprietarioNome(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner uppercase" />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-slate-500">CPF / CNPJ do Proprietário</label>
-                    <div className="relative">
-                      <input type="text" value={proprietarioCpfCnpj} onChange={e => setProprietarioCpfCnpj(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                    </div>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">CPF / CNPJ do Proprietário</label>
+                    <input type="text" value={proprietarioCpfCnpj} onChange={e => setProprietarioCpfCnpj(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner font-mono" />
                   </div>
                 </>
               )}
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Área construída</label>
-                <div className="relative">
-                  <input type="number" value={areaConstruida || ''} onChange={e => setAreaConstruida(Number(e.target.value))} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                </div>
-              </div>
-
-              {workModalMode === 'detailed' && (
-                <>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-slate-500">CNO</label>
-                    <div className="relative">
-                      <input type="text" value={cnoNumero} onChange={e => setCnoNumero(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-slate-500">RMT inicial</label>
-                    <div className="relative">
-                      <input type="number" value={rmtInicial || ''} onChange={e => setRmtInicial(Number(e.target.value))} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-slate-500">Requisito (%)</label>
-                    <div className="relative">
-                      <input type="number" value={requisitoPercent || ''} onChange={e => setRequisitoPercent(Number(e.target.value))} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                    </div>
-                  </div>
-                </>
-              )}
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Endereço</label>
-                <div className="relative">
-                  <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" />
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                </div>
-              </div>
-
-              {workModalMode === 'detailed' && (
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-500">Emitir NF, DAS ou recibo mensal?</label>
-                  <div className="relative">
-                    <select value={emitirDocumento} onChange={e => setEmitirDocumento(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none appearance-none bg-white">
-                      <option value="Não">Não</option>
-                      <option value="Sim">Sim</option>
-                    </select>
-                    <Check className="absolute right-8 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                  </div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Área construída</label>
+                  <input type="number" value={areaConstruida || ''} onChange={e => setAreaConstruida(Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
                 </div>
-              )}
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">OBS</label>
-                <div className="relative">
-                  <textarea value={observations} onChange={e => setObservations(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none min-h-[80px]" />
-                  <Check className="absolute right-3 top-6 h-4 w-4 text-emerald-500" />
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">CNO</label>
+                  <input type="text" value={cnoNumero} onChange={e => setCnoNumero(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner font-mono" />
                 </div>
               </div>
             </div>
 
+            {/* Modal Body */}
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Início da Obra</label>
+                  <input type="month" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Término da Obra</label>
+                  <input type="month" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                </div>
+              </div>
+
+              {workModalMode === 'detailed' && (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Categoria de Regularização</label>
+                    <select value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner">
+                      <option value="" className="bg-[#1C232E]">--</option>
+                      <option value="Regularização por Aferição Indireta" className="bg-[#1C232E]">Regularização por Aferição Indireta</option>
+                      <option value="Regularização por Contabilidade Regular" className="bg-[#1C232E]">Regularização por Contabilidade Regular</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Requisito (%)</label>
+                    <input type="number" value={requisitoPercent || ''} onChange={e => setRequisitoPercent(Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                  </div>
+                </>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Endereço Completo</label>
+                <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner uppercase" />
+              </div>
+
+              {workModalMode === 'detailed' && (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Emitir Documento Mensal?</label>
+                  <select value={emitirDocumento} onChange={e => setEmitirDocumento(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner">
+                    <option value="Não" className="bg-[#1C232E]">Não</option>
+                    <option value="Sim" className="bg-[#1C232E]">Sim</option>
+                  </select>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Observações do Projeto</label>
+                <textarea value={observations} onChange={e => setObservations(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner min-h-[80px]" />
+              </div>
+            </div>
+
             {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
-              <button onClick={() => setIsWorkModalOpen(false)} className="px-4 py-2 bg-[#636E72] text-white text-xs font-bold rounded hover:bg-slate-600 transition-colors">Close</button>
-              <button onClick={handleSave} disabled={isSaving} className="px-4 py-2 bg-[#007AFF] text-white text-xs font-bold rounded hover:bg-blue-600 transition-colors disabled:opacity-50">
-                {isSaving ? 'Saving...' : 'Submit'}
+            <div className="p-6 bg-white/5 border-t border-white/5 flex justify-end gap-3">
+              <button onClick={() => setIsWorkModalOpen(false)} className="px-6 py-2.5 bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
+              <button onClick={handleSave} disabled={isSaving} className="px-6 py-2.5 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all shadow-lg shadow-primary/20 disabled:opacity-50">
+                {isSaving ? 'Salvando...' : 'Salvar Alterações'}
               </button>
             </div>
           </div>
@@ -3245,107 +3218,115 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       {/* S-1000 Event View */}
       {currentView === 's1000_view' && inssRegularization && (
-        <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
             <div>
-              <h2 className="text-xl font-bold text-slate-800">Transmitir eventos para o eSocial</h2>
-              <p className="text-xs text-slate-500 mt-1">Confirme se as informações estão corretas antes de transmitir!</p>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter">Eventos de Tabela — S-1000</h2>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Informações Iniciais do Empregador/Contribuinte</p>
             </div>
             <button 
               onClick={() => setCurrentView('management')}
-              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 transition-all shadow-md"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <h3 className="text-lg font-bold text-slate-700 mb-6 flex items-center gap-2">
-              Evento S-1000 - Informações iniciais do empregador
-            </h3>
-
-            <div className="border border-slate-200 rounded overflow-hidden mb-8">
+            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02] mb-8">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-slate-200">
-                    <td className="w-1/3 p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">Procurador:</td>
-                    <td className="p-3 text-slate-800 font-bold">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
+                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">nome_empregador</td>
-                    <td className="p-3 text-slate-800 font-bold uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
+                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">cpf_empregador</td>
-                    <td className="p-3 text-slate-800 font-bold">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
+                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">evento</td>
-                    <td className="p-3 text-slate-800 font-bold">1000</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                    <td className="p-4 text-primary font-black">1000</td>
                   </tr>
                   <tr>
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">periodo</td>
-                    <td className="p-3 text-slate-800 font-bold">{new Date().toISOString().substring(0, 7)}</td>
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período:</td>
+                    <td className="p-4 text-slate-400 font-bold font-mono">{new Date().toISOString().substring(0, 7)}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6">
               <button 
                 onClick={esocialS1000Status && esocialS1000Status.status !== 'ERRO' && esocialS1000Status.status !== 'PENDENTE' ? handleConsultS1000 : handleTransmitS1000}
                 disabled={isTransmitting}
                 className={cn(
-                  "w-full py-4 rounded font-bold text-sm flex items-center justify-center gap-3 transition-all shadow-lg uppercase tracking-widest",
-                  isTransmitting ? "bg-slate-400 cursor-not-allowed" : 
-                  (esocialS1000Status?.status === 'PROCESSANDO' ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-[#1B8E5A] hover:bg-emerald-700 text-white")
+                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
+                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
+                  (esocialS1000Status?.status === 'PROCESSANDO' ? "bg-primary hover:bg-blue-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20")
                 )}
               >
                 {isTransmitting ? (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-6 w-6 animate-spin" />
                     {esocialS1000Status?.status === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
                   </>
                 ) : (
                   <>
-                    <Send className="h-5 w-5" />
+                    <Send className="h-6 w-6" />
                     Transmitir Evento / Consultar
                   </>
                 )}
               </button>
               
-              {/* Detailed Log S-1000 */}
+              {/* Detailed Log S-1000 - DARK */}
               {esocialS1000Status && (esocialS1000Status.status === 'SUCESSO' || esocialS1000Status.status === 'ERRO' || esocialS1000Status.status === 'PROCESSANDO') && (
-                <div className="p-6 bg-white border border-slate-200 rounded shadow-sm">
-                  <div className="space-y-4">
-                    <div>
-                      <span className="font-bold text-slate-800">Envio =&gt; </span>
-                      <span className={cn(
-                        "font-medium",
-                        esocialS1000Status.status === 'ERRO' ? "text-red-600" : "text-emerald-600"
-                      )}>
-                        {esocialS1000Status.resposta_governo?.envio_codigo || '201'} - {esocialS1000Status.resposta_governo?.envio_mensagem || 'Lote recebido com sucesso.'}
-                      </span>
+                <div className="p-8 bg-white/5 border border-white/5 rounded-2xl shadow-2xl">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Resposta do Governo (S-1000)</h4>
+                      <div className={cn(
+                        "w-3 h-3 rounded-full shadow-[0_0_8px]",
+                        esocialS1000Status.status === 'SUCESSO' ? "bg-emerald-500 shadow-emerald-500/50" : 
+                        esocialS1000Status.status === 'ERRO' ? "bg-red-500 shadow-red-500/50" : "bg-blue-500 shadow-blue-500/50"
+                      )}></div>
                     </div>
 
-                    {(esocialS1000Status.status === 'SUCESSO' || esocialS1000Status.status === 'ERRO') && (
-                      <div>
-                        <span className="font-bold text-slate-800">Processamento =&gt; </span>
-                        <span className={cn(
-                          "font-medium",
-                          esocialS1000Status.status === 'ERRO' ? "text-red-600" : "text-emerald-600"
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Envio Lote</span>
+                        <p className={cn(
+                          "font-black text-sm",
+                          esocialS1000Status.status === 'ERRO' ? "text-red-500" : "text-emerald-500"
                         )}>
-                          {esocialS1000Status.resposta_governo?.proc_codigo || '202'} - {esocialS1000Status.resposta_governo?.proc_mensagem || 'Sucesso'}
-                        </span>
+                          {esocialS1000Status.resposta_governo?.envio_codigo || '201'} - {esocialS1000Status.resposta_governo?.envio_mensagem || 'Lote recebido com sucesso.'}
+                        </p>
                       </div>
-                    )}
+
+                      {(esocialS1000Status.status === 'SUCESSO' || esocialS1000Status.status === 'ERRO') && (
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Status Processamento</span>
+                          <p className={cn(
+                            "font-black text-sm",
+                            esocialS1000Status.status === 'ERRO' ? "text-red-500" : "text-emerald-600"
+                          )}>
+                            {esocialS1000Status.resposta_governo?.proc_codigo || '202'} - {esocialS1000Status.resposta_governo?.proc_mensagem || 'Sucesso'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
 
                     {esocialS1000Status.status === 'ERRO' && (
-                      <div className="pt-2 text-slate-600 text-sm leading-relaxed space-y-4">
-                        <p>{esocialS1000Status.resposta_governo?.detalhe || 'Erro desconhecido no processamento do S-1000.'}</p>
-                        <span className="block mt-2 font-bold text-slate-700">
-                          Ação Sugerida: {esocialS1000Status.resposta_governo?.acao_sugerida || 'Verifique os dados cadastrais do empregador.'}
-                        </span>
+                      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl space-y-2">
+                        <p className="text-red-400 text-xs font-medium leading-relaxed">{esocialS1000Status.resposta_governo?.detalhe || 'Erro desconhecido no processamento do S-1000.'}</p>
+                        <div className="pt-2 border-t border-red-500/10">
+                          <span className="text-[9px] font-black text-red-500 uppercase tracking-widest block mb-1">Ação Sugerida</span>
+                          <p className="text-white text-[11px] font-bold">{esocialS1000Status.resposta_governo?.acao_sugerida || 'Verifique os dados cadastrais do empregador.'}</p>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -3356,113 +3337,122 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         </div>
       )}
 
-      {/* S-1005 Event View */}
+
+      {/* S-1005 Event View - DARK */}
       {currentView === 's1005_view' && inssRegularization && (
-        <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
             <div>
-              <h2 className="text-xl font-bold text-slate-800">Transmitir eventos para o eSocial</h2>
-              <p className="text-xs text-slate-500 mt-1">Confirme se as informações estão corretas antes de transmitir!</p>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter">Evento S-1005 – Tabela de Estabelecimentos</h2>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Informações de Obras de Construção Civil</p>
             </div>
             <button 
               onClick={() => setCurrentView('management')}
-              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 transition-all shadow-md"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <h3 className="text-lg font-bold text-slate-700 mb-6 flex items-center gap-2">
-              Evento S-1005 - Tabela de Estabelecimentos, Obras
-            </h3>
-
-            <div className="border border-slate-200 rounded overflow-hidden mb-8">
+            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02] mb-8">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-slate-200">
-                    <td className="w-1/3 p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">Procurador:</td>
-                    <td className="p-3 text-slate-800 font-bold">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
+                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">nome_empregador</td>
-                    <td className="p-3 text-slate-800 font-bold uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
+                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">cpf_empregador</td>
-                    <td className="p-3 text-slate-800 font-bold">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
+                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">cno</td>
-                    <td className="p-3 text-slate-800 font-bold">{cnoNumero}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CNO:</td>
+                    <td className="p-4 text-white font-black font-mono">{cnoNumero}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">evento</td>
-                    <td className="p-3 text-slate-800 font-bold">1005</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                    <td className="p-4 text-primary font-black">1005</td>
                   </tr>
                   <tr>
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">periodo</td>
-                    <td className="p-3 text-slate-800 font-bold">{new Date().toISOString().substring(0, 7)}</td>
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período:</td>
+                    <td className="p-4 text-slate-400 font-bold font-mono">{new Date().toISOString().substring(0, 7)}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6">
               <button 
                 onClick={esocialS1005Status && esocialS1005Status.status !== 'ERRO' && esocialS1005Status.status !== 'PENDENTE' ? handleConsultS1005 : handleTransmitS1005}
                 disabled={isTransmitting}
                 className={cn(
-                  "w-full py-4 rounded font-bold text-sm flex items-center justify-center gap-3 transition-all shadow-lg uppercase tracking-widest",
-                  isTransmitting ? "bg-slate-400 cursor-not-allowed" : 
-                  (esocialS1005Status?.status === 'PROCESSANDO' ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-[#1B8E5A] hover:bg-emerald-700 text-white")
+                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
+                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
+                  (esocialS1005Status?.status === 'PROCESSANDO' ? "bg-primary hover:bg-blue-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20")
                 )}
               >
                 {isTransmitting ? (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-6 w-6 animate-spin" />
                     {esocialS1005Status?.status === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
                   </>
                 ) : (
                   <>
-                    <Send className="h-5 w-5" />
+                    <Send className="h-6 w-6" />
                     Transmitir Evento / Consultar
                   </>
                 )}
               </button>
               
-              {/* Detailed Log S-1005 */}
+              {/* Detailed Log S-1005 - DARK */}
               {esocialS1005Status && (esocialS1005Status.status === 'SUCESSO' || esocialS1005Status.status === 'ERRO' || esocialS1005Status.status === 'PROCESSANDO') && (
-                <div className="p-6 bg-white border border-slate-200 rounded shadow-sm">
-                  <div className="space-y-4">
-                    <div>
-                      <span className="font-bold text-slate-800">Envio =&gt; </span>
-                      <span className={cn(
-                        "font-medium",
-                        esocialS1005Status.status === 'ERRO' ? "text-red-600" : "text-emerald-600"
-                      )}>
-                        {esocialS1005Status.resposta_governo?.envio_codigo || '201'} - {esocialS1005Status.resposta_governo?.envio_mensagem || 'Lote recebido com sucesso.'}
-                      </span>
+                <div className="p-8 bg-white/5 border border-white/5 rounded-2xl shadow-2xl">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Resposta do Governo (S-1005)</h4>
+                      <div className={cn(
+                        "w-3 h-3 rounded-full shadow-[0_0_8px]",
+                        esocialS1005Status.status === 'SUCESSO' ? "bg-emerald-500 shadow-emerald-500/50" : 
+                        esocialS1005Status.status === 'ERRO' ? "bg-red-500 shadow-red-500/50" : "bg-blue-500 shadow-blue-500/50"
+                      )}></div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Envio Lote</span>
+                        <p className={cn(
+                          "font-black text-sm",
+                          esocialS1005Status.status === 'ERRO' ? "text-red-500" : "text-emerald-500"
+                        )}>
+                          {esocialS1005Status.resposta_governo?.envio_codigo || '201'} - {esocialS1005Status.resposta_governo?.envio_mensagem || 'Lote recebido com sucesso.'}
+                        </p>
+                      </div>
+
+                      {(esocialS1005Status.status === 'SUCESSO' || esocialS1005Status.status === 'ERRO') && (
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Processamento</span>
+                          <p className={cn(
+                            "font-black text-sm",
+                            esocialS1005Status.status === 'ERRO' ? "text-red-500" : "text-emerald-600"
+                          )}>
+                            {esocialS1005Status.resposta_governo?.proc_codigo || '202'} - {esocialS1005Status.resposta_governo?.proc_mensagem || 'Sucesso'}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
-                    {(esocialS1005Status.status === 'SUCESSO' || esocialS1005Status.status === 'ERRO') && (
-                      <div>
-                        <span className="font-bold text-slate-800">Processamento =&gt; </span>
-                        <span className={cn(
-                          "font-medium",
-                          esocialS1005Status.status === 'ERRO' ? "text-red-600" : "text-emerald-600"
-                        )}>
-                          {esocialS1005Status.resposta_governo?.proc_codigo || '202'} - {esocialS1005Status.resposta_governo?.proc_mensagem || 'Sucesso'}
-                        </span>
-                      </div>
-                    )}
-
                     {esocialS1005Status.status === 'ERRO' && (
-                      <div className="pt-2 text-slate-600 text-sm leading-relaxed space-y-4">
-                        <p>{esocialS1005Status.resposta_governo?.detalhe || 'Erro desconhecido no processamento do S-1005.'}</p>
-                        <span className="block mt-2 font-bold text-slate-700">
-                          Ação Sugerida: {esocialS1005Status.resposta_governo?.acao_sugerida || 'Verifique o número do CNO e os dados da obra.'}
-                        </span>
+                      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl space-y-2">
+                        <p className="text-red-400 text-xs font-medium leading-relaxed">{esocialS1005Status.resposta_governo?.detalhe || 'Erro no processamento do estabelecimento/obra.'}</p>
+                        <div className="pt-2 border-t border-red-500/10">
+                          <span className="text-[9px] font-black text-red-500 uppercase tracking-widest block mb-1">Ação Sugerida</span>
+                          <p className="text-white text-[11px] font-bold">{esocialS1005Status.resposta_governo?.acao_sugerida || 'Verifique o número do CNO e os dados da obra.'}</p>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -3473,594 +3463,346 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         </div>
       )}
 
-      {/* S-1020 Event View */}
+      {/* S-1020 Event View - DARK */}
       {currentView === 's1020_view' && inssRegularization && (
-        <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
             <div>
-              <h2 className="text-xl font-bold text-slate-800">Transmitir eventos para o eSocial</h2>
-              <p className="text-xs text-slate-500 mt-1">Confirme se as informações estão corretas antes de transmitir!</p>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter">Evento S-1020 – Tabela de Lotações</h2>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Classificação das Lotações Tributárias</p>
             </div>
             <button 
               onClick={() => setCurrentView('management')}
-              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 transition-all shadow-md"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <h3 className="text-lg font-bold text-slate-700 mb-6 flex items-center gap-2">
-              Evento S-1020 – Tabela de Lotações Tributárias
-            </h3>
-
-            <div className="border border-slate-200 rounded overflow-hidden mb-8">
+            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02] mb-8">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-slate-200">
-                    <td className="w-1/3 p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">Procurador:</td>
-                    <td className="p-3 text-slate-800 font-bold">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
+                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">nome_empregador</td>
-                    <td className="p-3 text-slate-800 font-bold uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
+                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">cpf_empregador</td>
-                    <td className="p-3 text-slate-800 font-bold">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
+                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">cno</td>
-                    <td className="p-3 text-slate-800 font-bold">{cnoNumero}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Tipo Lotação:</td>
+                    <td className="p-4 text-white font-bold">{tipoLotacao}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">tipo_lotacao</td>
-                    <td className="p-3 text-slate-800 font-bold">{tipoLotacao}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">evento</td>
-                    <td className="p-3 text-slate-800 font-bold">1020</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">codlotacao</td>
-                    <td className="p-3 text-slate-800 font-bold">01</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                    <td className="p-4 text-primary font-black">1020</td>
                   </tr>
                   <tr>
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">periodo</td>
-                    <td className="p-3 text-slate-800 font-bold">{new Date().toISOString().substring(0, 7)}</td>
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período:</td>
+                    <td className="p-4 text-slate-400 font-bold font-mono">{new Date().toISOString().substring(0, 7)}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6">
               <button 
                 onClick={esocialS1020Status && esocialS1020Status.status !== 'ERRO' && esocialS1020Status.status !== 'PENDENTE' ? handleConsultS1020 : handleTransmitS1020}
                 disabled={isTransmitting}
                 className={cn(
-                  "w-full py-4 rounded font-bold text-sm flex items-center justify-center gap-3 transition-all shadow-lg uppercase tracking-widest",
-                  isTransmitting ? "bg-slate-400 cursor-not-allowed" : 
-                  (esocialS1020Status?.status === 'PROCESSANDO' ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-[#1B8E5A] hover:bg-emerald-700 text-white")
+                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
+                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
+                  (esocialS1020Status?.status === 'PROCESSANDO' ? "bg-primary hover:bg-blue-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20")
                 )}
               >
                 {isTransmitting ? (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-6 w-6 animate-spin" />
                     {esocialS1020Status?.status === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
                   </>
                 ) : (
                   <>
-                    <Send className="h-5 w-5" />
+                    <Send className="h-6 w-6" />
                     Transmitir Evento / Consultar
                   </>
                 )}
               </button>
-              
-              {/* Detailed Log S-1020 */}
-              {esocialS1020Status && (esocialS1020Status.status === 'SUCESSO' || esocialS1020Status.status === 'ERRO' || esocialS1020Status.status === 'PROCESSANDO') && (
-                <div className="p-6 bg-white border border-slate-200 rounded shadow-sm">
-                  <div className="space-y-4">
-                    <div>
-                      <span className="font-bold text-slate-800">Envio =&gt; </span>
-                      <span className={cn(
-                        "font-medium",
-                        esocialS1020Status.status === 'ERRO' ? "text-red-600" : "text-emerald-600"
-                      )}>
-                        {esocialS1020Status.resposta_governo?.envio_codigo || '201'} - {esocialS1020Status.resposta_governo?.envio_mensagem || 'Lote recebido com sucesso.'}
-                      </span>
-                    </div>
-
-                    {(esocialS1020Status.status === 'SUCESSO' || esocialS1020Status.status === 'ERRO') && (
-                      <div>
-                        <span className="font-bold text-slate-800">Processamento =&gt; </span>
-                        <span className={cn(
-                          "font-medium",
-                          esocialS1020Status.status === 'ERRO' ? "text-red-600" : "text-emerald-600"
-                        )}>
-                          {esocialS1020Status.resposta_governo?.proc_codigo || '202'} - {esocialS1020Status.resposta_governo?.proc_mensagem || 'Sucesso'}
-                        </span>
-                      </div>
-                    )}
-
-                    {esocialS1020Status.status === 'ERRO' && (
-                      <div className="pt-2 text-slate-600 text-sm leading-relaxed space-y-4">
-                        <p>{esocialS1020Status.resposta_governo?.detalhe || 'Erro desconhecido no processamento do S-1020.'}</p>
-                        <span className="block mt-2 font-bold text-slate-700">
-                          Ação Sugerida: {esocialS1020Status.resposta_governo?.acao_sugerida || 'Verifique as configurações de FPAS e Tipo de Lotação.'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Lotacao Modal (S-1020) */}
+      {/* Lotacao Modal (S-1020) - DARK */}
       {isLotacaoModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
-          <div className="bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1C232E] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-white/10">
             {/* Modal Header */}
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-slate-800 font-bold">Informações da Lotação</span>
-              <button onClick={() => setIsLotacaoModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-md transition-colors text-slate-400">
+            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+              <span className="text-white font-black uppercase tracking-widest text-xs">Informações da Lotação</span>
+              <button onClick={() => setIsLotacaoModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-6">
+            <div className="p-8 space-y-6">
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Código lotação</label>
-                <input 
-                  type="text" 
-                  value="01" 
-                  readOnly
-                  className="w-full border border-slate-200 bg-slate-50 rounded-md px-3 py-2 text-sm text-slate-800 outline-none" 
-                />
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Código lotação</label>
+                <input type="text" value="01" readOnly className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-400 outline-none shadow-inner cursor-not-allowed" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Tipo lotação</label>
-                <select 
-                  value={tipoLotacao}
-                  onChange={(e) => setTipoLotacao(e.target.value)}
-                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none appearance-none bg-white"
-                >
-                  <option value="21">21 - obra própria de pessoa física</option>
-                  <option value="01">01 - classificação de atividades econômicas</option>
-                </select>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Tipo lotação</label>
+                <div className="relative">
+                  <select value={tipoLotacao} onChange={(e) => setTipoLotacao(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    <option value="21" className="bg-[#1C232E]">21 - obra própria de pessoa física</option>
+                    <option value="01" className="bg-[#1C232E]">01 - classificação de atividades econômicas</option>
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Informações FPAS</label>
-                <input 
-                  type="text" 
-                  value={infoFpas}
-                  onChange={(e) => setInfoFpas(e.target.value)}
-                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" 
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-4">
-                <button 
-                  onClick={() => {
-                    setIsLotacaoModalOpen(false);
-                    alert('Lotação marcada como concluída manualmente.');
-                  }}
-                  className="flex-1 py-2 border border-emerald-500 text-emerald-600 font-bold text-xs rounded hover:bg-emerald-50 transition-all"
-                >
-                  Já foi feito
-                </button>
-                <button 
-                  onClick={() => {
-                    setTipoLotacao('21');
-                    setInfoFpas('FPAS - 507 / Cod. terceiros - 0079');
-                  }}
-                  className="px-4 py-2 border border-red-400 text-red-500 font-bold text-xs rounded hover:bg-red-50 transition-all"
-                >
-                  Limpar
-                </button>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Informações FPAS</label>
+                <input type="text" value={infoFpas} onChange={(e) => setInfoFpas(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center gap-2">
+            <div className="p-6 bg-white/5 border-t border-white/5 flex items-center gap-3">
+              <button onClick={() => setIsLotacaoModalOpen(false)} className="flex-1 py-3 bg-slate-700 text-white font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
               <button 
-                onClick={() => setIsLotacaoModalOpen(false)}
-                className="flex-1 py-2 bg-slate-500 text-white font-bold text-xs rounded hover:bg-slate-600 transition-all shadow-md"
+                onClick={() => { setIsLotacaoModalOpen(false); setCurrentView('s1020_view'); }}
+                className="flex-1 py-3 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2"
               >
-                Cancelar
-              </button>
-              <button 
-                onClick={() => {
-                  setIsLotacaoModalOpen(false);
-                  setCurrentView('s1020_view');
-                }}
-                className="flex-1 py-2 bg-blue-600 text-white font-bold text-xs rounded hover:bg-blue-700 transition-all shadow-md flex items-center justify-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Criar Lotação
+                <Plus className="h-4 w-4" /> Criar Lotação
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* S-1010 Event View */}
+      {/* S-1010 Event View - DARK */}
       {currentView === 's1010_view' && inssRegularization && (
-        <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
             <div>
-              <h2 className="text-xl font-bold text-slate-800">Transmitir eventos para o eSocial</h2>
-              <p className="text-xs text-slate-500 mt-1">Confirme se as informações estão corretas antes de transmitir!</p>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter">Evento S-1010 – Tabela de Rúbricas</h2>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Configuração de Incidências Tributárias</p>
             </div>
             <button 
               onClick={() => setCurrentView('management')}
-              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 transition-all shadow-md"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <h3 className="text-lg font-bold text-slate-700 mb-6 flex items-center gap-2">
-              Evento S-1010 – Tabela de Rúbricas
-            </h3>
-
-            <div className="border border-slate-200 rounded overflow-hidden mb-8">
+            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02] mb-8">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-slate-200">
-                    <td className="w-1/3 p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">Procurador:</td>
-                    <td className="p-3 text-slate-800 font-bold">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
+                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">nome_empregador</td>
-                    <td className="p-3 text-slate-800 font-bold uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Descrição:</td>
+                    <td className="p-4 text-white font-black uppercase">{descRubrica}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">cpf_empregador</td>
-                    <td className="p-3 text-slate-800 font-bold">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Cód. Rúbrica:</td>
+                    <td className="p-4 text-white font-black font-mono">{codRubrica}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">descricao</td>
-                    <td className="p-3 text-slate-800 font-bold uppercase">{descRubrica}</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Inc. Prev:</td>
+                    <td className="p-4 text-white font-bold">{incidPrev}</td>
                   </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">cod_rub</td>
-                    <td className="p-3 text-slate-800 font-bold">{codRubrica}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">tab_rub</td>
-                    <td className="p-3 text-slate-800 font-bold">{tabRubrica}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">inc_trib_rub</td>
-                    <td className="p-3 text-slate-800 font-bold">{incidPrev}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">inc_trib_irpf</td>
-                    <td className="p-3 text-slate-800 font-bold">{incidIrrf}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">evento</td>
-                    <td className="p-3 text-slate-800 font-bold">1010</td>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                    <td className="p-4 text-primary font-black">1010</td>
                   </tr>
                   <tr>
-                    <td className="p-3 bg-slate-50 text-slate-500 font-medium border-r border-slate-200 uppercase text-[10px] tracking-wider">periodo</td>
-                    <td className="p-3 text-slate-800 font-bold">{new Date().toISOString().substring(0, 7)}</td>
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período:</td>
+                    <td className="p-4 text-slate-400 font-bold font-mono">{new Date().toISOString().substring(0, 7)}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6">
               <button 
                 onClick={esocialS1010Status && esocialS1010Status.status !== 'ERRO' && esocialS1010Status.status !== 'PENDENTE' ? handleConsultS1010 : handleTransmitS1010}
                 disabled={isTransmitting}
                 className={cn(
-                  "w-full py-4 rounded font-bold text-sm flex items-center justify-center gap-3 transition-all shadow-lg uppercase tracking-widest",
-                  isTransmitting ? "bg-slate-400 cursor-not-allowed" : 
-                  (esocialS1010Status?.status === 'PROCESSANDO' ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-[#1B8E5A] hover:bg-emerald-700 text-white")
+                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
+                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
+                  (esocialS1010Status?.status === 'PROCESSANDO' ? "bg-primary hover:bg-blue-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20")
                 )}
               >
                 {isTransmitting ? (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-6 w-6 animate-spin" />
                     {esocialS1010Status?.status === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
                   </>
                 ) : (
                   <>
-                    <Send className="h-5 w-5" />
+                    <Send className="h-6 w-6" />
                     Transmitir Evento / Consultar
                   </>
                 )}
               </button>
-              
-              {/* Detailed Log S-1010 */}
-              {esocialS1010Status && (esocialS1010Status.status === 'SUCESSO' || esocialS1010Status.status === 'ERRO' || esocialS1010Status.status === 'PROCESSANDO') && (
-                <div className="p-6 bg-white border border-slate-200 rounded shadow-sm">
-                  <div className="space-y-4">
-                    <div>
-                      <span className="font-bold text-slate-800">Envio =&gt; </span>
-                      <span className={cn(
-                        "font-medium",
-                        esocialS1010Status.status === 'ERRO' ? "text-red-600" : "text-emerald-600"
-                      )}>
-                        {esocialS1010Status.resposta_governo?.envio_codigo || '201'} - {esocialS1010Status.resposta_governo?.envio_mensagem || 'Lote recebido com sucesso.'}
-                      </span>
-                    </div>
-
-                    {(esocialS1010Status.status === 'SUCESSO' || esocialS1010Status.status === 'ERRO') && (
-                      <div>
-                        <span className="font-bold text-slate-800">Processamento =&gt; </span>
-                        <span className={cn(
-                          "font-medium",
-                          esocialS1010Status.status === 'ERRO' ? "text-red-600" : "text-emerald-600"
-                        )}>
-                          {esocialS1010Status.resposta_governo?.proc_codigo || '202'} - {esocialS1010Status.resposta_governo?.proc_mensagem || 'Sucesso'}
-                        </span>
-                      </div>
-                    )}
-
-                    {esocialS1010Status.status === 'ERRO' && (
-                      <div className="pt-2 text-slate-600 text-sm leading-relaxed space-y-4">
-                        <p>{esocialS1010Status.resposta_governo?.detalhe || 'Erro desconhecido no processamento do S-1010.'}</p>
-                        <span className="block mt-2 font-bold text-slate-700">
-                          Ação Sugerida: {esocialS1010Status.resposta_governo?.acao_sugerida || 'Verifique as configurações de Incidência Tributária da Rúbrica.'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Rubrica Modal (S-1010) */}
+      {/* Rubrica Modal (S-1010) - DARK */}
       {isRubricaModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
-          <div className="bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1C232E] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-white/10">
             {/* Modal Header */}
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-slate-800 font-bold">Informações da Rúbrica</span>
-              <button onClick={() => setIsRubricaModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-md transition-colors text-slate-400">
+            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+              <span className="text-white font-black uppercase tracking-widest text-xs">Informações da Rúbrica</span>
+              <button onClick={() => setIsRubricaModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Código rubrica</label>
-                <input 
-                  type="text" 
-                  value={codRubrica}
-                  onChange={(e) => setCodRubrica(e.target.value)}
-                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" 
-                />
+            <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Código rúbrica</label>
+                  <input type="text" value={codRubrica} onChange={(e) => setCodRubrica(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner font-mono" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Tab rúbrica</label>
+                  <input type="text" value={tabRubrica} onChange={(e) => setTabRubrica(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner font-mono" />
+                </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Tab rúbrica</label>
-                <input 
-                  type="text" 
-                  value={tabRubrica}
-                  onChange={(e) => setTabRubrica(e.target.value)}
-                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none" 
-                />
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Descrição</label>
+                <textarea value={descRubrica} onChange={(e) => setDescRubrica(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner min-h-[60px] uppercase" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Descrição</label>
-                <textarea 
-                  value={descRubrica}
-                  onChange={(e) => setDescRubrica(e.target.value)}
-                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none min-h-[60px]" 
-                />
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Inc. Previdência</label>
+                <div className="relative">
+                  <select value={incidPrev} onChange={(e) => setIncidPrev(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    <option value="13" className="bg-[#1C232E]">13 - Base de cálculo (13º)</option>
+                    <option value="00" className="bg-[#1C232E]">00 - Não é base</option>
+                    <option value="11" className="bg-[#1C232E]">11 - Base de cálculo mensal</option>
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Incidência Tributária - Previdência Social</label>
-                <select 
-                  value={incidPrev}
-                  onChange={(e) => setIncidPrev(e.target.value)}
-                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none appearance-none bg-white"
-                >
-                  <option value="13">13 - Base de cálculo das contribuições sociais Salário de C...</option>
-                  <option value="00">00 - Não é base de cálculo</option>
-                  <option value="11">11 - Base de cálculo das contribuições sociais</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Incidência Tributária - IRRF</label>
-                <select 
-                  value={incidIrrf}
-                  onChange={(e) => setIncidIrrf(e.target.value)}
-                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-800 focus:border-blue-500 outline-none appearance-none bg-white"
-                >
-                  <option value="11">11 - Remuneração mensal</option>
-                  <option value="00">00 - Não é base de cálculo</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <button 
-                  onClick={() => {
-                    setIsRubricaModalOpen(false);
-                    alert('Rúbrica marcada como concluída manualmente.');
-                  }}
-                  className="flex-1 py-2 border border-emerald-500 text-emerald-600 font-bold text-xs rounded hover:bg-emerald-50 transition-all"
-                >
-                  Já foi feito
-                </button>
-                <button 
-                  onClick={() => {
-                    setCodRubrica('200');
-                    setTabRubrica('200');
-                    setDescRubrica('Prestação de serviço de trabalhador sem vínculo empregatício');
-                    setIncidPrev('13');
-                    setIncidIrrf('11');
-                  }}
-                  className="px-4 py-2 border border-red-400 text-red-500 font-bold text-xs rounded hover:bg-red-50 transition-all"
-                >
-                  Limpar
-                </button>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Incidência IRRF</label>
+                <div className="relative">
+                  <select value={incidIrrf} onChange={(e) => setIncidIrrf(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    <option value="11" className="bg-[#1C232E]">11 - Remuneração mensal</option>
+                    <option value="00" className="bg-[#1C232E]">00 - Não é base</option>
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                </div>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center gap-2">
+            <div className="p-6 bg-white/5 border-t border-white/5 flex items-center gap-3">
+              <button onClick={() => setIsRubricaModalOpen(false)} className="flex-1 py-3 bg-slate-700 text-white font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
               <button 
-                onClick={() => setIsRubricaModalOpen(false)}
-                className="flex-1 py-2 bg-slate-500 text-white font-bold text-xs rounded hover:bg-slate-600 transition-all shadow-md"
+                onClick={() => { setIsRubricaModalOpen(false); setCurrentView('s1010_view'); }}
+                className="flex-1 py-3 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2"
               >
-                Cancelar
-              </button>
-              <button 
-                onClick={() => {
-                  setIsRubricaModalOpen(false);
-                  setCurrentView('s1010_view');
-                }}
-                className="flex-1 py-2 bg-blue-600 text-white font-bold text-xs rounded hover:bg-blue-700 transition-all shadow-md flex items-center justify-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Criar Rúbrica
+                <Plus className="h-4 w-4" /> Criar Rúbrica
               </button>
             </div>
           </div>
         </div>
       )}
-      {/* Remuneration Modal */}
+      {/* Remuneration Modal - DARK */}
       {isRemunerationModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1C232E] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-white/10">
             {/* Modal Header */}
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-2 text-slate-800 font-bold">
-                <DollarSign className="h-4 w-4" />
-                <span>Cadastrar remunerações</span>
+            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+              <div className="flex items-center gap-2 text-white font-black uppercase tracking-widest text-xs">
+                <DollarSign className="h-4 w-4 text-emerald-500" />
+                <span>Cadastrar Remunerações</span>
               </div>
-              <button onClick={() => setIsRemunerationModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-md transition-colors text-slate-400">
+              <button onClick={() => setIsRemunerationModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-6">
-              {/* Info Alert */}
-              <div className="bg-sky-50 border border-sky-100 rounded-xl p-4 flex gap-3 shadow-sm">
-                <Info className="h-5 w-5 text-sky-600 flex-shrink-0" />
-                <div className="space-y-1">
-                  <h4 className="text-sky-900 font-bold text-sm">Informações</h4>
-                  <p className="text-sky-700 text-xs leading-relaxed">
-                    Você pode definir valores diferentes por período.<br />
-                    Para remover meses, informe valor <b>0</b> nos meses a remover.
-                  </p>
-                </div>
+            <div className="p-8 space-y-6">
+              <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 flex gap-3">
+                <Info className="h-5 w-5 text-primary flex-shrink-0" />
+                <p className="text-[11px] text-primary/80 font-medium leading-relaxed uppercase tracking-wider">
+                  Os valores gerados serão <span className="text-white font-black">BLOQUEADOS</span> para edição manual após a criação. Use o botão "Limpar" para destravar.
+                </p>
               </div>
 
-              {/* Value Input */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Valor da remuneração</label>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Valor Mensal</label>
                 <div className="relative">
-                  <input 
-                    type="text" 
-                    value={remValue}
-                    onChange={(e) => setRemValue(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:border-emerald-500 outline-none transition-all shadow-inner font-bold"
-                  />
-                  <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                  <input type="text" value={remValue} onChange={(e) => setRemValue(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-lg text-white focus:border-primary outline-none transition-all shadow-inner font-black" />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-xs">BRL</span>
                 </div>
               </div>
 
-              {/* Period Selectors */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                  <Calendar className="h-3.5 w-3.5" />
-                  <span>Período de vigência</span>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Mês Inicial</label>
+                  <select value={remStartMonth} onChange={(e) => setRemStartMonth(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    {[...Array(12)].map((_, i) => (<option key={i + 1} value={i + 1} className="bg-[#1C232E]">{i + 1}</option>))}
+                  </select>
                 </div>
-
-                {/* Início */}
-                <div className="grid grid-cols-12 gap-3 items-center">
-                  <div className="col-span-2">
-                    <span className="text-xs font-medium text-slate-400">Início</span>
-                  </div>
-                  <div className="col-span-5 relative">
-                    <select 
-                      value={remStartMonth}
-                      onChange={(e) => setRemStartMonth(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl pl-3 pr-8 py-2.5 text-xs font-bold text-slate-700 focus:border-emerald-500 outline-none appearance-none"
-                    >
-                      {[...Array(12)].map((_, i) => (
-                        <option key={i + 1} value={i + 1}>{i + 1}</option>
-                      ))}
-                    </select>
-                    <Check className="absolute right-8 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-emerald-500" />
-                  </div>
-                  <div className="col-span-5 relative">
-                    <select 
-                      value={remStartYear}
-                      onChange={(e) => setRemStartYear(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl pl-3 pr-8 py-2.5 text-xs font-bold text-slate-700 focus:border-emerald-500 outline-none appearance-none"
-                    >
-                      {[2024, 2025, 2026, 2027].map(y => (
-                        <option key={y} value={y}>{y}</option>
-                      ))}
-                    </select>
-                    <Check className="absolute right-8 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-emerald-500" />
-                  </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Ano Inicial</label>
+                  <select value={remStartYear} onChange={(e) => setRemStartYear(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    {[2024, 2025, 2026, 2027].map(y => (<option key={y} value={y} className="bg-[#1C232E]">{y}</option>))}
+                  </select>
                 </div>
+              </div>
 
-                {/* Fim */}
-                <div className="grid grid-cols-12 gap-3 items-center">
-                  <div className="col-span-2">
-                    <span className="text-xs font-medium text-slate-400">Fim</span>
-                  </div>
-                  <div className="col-span-5 relative">
-                    <select 
-                      value={remEndMonth}
-                      onChange={(e) => setRemEndMonth(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl pl-3 pr-8 py-2.5 text-xs font-bold text-slate-700 focus:border-emerald-500 outline-none appearance-none"
-                    >
-                      {[...Array(12)].map((_, i) => (
-                        <option key={i + 1} value={i + 1}>{i + 1}</option>
-                      ))}
-                    </select>
-                    <Check className="absolute right-8 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-emerald-500" />
-                  </div>
-                  <div className="col-span-5 relative">
-                    <select 
-                      value={remEndYear}
-                      onChange={(e) => setRemEndYear(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl pl-3 pr-8 py-2.5 text-xs font-bold text-slate-700 focus:border-emerald-500 outline-none appearance-none"
-                    >
-                      {[2024, 2025, 2026, 2027].map(y => (
-                        <option key={y} value={y}>{y}</option>
-                      ))}
-                    </select>
-                    <Check className="absolute right-8 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-emerald-500" />
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Mês Final</label>
+                  <select value={remEndMonth} onChange={(e) => setRemEndMonth(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    {[...Array(12)].map((_, i) => (<option key={i + 1} value={i + 1} className="bg-[#1C232E]">{i + 1}</option>))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Ano Final</label>
+                  <select value={remEndYear} onChange={(e) => setRemEndYear(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    {[2024, 2025, 2026, 2027].map(y => (<option key={y} value={y} className="bg-[#1C232E]">{y}</option>))}
+                  </select>
                 </div>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
-              <button onClick={() => setIsRemunerationModalOpen(false)} className="px-6 py-2 bg-[#636E72] text-white text-xs font-bold rounded-lg hover:bg-slate-600 transition-all shadow-md">Close</button>
+            <div className="p-6 bg-white/5 border-t border-white/5 flex justify-end gap-3">
+              <button onClick={() => setIsRemunerationModalOpen(false)} className="px-6 py-2.5 bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
               <button 
                 onClick={handleSaveRemuneration} 
                 disabled={isSaving}
-                className="px-8 py-2 bg-[#007AFF] text-white text-xs font-bold rounded-lg hover:bg-blue-600 transition-all shadow-md flex items-center gap-2"
+                className="px-8 py-2.5 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2"
               >
-                {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                Submit
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Gerar Remunerações
               </button>
             </div>
           </div>
@@ -4068,6 +3810,6 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       )}
     </div>
   );
-};
+}
 
 export default INSSRegularizationTab;

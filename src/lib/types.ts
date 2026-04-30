@@ -183,6 +183,7 @@ export interface INSSRegularization {
   name: string;
   client: string;
   phone?: string;
+  email?: string;
   status?: string;
   cpf_cnpj?: string;
   prazos?: string;
@@ -220,6 +221,8 @@ export interface INSSRegularization {
     issuer: string;
     valid_from: string;
     valid_to: string;
+    apelido?: string;
+    cpf_cnpj?: string;
   };
   created_at?: string;
   updated_at?: string;
