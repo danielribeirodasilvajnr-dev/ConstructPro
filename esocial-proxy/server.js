@@ -75,7 +75,12 @@ app.post('/esocial', async (req, res) => {
   try {
     const { action, eventData = {}, regularizationId } = req.body;
 
-    const { data: credentials } = await supabase.from('esocial_credentials').select('*').eq('regularization_id', regularizationId).single();
+    const { data: credentials } = await supabase.from('esocial_credentials')
+      .select('*')
+      .eq('regularization_id', regularizationId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
     const { data: pfxBlob } = await supabase.storage.from('esocial_files').download(credentials.certificate_url.split('esocial_files/')[1]);
     const pfxBuffer = Buffer.from(await pfxBlob.arrayBuffer());
 
@@ -92,15 +97,23 @@ app.post('/esocial', async (req, res) => {
     const timestamp = new Date().toISOString().replace(/[-:T.Z]/g, '').substring(0, 14);
     const rnd = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
     const eventId = `ID2${empCpfCnpj.padEnd(14, '0')}${timestamp}${rnd}`;
-    const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
-    const workerNome = (eventData.workerNome || '').toUpperCase();
-    const ns = 'http://www.esocial.gov.br/schema/evt/evtTSVInicio/v_S_01_03_00';
 
-    const xmlEvento = `<eSocial xmlns="${ns}"><evtTSVInicio Id="${eventId}"><ideEvento><indRetif>1</indRetif><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><trabalhador><cpfTrab>${workerCpf}</cpfTrab><nmTrab>${workerNome}</nmTrab><sexo>${eventData.sexo || 'M'}</sexo><racaCor>${eventData.racaCor || '1'}</racaCor><estCiv>${eventData.estCiv || '1'}</estCiv><grauInstr>${eventData.grauInstr || '07'}</grauInstr><nascimento><dtNascto>${eventData.nascimento || '1985-05-20'}</dtNascto><paisNascto>105</paisNascto><paisNac>105</paisNac></nascimento></trabalhador><infoTSVInicio><cadIni>S</cadIni><codCateg>${eventData.codCateg || '701'}</codCateg><dtInicio>${eventData.dtInicio || '2024-04-01'}</dtInicio></infoTSVInicio></evtTSVInicio></eSocial>`;
+    let xmlEvento = '';
+    if (action === 'TRANSMIT_S1000') {
+      const ns = 'http://www.esocial.gov.br/schema/evt/evtInfoEmpregador/v_S_01_03_00';
+      xmlEvento = `<eSocial xmlns="${ns}"><evtInfoEmpregador Id="${eventId}"><ideEvento><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><infoEmpregador><inclusao><idePeriodo><iniValid>${eventData.iniValid || '2024-01'}</iniValid></idePeriodo><infoCadastro><classTrib>${eventData.classTrib || '21'}</classTrib><indDesFolha>0</indDesFolha><indOpcCP>1</indOpcCP><indOptRegEletron>0</indOptRegEletron></infoCadastro></inclusao></infoEmpregador></evtInfoEmpregador></eSocial>`;
+    } else {
+      const ns = 'http://www.esocial.gov.br/schema/evt/evtTSVInicio/v_S_01_03_00';
+      const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
+      const workerNome = (eventData.workerNome || '').toUpperCase();
+      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVInicio Id="${eventId}"><ideEvento><indRetif>1</indRetif><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><trabalhador><cpfTrab>${workerCpf}</cpfTrab><nmTrab>${workerNome}</nmTrab><sexo>${eventData.sexo || 'M'}</sexo><racaCor>${eventData.racaCor || '1'}</racaCor><estCiv>${eventData.estCiv || '1'}</estCiv><grauInstr>${eventData.grauInstr || '07'}</grauInstr><nascimento><dtNascto>${eventData.nascimento || '1980-03-05'}</dtNascto><paisNascto>105</paisNascto><paisNac>105</paisNac></nascimento><endereco><brasil><tpLograd>R</tpLograd><dscLograd>${eventData.logradouro || 'RUA'}</dscLograd><nrLograd>${eventData.numero || 'SN'}</nrLograd><bairro>${eventData.bairro || 'CENTRO'}</bairro><cep>${eventData.cep || '00000000'}</cep><codMunic>${eventData.codMunic || '3304557'}</codMunic><uf>${eventData.uf || 'SP'}</uf></brasil></endereco></trabalhador><infoTSVInicio><cadIni>N</cadIni><matricula>${eventData.matricula || '001'}</matricula><codCateg>${eventData.codCateg || '701'}</codCateg><dtInicio>${eventData.dtInicio || '2024-04-01'}</dtInicio><infoComplementares><cargoFuncao><nmCargo>PEDREIRO</nmCargo><CBOCargo>715210</CBOCargo></cargoFuncao></infoComplementares></infoTSVInicio></evtTSVInicio></eSocial>`;
+    }
 
     const xmlAssinado = assinarXml(xmlEvento, privateKeyPem, certPem);
 
-    const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_0"><soapenv:Body><ns:EnviarLoteEventos><ns:loteEventos><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/v1_1_1"><envioLoteEventos grupo="2"><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTransmissor><tpInsc>2</tpInsc><nrInsc>${transCpfCnpj}</nrInsc></ideTransmissor><eventos><evento Id="${eventId}">${xmlAssinado}</evento></eventos></envioLoteEventos></eSocial></ns:loteEventos></ns:EnviarLoteEventos></soapenv:Body></soapenv:Envelope>`;
+    const grupoLote = (action === 'TRANSMIT_S1000') ? '1' : '2';
+
+    const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_0"><soapenv:Body><ns:EnviarLoteEventos><ns:loteEventos><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/v1_1_1"><envioLoteEventos grupo="${grupoLote}"><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTransmissor><tpInsc>2</tpInsc><nrInsc>${transCpfCnpj}</nrInsc></ideTransmissor><eventos><evento Id="${eventId}">${xmlAssinado}</evento></eventos></envioLoteEventos></eSocial></ns:loteEventos></ns:EnviarLoteEventos></soapenv:Body></soapenv:Envelope>`;
 
     const response = await axios.post(URL_ENVIO, soapRequest, {
       headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_0/ServicoEnviarLoteEventos/EnviarLoteEventos"' },
@@ -116,7 +129,12 @@ app.post('/esocial', async (req, res) => {
 app.post('/consultar', async (req, res) => {
   try {
     const { protocolo, regularizationId } = req.body;
-    const { data: credentials } = await supabase.from('esocial_credentials').select('*').eq('regularization_id', regularizationId).single();
+    const { data: credentials } = await supabase.from('esocial_credentials')
+      .select('*')
+      .eq('regularization_id', regularizationId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
     const { data: pfxBlob } = await supabase.storage.from('esocial_files').download(credentials.certificate_url.split('esocial_files/')[1]);
     const pfxBuffer = Buffer.from(await pfxBlob.arrayBuffer());
     const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0"><soapenv:Body><ns:ConsultarLoteEventos><ns:consulta><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_0_0"><consultaLoteEventos><protocoloEnvio>${protocolo}</protocoloEnvio></consultaLoteEventos></eSocial></ns:consulta></ns:ConsultarLoteEventos></soapenv:Body></soapenv:Envelope>`;

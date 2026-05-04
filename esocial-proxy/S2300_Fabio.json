@@ -9,12 +9,17 @@
     "racaCor": "1",
     "estCiv": "1",
     "grauInstr": "07",
-    "nascimento": "1985-05-20",
-    "codMunic": "3304557",
-    "uf": "RJ",
+    "nascimento": "1980-03-05",
+    "codMunic": "3547809",
+    "uf": "SP",
     "nmMae": "MARIA MARTINS LEMOS",
     "codCateg": "701",
     "dtInicio": "2024-04-01",
-    "vrSalFx": "2500.00"
+    "vrSalFx": "2500.00",
+    "matricula": "009",
+    "logradouro": "Avenida Eduardo Prado",
+    "numero": "129",
+    "cep": "09271180",
+    "bairro": "Parque Erasmo Assunção"
   }
 }
