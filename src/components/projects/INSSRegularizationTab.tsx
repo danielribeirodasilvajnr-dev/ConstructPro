@@ -3513,7 +3513,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Requisito (%)</label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Requisito (%)</label>
+                      <span className="text-[9px] text-primary font-bold italic">Lei 10/2021 - Verificar no portal SERO</span>
+                    </div>
                     <input type="number" value={requisitoPercent || ''} onChange={e => setRequisitoPercent(Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
                   </div>
                 </>
@@ -4178,7 +4181,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Ano Inicial</label>
                   <select value={remStartYear} onChange={(e) => setRemStartYear(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
-                    {[2024, 2025, 2026, 2027].map(y => (<option key={y} value={y} className="bg-[#1C232E]">{y}</option>))}
+                    {[2021, 2022, 2023, 2024, 2025, 2026, 2027].map(y => (<option key={y} value={y} className="bg-[#1C232E]">{y}</option>))}
                   </select>
                 </div>
               </div>
@@ -4193,7 +4196,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Ano Final</label>
                   <select value={remEndYear} onChange={(e) => setRemEndYear(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
-                    {[2024, 2025, 2026, 2027].map(y => (<option key={y} value={y} className="bg-[#1C232E]">{y}</option>))}
+                    {[2021, 2022, 2023, 2024, 2025, 2026, 2027].map(y => (<option key={y} value={y} className="bg-[#1C232E]">{y}</option>))}
                   </select>
                 </div>
               </div>
