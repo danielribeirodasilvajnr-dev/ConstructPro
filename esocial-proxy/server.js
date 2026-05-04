@@ -73,17 +73,33 @@ function assinarXml(xmlStr, privateKeyPem, certPem) {
 
 app.post('/esocial', async (req, res) => {
   try {
-    const { action, eventData = {}, regularizationId } = req.body;
+    const { action, eventData = {}, regularizationId, protocolo } = req.body;
 
     const { data: credentials } = await supabase.from('esocial_credentials')
       .select('*')
       .eq('regularization_id', regularizationId)
-      .order('created_at', { ascending: false })
-      .limit(1)
       .single();
+
     const { data: pfxBlob } = await supabase.storage.from('esocial_files').download(credentials.certificate_url.split('esocial_files/')[1]);
     const pfxBuffer = Buffer.from(await pfxBlob.arrayBuffer());
 
+    // Se for CONSULTA, redireciona para a lógica de consulta
+    if (action === 'CONSULT') {
+      const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0"><soapenv:Body><ns:ConsultarLoteEventos><ns:consulta><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_0_0"><consultaLoteEventos><protocoloEnvio>${protocolo}</protocoloEnvio></consultaLoteEventos></eSocial></ns:consulta></ns:ConsultarLoteEventos></soapenv:Body></soapenv:Envelope>`;
+      const response = await axios.post(URL_CONSULTA, soapRequest, {
+        headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0/ServicoConsultarLoteEventos/ConsultarLoteEventos"' },
+        httpsAgent: new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: false, minVersion: 'TLSv1.2' }),
+      });
+
+      // Parsing simplificado para SUCESSO/ERRO
+      const xmlRes = response.data;
+      const isSuccess = xmlRes.includes('202') && xmlRes.includes('Sucesso');
+      const status = isSuccess ? 'SUCESSO' : (xmlRes.includes('Processando') ? 'PROCESSANDO' : 'ERRO');
+      
+      return res.json({ success: true, status, response: xmlRes });
+    }
+
+    // Lógica de TRANSMISSÃO (Já existente, com correções de campos)
     const pfx = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(forge.util.createBuffer(pfxBuffer).getBytes()), credentials.certificate_password);
     const certificate = pfx.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag][0].cert;
     const keyBag = pfx.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[forge.pki.oids.pkcs8ShroudedKeyBag][0];
@@ -92,7 +108,7 @@ app.post('/esocial', async (req, res) => {
     const certPem = forge.pki.certificateToPem(certificate);
     const commonName = certificate.subject.getField('CN').value;
     const transCpfCnpj = commonName.split(':').pop().replace(/\D/g, '');
-    const empCpfCnpj = (eventData.proprietarioCpfCnpj || '25502713865').replace(/\D/g, '');
+    const empCpfCnpj = (eventData.proprietarioCpfCnpj || '').replace(/\D/g, '');
 
     const timestamp = new Date().toISOString().replace(/[-:T.Z]/g, '').substring(0, 14);
     const rnd = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
@@ -110,21 +126,20 @@ app.post('/esocial', async (req, res) => {
       xmlEvento = `<eSocial xmlns="${ns}"><evtTabEstab Id="${eventId}"><ideEvento><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><infoEstab><inclusao><ideEstab><tpInsc>4</tpInsc><nrInsc>${cno}</nrInsc><iniValid>${eventData.iniValid || '2024-01'}</iniValid></ideEstab><dadosEstab><aliqRat>2</aliqRat><fap>1.0</fap></dadosEstab></inclusao></infoEstab></evtTabEstab></eSocial>`;
     } else if (eventType === 'S-1010') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtTabRubrica/v_S_01_03_00';
-      xmlEvento = `<eSocial xmlns="${ns}"><evtTabRubrica Id="${eventId}"><ideEvento><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><infoRubrica><inclusao><ideRubrica><codRubr>1000</codRubr><ideTabRubr>TAB01</ideTabRubr><iniValid>${eventData.iniValid || '2024-01'}</iniValid></ideRubrica><dadosRubrica><dscRubr>SALARIO</dscRubr><tpRubr>1</tpRubr><codIncCP>11</codIncCP><codIncIRRF>11</codIncIRRF><codIncFGTS>11</codIncFGTS></dadosRubrica></inclusao></infoRubrica></evtTabRubrica></eSocial>`;
+      xmlEvento = `<eSocial xmlns="${ns}"><evtTabRubrica Id="${eventId}"><ideEvento><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><infoRubrica><inclusao><ideRubrica><codRubr>${eventData.codRubr || '1000'}</codRubr><ideTabRubr>${eventData.ideTabRubr || 'TAB01'}</ideTabRubr><iniValid>${eventData.iniValid || '2024-01'}</iniValid></ideRubrica><dadosRubrica><dscRubr>${eventData.dscRubr || 'SALARIO'}</dscRubr><tpRubr>1</tpRubr><codIncCP>${eventData.codIncCP || '11'}</codIncCP><codIncIRRF>${eventData.codIncIRRF || '11'}</codIncIRRF><codIncFGTS>11</codIncFGTS></dadosRubrica></inclusao></infoRubrica></evtTabRubrica></eSocial>`;
     } else if (eventType === 'S-1020') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtTabLotacao/v_S_01_03_00';
-      xmlEvento = `<eSocial xmlns="${ns}"><evtTabLotacao Id="${eventId}"><ideEvento><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><infoLotacao><inclusao><ideLotacao><codLotacao>LOT01</codLotacao><iniValid>${eventData.iniValid || '2024-01'}</iniValid></ideLotacao><dadosLotacao><tpLotacao>21</tpLotacao><fpas>507</fpas><codTerc>0079</codTerc></dadosLotacao></inclusao></infoLotacao></evtTabLotacao></eSocial>`;
+      xmlEvento = `<eSocial xmlns="${ns}"><evtTabLotacao Id="${eventId}"><ideEvento><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><infoLotacao><inclusao><ideLotacao><codLotacao>${eventData.codLotacao || 'LOT01'}</codLotacao><iniValid>${eventData.iniValid || '2024-01'}</iniValid></ideLotacao><dadosLotacao><tpLotacao>${eventData.tpLotacao || '21'}</tpLotacao><fpas>${eventData.fpas || '507'}</fpas><codTerc>${eventData.codTerc || '0079'}</codTerc></dadosLotacao></inclusao></infoLotacao></evtTabLotacao></eSocial>`;
     } else if (eventType === 'S-2300') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtTSVInicio/v_S_01_03_00';
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
       const workerNome = (eventData.workerNome || '').toUpperCase();
-      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVInicio Id="${eventId}"><ideEvento><indRetif>1</indRetif><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><trabalhador><cpfTrab>${workerCpf}</cpfTrab><nmTrab>${workerNome}</nmTrab><sexo>${eventData.sexo || 'M'}</sexo><racaCor>${eventData.racaCor || '1'}</racaCor><estCiv>${eventData.estCiv || '1'}</estCiv><grauInstr>${eventData.grauInstr || '07'}</grauInstr><nascimento><dtNascto>${eventData.nascimento || '1980-03-05'}</dtNascto><paisNascto>105</paisNascto><paisNac>105</paisNac></nascimento><endereco><brasil><tpLograd>R</tpLograd><dscLograd>${eventData.logradouro || 'RUA'}</dscLograd><nrLograd>${eventData.numero || 'SN'}</nrLograd><bairro>${eventData.bairro || 'CENTRO'}</bairro><cep>${eventData.cep || '00000000'}</cep><codMunic>${eventData.codMunic || '3304557'}</codMunic><uf>${eventData.uf || 'SP'}</uf></brasil></endereco></trabalhador><infoTSVInicio><cadIni>N</cadIni><matricula>${eventData.matricula || '001'}</matricula><codCateg>${eventData.codCateg || '701'}</codCateg><dtInicio>${eventData.dtInicio || '2024-04-01'}</dtInicio><infoComplementares><cargoFuncao><nmCargo>PEDREIRO</nmCargo><CBOCargo>715210</CBOCargo></cargoFuncao></infoComplementares></infoTSVInicio></evtTSVInicio></eSocial>`;
+      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVInicio Id="${eventId}"><ideEvento><indRetif>1</indRetif><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><trabalhador><cpfTrab>${workerCpf}</cpfTrab><nmTrab>${workerNome}</nmTrab><sexo>${eventData.sexo || 'M'}</sexo><racaCor>${eventData.racaCor || '1'}</racaCor><estCiv>${eventData.estCiv || '1'}</estCiv><grauInstr>${eventData.grauInstr || '07'}</grauInstr><nascimento><dtNascto>${eventData.nascimento || '1980-03-05'}</dtNascto><paisNascto>105</paisNascto><paisNac>105</paisNac></nascimento><endereco><brasil><tpLograd>R</tpLograd><dscLograd>${eventData.logradouro || 'RUA'}</dscLograd><nrLograd>${eventData.numero || 'SN'}</nrLograd><bairro>${eventData.bairro || 'CENTRO'}</bairro><cep>${eventData.cep || '00000000'}</cep><codMunic>${eventData.codMunic || '3304557'}</codMunic><uf>${eventData.uf || 'SP'}</uf></brasil></endereco></trabalhador><infoTSVInicio><cadIni>N</cadIni><matricula>${eventData.matricula || '001'}</matricula><codCateg>${eventData.codCateg || '701'}</codCateg><dtInicio>${eventData.dtInicio || '2024-04-01'}</dtInicio><infoComplementares><cargoFuncao><nmCargo>${eventData.nmCargo || 'PEDREIRO'}</nmCargo><CBOCargo>${eventData.CBOCargo || '715210'}</CBOCargo></cargoFuncao></infoComplementares></infoTSVInicio></evtTSVInicio></eSocial>`;
     } else {
-      throw new Error(`Evento ${eventType} não suportado pelo proxy.`);
+      throw new Error(`Evento ${eventType} não suportado.`);
     }
 
     const xmlAssinado = assinarXml(xmlEvento, privateKeyPem, certPem);
-
     const tableEvents = ['S-1000', 'S-1005', 'S-1010', 'S-1020', 'S-1070'];
     const grupoLote = tableEvents.includes(eventType) ? '1' : '2';
 
@@ -141,27 +156,5 @@ app.post('/esocial', async (req, res) => {
   }
 });
 
-app.post('/consultar', async (req, res) => {
-  try {
-    const { protocolo, regularizationId } = req.body;
-    const { data: credentials } = await supabase.from('esocial_credentials')
-      .select('*')
-      .eq('regularization_id', regularizationId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-    const { data: pfxBlob } = await supabase.storage.from('esocial_files').download(credentials.certificate_url.split('esocial_files/')[1]);
-    const pfxBuffer = Buffer.from(await pfxBlob.arrayBuffer());
-    const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0"><soapenv:Body><ns:ConsultarLoteEventos><ns:consulta><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_0_0"><consultaLoteEventos><protocoloEnvio>${protocolo}</protocoloEnvio></consultaLoteEventos></eSocial></ns:consulta></ns:ConsultarLoteEventos></soapenv:Body></soapenv:Envelope>`;
-    const response = await axios.post(URL_CONSULTA, soapRequest, {
-      headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0/ServicoConsultarLoteEventos/ConsultarLoteEventos"' },
-      httpsAgent: new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: false, minVersion: 'TLSv1.2' }),
-    });
-    res.json({ success: true, response: response.data });
-  } catch (error) {
-    console.error('ERRO /consultar:', error.message);
-    res.json({ success: false, error: error.message });
-  }
-});
+app.listen(3005, () => console.log('🚀 Proxy eSocial Online na porta 3005'));
 
-app.listen(3005, () => console.log('🚀 Proxy C14N+Forge (URI Vazio Real) Online na porta 3005'));
