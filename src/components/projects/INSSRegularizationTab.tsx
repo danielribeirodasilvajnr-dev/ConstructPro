@@ -647,24 +647,24 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           regularizationId: inssRegularization.id,
           eventData: {
             proprietarioCpfCnpj,
-            workerCpf: selectedWorker.cpf,
-            workerNome: selectedWorker.nome,
-            sexo: selectedWorker.sexo,
-            racaCor: selectedWorker.cor_pele,
-            grauInstr: selectedWorker.escolaridade,
-            nascimento: selectedWorker.nascimento,
-            paisNascto: selectedWorker.pais_nascimento || '105',
-            logradouro: selectedWorker.logradouro,
-            numero: selectedWorker.numero,
-            complemento: selectedWorker.complemento,
-            bairro: selectedWorker.bairro,
-            cep: selectedWorker.cep,
-            codMunic: selectedWorker.cod_ibge,
-            uf: selectedWorker.uf,
-            matricula: selectedWorker.matricula_esocial,
-            codCateg: selectedWorker.categoria,
-            nmCargo: selectedWorker.cargo_nome,
-            CBOCargo: selectedWorker.cbo_cargo,
+            workerCpf,
+            workerNome,
+            workerSexo,
+            workerCorPele,
+            workerEscolaridade,
+            workerNascimento,
+            workerPaisNascimento,
+            workerLogradouro,
+            workerNumero,
+            workerComplemento,
+            workerBairro,
+            workerCep,
+            workerCodIbge,
+            workerUf,
+            workerMatricula,
+            workerCategoria,
+            workerCargo,
+            workerCbo,
             transmissorCpfCnpj: certificateCpfCnpj
           }
         }
@@ -1401,6 +1401,19 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       if (fnError) throw fnError;
       if (!response.success) throw new Error(response.error);
+
+      // Persist event in DB
+      await supabase.from('esocial_events').insert({
+        regularization_id: inssRegularization.id,
+        tipo_evento: 'S-2399',
+        cpf_trabalhador: selectedWorker.cpf,
+        protocolo: response.protocolo,
+        status: 'PROCESSANDO',
+        resposta_governo: {
+          envio_codigo: '201',
+          envio_mensagem: 'Lote de encerramento recebido com sucesso.'
+        }
+      });
 
       // Update worker with S2399 status locally
       setWorkers(prev => prev.map(w => 
