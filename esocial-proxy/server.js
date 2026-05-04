@@ -98,20 +98,35 @@ app.post('/esocial', async (req, res) => {
     const rnd = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
     const eventId = `ID2${empCpfCnpj.padEnd(14, '0')}${timestamp}${rnd}`;
 
+    const eventType = req.body.eventType || (action === 'TRANSMIT_S1000' ? 'S-1000' : 'S-2300');
     let xmlEvento = '';
-    if (action === 'TRANSMIT_S1000') {
+
+    if (eventType === 'S-1000') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtInfoEmpregador/v_S_01_03_00';
       xmlEvento = `<eSocial xmlns="${ns}"><evtInfoEmpregador Id="${eventId}"><ideEvento><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><infoEmpregador><inclusao><idePeriodo><iniValid>${eventData.iniValid || '2024-01'}</iniValid></idePeriodo><infoCadastro><classTrib>${eventData.classTrib || '21'}</classTrib><indDesFolha>0</indDesFolha><indOpcCP>1</indOpcCP><indOptRegEletron>0</indOptRegEletron></infoCadastro></inclusao></infoEmpregador></evtInfoEmpregador></eSocial>`;
-    } else {
+    } else if (eventType === 'S-1005') {
+      const ns = 'http://www.esocial.gov.br/schema/evt/evtTabEstab/v_S_01_03_00';
+      const cno = (eventData.cnoNumero || '').replace(/\D/g, '');
+      xmlEvento = `<eSocial xmlns="${ns}"><evtTabEstab Id="${eventId}"><ideEvento><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><infoEstab><inclusao><ideEstab><tpInsc>4</tpInsc><nrInsc>${cno}</nrInsc><iniValid>${eventData.iniValid || '2024-01'}</iniValid></ideEstab><dadosEstab><aliqRat>2</aliqRat><fap>1.0</fap></dadosEstab></inclusao></infoEstab></evtTabEstab></eSocial>`;
+    } else if (eventType === 'S-1010') {
+      const ns = 'http://www.esocial.gov.br/schema/evt/evtTabRubrica/v_S_01_03_00';
+      xmlEvento = `<eSocial xmlns="${ns}"><evtTabRubrica Id="${eventId}"><ideEvento><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><infoRubrica><inclusao><ideRubrica><codRubr>1000</codRubr><ideTabRubr>TAB01</ideTabRubr><iniValid>${eventData.iniValid || '2024-01'}</iniValid></ideRubrica><dadosRubrica><dscRubr>SALARIO</dscRubr><tpRubr>1</tpRubr><codIncCP>11</codIncCP><codIncIRRF>11</codIncIRRF><codIncFGTS>11</codIncFGTS></dadosRubrica></inclusao></infoRubrica></evtTabRubrica></eSocial>`;
+    } else if (eventType === 'S-1020') {
+      const ns = 'http://www.esocial.gov.br/schema/evt/evtTabLotacao/v_S_01_03_00';
+      xmlEvento = `<eSocial xmlns="${ns}"><evtTabLotacao Id="${eventId}"><ideEvento><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><infoLotacao><inclusao><ideLotacao><codLotacao>LOT01</codLotacao><iniValid>${eventData.iniValid || '2024-01'}</iniValid></ideLotacao><dadosLotacao><tpLotacao>21</tpLotacao><fpas>507</fpas><codTerc>0079</codTerc></dadosLotacao></inclusao></infoLotacao></evtTabLotacao></eSocial>`;
+    } else if (eventType === 'S-2300') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtTSVInicio/v_S_01_03_00';
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
       const workerNome = (eventData.workerNome || '').toUpperCase();
       xmlEvento = `<eSocial xmlns="${ns}"><evtTSVInicio Id="${eventId}"><ideEvento><indRetif>1</indRetif><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><trabalhador><cpfTrab>${workerCpf}</cpfTrab><nmTrab>${workerNome}</nmTrab><sexo>${eventData.sexo || 'M'}</sexo><racaCor>${eventData.racaCor || '1'}</racaCor><estCiv>${eventData.estCiv || '1'}</estCiv><grauInstr>${eventData.grauInstr || '07'}</grauInstr><nascimento><dtNascto>${eventData.nascimento || '1980-03-05'}</dtNascto><paisNascto>105</paisNascto><paisNac>105</paisNac></nascimento><endereco><brasil><tpLograd>R</tpLograd><dscLograd>${eventData.logradouro || 'RUA'}</dscLograd><nrLograd>${eventData.numero || 'SN'}</nrLograd><bairro>${eventData.bairro || 'CENTRO'}</bairro><cep>${eventData.cep || '00000000'}</cep><codMunic>${eventData.codMunic || '3304557'}</codMunic><uf>${eventData.uf || 'SP'}</uf></brasil></endereco></trabalhador><infoTSVInicio><cadIni>N</cadIni><matricula>${eventData.matricula || '001'}</matricula><codCateg>${eventData.codCateg || '701'}</codCateg><dtInicio>${eventData.dtInicio || '2024-04-01'}</dtInicio><infoComplementares><cargoFuncao><nmCargo>PEDREIRO</nmCargo><CBOCargo>715210</CBOCargo></cargoFuncao></infoComplementares></infoTSVInicio></evtTSVInicio></eSocial>`;
+    } else {
+      throw new Error(`Evento ${eventType} não suportado pelo proxy.`);
     }
 
     const xmlAssinado = assinarXml(xmlEvento, privateKeyPem, certPem);
 
-    const grupoLote = (action === 'TRANSMIT_S1000') ? '1' : '2';
+    const tableEvents = ['S-1000', 'S-1005', 'S-1010', 'S-1020', 'S-1070'];
+    const grupoLote = tableEvents.includes(eventType) ? '1' : '2';
 
     const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_0"><soapenv:Body><ns:EnviarLoteEventos><ns:loteEventos><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/v1_1_1"><envioLoteEventos grupo="${grupoLote}"><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTransmissor><tpInsc>2</tpInsc><nrInsc>${transCpfCnpj}</nrInsc></ideTransmissor><eventos><evento Id="${eventId}">${xmlAssinado}</evento></eventos></envioLoteEventos></eSocial></ns:loteEventos></ns:EnviarLoteEventos></soapenv:Body></soapenv:Envelope>`;
 

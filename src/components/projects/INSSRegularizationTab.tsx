@@ -1832,13 +1832,14 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </div>
             </div>
 
-            {/* Row 4: Detalhes */}
             <div className="flex border-b border-white/5 hover:bg-white/[0.02] transition-colors">
               <div className="w-48 p-4 bg-white/5 border-r border-white/5 flex items-center">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Detalhes</span>
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">RMT Inicial</span>
               </div>
-              <div className="flex-1 p-4 flex items-center">
-                <span className="text-slate-500 italic text-sm">--</span>
+              <div className="flex-1 p-4 flex items-center gap-3">
+                <span className="text-xl font-bold text-slate-300 tracking-wider font-mono">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rmtInicial || 0)}
+                </span>
               </div>
             </div>
 
@@ -3502,26 +3503,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             {/* Modal Body */}
             <div className="p-8 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Início da Obra</label>
-                  <input type="month" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Término da Obra</label>
-                  <input type="month" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
-                </div>
-              </div>
+
 
               {workModalMode === 'detailed' && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Categoria de Regularização</label>
-                    <select value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner">
-                      <option value="" className="bg-[#1C232E]">--</option>
-                      <option value="Regularização por Aferição Indireta" className="bg-[#1C232E]">Regularização por Aferição Indireta</option>
-                      <option value="Regularização por Contabilidade Regular" className="bg-[#1C232E]">Regularização por Contabilidade Regular</option>
-                    </select>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">RMT Inicial</label>
+                    <input type="number" value={rmtInicial || ''} onChange={e => setRmtInicial(Number(e.target.value))} placeholder="0,00" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
                   </div>
 
                   <div className="space-y-1">
