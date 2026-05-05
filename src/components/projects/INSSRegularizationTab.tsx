@@ -63,9 +63,13 @@ interface Worker {
   cod_rubrica: string;
   cod_lotacao: string;
   esocial_status?: 'PENDENTE' | 'ENVIADO' | 'PROCESSANDO' | 'SUCESSO' | 'ERRO';
+  protocolo?: string;
+  recibo?: string;
+  resposta_governo?: any;
   s2399_status?: 'PENDENTE' | 'ENVIADO' | 'PROCESSANDO' | 'SUCESSO' | 'ERRO';
   s2399_protocolo?: string;
   s2399_recibo?: string;
+  s2399_resposta_governo?: any;
   s2399_date?: string;
 }
 
@@ -435,6 +439,84 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       console.error('Error checking esocial status:', err);
     }
   };
+  const renderEventLog = (event: any, tipo: string, cpf?: string) => {
+    if (!event || event.status === 'PENDENTE') return null;
+
+    return (
+      <div className="mt-6 border border-white/5 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "w-2 h-2 rounded-full animate-pulse",
+              event.status === 'SUCESSO' ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : 
+              event.status === 'ERRO' ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+            )} />
+            <span className="text-[10px] font-black text-white uppercase tracking-[2px]">Log de Processamento eSocial</span>
+          </div>
+          <span className="text-[10px] font-bold text-slate-500 font-mono">ID: {event.id || 'N/A'}</span>
+        </div>
+        
+        <div className="p-6 bg-[#161B22] space-y-4">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-1">
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Status do Governo</p>
+              <div className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm",
+                event.status === 'SUCESSO' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : 
+                event.status === 'ERRO' ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-primary/10 text-primary border border-primary/20"
+              )}>
+                {event.status === 'SUCESSO' ? <Check className="h-3 w-3" /> : event.status === 'ERRO' ? <X className="h-3 w-3" /> : <Loader2 className="h-3 w-3 animate-spin" />}
+                {event.status}
+              </div>
+            </div>
+            {event.recibo && (
+              <div className="space-y-1">
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Número do Recibo</p>
+                <p className="text-xs font-black text-white font-mono bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 inline-block select-all cursor-copy hover:bg-white/10 transition-all">
+                  {event.recibo}
+                </p>
+              </div>
+            )}
+            {event.protocolo && (
+              <div className="space-y-1">
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Protocolo de Envio</p>
+                <p className="text-xs font-black text-slate-400 font-mono bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 inline-block select-all italic">
+                  {event.protocolo}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {event.resposta_governo && (
+            <div className="pt-4 border-t border-white/5">
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Mensagem do Sistema</p>
+              <div className="bg-black/40 rounded-xl p-4 border border-white/5">
+                <p className="text-xs text-slate-300 font-medium leading-relaxed font-mono">
+                  {event.resposta_governo.envio_mensagem || event.resposta_governo.message || (event.status === 'SUCESSO' ? 'Evento processado e aceito pelo eSocial.' : 'Aguardando retorno do processamento...')}
+                </p>
+                {event.resposta_governo.ocorre_mensagem && (
+                  <div className="mt-3 pt-3 border-t border-white/5">
+                    <p className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-1">Ocorrência eSocial:</p>
+                    <p className="text-[11px] text-red-300/80 font-bold">{event.resposta_governo.ocorre_mensagem}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+            <button 
+              onClick={() => handleMarkAsDone(tipo, cpf)}
+              className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Já foi feito!
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const checkS1000Status = async () => {
     if (!inssRegularization) return;
     try {
@@ -1151,6 +1233,29 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     }
   };
 
+  const handleConsultS1299 = async () => {
+    if (!selectedPeriodForEvent || isTransmitting) return;
+    setIsTransmitting(true);
+    try {
+      const { data: response, error: fnError } = await invokeProxy({
+        body: { action: 'CONSULT', protocolo: periodStatuses[selectedPeriodForEvent]?.s1299Protocolo, regularizationId: inssRegularization.id }
+      });
+      if (fnError) throw fnError;
+      if (!response.success) throw new Error(response.error);
+      const { status, recibo } = response;
+      setPeriodStatuses(prev => ({
+        ...prev,
+        [selectedPeriodForEvent]: { ...prev[selectedPeriodForEvent], s1299Status: status, s1299Recibo: recibo }
+      }));
+      if (status === 'SUCESSO') alert('S-1299 processado com SUCESSO! Folha Fechada.');
+      else alert('Erro ao processar fechamento.');
+    } catch (err: any) {
+      alert(`Erro na consulta S-1299: ${err.message}`);
+    } finally {
+      setIsTransmitting(false);
+    }
+  };
+
 
   const handleTransmitS1299 = async () => {
     if (!selectedPeriodForEvent || isTransmitting || !inssRegularization) return;
@@ -1229,19 +1334,28 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       // Fetch esocial status for all workers
       const { data: eventsData, error: eventsError } = await supabase
         .from('esocial_events')
-        .select('cpf_trabalhador, status')
+        .select('cpf_trabalhador, status, protocolo, recibo, resposta_governo, tipo_evento')
         .eq('regularization_id', inssRegularization.id)
-        .eq('tipo_evento', 'S-2300')
+        .in('tipo_evento', ['S-2300', 'S-2399'])
         .order('created_at', { ascending: false });
 
       if (eventsError) throw eventsError;
 
       // Map status to workers
       const workersWithStatus = (workersData || []).map(worker => {
-        const latestEvent = eventsData?.find(e => e.cpf_trabalhador === worker.cpf);
+        const s2300Event = eventsData?.find(e => e.cpf_trabalhador === worker.cpf && e.tipo_evento === 'S-2300');
+        const s2399Event = eventsData?.find(e => e.cpf_trabalhador === worker.cpf && e.tipo_evento === 'S-2399');
+        
         return {
           ...worker,
-          esocial_status: latestEvent?.status || 'PENDENTE'
+          esocial_status: s2300Event?.status || 'PENDENTE',
+          protocolo: s2300Event?.protocolo,
+          recibo: s2300Event?.recibo,
+          resposta_governo: s2300Event?.resposta_governo,
+          s2399_status: s2399Event?.status || 'PENDENTE',
+          s2399_protocolo: s2399Event?.protocolo,
+          s2399_recibo: s2399Event?.recibo,
+          s2399_resposta_governo: s2399Event?.resposta_governo
         };
       });
 
@@ -1367,7 +1481,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       if (tipo === 'S-1000') checkS1000Status();
       else if (tipo === 'S-1005') checkS1005Status();
       else if (tipo === 'S-1020') checkS1020Status();
-      else if (cpf) checkEsocialStatus(cpf);
+      else if (tipo === 'S-1010') checkS1010Status();
+      else if (cpf) {
+        checkEsocialStatus(cpf);
+        fetchWorkers();
+      }
       
     } catch (err: any) {
       alert(`Erro ao marcar como concluído: ${err.message}`);
@@ -2027,7 +2145,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               Estabelecimento / obra
             </button>
             <button 
-              onClick={() => setIsLotacaoModalOpen(true)}
+              onClick={() => setCurrentView('s1020_view')}
               className={cn(
                 "px-4 py-2 text-white rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
                 esocialS1020Status?.status === 'SUCESSO' ? "bg-emerald-600" : "bg-[#E27676]"
@@ -2037,7 +2155,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               Lotação tributária
             </button>
             <button 
-              onClick={() => setIsRubricaModalOpen(true)}
+              onClick={() => setCurrentView('s1010_view')}
               className={cn(
                 "px-4 py-2 text-white rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
                 esocialS1010Status?.status === 'SUCESSO' ? "bg-emerald-600" : "bg-[#E27676]"
@@ -2124,9 +2242,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                       </button>
                       <button 
                         onClick={() => { setSelectedWorker(worker); setCurrentView('s2399_view'); }}
-                        className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 rounded-xl text-xs font-black text-white hover:bg-emerald-700 transition-all shadow-xl uppercase tracking-widest"
+                        className={cn(
+                          "flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black text-white transition-all shadow-xl uppercase tracking-widest",
+                          worker.s2399_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-500 hover:bg-red-600"
+                        )}
                       >
-                        <Target className="h-4 w-4" /> Encerrar trab
+                        <Target className="h-4 w-4" /> 
+                        {worker.s2399_status === 'SUCESSO' ? 'Trabalhador Encerrado' : 'Encerrar trab'}
                       </button>
                     </div>
                   </div>
@@ -2272,15 +2394,26 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                           </td>
                           <td className="p-6 border-r border-white/5">
                             <div className="flex flex-col items-center gap-2">
-                              <button 
-                                onClick={() => {
-                                  setSelectedPeriodForEvent(pa);
-                                  setCurrentView('s1298_view');
-                                }}
-                                className="w-full px-3 py-2 bg-emerald-600 text-[9px] font-black text-white rounded-lg hover:bg-emerald-700 shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-1.5 uppercase tracking-widest"
-                              >
-                                <Send className="h-3 w-3" /> DCTFWeb
-                              </button>
+                              <div className="flex flex-col gap-1 w-full">
+                                <button 
+                                  onClick={() => {
+                                    setSelectedPeriodForEvent(pa);
+                                    setCurrentView('s1299_view');
+                                  }}
+                                  className="w-full px-3 py-2 bg-emerald-600 text-[9px] font-black text-white rounded-lg hover:bg-emerald-700 shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-1.5 uppercase tracking-widest"
+                                >
+                                  <Lock className="h-3 w-3" /> Fechar Folha (1299)
+                                </button>
+                                <button 
+                                  onClick={() => {
+                                    setSelectedPeriodForEvent(pa);
+                                    setCurrentView('s1298_view');
+                                  }}
+                                  className="w-full px-3 py-2 bg-slate-700 text-[9px] font-black text-white rounded-lg hover:bg-slate-600 shadow-lg shadow-black/10 flex items-center justify-center gap-1.5 uppercase tracking-widest"
+                                >
+                                  <Unlock className="h-3 w-3" /> Reabrir Folha (1298)
+                                </button>
+                              </div>
                               <div className="flex items-center gap-2 w-full">
                                 <button className="p-2 bg-white/5 text-slate-400 rounded-lg hover:text-white border border-white/10 transition-colors">
                                   <Copy className="h-3.5 w-3.5" />
@@ -2393,45 +2526,82 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 {isTransmitting ? 'Processando...' : 'Transmitir Evento / Consultar'}
               </button>
 
-              <div className="flex flex-col items-center gap-6">
-                <div className="flex items-center gap-4 w-full">
-                  <div className="h-px flex-1 bg-white/5"></div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
-                  <div className="h-px flex-1 bg-white/5"></div>
-                </div>
-                
-                <div className="flex flex-wrap items-center justify-center gap-4">
-                  <button 
-                    onClick={() => handleMarkAsDone('S-1298')}
-                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
-                  >
-                    Já foi feito!
-                  </button>
-                  <button className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest">
-                    Limpar registro!
-                  </button>
-                  <button 
-                    onClick={handleTransmitS1299}
-                    disabled={isTransmitting}
-                    className="px-6 py-2.5 border border-red-500/30 bg-red-500/10 rounded-xl text-[10px] font-black text-red-400 hover:bg-red-500 hover:text-white transition-all uppercase tracking-widest"
-                  >
-                    Fechar folha de pagamento
-                  </button>
-                </div>
-              </div>
-
-              <div className="pt-12 text-center border-t border-white/5">
-                <p className="text-[11px] text-slate-500 mb-6 italic font-medium">Sem resposta? Utilize a consulta de erros se o processamento exceder 30 segundos.</p>
-                <button className="px-8 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-slate-400 hover:text-white transition-all uppercase tracking-[2px]">
-                  Consultar Logs do eSocial
-                </button>
-              </div>
+              {renderEventLog(periodStatuses[selectedPeriodForEvent] ? { status: periodStatuses[selectedPeriodForEvent].s1298Status, protocolo: periodStatuses[selectedPeriodForEvent].s1298Protocolo, recibo: periodStatuses[selectedPeriodForEvent].s1298Recibo } : null, 'S-1298')}
             </div>
           </div>
         </div>
       )}
 
-      {/* S-1210 Event View */}
+      {/* S-1299 Event View */}
+      {currentView === 's1299_view' && selectedPeriodForEvent && (
+        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+            <div>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter">
+                Evento S-1299 – Fechamento dos Eventos Periódicos
+              </h2>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 italic">
+                Encerramento da folha para geração da DCTFWeb
+              </p>
+            </div>
+            <button 
+              onClick={() => { setSelectedPeriodForEvent(null); setCurrentView('management'); }}
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+            >
+              Voltar para obra
+            </button>
+          </div>
+
+          <div className="p-8">
+            <div className="border border-white/5 rounded-2xl overflow-hidden mb-8 shadow-inner bg-white/[0.02]">
+              <table className="w-full text-sm border-collapse">
+                <tbody>
+                  <tr className="border-b border-white/5">
+                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
+                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
+                  </tr>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
+                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
+                  </tr>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
+                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
+                  </tr>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                    <td className="p-4 text-primary font-black">1299</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período:</td>
+                    <td className="p-4 text-white font-black font-mono">{selectedPeriodForEvent.split('-')[1]}-{selectedPeriodForEvent.split('-')[0]}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="space-y-6">
+              <button 
+                onClick={periodStatuses[selectedPeriodForEvent]?.s1299Status === 'SUCESSO' || periodStatuses[selectedPeriodForEvent]?.s1299Status === 'PROCESSANDO' ? handleConsultS1299 : handleTransmitS1299}
+                disabled={isTransmitting}
+                className={cn(
+                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
+                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                )}
+              >
+                {isTransmitting ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  <Send className="h-6 w-6" />
+                )}
+                {isTransmitting ? 'Processando...' : 'Transmitir Fechamento / Consultar'}
+              </button>
+
+              {renderEventLog(periodStatuses[selectedPeriodForEvent] ? { status: periodStatuses[selectedPeriodForEvent].s1299Status, protocolo: periodStatuses[selectedPeriodForEvent].s1299Protocolo, recibo: periodStatuses[selectedPeriodForEvent].s1299Recibo } : null, 'S-1299')}
+            </div>
+          </div>
+        </div>
+      )}
       {currentView === 's1210_view' && selectedWorker && selectedRemForEvent && (
         <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
           <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
@@ -2533,75 +2703,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 )}
               </button>
               
-              {/* Government Response Log - DARK */}
-              {selectedRemForEvent.pagStatus && selectedRemForEvent.pagStatus !== 'PENDENTE' && (
-                <div className="p-8 bg-white/5 border border-white/5 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Resposta do Governo</h4>
-                      <div className={cn(
-                        "w-3 h-3 rounded-full shadow-[0_0_8px]",
-                        selectedRemForEvent.pagStatus === 'SUCESSO' ? "bg-emerald-500 shadow-emerald-500/50" : 
-                        selectedRemForEvent.pagStatus === 'ERRO' ? "bg-red-500 shadow-red-500/50" : "bg-blue-500 shadow-blue-500/50"
-                      )}></div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Status do Envio</span>
-                        <p className={cn(
-                          "font-black text-sm",
-                          selectedRemForEvent.pagStatus === 'ERRO' ? "text-red-500" : "text-emerald-500"
-                        )}>
-                          201 - Lote recebido com sucesso.
-                        </p>
-                      </div>
-
-                      {(selectedRemForEvent.pagStatus === 'SUCESSO' || selectedRemForEvent.pagStatus === 'ERRO') && (
-                        <div className="space-y-2">
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Processamento</span>
-                          <p className={cn(
-                            "font-black text-sm",
-                            selectedRemForEvent.pagStatus === 'ERRO' ? "text-red-500" : "text-emerald-500"
-                          )}>
-                            {selectedRemForEvent.pagStatus === 'SUCESSO' ? '202 - Sucesso' : '401 - Erro na estrutura do evento.'}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {selectedRemForEvent.pagStatus === 'SUCESSO' && (
-                      <div className="pt-6 border-t border-white/5 space-y-2">
-                        <p className="text-emerald-500 text-sm font-black uppercase tracking-tight">O pagamento foi registrado e processado com sucesso pelo eSocial.</p>
-                        <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">RECIBO: {selectedRemForEvent.pagRecibo}</p>
-                      </div>
-                    )}
-
-                    {selectedRemForEvent.pagStatus === 'PROCESSANDO' && (
-                      <div className="pt-6 border-t border-white/5 space-y-2">
-                        <p className="text-blue-500 text-sm font-black uppercase tracking-tight animate-pulse">Aguardando processamento do pagamento...</p>
-                        <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">PROTOCOLO: {selectedRemForEvent.pagProtocolo}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-              <div className="flex flex-col items-center gap-6 mt-8">
-                <div className="flex items-center gap-4 w-full">
-                  <div className="h-px flex-1 bg-white/5"></div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
-                  <div className="h-px flex-1 bg-white/5"></div>
-                </div>
-                
-                <div className="flex flex-wrap items-center justify-center gap-4">
-                  <button 
-                    onClick={() => handleMarkAsDone('S-1210')}
-                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
-                  >
-                    Já foi feito!
-                  </button>
-                </div>
-              </div>
+              {renderEventLog({ status: selectedRemForEvent.pagStatus, protocolo: selectedRemForEvent.pagProtocolo, recibo: selectedRemForEvent.pagRecibo }, 'S-1210', selectedWorker.cpf)}
             </div>
           </div>
         </div>
@@ -2709,59 +2811,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 )}
               </button>
               
-              {/* Government Response Log - DARK */}
-              {selectedRemForEvent.remStatus && selectedRemForEvent.remStatus !== 'PENDENTE' && (
-                <div className="p-8 bg-white/5 border border-white/5 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Resposta do eSocial</h4>
-                      <div className={cn(
-                        "w-3 h-3 rounded-full shadow-[0_0_8px]",
-                        selectedRemForEvent.remStatus === 'SUCESSO' ? "bg-emerald-500 shadow-emerald-500/50" : 
-                        selectedRemForEvent.remStatus === 'ERRO' ? "bg-red-500 shadow-red-500/50" : "bg-blue-500 shadow-blue-500/50"
-                      )}></div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Lote Envio</span>
-                        <p className={cn(
-                          "font-black text-sm",
-                          selectedRemForEvent.remStatus === 'ERRO' ? "text-red-500" : "text-emerald-600"
-                        )}>
-                          201 - Lote recebido com sucesso.
-                        </p>
-                      </div>
-
-                      {(selectedRemForEvent.remStatus === 'SUCESSO' || selectedRemForEvent.remStatus === 'ERRO') && (
-                        <div className="space-y-2">
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Processamento</span>
-                          <p className={cn(
-                            "font-black text-sm",
-                            selectedRemForEvent.remStatus === 'ERRO' ? "text-red-500" : "text-emerald-600"
-                          )}>
-                            {selectedRemForEvent.remStatus === 'SUCESSO' ? '202 - Sucesso' : '401 - Conteúdo do evento inválido.'}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {selectedRemForEvent.remStatus === 'SUCESSO' && (
-                      <div className="pt-6 border-t border-white/5 space-y-2">
-                        <p className="text-emerald-500 text-sm font-black uppercase tracking-tight">O evento foi aceito e processado com sucesso pelo Ambiente Nacional.</p>
-                        <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">RECIBO: {selectedRemForEvent.remRecibo}</p>
-                      </div>
-                    )}
-
-                    {selectedRemForEvent.remStatus === 'PROCESSANDO' && (
-                      <div className="pt-6 border-t border-white/5 space-y-2">
-                        <p className="text-blue-500 text-sm font-black uppercase tracking-tight animate-pulse">Aguardando processamento pelo eSocial...</p>
-                        <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">PROTOCOLO: {selectedRemForEvent.remProtocolo}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              {renderEventLog({ status: selectedRemForEvent.remStatus, protocolo: selectedRemForEvent.remProtocolo, recibo: selectedRemForEvent.remRecibo }, 'S-1200', selectedWorker.cpf)}
+              
               <div className="flex flex-col items-center gap-6 mt-8">
                 <div className="flex items-center gap-4 w-full">
                   <div className="h-px flex-1 bg-white/5"></div>
@@ -2885,66 +2936,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 )}
               </button>
               
-              {/* Detailed Government Log - DARK */}
-              {esocialStatus && (esocialStatus.status === 'SUCESSO' || esocialStatus.status === 'ERRO' || esocialStatus.status === 'PROCESSANDO') && (
-                <div className="p-8 bg-white/5 border border-white/5 rounded-2xl shadow-2xl">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Histórico de Processamento</h4>
-                      <div className={cn(
-                        "w-3 h-3 rounded-full shadow-[0_0_8px]",
-                        esocialStatus.status === 'SUCESSO' ? "bg-emerald-500 shadow-emerald-500/50" : 
-                        esocialStatus.status === 'ERRO' ? "bg-red-500 shadow-red-500/50" : "bg-blue-500 shadow-blue-500/50"
-                      )}></div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Envio Lote</span>
-                        <p className={cn(
-                          "font-black text-sm",
-                          esocialStatus.status === 'ERRO' ? "text-red-500" : "text-emerald-500"
-                        )}>
-                          {esocialStatus.resposta_governo?.envio_codigo || '201'} - {esocialStatus.resposta_governo?.envio_mensagem || 'Lote recebido com sucesso.'}
-                        </p>
-                      </div>
-
-                      {(esocialStatus.status === 'SUCESSO' || esocialStatus.status === 'ERRO') && (
-                        <div className="space-y-2">
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Processamento eSocial</span>
-                          <p className={cn(
-                            "font-black text-sm",
-                            esocialStatus.status === 'ERRO' ? "text-red-500" : "text-emerald-600"
-                          )}>
-                            {esocialStatus.resposta_governo?.proc_codigo || (esocialStatus.status === 'SUCESSO' ? '202' : '401')} - {esocialStatus.resposta_governo?.proc_mensagem || (esocialStatus.status === 'SUCESSO' ? 'Sucesso' : 'Conteúdo do evento inválido.')}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {esocialStatus.status === 'ERRO' && (
-                      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl space-y-4">
-                        <p className="text-red-400 text-xs leading-relaxed font-medium">
-                          {esocialStatus.resposta_governo?.detalhe || 'Foi localizado no sistema um evento em duplicidade com o evento a ser enviado.'}
-                        </p>
-                        <div className="pt-2 border-t border-red-500/10">
-                          <span className="text-[9px] font-black text-red-500 uppercase tracking-widest block mb-1">Ação Sugerida</span>
-                          <p className="text-white text-[11px] font-bold">
-                            {esocialStatus.resposta_governo?.acao_sugerida || 'Verificar a matrícula informada e gerar uma nova se necessário.'}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {esocialStatus.status === 'SUCESSO' && (
-                      <div className="pt-6 border-t border-white/5 space-y-2">
-                        <p className="text-emerald-500 text-sm font-black uppercase tracking-tight">O evento foi aceito e processado com sucesso pelo eSocial.</p>
-                        <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">RECIBO: {esocialStatus.recibo}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              {renderEventLog({ status: selectedWorker.esocial_status, protocolo: selectedWorker.protocolo, recibo: selectedWorker.recibo, resposta_governo: selectedWorker.resposta_governo }, 'S-2300', selectedWorker.cpf)}
+              
               <div className="flex flex-col items-center gap-6 mt-8">
                 <div className="flex items-center gap-4 w-full">
                   <div className="h-px flex-1 bg-white/5"></div>
@@ -3048,60 +3041,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </>
                 )}
               </button>
-              
-              {/* Detailed Government Log - S-2399 */}
-              {selectedWorker.s2399_status && selectedWorker.s2399_status !== 'PENDENTE' && (
-                <div className="p-8 bg-white/5 border border-white/5 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Resposta do eSocial (S-2399)</h4>
-                      <div className={cn(
-                        "w-3 h-3 rounded-full shadow-[0_0_8px]",
-                        selectedWorker.s2399_status === 'SUCESSO' ? "bg-emerald-500 shadow-emerald-500/50" : 
-                        selectedWorker.s2399_status === 'ERRO' ? "bg-red-500 shadow-red-500/50" : "bg-blue-500 shadow-blue-500/50"
-                      )}></div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Lote Envio</span>
-                        <p className={cn(
-                          "font-black text-sm",
-                          selectedWorker.s2399_status === 'ERRO' ? "text-red-500" : "text-emerald-600"
-                        )}>
-                          201 - Lote recebido com sucesso.
-                        </p>
-                      </div>
-
-                      {(selectedWorker.s2399_status === 'SUCESSO' || selectedWorker.s2399_status === 'ERRO') && (
-                        <div className="space-y-2">
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Processamento</span>
-                          <p className={cn(
-                            "font-black text-sm",
-                            selectedWorker.s2399_status === 'ERRO' ? "text-red-500" : "text-emerald-600"
-                          )}>
-                            {selectedWorker.s2399_status === 'SUCESSO' ? '202 - Sucesso' : '401 - Erro na validação do término.'}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {selectedWorker.s2399_status === 'SUCESSO' && (
-                      <div className="pt-6 border-t border-white/5 space-y-2">
-                        <p className="text-emerald-500 text-sm font-black uppercase tracking-tight">O desligamento/término foi processado com sucesso.</p>
-                        <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">RECIBO: {selectedWorker.s2399_recibo}</p>
-                      </div>
-                    )}
-
-                    {selectedWorker.s2399_status === 'PROCESSANDO' && (
-                      <div className="pt-6 border-t border-white/5 space-y-2">
-                        <p className="text-blue-500 text-sm font-black uppercase tracking-tight animate-pulse">Aguardando processamento pelo eSocial...</p>
-                        <p className="text-slate-500 font-mono text-[10px] bg-black/20 p-2 rounded border border-white/5">PROTOCOLO: {selectedWorker.s2399_protocolo}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              {renderEventLog({ status: selectedWorker.s2399_status, protocolo: selectedWorker.s2399_protocolo, recibo: selectedWorker.s2399_recibo, resposta_governo: selectedWorker.s2399_resposta_governo }, 'S-2399', selectedWorker.cpf)}
             </div>
           </div>
         </div>
@@ -3634,72 +3574,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 )}
               </button>
               
-              {/* Detailed Log S-1000 - DARK */}
-              {esocialS1000Status && (esocialS1000Status.status === 'SUCESSO' || esocialS1000Status.status === 'ERRO' || esocialS1000Status.status === 'PROCESSANDO') && (
-                <div className="p-8 bg-white/5 border border-white/5 rounded-2xl shadow-2xl">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Resposta do Governo (S-1000)</h4>
-                      <div className={cn(
-                        "w-3 h-3 rounded-full shadow-[0_0_8px]",
-                        esocialS1000Status.status === 'SUCESSO' ? "bg-emerald-500 shadow-emerald-500/50" : 
-                        esocialS1000Status.status === 'ERRO' ? "bg-red-500 shadow-red-500/50" : "bg-blue-500 shadow-blue-500/50"
-                      )}></div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Envio Lote</span>
-                        <p className={cn(
-                          "font-black text-sm",
-                          esocialS1000Status.status === 'ERRO' ? "text-red-500" : "text-emerald-500"
-                        )}>
-                          {esocialS1000Status.resposta_governo?.envio_codigo || '201'} - {esocialS1000Status.resposta_governo?.envio_mensagem || 'Lote recebido com sucesso.'}
-                        </p>
-                      </div>
-
-                      {(esocialS1000Status.status === 'SUCESSO' || esocialS1000Status.status === 'ERRO') && (
-                        <div className="space-y-2">
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Status Processamento</span>
-                          <p className={cn(
-                            "font-black text-sm",
-                            esocialS1000Status.status === 'ERRO' ? "text-red-500" : "text-emerald-600"
-                          )}>
-                            {esocialS1000Status.resposta_governo?.proc_codigo || '202'} - {esocialS1000Status.resposta_governo?.proc_mensagem || 'Sucesso'}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {esocialS1000Status.status === 'ERRO' && (
-                      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl space-y-2">
-                        <p className="text-red-400 text-xs font-medium leading-relaxed">{esocialS1000Status.resposta_governo?.detalhe || 'Erro desconhecido no processamento do S-1000.'}</p>
-                        <div className="pt-2 border-t border-red-500/10">
-                          <span className="text-[9px] font-black text-red-500 uppercase tracking-widest block mb-1">Ação Sugerida</span>
-                          <p className="text-white text-[11px] font-bold">{esocialS1000Status.resposta_governo?.acao_sugerida || 'Verifique os dados cadastrais do empregador.'}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex flex-col items-center gap-6 mt-8">
-                <div className="flex items-center gap-4 w-full">
-                  <div className="h-px flex-1 bg-white/5"></div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
-                  <div className="h-px flex-1 bg-white/5"></div>
-                </div>
-                
-                <div className="flex flex-wrap items-center justify-center gap-4">
-                  <button 
-                    onClick={() => handleMarkAsDone('S-1000')}
-                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
-                  >
-                    Já foi feito!
-                  </button>
-                </div>
-              </div>
+              {renderEventLog(esocialS1000Status, 'S-1000')}
             </div>
           </div>
         </div>
@@ -3778,55 +3653,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 )}
               </button>
               
-              {/* Detailed Log S-1005 - DARK */}
-              {esocialS1005Status && (esocialS1005Status.status === 'SUCESSO' || esocialS1005Status.status === 'ERRO' || esocialS1005Status.status === 'PROCESSANDO') && (
-                <div className="p-8 bg-white/5 border border-white/5 rounded-2xl shadow-2xl">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Resposta do Governo (S-1005)</h4>
-                      <div className={cn(
-                        "w-3 h-3 rounded-full shadow-[0_0_8px]",
-                        esocialS1005Status.status === 'SUCESSO' ? "bg-emerald-500 shadow-emerald-500/50" : 
-                        esocialS1005Status.status === 'ERRO' ? "bg-red-500 shadow-red-500/50" : "bg-blue-500 shadow-blue-500/50"
-                      )}></div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Envio Lote</span>
-                        <p className={cn(
-                          "font-black text-sm",
-                          esocialS1005Status.status === 'ERRO' ? "text-red-500" : "text-emerald-500"
-                        )}>
-                          {esocialS1005Status.resposta_governo?.envio_codigo || '201'} - {esocialS1005Status.resposta_governo?.envio_mensagem || 'Lote recebido com sucesso.'}
-                        </p>
-                      </div>
-
-                      {(esocialS1005Status.status === 'SUCESSO' || esocialS1005Status.status === 'ERRO') && (
-                        <div className="space-y-2">
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Processamento</span>
-                          <p className={cn(
-                            "font-black text-sm",
-                            esocialS1005Status.status === 'ERRO' ? "text-red-500" : "text-emerald-600"
-                          )}>
-                            {esocialS1005Status.resposta_governo?.proc_codigo || '202'} - {esocialS1005Status.resposta_governo?.proc_mensagem || 'Sucesso'}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {esocialS1005Status.status === 'ERRO' && (
-                      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl space-y-2">
-                        <p className="text-red-400 text-xs font-medium leading-relaxed">{esocialS1005Status.resposta_governo?.detalhe || 'Erro no processamento do estabelecimento/obra.'}</p>
-                        <div className="pt-2 border-t border-red-500/10">
-                          <span className="text-[9px] font-black text-red-500 uppercase tracking-widest block mb-1">Ação Sugerida</span>
-                          <p className="text-white text-[11px] font-bold">{esocialS1005Status.resposta_governo?.acao_sugerida || 'Verifique o número do CNO e os dados da obra.'}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              {renderEventLog(esocialS1005Status, 'S-1005')}
 
               <div className="flex flex-col items-center gap-6 mt-8">
                 <div className="flex items-center gap-4 w-full">
@@ -3858,12 +3685,20 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <h2 className="text-xl font-black text-white uppercase tracking-tighter">Evento S-1020 – Tabela de Lotações</h2>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Classificação das Lotações Tributárias</p>
             </div>
-            <button 
-              onClick={() => setCurrentView('management')}
-              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
-            >
-              Voltar para obra
-            </button>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setIsLotacaoModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-all shadow-lg"
+              >
+                <Settings className="h-3.5 w-3.5" /> Configurar
+              </button>
+              <button 
+                onClick={() => setCurrentView('management')}
+                className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+              >
+                Voltar para obra
+              </button>
+            </div>
           </div>
 
           <div className="p-8">
@@ -3921,22 +3756,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 )}
               </button>
 
-              <div className="flex flex-col items-center gap-6 mt-8">
-                <div className="flex items-center gap-4 w-full">
-                  <div className="h-px flex-1 bg-white/5"></div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
-                  <div className="h-px flex-1 bg-white/5"></div>
-                </div>
-                
-                <div className="flex flex-wrap items-center justify-center gap-4">
-                  <button 
-                    onClick={() => handleMarkAsDone('S-1020')}
-                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
-                  >
-                    Já foi feito!
-                  </button>
-                </div>
-              </div>
+              {renderEventLog(esocialS1020Status, 'S-1020')}
 
             </div>
           </div>
@@ -4001,12 +3821,20 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <h2 className="text-xl font-black text-white uppercase tracking-tighter">Evento S-1010 – Tabela de Rúbricas</h2>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Configuração de Incidências Tributárias</p>
             </div>
-            <button 
-              onClick={() => setCurrentView('management')}
-              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
-            >
-              Voltar para obra
-            </button>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setIsRubricaModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-all shadow-lg"
+              >
+                <Settings className="h-3.5 w-3.5" /> Configurar
+              </button>
+              <button 
+                onClick={() => setCurrentView('management')}
+                className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+              >
+                Voltar para obra
+              </button>
+            </div>
           </div>
 
           <div className="p-8">
@@ -4064,22 +3892,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 )}
               </button>
 
-              <div className="flex flex-col items-center gap-6 mt-8">
-                <div className="flex items-center gap-4 w-full">
-                  <div className="h-px flex-1 bg-white/5"></div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
-                  <div className="h-px flex-1 bg-white/5"></div>
-                </div>
-                
-                <div className="flex flex-wrap items-center justify-center gap-4">
-                  <button 
-                    onClick={() => handleMarkAsDone('S-1010')}
-                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
-                  >
-                    Já foi feito!
-                  </button>
-                </div>
-              </div>
+              {renderEventLog(esocialS1010Status, 'S-1010')}
             </div>
           </div>
         </div>
