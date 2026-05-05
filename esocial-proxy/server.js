@@ -81,7 +81,13 @@ app.post('/esocial', async (req, res) => {
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
-    const { data: pfxBlob } = await supabase.storage.from('esocial_files').download(credentials.certificate_url.split('esocial_files/')[1]);
+    const certPath = credentials.certificate_url.split('esocial_files/')[1];
+    const { data: pfxBlob, error: downloadError } = await supabase.storage.from('esocial_files').download(certPath);
+    
+    if (downloadError || !pfxBlob) {
+      throw new Error(`Não foi possível baixar o certificado do Storage (${certPath}). Verifique se o arquivo ainda existe.`);
+    }
+
     const pfxBuffer = Buffer.from(await pfxBlob.arrayBuffer());
 
     const pfx = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(forge.util.createBuffer(pfxBuffer).getBytes()), credentials.certificate_password);
@@ -153,7 +159,12 @@ app.post('/esocial', async (req, res) => {
       headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_0/ServicoEnviarLoteEventos/EnviarLoteEventos"' },
       httpsAgent: new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: false, minVersion: 'TLSv1.2' }),
     });
-    res.json({ success: true, response: response.data });
+
+    const xmlRes = response.data;
+    const protMatch = xmlRes.match(/<protocoloEnvio>([^<]+)<\/protocoloEnvio>/);
+    const protocolo = protMatch ? protMatch[1] : null;
+
+    res.json({ success: true, protocolo, response: xmlRes });
   } catch (error) {
     console.error('ERRO /esocial:', error.message);
     res.json({ success: false, error: error.message });
@@ -169,14 +180,29 @@ app.post('/consultar', async (req, res) => {
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
-    const { data: pfxBlob } = await supabase.storage.from('esocial_files').download(credentials.certificate_url.split('esocial_files/')[1]);
+    
+    const certPath = credentials.certificate_url.split('esocial_files/')[1];
+    const { data: pfxBlob, error: downloadError } = await supabase.storage.from('esocial_files').download(certPath);
+    if (downloadError || !pfxBlob) throw new Error(`Certificado não encontrado no storage: ${certPath}`);
+    
     const pfxBuffer = Buffer.from(await pfxBlob.arrayBuffer());
     const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0"><soapenv:Body><ns:ConsultarLoteEventos><ns:consulta><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_0_0"><consultaLoteEventos><protocoloEnvio>${protocolo}</protocoloEnvio></consultaLoteEventos></eSocial></ns:consulta></ns:ConsultarLoteEventos></soapenv:Body></soapenv:Envelope>`;
+    
     const response = await axios.post(URL_CONSULTA, soapRequest, {
       headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0/ServicoConsultarLoteEventos/ConsultarLoteEventos"' },
       httpsAgent: new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: false, minVersion: 'TLSv1.2' }),
     });
-    res.json({ success: true, response: response.data });
+
+    const xmlRes = response.data;
+    const statusMatch = xmlRes.match(/<cdResposta>([^<]+)<\/cdResposta>/);
+    const reciboMatch = xmlRes.match(/<nrRecibo>([^<]+)<\/nrRecibo>/);
+    const msgMatch = xmlRes.match(/<dscOcorrencia>([^<]+)<\/dscOcorrencia>/);
+
+    const status = statusMatch && statusMatch[1] === '201' ? 'SUCESSO' : 'PROCESSANDO';
+    const recibo = reciboMatch ? reciboMatch[1] : null;
+    const message = msgMatch ? msgMatch[1] : null;
+
+    res.json({ success: true, status, recibo, message, response: xmlRes });
   } catch (error) {
     console.error('ERRO /consultar:', error.message);
     res.json({ success: false, error: error.message });
