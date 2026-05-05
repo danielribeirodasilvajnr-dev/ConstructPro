@@ -113,7 +113,7 @@ const CATEGORIA_OPTIONS = [
 // FUNÇÃO PROXY LOCAL PARA MTLS NO NODE.JS
 async function invokeProxy(options: any) {
   try {
-    const response = await fetch('http://localhost:3005/esocial', {
+    const response = await fetch('http://127.0.0.1:3005/esocial', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(options.body)
@@ -1428,17 +1428,16 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
   const fetchCredentials = async () => {
     if (!inssRegularization) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('esocial_credentials')
       .select('*')
       .eq('regularization_id', inssRegularization.id)
-      .single();
+      .order('created_at', { ascending: false });
     
-    if (data) {
-      setEsocialCredentials(data);
-      setCertificateUrl(data.certificate_url);
-      // We don't set the password in the frontend state for security, 
-      // it will be handled by the Edge Function
+    if (data && data.length > 0) {
+      const creds = data[0];
+      setEsocialCredentials(creds);
+      setCertificateUrl(creds.certificate_url);
     }
   };
 
@@ -1549,7 +1548,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             workerCpf: selectedWorker.cpf,
             proprietarioCpfCnpj,
             matricula: selectedWorker.matricula_esocial,
-            dtTerm: terminationDate
+            dtTerm: new Date().toLocaleDateString('en-CA') // YYYY-MM-DD local
           }
         }
       });
@@ -1571,11 +1570,20 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       });
 
       // Update worker with S2399 status locally
+      const updatedData = { 
+        s2399_status: 'PROCESSANDO', 
+        s2399_protocolo: response.protocolo,
+        s2399_resposta_governo: {
+          envio_codigo: '201',
+          envio_mensagem: 'Lote de encerramento recebido com sucesso.'
+        }
+      };
+
       setWorkers(prev => prev.map(w => 
-        w.id === selectedWorker.id ? { ...w, s2399_status: 'PROCESSANDO', s2399_protocolo: response.protocolo } : w
+        w.id === selectedWorker.id ? { ...w, ...updatedData } : w
       ));
       
-      setSelectedWorker((prev: any) => prev ? { ...prev, s2399_status: 'PROCESSANDO', s2399_protocolo: response.protocolo } : null);
+      setSelectedWorker((prev: any) => prev ? { ...prev, ...updatedData } : null);
 
       alert(`Lote S-2399 enviado com sucesso! Protocolo registrado.`);
     } catch (err: any) {
@@ -1592,14 +1600,30 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       const { data: response, error: fnError } = await invokeProxy({
         body: { action: 'CONSULT', protocolo: selectedWorker.s2399_protocolo, regularizationId: inssRegularization.id }
       });
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-      const { status, recibo } = response;
+
+      if (fnError) {
+        throw new Error(`Erro de conexão com o Proxy: ${fnError.message || 'Verifique se o servidor Proxy (3005) está rodando.'}`);
+      }
+
+      if (!response || !response.success) {
+        throw new Error(response?.error || 'O servidor Proxy não retornou uma resposta válida.');
+      }
+
+      const { status, recibo, message } = response;
+
+      const consultUpdate = { 
+        s2399_status: status, 
+        s2399_recibo: recibo,
+        s2399_resposta_governo: {
+          recibo_codigo: status === 'SUCESSO' ? '201' : '101',
+          recibo_mensagem: message || (status === 'SUCESSO' ? 'Processado com sucesso' : 'Aguardando processamento...')
+        }
+      };
 
       setWorkers(prev => prev.map(w => 
-        w.id === selectedWorker.id ? { ...w, s2399_status: status, s2399_recibo: recibo } : w
+        w.id === selectedWorker.id ? { ...w, ...consultUpdate } : w
       ));
-      setSelectedWorker((prev: any) => prev ? { ...prev, s2399_status: status, s2399_recibo: recibo } : null);
+      setSelectedWorker((prev: any) => prev ? { ...prev, ...consultUpdate } : null);
 
       if (status === 'SUCESSO') {
         alert('S-2399 processado com SUCESSO! O recibo foi gerado.');
@@ -3065,14 +3089,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     <td className="p-4 text-white font-black font-mono">{selectedWorker.matricula_esocial}</td>
                   </tr>
                   <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Data de Término:</td>
-                    <td className="p-4">
-                      <input 
-                        type="date" 
-                        value={terminationDate} 
-                        onChange={(e) => setTerminationDate(e.target.value)} 
-                        className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white font-black outline-none focus:border-primary transition-all"
-                      />
+                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Data de Término (Hoje):</td>
+                    <td className="p-4 text-white font-black font-mono">
+                      {new Date().toLocaleDateString('pt-BR')}
                     </td>
                   </tr>
                   <tr>
@@ -3136,7 +3155,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </p>
                 </div>
               )}
-              {renderEventLog({ status: selectedWorker.s2399_status, protocolo: selectedWorker.s2399_protocolo, recibo: selectedWorker.s2399_recibo, resposta_governo: selectedWorker.s2399_resposta_governo }, 'S-2399', selectedWorker.cpf)}
+              {renderEventLog({ 
+                status: selectedWorker.s2399_status, 
+                protocolo: selectedWorker.s2399_protocolo, 
+                recibo: selectedWorker.s2399_recibo, 
+                resposta_governo: selectedWorker.s2399_resposta_governo 
+              }, 'S-2399', selectedWorker.cpf)}
             </div>
           </div>
         </div>

@@ -102,17 +102,23 @@ app.post('/esocial', async (req, res) => {
     const { action, eventType: reqEventType, eventData: reqEventData = {}, regularizationId } = req.body;
     const eventData = { ...reqEventData };
 
-    const { data: credentials } = await supabase.from('esocial_credentials')
+    const { data: credentialsList, error: credError } = await supabase.from('esocial_credentials')
       .select('*')
       .eq('regularization_id', regularizationId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .order('created_at', { ascending: false });
+
+    if (credError || !credentialsList || credentialsList.length === 0) {
+      throw new Error(`Credenciais eSocial não encontradas para a regularização ID: ${regularizationId}. Configure o certificado na aba eSocial.`);
+    }
+
+    const credentials = credentialsList[0];
     const certPath = credentials.certificate_url.split('esocial_files/')[1];
+    console.log(`[DEBUG] Baixando certificado: ${certPath}`);
+    
     const { data: pfxBlob, error: downloadError } = await supabase.storage.from('esocial_files').download(certPath);
     
     if (downloadError || !pfxBlob) {
-      throw new Error(`Não foi possível baixar o certificado do Storage (${certPath}). Verifique se o arquivo ainda existe.`);
+      throw new Error(`Erro ao baixar certificado (${certPath}): ${downloadError?.message || 'Arquivo não encontrado'}`);
     }
 
     const pfxBuffer = Buffer.from(await pfxBlob.arrayBuffer());
@@ -157,7 +163,11 @@ app.post('/esocial', async (req, res) => {
     const transCpfCnpj = commonName.split(':').pop().replace(/\D/g, '');
     const empCpfCnpj = (eventData.proprietarioCpfCnpj || '25502713865').replace(/\D/g, '');
 
-    const timestamp = new Date().toISOString().replace(/[-:T.Z]/g, '').substring(0, 14);
+    // Captura a data local ajustada para o fuso do Brasil (GMT-3)
+    const now = new Date();
+    const offset = -3; // Brasil (Brasília)
+    const brDate = new Date(now.getTime() + (offset * 3600000));
+    const timestamp = now.toISOString().replace(/[-:T.Z]/g, '').substring(0, 14);
     const rnd = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
     const empTpInsc = empCpfCnpj.length <= 11 ? '2' : '1';
     const eventId = `ID${empTpInsc}${empCpfCnpj.padEnd(14, '0')}${timestamp}${rnd}`;
@@ -186,7 +196,8 @@ app.post('/esocial', async (req, res) => {
     } else if (eventType === 'S-2399') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtTSVTermino/v_S_01_03_00';
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
-      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVTermino Id="${eventId}"><ideEvento><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><trabalhador><cpfTrab>${workerCpf}</cpfTrab></trabalhador><infoTSVTermino><dtTerm>${eventData.dtTerm || new Date().toISOString().split('T')[0]}</dtTerm></infoTSVTermino></evtTSVTermino></eSocial>`;
+      const brToday = new Date().toLocaleDateString('en-CA'); // Retorna YYYY-MM-DD local
+      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVTermino Id="${eventId}"><ideEvento><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><trabalhador><cpfTrab>${workerCpf}</cpfTrab></trabalhador><infoTSVTermino><dtTerm>${brToday}</dtTerm></infoTSVTermino></evtTSVTermino></eSocial>`;
     } else if (eventType === 'S-1200') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtRemun/v_S_01_03_00';
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
@@ -267,4 +278,4 @@ app.post('/consultar', async (req, res) => {
   }
 });
 
-app.listen(3005, () => console.log('🚀 Proxy C14N+Forge (URI Vazio Real) Online na porta 3005'));
+app.listen(3005, '0.0.0.0', () => console.log('🚀 Proxy C14N+Forge (URI Vazio Real) Online na porta 3005'));
