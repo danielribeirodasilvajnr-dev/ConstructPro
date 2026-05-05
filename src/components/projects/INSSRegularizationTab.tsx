@@ -830,8 +830,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           setCurrentView('management');
           fetchWorkers();
         }, 1500);
+      } else if (response.status === 'PROCESSANDO') {
+        alert('O eSocial ainda está processando o lote. Aguarde alguns segundos e tente novamente.');
       } else {
-        alert('O eSocial retornou erro no processamento. Verifique os detalhes no log.');
+        alert(`O eSocial retornou um erro: ${response.message || 'Erro de validação desconhecido.'}`);
       }
       
       checkEsocialStatus(esocialStatus.cpf_trabalhador);
@@ -1151,7 +1153,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       setSelectedRemForEvent((prev: any) => ({ ...prev, remStatus: status, remRecibo: recibo }));
       
       if (status === 'SUCESSO') alert('S-1200 processado com SUCESSO!');
-      else alert('Erro ao processar S-1200. Verifique os detalhes no log.');
+      else alert(`Erro ao processar S-1200: ${response.message || 'Verifique os detalhes no log.'}`);
     } catch (err: any) {
       alert(`Erro na consulta S-1200: ${err.message}`);
     } finally {

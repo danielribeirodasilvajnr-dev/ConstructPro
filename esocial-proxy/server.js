@@ -134,13 +134,40 @@ app.post('/esocial', async (req, res) => {
       });
 
       const xmlRes = response.data;
+      
+      // Salva resposta completa para debug
+      fs.writeFileSync('debug_consulta_resposta.xml', xmlRes, 'utf8');
+      console.log('[DEBUG] Resposta da consulta salva em debug_consulta_resposta.xml');
+
       const statusMatch = xmlRes.match(/<cdResposta>([^<]+)<\/cdResposta>/);
       const reciboMatch = xmlRes.match(/<nrRecibo>([^<]+)<\/nrRecibo>/);
       const msgMatch = xmlRes.match(/<dscOcorrencia>([^<]+)<\/dscOcorrencia>/);
+      const cdRetornoEvt = xmlRes.match(/<cdRetornoEvt>([^<]+)<\/cdRetornoEvt>/);
 
-      const status = statusMatch && statusMatch[1] === '201' ? 'SUCESSO' : 'PROCESSANDO';
+      const cdResposta = statusMatch ? statusMatch[1] : '0';
+      const cdEvt = cdRetornoEvt ? cdRetornoEvt[1] : null;
+      
+      // 201 = Lote processado com sucesso (pode ter eventos com erro dentro)
+      // 101/202 = Em processamento
+      // Outros = Erro no lote
+      let status;
+      if (cdResposta === '201') {
+        // Lote processado - verificar se o evento dentro teve sucesso ou erro
+        if (cdEvt && cdEvt !== '1') {
+          status = 'ERRO'; // Evento rejeitado pelo governo
+        } else {
+          status = 'SUCESSO';
+        }
+      } else if (cdResposta === '101' || cdResposta === '202') {
+        status = 'PROCESSANDO';
+      } else {
+        status = 'ERRO';
+      }
+      
       const recibo = reciboMatch ? reciboMatch[1] : null;
-      const message = msgMatch ? msgMatch[1] : (status === 'SUCESSO' ? 'Processado com sucesso' : 'Aguardando processamento...');
+      const message = msgMatch ? msgMatch[1] : (status === 'SUCESSO' ? 'Processado com sucesso' : status === 'ERRO' ? `Erro do governo (código ${cdResposta}/${cdEvt || 'N/A'})` : 'Aguardando processamento...');
+
+      console.log(`[DEBUG] Status: ${status}, cdResposta: ${cdResposta}, cdEvt: ${cdEvt}, Recibo: ${recibo}, Msg: ${message}`);
 
       // SECURITY: Return only necessary fields, never the full XML response
       return res.json({ success: true, status, recibo, message });
