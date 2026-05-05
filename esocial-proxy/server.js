@@ -99,7 +99,8 @@ function assinarXml(xmlStr, privateKeyPem, certPem) {
 
 app.post('/esocial', async (req, res) => {
   try {
-    const { action, eventData = {}, regularizationId } = req.body;
+    const { action, eventType: reqEventType, eventData: reqEventData = {}, regularizationId } = req.body;
+    const eventData = { ...reqEventData };
 
     const { data: credentials } = await supabase.from('esocial_credentials')
       .select('*')
@@ -139,8 +140,6 @@ app.post('/esocial', async (req, res) => {
       return res.json({ success: true, status, recibo, message });
     }
 
-    const { eventType, eventData = {} } = req.body;
-    
     // SECURITY: Sanitize all input data before XML generation
     Object.keys(eventData).forEach(key => {
       if (typeof eventData[key] === 'string') {
@@ -163,7 +162,7 @@ app.post('/esocial', async (req, res) => {
     const empTpInsc = empCpfCnpj.length <= 11 ? '2' : '1';
     const eventId = `ID${empTpInsc}${empCpfCnpj.padEnd(14, '0')}${timestamp}${rnd}`;
 
-    const eventType = req.body.eventType || (action === 'TRANSMIT_S1000' ? 'S-1000' : 'S-2300');
+    const eventType = reqEventType || (action === 'TRANSMIT_S1000' ? 'S-1000' : 'S-2300');
     let xmlEvento = '';
 
     if (eventType === 'S-1000') {

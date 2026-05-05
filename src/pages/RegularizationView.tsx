@@ -91,6 +91,16 @@ export function RegularizationView() {
 
   const selectedItem = regularizations.find(r => r.id === selectedId);
 
+  // Se houver ID selecionado mas a lista ainda estiver carregando, mostra loading
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <p className="text-blue-400 font-bold uppercase tracking-widest text-[10px] animate-pulse">Sincronizando Dados...</p>
+      </div>
+    );
+  }
+
   if (selectedId && selectedItem) {
     return (
       <div className="space-y-6">

@@ -127,13 +127,50 @@ async function invokeProxy(options: any) {
 
 export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh, readOnly, isStandalone }: INSSRegularizationTabProps) {
   const { user } = useAuth();
-  const [currentView, setCurrentView] = useState<'summary' | 'management' | 'worker_form' | 's2300_view' | 's1200_view' | 's1210_view' | 's1298_view' | 's1000_view' | 's1005_view' | 's1010_view' | 's1020_view' | 's2399_view'>('summary');
+  const [currentView, setCurrentView] = useState<'summary' | 'management' | 'worker_form' | 's2300_view' | 's1200_view' | 's1210_view' | 's1298_view' | 's1000_view' | 's1005_view' | 's1010_view' | 's1020_view' | 's2399_view'>(() => {
+    return (sessionStorage.getItem(`currentRegularizationView_${projectId}`) as any) || 'summary';
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem(`currentRegularizationView_${projectId}`, currentView);
+  }, [currentView, projectId]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
   const [workModalMode, setWorkModalMode] = useState<'simple' | 'detailed'>('simple');
   const [workers, setWorkers] = useState<Worker[]>([]);
+  const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(() => {
+    return sessionStorage.getItem(`selectedWorkerId_${projectId}`);
+  });
+
+  useEffect(() => {
+    if (selectedWorkerId) {
+      sessionStorage.setItem(`selectedWorkerId_${projectId}`, selectedWorkerId);
+    } else {
+      sessionStorage.removeItem(`selectedWorkerId_${projectId}`);
+    }
+  }, [selectedWorkerId, projectId]);
+
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
+
+  // Sincroniza selectedWorker quando a lista de workers carrega ou o ID muda
+  useEffect(() => {
+    if (selectedWorkerId && workers.length > 0) {
+      const worker = workers.find(w => w.id === selectedWorkerId);
+      if (worker) {
+        setSelectedWorker(worker);
+      }
+    }
+  }, [selectedWorkerId, workers]);
+
   const [editingWorkerId, setEditingWorkerId] = useState<string | null>(null);
+
+  // Fallback de segurança: Se a view exige um worker mas ele sumiu (refresh), volta para gestão
+  useEffect(() => {
+    const viewsRequiringWorker = ['s2300_view', 's2399_view', 'worker_form'];
+    if (viewsRequiringWorker.includes(currentView) && !selectedWorkerId && !editingWorkerId) {
+      setCurrentView('management');
+    }
+  }, [currentView, selectedWorkerId, editingWorkerId]);
   
   // Form State - Client
   const [name, setName] = useState('');
@@ -2237,7 +2274,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                         <Trash2 className="h-4 w-4" /> Remover trabalhador
                       </button>
                       <button 
-                        onClick={() => { setSelectedWorker(worker); setCurrentView('s2300_view'); }}
+                        onClick={() => { 
+                          setSelectedWorkerId(worker.id);
+                          setSelectedWorker(worker); 
+                          setCurrentView('s2300_view'); 
+                        }}
                         className={cn(
                           "flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black text-white transition-all shadow-xl uppercase tracking-widest",
                           worker.esocial_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-primary hover:bg-primary/90"
@@ -2247,7 +2288,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                         {worker.esocial_status === 'SUCESSO' ? 'Evento Enviado' : 'Cadastrar trab'}
                       </button>
                       <button 
-                        onClick={() => { setSelectedWorker(worker); setCurrentView('s2399_view'); }}
+                        onClick={() => { 
+                          setSelectedWorkerId(worker.id);
+                          setSelectedWorker(worker); 
+                          setCurrentView('s2399_view'); 
+                        }}
                         className={cn(
                           "flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black text-white transition-all shadow-xl uppercase tracking-widest",
                           worker.s2399_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-500 hover:bg-red-600"
@@ -2361,11 +2406,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                                     </div>
                                     <div className="flex items-center justify-center gap-2">
                                       <button 
-                                        onClick={() => {
-                                          setSelectedWorker(w);
-                                          setSelectedRemForEvent(rem);
-                                          setCurrentView('s1200_view');
-                                        }}
+                                          onClick={() => {
+                                            setSelectedWorkerId(w.id);
+                                            setSelectedWorker(w);
+                                            setSelectedRemForEvent(rem);
+                                            setCurrentView('s1200_view');
+                                          }}
                                         className={cn(
                                           "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black text-white transition-all shadow-xl uppercase tracking-widest",
                                           rem.remStatus === 'SUCESSO' ? "bg-emerald-600" : "bg-primary hover:bg-blue-700 shadow-primary/20"
@@ -2374,11 +2420,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                                         <Send className="h-3 w-3" /> Rem
                                       </button>
                                       <button 
-                                        onClick={() => {
-                                          setSelectedWorker(w);
-                                          setSelectedRemForEvent(rem);
-                                          setCurrentView('s1210_view');
-                                        }}
+                                          onClick={() => {
+                                            setSelectedWorkerId(w.id);
+                                            setSelectedWorker(w);
+                                            setSelectedRemForEvent(rem);
+                                            setCurrentView('s1210_view');
+                                          }}
                                         className={cn(
                                           "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black text-white transition-all shadow-xl uppercase tracking-widest",
                                           rem.pagStatus === 'SUCESSO' ? "bg-emerald-600" : "bg-slate-700 hover:bg-slate-600 shadow-black/20"
@@ -2620,7 +2667,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </p>
             </div>
             <button 
-              onClick={() => { setSelectedRemForEvent(null); setCurrentView('management'); }}
+              onClick={() => { 
+                setSelectedWorkerId(null);
+                setSelectedRemForEvent(null); 
+                setCurrentView('management'); 
+              }}
               className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
@@ -2728,7 +2779,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </p>
             </div>
             <button 
-              onClick={() => { setSelectedRemForEvent(null); setCurrentView('management'); }}
+              onClick={() => { 
+                setSelectedWorkerId(null);
+                setSelectedRemForEvent(null); 
+                setCurrentView('management'); 
+              }}
               className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
@@ -2847,7 +2902,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               Evento S-2300 – Início do Trabalhador Sem Vínculo
             </h2>
             <button 
-              onClick={() => { setSelectedWorker(null); setCurrentView('management'); }}
+              onClick={() => { 
+                setSelectedWorkerId(null);
+                setSelectedWorker(null); 
+                setCurrentView('management'); 
+              }}
               className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
@@ -2978,7 +3037,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </p>
             </div>
             <button 
-              onClick={() => { setSelectedWorker(null); setCurrentView('management'); }}
+              onClick={() => { 
+                setSelectedWorkerId(null);
+                setSelectedWorker(null); 
+                setCurrentView('management'); 
+              }}
               className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
@@ -3022,7 +3085,6 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             <div className="mt-8 space-y-6">
               <button 
-                onClick={selectedWorker.s2399_status && selectedWorker.s2399_status !== 'ERRO' && selectedWorker.s2399_status !== 'PENDENTE' ? handleConsultS2399 : handleTransmitS2399}
                 onClick={selectedWorker.s2399_status === 'PROCESSANDO' ? handleConsultS2399 : handleTransmitS2399}
                 disabled={isTransmitting}
                 className={cn(
@@ -3053,9 +3115,21 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </button>
               {selectedWorker.s2399_status === 'PROCESSANDO' && (
                 <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 mt-4 animate-pulse">
-                  <div className="flex items-center gap-3 text-blue-400 mb-2">
-                    <History className="h-5 w-5" />
-                    <span className="font-bold text-sm uppercase tracking-widest">Aguardando Resposta</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3 text-blue-400">
+                      <History className="h-5 w-5" />
+                      <span className="font-bold text-sm uppercase tracking-widest">Aguardando Resposta</span>
+                    </div>
+                    <button 
+                      onClick={async () => {
+                        if (!confirm('Deseja realmente resetar o status deste evento? Use apenas se estiver travado.')) return;
+                        await supabase.from('esocial_events').delete().eq('cpf_trabalhador', selectedWorker.cpf).eq('tipo_evento', 'S-2399');
+                        window.location.reload();
+                      }}
+                      className="text-[10px] font-bold text-red-400 hover:text-red-300 underline uppercase tracking-tighter"
+                    >
+                      Limpar Status (Reset)
+                    </button>
                   </div>
                   <p className="text-blue-100/60 text-xs">
                     O evento já foi recebido pelo governo. Clique no botão acima para verificar se o recibo oficial já foi gerado.
