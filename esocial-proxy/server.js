@@ -10,8 +10,34 @@ const fs = require('fs');
 require('dotenv').config({ path: '../.env' });
 
 const app = express();
-app.use(cors());
+
+// SECURITY: Restrict CORS to local development ports
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS Policy: Origin not allowed'));
+    }
+  }
+}));
+
 app.use(express.json({ limit: '10mb' }));
+
+// SECURITY: XML Sanitization Helper
+function escapeXml(unsafe) {
+  if (typeof unsafe !== 'string') return unsafe;
+  return unsafe.replace(/[<>&'"]/g, function (c) {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+    }
+  });
+}
 
 const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const URL_ENVIO = 'https://webservices.envio.esocial.gov.br/servicos/empregador/enviarloteeventos/WsEnviarLoteEventos.svc';
@@ -90,6 +116,38 @@ app.post('/esocial', async (req, res) => {
 
     const pfxBuffer = Buffer.from(await pfxBlob.arrayBuffer());
 
+    if (action === 'CONSULT') {
+      const { protocolo } = req.body;
+      console.log(`[DEBUG] Consultando protocolo: ${protocolo}`);
+      const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0"><soapenv:Body><ns:ConsultarLoteEventos><ns:consulta><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_0_0"><consultaLoteEventos><protocoloEnvio>${protocolo}</protocoloEnvio></consultaLoteEventos></eSocial></ns:consulta></ns:ConsultarLoteEventos></soapenv:Body></soapenv:Envelope>`;
+      
+      const response = await axios.post(URL_CONSULTA, soapRequest, {
+        headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0/ServicoConsultarLoteEventos/ConsultarLoteEventos"' },
+        httpsAgent: new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: false, minVersion: 'TLSv1.2' }),
+      });
+
+      const xmlRes = response.data;
+      const statusMatch = xmlRes.match(/<cdResposta>([^<]+)<\/cdResposta>/);
+      const reciboMatch = xmlRes.match(/<nrRecibo>([^<]+)<\/nrRecibo>/);
+      const msgMatch = xmlRes.match(/<dscOcorrencia>([^<]+)<\/dscOcorrencia>/);
+
+      const status = statusMatch && statusMatch[1] === '201' ? 'SUCESSO' : 'PROCESSANDO';
+      const recibo = reciboMatch ? reciboMatch[1] : null;
+      const message = msgMatch ? msgMatch[1] : (status === 'SUCESSO' ? 'Processado com sucesso' : 'Aguardando processamento...');
+
+      // SECURITY: Return only necessary fields, never the full XML response
+      return res.json({ success: true, status, recibo, message });
+    }
+
+    const { eventType, eventData = {} } = req.body;
+    
+    // SECURITY: Sanitize all input data before XML generation
+    Object.keys(eventData).forEach(key => {
+      if (typeof eventData[key] === 'string') {
+        eventData[key] = escapeXml(eventData[key]);
+      }
+    });
+
     const pfx = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(forge.util.createBuffer(pfxBuffer).getBytes()), credentials.certificate_password);
     const certificate = pfx.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag][0].cert;
     const keyBag = pfx.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[forge.pki.oids.pkcs8ShroudedKeyBag][0];
@@ -164,7 +222,8 @@ app.post('/esocial', async (req, res) => {
     const protMatch = xmlRes.match(/<protocoloEnvio>([^<]+)<\/protocoloEnvio>/);
     const protocolo = protMatch ? protMatch[1] : null;
 
-    res.json({ success: true, protocolo, response: xmlRes });
+    // SECURITY: Return only protocol, never the full sensitive response
+    res.json({ success: true, protocolo });
   } catch (error) {
     console.error('ERRO /esocial:', error.message);
     res.json({ success: false, error: error.message });

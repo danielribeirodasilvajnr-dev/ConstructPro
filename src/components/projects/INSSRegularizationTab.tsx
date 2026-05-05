@@ -1540,9 +1540,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       
       setSelectedWorker((prev: any) => prev ? { ...prev, s2399_status: 'PROCESSANDO', s2399_protocolo: response.protocolo } : null);
 
-      alert(`Lote S-2399 enviado! Protocolo: ${response.protocolo}`);
+      alert(`Lote S-2399 enviado com sucesso! Protocolo registrado.`);
     } catch (err: any) {
-      alert(`Erro no S-2399: ${err.message}`);
+      alert(`Não foi possível concluir o envio. Verifique os dados e tente novamente.`);
     } finally {
       setIsTransmitting(false);
     }
@@ -1564,9 +1564,15 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       ));
       setSelectedWorker((prev: any) => prev ? { ...prev, s2399_status: status, s2399_recibo: recibo } : null);
 
-      if (status === 'SUCESSO') alert('S-2399 processado com SUCESSO!');
-      else alert('Erro ao processar S-2399.');
+      if (status === 'SUCESSO') {
+        alert('S-2399 processado com SUCESSO! O recibo foi gerado.');
+      } else if (status === 'PROCESSANDO') {
+        alert('O eSocial ainda está processando o lote. Por favor, aguarde mais alguns segundos e tente consultar novamente.');
+      } else {
+        alert(`Ocorreu um problema no processamento. Mensagem: ${response.message || 'Erro desconhecido'}`);
+      }
     } catch (err: any) {
+      console.error('Erro na consulta:', err);
       alert(`Erro na consulta S-2399: ${err.message}`);
     } finally {
       setIsTransmitting(false);
@@ -3017,11 +3023,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             <div className="mt-8 space-y-6">
               <button 
                 onClick={selectedWorker.s2399_status && selectedWorker.s2399_status !== 'ERRO' && selectedWorker.s2399_status !== 'PENDENTE' ? handleConsultS2399 : handleTransmitS2399}
+                onClick={selectedWorker.s2399_status === 'PROCESSANDO' ? handleConsultS2399 : handleTransmitS2399}
                 disabled={isTransmitting}
                 className={cn(
                   "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
                   isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
-                  selectedWorker.s2399_status === 'SUCESSO' ? "bg-primary hover:bg-blue-700 text-white shadow-primary/20" :
+                  selectedWorker.s2399_status === 'SUCESSO' ? "bg-primary text-white shadow-primary/20" :
+                  selectedWorker.s2399_status === 'PROCESSANDO' ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20" :
                   "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
@@ -3034,13 +3042,26 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   <>
                     <Send className="h-6 w-6" />
                     {selectedWorker.s2399_status === 'SUCESSO' 
-                      ? 'Consultar Status / Recibo' 
-                      : selectedWorker.s2399_status === 'ERRO' 
-                        ? 'Tentar Transmitir Novamente'
-                        : 'Transmitir Evento S-2399'}
+                      ? 'Encerrado com Sucesso' 
+                      : selectedWorker.s2399_status === 'PROCESSANDO'
+                        ? 'Consultar Retorno do Governo'
+                        : selectedWorker.s2399_status === 'ERRO' 
+                          ? 'Tentar Transmitir Novamente'
+                          : 'Transmitir Evento S-2399'}
                   </>
                 )}
               </button>
+              {selectedWorker.s2399_status === 'PROCESSANDO' && (
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 mt-4 animate-pulse">
+                  <div className="flex items-center gap-3 text-blue-400 mb-2">
+                    <History className="h-5 w-5" />
+                    <span className="font-bold text-sm uppercase tracking-widest">Aguardando Resposta</span>
+                  </div>
+                  <p className="text-blue-100/60 text-xs">
+                    O evento já foi recebido pelo governo. Clique no botão acima para verificar se o recibo oficial já foi gerado.
+                  </p>
+                </div>
+              )}
               {renderEventLog({ status: selectedWorker.s2399_status, protocolo: selectedWorker.s2399_protocolo, recibo: selectedWorker.s2399_recibo, resposta_governo: selectedWorker.s2399_resposta_governo }, 'S-2399', selectedWorker.cpf)}
             </div>
           </div>

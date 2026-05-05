@@ -9,8 +9,18 @@ export function RegularizationView() {
   const { user } = useAuth();
   const [regularizations, setRegularizations] = useState<INSSRegularization[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(() => {
+    return sessionStorage.getItem('selectedRegularizationId');
+  });
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    if (selectedId) {
+      sessionStorage.setItem('selectedRegularizationId', selectedId);
+    } else {
+      sessionStorage.removeItem('selectedRegularizationId');
+    }
+  }, [selectedId]);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
