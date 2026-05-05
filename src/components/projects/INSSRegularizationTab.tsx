@@ -3144,8 +3144,27 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     <button 
                       onClick={async () => {
                         if (!confirm('Deseja realmente resetar o status deste evento? Use apenas se estiver travado.')) return;
-                        await supabase.from('esocial_events').delete().eq('cpf_trabalhador', selectedWorker.cpf).eq('tipo_evento', 'S-2399');
-                        window.location.reload();
+                        const { error: delError } = await supabase
+                          .from('esocial_events')
+                          .delete()
+                          .eq('cpf_trabalhador', selectedWorker.cpf)
+                          .eq('tipo_evento', 'S-2399')
+                          .eq('regularization_id', inssRegularization!.id);
+                        
+                        if (delError) {
+                          alert(`Erro ao resetar: ${delError.message}`);
+                          return;
+                        }
+                        
+                        // Limpar o sessionStorage para evitar restore do estado travado
+                        sessionStorage.removeItem(`selectedWorkerId_${projectId}`);
+                        sessionStorage.removeItem(`currentRegularizationView_${projectId}`);
+                        
+                        // Atualizar estado local sem recarregar
+                        const resetData = { s2399_status: undefined, s2399_protocolo: undefined, s2399_recibo: undefined, s2399_resposta_governo: undefined };
+                        setWorkers(prev => prev.map(w => w.id === selectedWorker.id ? { ...w, ...resetData } : w));
+                        setSelectedWorker((prev: any) => prev ? { ...prev, ...resetData } : null);
+                        alert('Status resetado com sucesso! Agora você pode transmitir novamente.');
                       }}
                       className="text-[10px] font-bold text-red-400 hover:text-red-300 underline uppercase tracking-tighter"
                     >
