@@ -714,53 +714,6 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
     setIsTransmitting(true);
     try {
-      // ETAPA 4 - GERAR EVENTO (MOCKUP XML)
-      const eventId = `ID${indRetif}${selectedWorker.cpf.replace(/\D/g, '')}${new Date().getTime()}`;
-      const protocoloInicial = `PRT.${Math.random().toString(36).substring(7).toUpperCase()}`;
-      const xmlMockup = `<?xml version="1.0" encoding="UTF-8"?><eSocial xmlns="http://www.esocial.gov.br/schema/evt/evtTSVInicio/v_S_01_01_00"><evtTSVInicio Id="${eventId}"><ideEvento><indRetif>${indRetif}</indRetif>${nrRecibo ? `<nrRecibo>${nrRecibo}</nrRecibo>` : ''}</ideEvento></evtTSVInicio></eSocial>`;
-
-      let eventIdInDb = esocialStatus?.id;
-
-      // Se NÃO for retificação e já temos um registro, vamos ATUALIZAR em vez de inserir novo
-      if (indRetif === 1 && eventIdInDb) {
-        const { error: updateError } = await supabase
-          .from('esocial_events')
-          .update({
-            xml_enviado: xmlMockup,
-            protocolo: protocoloInicial,
-            status: 'PROCESSANDO',
-            resposta_governo: {
-              envio_codigo: '201',
-              envio_mensagem: 'Lote recebido com sucesso (Reenvio).'
-            },
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', eventIdInDb);
-        
-        if (updateError) throw updateError;
-      } else {
-        // É retificação ou primeiro envio: Criamos um NOVO registro
-        const { data: eventData, error: eventError } = await supabase
-          .from('esocial_events')
-          .insert({
-            regularization_id: inssRegularization.id,
-            tipo_evento: 'S-2300',
-            cpf_trabalhador: selectedWorker.cpf,
-            xml_enviado: xmlMockup,
-            protocolo: protocoloInicial,
-            status: 'PROCESSANDO',
-            resposta_governo: {
-              envio_codigo: '201',
-              envio_mensagem: 'Lote recebido com sucesso.'
-            }
-          })
-          .select()
-          .single();
-
-        if (eventError) throw eventError;
-        eventIdInDb = eventData.id;
-      }
-
       // ETAPA 5, 6, 7 - ASSINATURA E ENVIO (REAL VIA BACKEND)
       const { data: response, error: fnError } = await invokeProxy({
         body: {

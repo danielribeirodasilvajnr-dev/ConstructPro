@@ -334,7 +334,7 @@ app.post('/esocial', async (req, res) => {
     // FIX #3: Persistir protocolo, xml_assinado e status no Supabase após envio bem-sucedido
     // Isso evita perda de protocolo por falha de rede ou reload da página no frontend
     if (protocolo && regularizationId) {
-      const workerCpf = (reqEventData.workerCpf || '').replace(/\D/g, '') || null;
+      const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '') || null;
       const { data: existingEvt } = await supabase
         .from('esocial_events')
         .select('id')
