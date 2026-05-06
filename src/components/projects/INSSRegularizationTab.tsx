@@ -1571,7 +1571,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         }
       });
 
-      // Update worker with S2399 status locally
+      // Atualiza UI para PROCESSANDO imediatamente
       const updatedData = { 
         s2399_status: 'PROCESSANDO', 
         s2399_protocolo: response.protocolo,
@@ -1584,15 +1584,77 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       setWorkers(prev => prev.map(w => 
         w.id === selectedWorker.id ? { ...w, ...updatedData } : w
       ));
-      
       setSelectedWorker((prev: any) => prev ? { ...prev, ...updatedData } : null);
 
-      alert(`Lote S-2399 enviado com sucesso! Protocolo registrado.`);
+      // ✅ AUTO-POLLING: aguarda 3s e consulta em loop até SUCESSO ou ERRO
+      await pollS2399Result(response.protocolo, selectedWorker);
+
     } catch (err: any) {
-      alert(`Não foi possível concluir o envio. Verifique os dados e tente novamente.`);
+      alert(`Não foi possível concluir o envio. Verifique os dados e tente novamente.\n\nDetalhe: ${err.message}`);
     } finally {
       setIsTransmitting(false);
     }
+  };
+
+  /**
+   * Polling automático do resultado S-2399.
+   * Aguarda 3s iniciais, depois consulta de 4 em 4s por até 8 tentativas.
+   */
+  const pollS2399Result = async (protocolo: string, worker: Worker) => {
+    const MAX_ATTEMPTS = 8;
+    const INITIAL_DELAY = 3000;  // 3s antes da 1ª consulta
+    const INTERVAL = 4000;       // 4s entre tentativas
+
+    await new Promise(r => setTimeout(r, INITIAL_DELAY));
+
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const { data: pollRes, error: pollErr } = await invokeProxy({
+          body: { action: 'CONSULT', protocolo, regularizationId: inssRegularization!.id }
+        });
+
+        if (!pollErr && pollRes?.success) {
+          const { status, recibo, message } = pollRes;
+
+          const consultUpdate = {
+            s2399_status: status,
+            s2399_recibo: recibo,
+            s2399_resposta_governo: {
+              recibo_codigo: status === 'SUCESSO' ? '201' : '101',
+              recibo_mensagem: message || (status === 'SUCESSO' ? 'Processado com sucesso' : 'Aguardando processamento...')
+            }
+          };
+
+          setWorkers(prev => prev.map(w =>
+            w.id === worker.id ? { ...w, ...consultUpdate } : w
+          ));
+          setSelectedWorker((prev: any) => prev ? { ...prev, ...consultUpdate } : null);
+
+          if (status === 'SUCESSO' || status === 'ERRO') {
+            await supabase.from('esocial_events')
+              .update({ status, recibo, resposta_governo: consultUpdate.s2399_resposta_governo })
+              .eq('cpf_trabalhador', worker.cpf)
+              .eq('tipo_evento', 'S-2399')
+              .eq('regularization_id', inssRegularization!.id);
+
+            if (status === 'SUCESSO') {
+              alert(`✅ S-2399 processado com SUCESSO!\nRecibo: ${recibo}`);
+            } else {
+              alert(`❌ eSocial retornou ERRO no processamento.\nMensagem: ${message || 'Erro desconhecido'}`);
+            }
+            return; // Para o polling
+          }
+        }
+      } catch (pollEx) {
+        console.warn(`[S-2399 Poll] Tentativa ${attempt}: erro, tentando novamente...`);
+      }
+
+      if (attempt < MAX_ATTEMPTS) {
+        await new Promise(r => setTimeout(r, INTERVAL));
+      }
+    }
+    // Esgotou tentativas — usuário pode clicar manualmente
+    console.info('[S-2399 Poll] Limite atingido. Use o botão Consultar.');
   };
 
   const handleConsultS2399 = async () => {
@@ -1600,19 +1662,17 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     setIsTransmitting(true);
     try {
       const { data: response, error: fnError } = await invokeProxy({
-        body: { action: 'CONSULT', protocolo: selectedWorker.s2399_protocolo, regularizationId: inssRegularization.id }
+        body: { action: 'CONSULT', protocolo: selectedWorker.s2399_protocolo, regularizationId: inssRegularization!.id }
       });
 
       if (fnError) {
         throw new Error(`Erro de conexão com o Proxy: ${fnError.message || 'Verifique se o servidor Proxy (3005) está rodando.'}`);
       }
-
       if (!response || !response.success) {
         throw new Error(response?.error || 'O servidor Proxy não retornou uma resposta válida.');
       }
 
       const { status, recibo, message } = response;
-
       const consultUpdate = { 
         s2399_status: status, 
         s2399_recibo: recibo,
@@ -1627,12 +1687,21 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       ));
       setSelectedWorker((prev: any) => prev ? { ...prev, ...consultUpdate } : null);
 
+      // Persiste resultado final no DB
+      if (status === 'SUCESSO' || status === 'ERRO') {
+        await supabase.from('esocial_events')
+          .update({ status, recibo, resposta_governo: consultUpdate.s2399_resposta_governo })
+          .eq('cpf_trabalhador', selectedWorker.cpf)
+          .eq('tipo_evento', 'S-2399')
+          .eq('regularization_id', inssRegularization!.id);
+      }
+
       if (status === 'SUCESSO') {
-        alert('S-2399 processado com SUCESSO! O recibo foi gerado.');
+        alert(`✅ S-2399 processado com SUCESSO!\nRecibo: ${recibo}`);
       } else if (status === 'PROCESSANDO') {
-        alert('O eSocial ainda está processando o lote. Por favor, aguarde mais alguns segundos e tente consultar novamente.');
+        alert('O eSocial ainda está processando o lote. Aguarde alguns segundos e tente novamente.');
       } else {
-        alert(`Ocorreu um problema no processamento. Mensagem: ${response.message || 'Erro desconhecido'}`);
+        alert(`❌ Ocorreu um problema no processamento.\nMensagem: ${message || 'Erro desconhecido'}`);
       }
     } catch (err: any) {
       console.error('Erro na consulta:', err);
@@ -3119,7 +3188,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 {isTransmitting ? (
                   <>
                     <Loader2 className="h-6 w-6 animate-spin" />
-                    {selectedWorker.s2399_status === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
+                    {selectedWorker.s2399_status === 'PROCESSANDO' 
+                      ? 'Consultando governo...' 
+                      : 'Enviando e aguardando resultado...'}
                   </>
                 ) : (
                   <>
