@@ -456,7 +456,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
           </div>
         ) : (
           measurements.map((m) => {
-            const totalValue = (m.items || []).reduce((acc: number, mi: any) => {
+            const totalValue = (m.measurement_items || []).reduce((acc: number, mi: any) => {
               const budgetItem = budgetItems.find(bi => bi.id === mi.budget_item_id);
               return acc + (Number(mi.quantity) * Number(budgetItem?.unit_cost || 0));
             }, 0);

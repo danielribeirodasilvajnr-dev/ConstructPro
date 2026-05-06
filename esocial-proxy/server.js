@@ -142,20 +142,39 @@ app.post('/esocial', async (req, res) => {
 
       const statusMatch = xmlRes.match(/<cdResposta>([^<]+)<\/cdResposta>/);
       const reciboMatch = xmlRes.match(/<nrRecibo>([^<]+)<\/nrRecibo>/);
-      const msgMatch = xmlRes.match(/<dscOcorrencia>([^<]+)<\/dscOcorrencia>/);
       const cdRetornoEvt = xmlRes.match(/<cdRetornoEvt>([^<]+)<\/cdRetornoEvt>/);
+
+      // FIX #4: Captura TODAS as ocorrências de erro do governo, não apenas a primeira
+      const ocorrencias = [];
+      const ocorrenciaRegex = /<ocorrencia>.*?<codigo>([^<]+)<\/codigo>.*?<descricao>([^<]+)<\/descricao>.*?<tipo>([^<]+)<\/tipo>.*?<\/ocorrencia>/gs;
+      let ocMatch;
+      while ((ocMatch = ocorrenciaRegex.exec(xmlRes)) !== null) {
+        ocorrencias.push({ codigo: ocMatch[1], descricao: ocMatch[2], tipo: ocMatch[3] });
+      }
+      // Fallback para tag legada dscOcorrencia
+      const msgMatchLegacy = xmlRes.match(/<dscOcorrencia>([^<]+)<\/dscOcorrencia>/);
+      const msgMatch = ocorrencias.length === 0 ? msgMatchLegacy : null;
 
       const cdResposta = statusMatch ? statusMatch[1] : '0';
       const cdEvt = cdRetornoEvt ? cdRetornoEvt[1] : null;
       
-      // 201 = Lote processado com sucesso (pode ter eventos com erro dentro)
-      // 101/202 = Em processamento
-      // Outros = Erro no lote
+      // Mapeamento completo de códigos de retorno do eSocial
+      // cdResposta = código do lote | cdEvt = código do evento individual
+      const CODIGOS_ERRO_CONHECIDOS = {
+        '411': '⛔ Assinante Inválido — O certificado usado não possui procuração eletrônica para enviar este evento, ou não é representante legal do empregador. Acesse o portal eSocial e cadastre a procuração para este CPF.',
+        '401': '✅ Evento em Duplicidade — O eSocial já possui este evento registrado com os mesmos dados (CPF, Matrícula, Data de Término). Isso indica que o evento foi enviado e ACEITO anteriormente com sucesso. Nenhuma ação necessária.',
+        '748': '⛔ Protocolo Inválido — O número de protocolo informado não existe ou pertence a outro envio. Verifique o protocolo gerado no momento do envio.',
+        '501': '⛔ Erro de preenchimento na consulta — Verifique o protocolo enviado.',
+        '403': '⛔ Acesso negado — Certificado sem permissão para acessar os dados deste empregador.',
+        '422': '⛔ Erro de validação de schema — O XML enviado não está em conformidade com o leiaute vigente do eSocial.',
+        '999': '⛔ Erro interno do governo — Tente novamente em alguns minutos.',
+      };
+
       let status;
       if (cdResposta === '201') {
-        // Lote processado - verificar se o evento dentro teve sucesso ou erro
+        // Lote processado — verificar código do evento individual
         if (cdEvt && cdEvt !== '1') {
-          status = 'ERRO'; // Evento rejeitado pelo governo
+          status = 'ERRO';
         } else {
           status = 'SUCESSO';
         }
@@ -164,14 +183,63 @@ app.post('/esocial', async (req, res) => {
       } else {
         status = 'ERRO';
       }
+
+      // Verifica código 411 nas ocorrências mesmo quando cdResposta = 201
+      const has411 = ocorrencias.some(o => o.codigo === '411') ||
+                     xmlRes.includes('<cdRetornoEvt>411</cdRetornoEvt>');
+      if (has411) {
+        status = 'ERRO';
+        console.warn('[AVISO] Erro 411 detectado — Assinante Inválido/Sem Procuração Eletrônica');
+      }
+
+      // Verifica código 401 — evento duplicado = já foi aceito anteriormente com SUCESSO
+      // Comportamento correto: tratar como SUCESSO, não como ERRO
+      const has401Duplicidade = (ocorrencias.some(o => o.codigo === '401') ||
+                     xmlRes.includes('<cdRetornoEvt>401</cdRetornoEvt>')) &&
+                     xmlRes.toLowerCase().includes('duplicidade');
+      if (has401Duplicidade) {
+        status = 'SUCESSO'; // Evento já existe no eSocial = foi enviado com sucesso antes
+        console.log('[INFO] Erro 401 de duplicidade detectado — evento já registrado no eSocial. Tratando como SUCESSO.');
+      }
       
       const recibo = reciboMatch ? reciboMatch[1] : null;
-      const message = msgMatch ? msgMatch[1] : (status === 'SUCESSO' ? 'Processado com sucesso' : status === 'ERRO' ? `Erro do governo (código ${cdResposta}/${cdEvt || 'N/A'})` : 'Aguardando processamento...');
+      // Monta mensagem final com todas as ocorrências + descrições amigáveis
+      let message;
+      if (has411) {
+        // Erro 411 tem mensagem explicativa especial com orientação de ação
+        message = CODIGOS_ERRO_CONHECIDOS['411'];
+      } else if (ocorrencias.length > 0) {
+        // Para cada ocorrência, substitui pelo texto amigável se houver mapeamento
+        message = ocorrencias.map(o => {
+          const descAmigavel = CODIGOS_ERRO_CONHECIDOS[o.codigo];
+          return descAmigavel ? descAmigavel : `[${o.codigo}] ${o.descricao}`;
+        }).join(' | ');
+      } else if (msgMatch) {
+        message = msgMatch[1];
+      } else if (status === 'ERRO' && CODIGOS_ERRO_CONHECIDOS[cdResposta]) {
+        message = CODIGOS_ERRO_CONHECIDOS[cdResposta];
+      } else {
+        message = status === 'SUCESSO' ? 'Processado com sucesso' : status === 'ERRO' ? `Erro do governo (código ${cdResposta}/${cdEvt || 'N/A'})` : 'Aguardando processamento...';
+      }
 
-      console.log(`[DEBUG] Status: ${status}, cdResposta: ${cdResposta}, cdEvt: ${cdEvt}, Recibo: ${recibo}, Msg: ${message}`);
+      console.log(`[DEBUG] Status: ${status}, cdResposta: ${cdResposta}, cdEvt: ${cdEvt}, Recibo: ${recibo}`);
+      if (ocorrencias.length > 0) console.log(`[DEBUG] Ocorrências governo:`, JSON.stringify(ocorrencias));
+
+      // Atualiza esocial_events com resultado da consulta se houver protocolo
+      if (req.body.protocolo && req.body.regularizationId) {
+        const updatePayload = { status, updated_at: new Date().toISOString() };
+        if (recibo) updatePayload.recibo = recibo;
+        if (ocorrencias.length > 0) updatePayload.resposta_governo = ocorrencias;
+        if (xmlRes) updatePayload.xml_retorno = xmlRes.substring(0, 10000); // Limita tamanho
+        await supabase.from('esocial_events')
+          .update(updatePayload)
+          .eq('regularization_id', req.body.regularizationId)
+          .eq('protocolo', req.body.protocolo);
+        console.log(`[PERSIST] Consulta persistida para protocolo: ${req.body.protocolo}, Status: ${status}`);
+      }
 
       // SECURITY: Return only necessary fields, never the full XML response
-      return res.json({ success: true, status, recibo, message });
+      return res.json({ success: true, status, recibo, message, ocorrencias });
     }
 
     // SECURITY: Sanitize all input data before XML generation
@@ -192,10 +260,11 @@ app.post('/esocial', async (req, res) => {
     const empCpfCnpj = (eventData.proprietarioCpfCnpj || '25502713865').replace(/\D/g, '');
 
     // Captura a data local ajustada para o fuso do Brasil (GMT-3)
+    // FIX #1: brDate agora é usado no timestamp do eventId (antes usava UTC puro)
     const now = new Date();
     const offset = -3; // Brasil (Brasília)
     const brDate = new Date(now.getTime() + (offset * 3600000));
-    const timestamp = now.toISOString().replace(/[-:T.Z]/g, '').substring(0, 14);
+    const timestamp = brDate.toISOString().replace(/[-:T.Z]/g, '').substring(0, 14);
     const rnd = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
     const empTpInsc = empCpfCnpj.length <= 11 ? '2' : '1';
     const eventId = `ID${empTpInsc}${empCpfCnpj.padEnd(14, '0')}${timestamp}${rnd}`;
@@ -224,8 +293,10 @@ app.post('/esocial', async (req, res) => {
     } else if (eventType === 'S-2399') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtTSVTermino/v_S_01_03_00';
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
-      const brToday = new Date().toLocaleDateString('en-CA'); // Retorna YYYY-MM-DD local
-      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVTermino Id="${eventId}"><ideEvento><indRetif>1</indRetif><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTrabSemVinculo><cpfTrab>${workerCpf}</cpfTrab><matricula>${eventData.matricula || '001'}</matricula></ideTrabSemVinculo><infoTSVTermino><dtTerm>${brToday}</dtTerm><mtvDesligTSV>${eventData.mtvDesligTSV || '11'}</mtvDesligTSV></infoTSVTermino></evtTSVTermino></eSocial>`;
+      // FIX #2: Usa brDate (já calculado em BRT) para dtTerm — determinístico em qualquer ambiente
+      const brToday = brDate.toISOString().split('T')[0];
+      const dtTermFinal = eventData.dtTerm || brToday; // Permite sobrescrever via payload
+      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVTermino Id="${eventId}"><ideEvento><indRetif>1</indRetif><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTrabSemVinculo><cpfTrab>${workerCpf}</cpfTrab><matricula>${eventData.matricula || '001'}</matricula></ideTrabSemVinculo><infoTSVTermino><dtTerm>${dtTermFinal}</dtTerm><mtvDesligTSV>${eventData.mtvDesligTSV || '11'}</mtvDesligTSV></infoTSVTermino></evtTSVTermino></eSocial>`;
     } else if (eventType === 'S-1200') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtRemun/v_S_01_03_00';
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
@@ -259,6 +330,45 @@ app.post('/esocial', async (req, res) => {
     const xmlRes = response.data;
     const protMatch = xmlRes.match(/<protocoloEnvio>([^<]+)<\/protocoloEnvio>/);
     const protocolo = protMatch ? protMatch[1] : null;
+
+    // FIX #3: Persistir protocolo, xml_assinado e status no Supabase após envio bem-sucedido
+    // Isso evita perda de protocolo por falha de rede ou reload da página no frontend
+    if (protocolo && regularizationId) {
+      const workerCpf = (reqEventData.workerCpf || '').replace(/\D/g, '') || null;
+      const { data: existingEvt } = await supabase
+        .from('esocial_events')
+        .select('id')
+        .eq('regularization_id', regularizationId)
+        .eq('tipo_evento', eventType)
+        .eq('cpf_trabalhador', workerCpf || '')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingEvt?.id) {
+        // Atualiza o registro existente com o protocolo recém-gerado
+        await supabase.from('esocial_events').update({
+          protocolo,
+          xml_assinado: xmlAssinado,
+          status: 'ENVIADO',
+          ide_evento_id: eventId,
+          updated_at: new Date().toISOString()
+        }).eq('id', existingEvt.id);
+        console.log(`[PERSIST] Evento ${eventType} atualizado. Protocolo: ${protocolo}`);
+      } else {
+        // Cria novo registro de evento
+        await supabase.from('esocial_events').insert({
+          regularization_id: regularizationId,
+          tipo_evento: eventType,
+          cpf_trabalhador: workerCpf,
+          xml_assinado: xmlAssinado,
+          protocolo,
+          status: 'ENVIADO',
+          ide_evento_id: eventId
+        });
+        console.log(`[PERSIST] Evento ${eventType} registrado. Protocolo: ${protocolo}`);
+      }
+    }
 
     // SECURITY: Return only protocol, never the full sensitive response
     res.json({ success: true, protocolo });

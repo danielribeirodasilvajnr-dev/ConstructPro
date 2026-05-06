@@ -31,7 +31,9 @@ import {
   Wallet,
   History,
   Building2,
-  RefreshCw
+  RefreshCw,
+  Unlock,
+  Settings
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
@@ -127,7 +129,7 @@ async function invokeProxy(options: any) {
 
 export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh, readOnly, isStandalone }: INSSRegularizationTabProps) {
   const { user } = useAuth();
-  const [currentView, setCurrentView] = useState<'summary' | 'management' | 'worker_form' | 's2300_view' | 's1200_view' | 's1210_view' | 's1298_view' | 's1000_view' | 's1005_view' | 's1010_view' | 's1020_view' | 's2399_view'>(() => {
+  const [currentView, setCurrentView] = useState<'summary' | 'management' | 'worker_form' | 's2300_view' | 's1200_view' | 's1210_view' | 's1298_view' | 's1299_view' | 's1000_view' | 's1005_view' | 's1010_view' | 's1020_view' | 's2399_view'>(() => {
     return (sessionStorage.getItem(`currentRegularizationView_${projectId}`) as any) || 'summary';
   });
 
@@ -844,6 +846,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       setIsTransmitting(false);
     }
   };
+
 
   const handleTransmitS1000 = async () => {
     if (!inssRegularization || isTransmitting) return;
@@ -1573,7 +1576,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       // Atualiza UI para PROCESSANDO imediatamente
       const updatedData = { 
-        s2399_status: 'PROCESSANDO', 
+        s2399_status: 'PROCESSANDO' as const, 
         s2399_protocolo: response.protocolo,
         s2399_resposta_governo: {
           envio_codigo: '201',

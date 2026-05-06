@@ -38,7 +38,7 @@ interface ProjectsViewProps {
 export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsViewProps) {
   const { user } = useAuth();
   const { projects, loading: loadingProjects, error, saveProject, deleteProject, refresh: refreshProjects } = useProjects();
-  const [activeTab, setActiveTab] = useState<'orcamento' | 'cronograma' | 'financeiro' | 'diario' | 'colaboradores' | 'medicoes'>('orcamento');
+  const [activeTab, setActiveTab] = useState<'orcamento' | 'cronograma' | 'financeiro' | 'concorrencia' | 'diario' | 'colaboradores' | 'medicoes'>('orcamento');
 
   // Modals for Projects
   const [isModalOpen, setIsModalOpen] = useState(false);
