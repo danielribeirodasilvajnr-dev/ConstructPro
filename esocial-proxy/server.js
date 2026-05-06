@@ -225,7 +225,7 @@ app.post('/esocial', async (req, res) => {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtTSVTermino/v_S_01_03_00';
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
       const brToday = new Date().toLocaleDateString('en-CA'); // Retorna YYYY-MM-DD local
-      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVTermino Id="${eventId}"><ideEvento><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><trabalhador><cpfTrab>${workerCpf}</cpfTrab></trabalhador><infoTSVTermino><dtTerm>${brToday}</dtTerm></infoTSVTermino></evtTSVTermino></eSocial>`;
+      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVTermino Id="${eventId}"><ideEvento><indRetif>1</indRetif><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTrabSemVinculo><cpfTrab>${workerCpf}</cpfTrab><matricula>${eventData.matricula || '001'}</matricula></ideTrabSemVinculo><infoTSVTermino><dtTerm>${brToday}</dtTerm><mtvDesligTSV>${eventData.mtvDesligTSV || '11'}</mtvDesligTSV></infoTSVTermino></evtTSVTermino></eSocial>`;
     } else if (eventType === 'S-1200') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtRemun/v_S_01_03_00';
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
