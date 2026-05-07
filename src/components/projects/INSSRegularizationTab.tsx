@@ -795,8 +795,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             workerCpf: selectedWorker.cpf,
             workerNome: selectedWorker.nome,
             workerSexo: selectedWorker.sexo || 'M',
-            workerCorPele: selectedWorker.raca_cor || '1',
-            workerEscolaridade: selectedWorker.grau_instrucao || '07',
+            workerCorPele: selectedWorker.cor_pele || '1',
+            workerEscolaridade: selectedWorker.escolaridade || '07',
             workerNascimento: selectedWorker.nascimento,
             workerPaisNascimento: selectedWorker.pais_nascimento || '105',
             workerLogradouro: selectedWorker.logradouro,
@@ -831,10 +831,18 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       };
 
       // Atualiza estado local imediatamente para feedback na UI
-      setEsocialStatus(prev => ({
-        ...(prev || {}),
-        ...updateData
-      }));
+      setEsocialStatus(prev => prev ? {
+        ...prev,
+        status: 'PROCESSANDO',
+        protocolo: protocolo,
+        resposta_governo: updateData.resposta_governo
+      } : {
+        status: 'PROCESSANDO',
+        protocolo: protocolo,
+        resposta_governo: updateData.resposta_governo,
+        tipo_evento: 'S-2300',
+        cpf_trabalhador: selectedWorker.cpf
+      });
       
       setSelectedWorker((prev: any) => prev ? { ...prev, ...updateData } : null);
 
