@@ -131,6 +131,24 @@ export const ESOCIAL_ERRORS: Record<string, Partial<ESocialDiagnostic>> = {
     nivel: 'CRITICO',
     bloqueiaTransmissao: true,
     temporario: false
+  },
+  '411': {
+    descricao: 'Assinante Inválido / Sem Procuração.',
+    causas: ['Certificado não é do empregador', 'Falta de procuração eletrônica no portal e-CAC para o eSocial', 'CNPJ/CPF do transmissor não autorizado'],
+    solucao: ['Acessar o portal e-CAC e cadastrar a procuração para o eSocial', 'Verificar se o certificado enviado é do titular ou procurador'],
+    tipo: 'CADASTRO',
+    nivel: 'CRITICO',
+    bloqueiaTransmissao: true,
+    temporario: false
+  },
+  '422': {
+    descricao: 'Erro de Validação de Schema / Enumeration.',
+    causas: ['Valor fora do padrão esperado pelo eSocial', 'Código de enumeração inválido (ex: mtvDesligTSV)', 'Data em formato incorreto', 'Campo obrigatório preenchido incorretamente'],
+    solucao: ['Revisar os campos do formulário (Datas, Motivos, Categorias)', 'Verificar se o valor informado está na lista permitida pelo governo'],
+    tipo: 'SCHEMA',
+    nivel: 'CRITICO',
+    bloqueiaTransmissao: true,
+    temporario: false
   }
 };
 
@@ -237,8 +255,12 @@ export function diagnoseESocialError(respostaGoverno: any, eventoTipo?: string):
 
   // 3. Prioridade 3: Descrição textual (heurística se não encontrou código claro)
   if (diagnostic.tipo === 'DESCONHECIDO') {
-    if (msg.toLowerCase().includes('schema') || msg.toLowerCase().includes('cvc-')) {
-      Object.assign(diagnostic, ESOCIAL_ERRORS['402']);
+    if (msg.toLowerCase().includes('schema') || msg.toLowerCase().includes('cvc-') || msg.toLowerCase().includes('enumeration') || msg.toLowerCase().includes('datatype')) {
+      Object.assign(diagnostic, ESOCIAL_ERRORS['402'] || ESOCIAL_ERRORS['422']);
+      if (msg.toLowerCase().includes('enumeration')) {
+        diagnostic.descricao = 'Valor inválido para o campo (Erro de Enumeração).';
+        diagnostic.causas.push('O código enviado não é reconhecido pelo eSocial para este campo.');
+      }
     } else if (msg.toLowerCase().includes('cpf')) {
       Object.assign(diagnostic, ESOCIAL_REGRAS['REGRA_VALIDA_CPF']);
     } else if (msg.toLowerCase().includes('rubrica')) {

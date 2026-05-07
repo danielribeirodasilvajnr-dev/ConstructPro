@@ -15,7 +15,7 @@ const app = express();
 // SECURITY: Restrict CORS to local development ports
 const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -100,7 +100,7 @@ function assinarXml(xmlStr, privateKeyPem, certPem) {
 
 app.post('/esocial', async (req, res) => {
   try {
-    const { action, eventType: reqEventType, eventData: reqEventData = {}, regularizationId } = req.body;
+    const { action, eventType: reqEventType, eventData: reqEventData = {}, regularizationId, indRetif, nrRecibo } = req.body;
     const eventData = { ...reqEventData };
 
     const { data: credentialsList, error: credError } = await supabase.from('esocial_credentials')
@@ -115,9 +115,9 @@ app.post('/esocial', async (req, res) => {
     const credentials = credentialsList[0];
     const certPath = credentials.certificate_url.split('esocial_files/')[1];
     console.log(`[DEBUG] Baixando certificado: ${certPath}`);
-    
+
     const { data: pfxBlob, error: downloadError } = await supabase.storage.from('esocial_files').download(certPath);
-    
+
     if (downloadError || !pfxBlob) {
       throw new Error(`Erro ao baixar certificado (${certPath}): ${downloadError?.message || 'Arquivo não encontrado'}`);
     }
@@ -128,14 +128,14 @@ app.post('/esocial', async (req, res) => {
       const { protocolo } = req.body;
       console.log(`[DEBUG] Consultando protocolo: ${protocolo}`);
       const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0"><soapenv:Body><ns:ConsultarLoteEventos><ns:consulta><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_0_0"><consultaLoteEventos><protocoloEnvio>${protocolo}</protocoloEnvio></consultaLoteEventos></eSocial></ns:consulta></ns:ConsultarLoteEventos></soapenv:Body></soapenv:Envelope>`;
-      
+
       const response = await axios.post(URL_CONSULTA, soapRequest, {
         headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0/ServicoConsultarLoteEventos/ConsultarLoteEventos"' },
         httpsAgent: new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: false, minVersion: 'TLSv1.2' }),
       });
 
       const xmlRes = response.data;
-      
+
       // Salva resposta completa para debug
       fs.writeFileSync('debug_consulta_resposta.xml', xmlRes, 'utf8');
       console.log('[DEBUG] Resposta da consulta salva em debug_consulta_resposta.xml');
@@ -157,7 +157,7 @@ app.post('/esocial', async (req, res) => {
 
       const cdResposta = statusMatch ? statusMatch[1] : '0';
       const cdEvt = cdRetornoEvt ? cdRetornoEvt[1] : null;
-      
+
       // Mapeamento completo de códigos de retorno do eSocial
       // cdResposta = código do lote | cdEvt = código do evento individual
       const CODIGOS_ERRO_CONHECIDOS = {
@@ -186,7 +186,7 @@ app.post('/esocial', async (req, res) => {
 
       // Verifica código 411 nas ocorrências mesmo quando cdResposta = 201
       const has411 = ocorrencias.some(o => o.codigo === '411') ||
-                     xmlRes.includes('<cdRetornoEvt>411</cdRetornoEvt>');
+        xmlRes.includes('<cdRetornoEvt>411</cdRetornoEvt>');
       if (has411) {
         status = 'ERRO';
         console.warn('[AVISO] Erro 411 detectado — Assinante Inválido/Sem Procuração Eletrônica');
@@ -195,13 +195,13 @@ app.post('/esocial', async (req, res) => {
       // Verifica código 401 — evento duplicado = já foi aceito anteriormente com SUCESSO
       // Comportamento correto: tratar como SUCESSO, não como ERRO
       const has401Duplicidade = (ocorrencias.some(o => o.codigo === '401') ||
-                     xmlRes.includes('<cdRetornoEvt>401</cdRetornoEvt>')) &&
-                     xmlRes.toLowerCase().includes('duplicidade');
+        xmlRes.includes('<cdRetornoEvt>401</cdRetornoEvt>')) &&
+        xmlRes.toLowerCase().includes('duplicidade');
       if (has401Duplicidade) {
         status = 'SUCESSO'; // Evento já existe no eSocial = foi enviado com sucesso antes
         console.log('[INFO] Erro 401 de duplicidade detectado — evento já registrado no eSocial. Tratando como SUCESSO.');
       }
-      
+
       const recibo = reciboMatch ? reciboMatch[1] : null;
       // Monta mensagem final com todas as ocorrências + descrições amigáveis
       let message;
@@ -267,7 +267,13 @@ app.post('/esocial', async (req, res) => {
     const timestamp = brDate.toISOString().replace(/[-:T.Z]/g, '').substring(0, 14);
     const rnd = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
     const empTpInsc = empCpfCnpj.length <= 11 ? '2' : '1';
-    const eventId = `ID${empTpInsc}${empCpfCnpj.padEnd(14, '0')}${timestamp}${rnd}`;
+    // FIX #3: O ID do evento no eSocial exige que o número de inscrição tenha 14 posições.
+    // Se for CPF (11 dígitos), deve ser completado com zeros à DIREITA (padEnd), conforme manual do desenvolvedor eSocial.
+    const empInscFormatted = empCpfCnpj.replace(/\D/g, '').padEnd(14, '0');
+    const eventId = `ID${empTpInsc}${empInscFormatted}${timestamp}${rnd}`;
+
+    console.log(`[ESOCIAL] Gerando evento ${reqEventType || action} | ID: ${eventId}`);
+    if (eventData) console.log(`[ESOCIAL] Dados do evento:`, JSON.stringify(eventData));
 
     const eventType = reqEventType || (action === 'TRANSMIT_S1000' ? 'S-1000' : 'S-2300');
     let xmlEvento = '';
@@ -289,22 +295,51 @@ app.post('/esocial', async (req, res) => {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtTSVInicio/v_S_01_03_00';
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
       const workerNome = (eventData.workerNome || '').toUpperCase();
-      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVInicio Id="${eventId}"><ideEvento><indRetif>1</indRetif><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><trabalhador><cpfTrab>${workerCpf}</cpfTrab><nmTrab>${workerNome}</nmTrab><sexo>${eventData.sexo || 'M'}</sexo><racaCor>${eventData.racaCor || '1'}</racaCor><estCiv>${eventData.estCiv || '1'}</estCiv><grauInstr>${eventData.grauInstr || '07'}</grauInstr><nascimento><dtNascto>${eventData.nascimento || '1980-03-05'}</dtNascto><paisNascto>105</paisNascto><paisNac>105</paisNac></nascimento><endereco><brasil><tpLograd>R</tpLograd><dscLograd>${eventData.logradouro || 'RUA'}</dscLograd><nrLograd>${eventData.numero || 'SN'}</nrLograd><bairro>${eventData.bairro || 'CENTRO'}</bairro><cep>${eventData.cep || '00000000'}</cep><codMunic>${eventData.codMunic || '3304557'}</codMunic><uf>${eventData.uf || 'SP'}</uf></brasil></endereco></trabalhador><infoTSVInicio><cadIni>N</cadIni><matricula>${eventData.matricula || '001'}</matricula><codCateg>${eventData.codCateg || '701'}</codCateg><dtInicio>${eventData.dtInicio || '2024-04-01'}</dtInicio><infoComplementares><cargoFuncao><nmCargo>PEDREIRO</nmCargo><CBOCargo>715210</CBOCargo></cargoFuncao></infoComplementares></infoTSVInicio></evtTSVInicio></eSocial>`;
+
+      // Mapeamento flexível para suportar nomes com ou sem prefixo 'worker'
+      const sexo = eventData.sexo || eventData.workerSexo || 'M';
+      const racaCor = eventData.racaCor || eventData.workerCorPele || '1';
+      const estCiv = eventData.estCiv || '1';
+      const grauInstr = eventData.grauInstr || eventData.workerEscolaridade || '07';
+      const nascimento = eventData.nascimento || eventData.workerNascimento || '1980-03-05';
+      const matricula = eventData.matricula || eventData.workerMatricula || '001';
+      const codCateg = eventData.codCateg || eventData.workerCategoria || '701';
+      const dtInicio = eventData.dtInicio || '2024-04-01';
+      const nmCargo = (eventData.workerCargo || eventData.nmCargo || 'PEDREIRO').toUpperCase();
+      const cboCargo = eventData.workerCbo || eventData.CBOCargo || '715210';
+
+      const logradouro = eventData.logradouro || eventData.workerLogradouro || 'RUA';
+      const numero = eventData.numero || eventData.workerNumero || 'SN';
+      const bairro = eventData.bairro || eventData.workerBairro || 'CENTRO';
+      const cep = (eventData.cep || eventData.workerCep || '00000000').replace(/\D/g, '');
+      const codMunic = eventData.codMunic || eventData.workerCodIbge || '3304557';
+      const uf = eventData.uf || eventData.workerUf || 'SP';
+
+      const ideEvento = `<ideEvento><indRetif>${indRetif || 1}</indRetif>${(indRetif == 2 && nrRecibo) ? `<nrRecibo>${nrRecibo}</nrRecibo>` : ''}<tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento>`;
+
+      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVInicio Id="${eventId}">${ideEvento}<ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><trabalhador><cpfTrab>${workerCpf}</cpfTrab><nmTrab>${workerNome}</nmTrab><sexo>${sexo}</sexo><racaCor>${racaCor}</racaCor><estCiv>${estCiv}</estCiv><grauInstr>${grauInstr}</grauInstr><nascimento><dtNascto>${nascimento}</dtNascto><paisNascto>105</paisNascto><paisNac>105</paisNac></nascimento><endereco><brasil><tpLograd>R</tpLograd><dscLograd>${logradouro}</dscLograd><nrLograd>${numero}</nrLograd><bairro>${bairro}</bairro><cep>${cep}</cep><codMunic>${codMunic}</codMunic><uf>${uf}</uf></brasil></endereco></trabalhador><infoTSVInicio><cadIni>N</cadIni><matricula>${matricula}</matricula><codCateg>${codCateg}</codCateg><dtInicio>${dtInicio}</dtInicio><infoComplementares><cargoFuncao><nmCargo>${nmCargo}</nmCargo><CBOCargo>${cboCargo}</CBOCargo></cargoFuncao></infoComplementares></infoTSVInicio></evtTSVInicio></eSocial>`;
     } else if (eventType === 'S-2399') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtTSVTermino/v_S_01_03_00';
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
+      const matricula = eventData.matricula || eventData.workerMatricula || '001';
       // FIX #2: Usa brDate (já calculado em BRT) para dtTerm — determinístico em qualquer ambiente
       const brToday = brDate.toISOString().split('T')[0];
-      const dtTermFinal = eventData.dtTerm || brToday; // Permite sobrescrever via payload
-      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVTermino Id="${eventId}"><ideEvento><indRetif>1</indRetif><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTrabSemVinculo><cpfTrab>${workerCpf}</cpfTrab><matricula>${eventData.matricula || '001'}</matricula></ideTrabSemVinculo><infoTSVTermino><dtTerm>${dtTermFinal}</dtTerm><mtvDesligTSV>${eventData.mtvDesligTSV || '11'}</mtvDesligTSV></infoTSVTermino></evtTSVTermino></eSocial>`;
+      const dtTermFinal = eventData.dtTerm || brToday; 
+      const mtvDesligTSV = String(eventData.mtvDesligTSV || '11').padStart(2, '0');
+
+      const ideEvento = `<ideEvento><indRetif>${indRetif || 1}</indRetif>${(indRetif == 2 && nrRecibo) ? `<nrRecibo>${nrRecibo}</nrRecibo>` : ''}<tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento>`;
+
+      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVTermino Id="${eventId}">${ideEvento}<ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTrabSemVinculo><cpfTrab>${workerCpf}</cpfTrab><matricula>${matricula}</matricula></ideTrabSemVinculo><infoTSVTermino><dtTerm>${dtTermFinal}</dtTerm><mtvDesligTSV>${mtvDesligTSV}</mtvDesligTSV></infoTSVTermino></evtTSVTermino></eSocial>`;
     } else if (eventType === 'S-1200') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtRemun/v_S_01_03_00';
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
-      xmlEvento = `<eSocial xmlns="${ns}"><evtRemun Id="${eventId}"><ideEvento><indRetif>1</indRetif><perApur>${eventData.period}</perApur><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTrabalhador><cpfTrab>${workerCpf}</cpfTrab><infoComplem><nmTrab>${(eventData.workerNome || 'TRABALHADOR').toUpperCase()}</nmTrab></infoComplem><dmDev><ideDmDev>1</ideDmDev><infoPerApur><ideEstabLot><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc><codLotacao>LOT01</codLotacao><remunPerApur><ideRubrica><codRubr>1000</codRubr><ideTabRubr>TAB01</ideTabRubr><vrRubr>${eventData.value || '0.00'}</vrRubr></ideRubrica></remunPerApur></ideEstabLot></infoPerApur></dmDev></ideTrabalhador></evtRemun></eSocial>`;
+      const period = eventData.period || (eventData.month && eventData.year ? `${eventData.year}-${String(eventData.month).padStart(2, '0')}` : '2024-04');
+      xmlEvento = `<eSocial xmlns="${ns}"><evtRemun Id="${eventId}"><ideEvento><indRetif>1</indRetif><perApur>${period}</perApur><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTrabalhador><cpfTrab>${workerCpf}</cpfTrab><infoComplem><nmTrab>${(eventData.workerNome || 'TRABALHADOR').toUpperCase()}</nmTrab></infoComplem><dmDev><ideDmDev>1</ideDmDev><infoPerApur><ideEstabLot><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc><codLotacao>LOT01</codLotacao><remunPerApur><ideRubrica><codRubr>1000</codRubr><ideTabRubr>TAB01</ideTabRubr><vrRubr>${eventData.value || '0.00'}</vrRubr></ideRubrica></remunPerApur></ideEstabLot></infoPerApur></dmDev></ideTrabalhador></evtRemun></eSocial>`;
     } else if (eventType === 'S-1210') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtPgtos/v_S_01_03_00';
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
-      xmlEvento = `<eSocial xmlns="${ns}"><evtPgtos Id="${eventId}"><ideEvento><perApur>${eventData.period}</perApur><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideBenef><cpfBenef>${workerCpf}</cpfBenef><infoPgto><dtPgto>${eventData.dtPgto || new Date().toISOString().split('T')[0]}</dtPgto><tpPgto>1</tpPgto><perRefer>${eventData.period}</perRefer><ideDmDev><ideDmDev>1</ideDmDev><vrLiq>${eventData.value || '0.00'}</vrLiq></ideDmDev></infoPgto></ideBenef></evtPgtos></eSocial>`;
+      const period = eventData.period || (eventData.month && eventData.year ? `${eventData.year}-${String(eventData.month).padStart(2, '0')}` : '2024-04');
+      xmlEvento = `<eSocial xmlns="${ns}"><evtPgtos Id="${eventId}"><ideEvento><perApur>${period}</perApur><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideBenef><cpfBenef>${workerCpf}</cpfBenef><infoPgto><dtPgto>${eventData.dtPgto || new Date().toISOString().split('T')[0]}</dtPgto><tpPgto>1</tpPgto><perRefer>${period}</perRefer><ideDmDev><ideDmDev>1</ideDmDev><vrLiq>${eventData.value || '0.00'}</vrLiq></ideDmDev></infoPgto></ideBenef></evtPgtos></eSocial>`;
     } else if (eventType === 'S-1298') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtReabertEvPer/v_S_01_03_00';
       xmlEvento = `<eSocial xmlns="${ns}"><evtReabertEvPer Id="${eventId}"><ideEvento><perApur>${eventData.period}</perApur><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador></evtReabertEvPer></eSocial>`;
@@ -320,7 +355,10 @@ app.post('/esocial', async (req, res) => {
     const tableEvents = ['S-1000', 'S-1005', 'S-1010', 'S-1020', 'S-1070'];
     const grupoLote = tableEvents.includes(eventType) ? '1' : '2';
 
-    const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_0"><soapenv:Body><ns:EnviarLoteEventos><ns:loteEventos><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/v1_1_1"><envioLoteEventos grupo="${grupoLote}"><ideEmpregador><tpInsc>2</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTransmissor><tpInsc>2</tpInsc><nrInsc>${transCpfCnpj}</nrInsc></ideTransmissor><eventos><evento Id="${eventId}">${xmlAssinado}</evento></eventos></envioLoteEventos></eSocial></ns:loteEventos></ns:EnviarLoteEventos></soapenv:Body></soapenv:Envelope>`;
+    const transTpInsc = transCpfCnpj.length <= 11 ? '2' : '1';
+    const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_0"><soapenv:Body><ns:EnviarLoteEventos><ns:loteEventos><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/v1_1_1"><envioLoteEventos grupo="${grupoLote}"><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTransmissor><tpInsc>${transTpInsc}</tpInsc><nrInsc>${transCpfCnpj}</nrInsc></ideTransmissor><eventos><evento Id="${eventId}">${xmlAssinado}</evento></eventos></envioLoteEventos></eSocial></ns:loteEventos></ns:EnviarLoteEventos></soapenv:Body></soapenv:Envelope>`;
+
+    console.log(`[ESOCIAL] Enviando lote para eSocial (URL: ${URL_ENVIO})`);
 
     const response = await axios.post(URL_ENVIO, soapRequest, {
       headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_0/ServicoEnviarLoteEventos/EnviarLoteEventos"' },
@@ -328,6 +366,7 @@ app.post('/esocial', async (req, res) => {
     });
 
     const xmlRes = response.data;
+    console.log(`[ESOCIAL] Resposta bruta do governo (Envio):`, xmlRes);
     const protMatch = xmlRes.match(/<protocoloEnvio>([^<]+)<\/protocoloEnvio>/);
     const protocolo = protMatch ? protMatch[1] : null;
 
@@ -335,12 +374,19 @@ app.post('/esocial', async (req, res) => {
     // Isso evita perda de protocolo por falha de rede ou reload da página no frontend
     if (protocolo && regularizationId) {
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '') || null;
-      const { data: existingEvt } = await supabase
+      const query = supabase
         .from('esocial_events')
         .select('id')
         .eq('regularization_id', regularizationId)
-        .eq('tipo_evento', eventType)
-        .eq('cpf_trabalhador', workerCpf || '')
+        .eq('tipo_evento', eventType);
+      
+      if (workerCpf) {
+        query.eq('cpf_trabalhador', workerCpf);
+      } else {
+        query.is('cpf_trabalhador', null);
+      }
+
+      const { data: existingEvt } = await query
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -387,20 +433,21 @@ app.post('/consultar', async (req, res) => {
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
-    
+
     const certPath = credentials.certificate_url.split('esocial_files/')[1];
     const { data: pfxBlob, error: downloadError } = await supabase.storage.from('esocial_files').download(certPath);
     if (downloadError || !pfxBlob) throw new Error(`Certificado não encontrado no storage: ${certPath}`);
-    
+
     const pfxBuffer = Buffer.from(await pfxBlob.arrayBuffer());
     const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0"><soapenv:Body><ns:ConsultarLoteEventos><ns:consulta><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_0_0"><consultaLoteEventos><protocoloEnvio>${protocolo}</protocoloEnvio></consultaLoteEventos></eSocial></ns:consulta></ns:ConsultarLoteEventos></soapenv:Body></soapenv:Envelope>`;
-    
+
     const response = await axios.post(URL_CONSULTA, soapRequest, {
       headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0/ServicoConsultarLoteEventos/ConsultarLoteEventos"' },
       httpsAgent: new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: false, minVersion: 'TLSv1.2' }),
     });
 
     const xmlRes = response.data;
+    console.log(`[ESOCIAL] Resposta bruta do governo (Consulta):`, xmlRes);
     const statusMatch = xmlRes.match(/<cdResposta>([^<]+)<\/cdResposta>/);
     const reciboMatch = xmlRes.match(/<nrRecibo>([^<]+)<\/nrRecibo>/);
     const msgMatch = xmlRes.match(/<dscOcorrencia>([^<]+)<\/dscOcorrencia>/);

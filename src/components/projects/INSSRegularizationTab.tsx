@@ -112,6 +112,11 @@ const CATEGORIA_OPTIONS = [
   { value: '741', label: '741 - MEI' }
 ];
 
+interface ESocialFlowState {
+  status: 'IDLE' | 'TRANSMITTING' | 'POLLING' | 'SUCCESS' | 'ERROR';
+  message: string;
+}
+
 
 // FUNÇÃO PROXY LOCAL PARA MTLS NO NODE.JS
 async function invokeProxy(options: any) {
@@ -169,8 +174,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
   // Fallback de segurança: Se a view exige um worker mas ele sumiu (refresh), volta para gestão
   useEffect(() => {
-    const viewsRequiringWorker = ['s2300_view', 's2399_view', 'worker_form'];
-    if (viewsRequiringWorker.includes(currentView) && !selectedWorkerId && !editingWorkerId) {
+    const viewsRequiringWorker = ['s2300_view', 's2399_view', 's1200_view', 's1210_view'];
+    if (viewsRequiringWorker.includes(currentView) && !selectedWorkerId) {
       setCurrentView('management');
     }
   }, [currentView, selectedWorkerId, editingWorkerId]);
@@ -252,6 +257,143 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     cpf_trabalhador: string;
     resposta_governo?: any;
   } | null>(null);
+
+  const [activeFlow, setActiveFlow] = useState<ESocialFlowState>({ status: 'IDLE', message: '' });
+
+  const executeESocialFlow = async (params: {
+    eventType: string;
+    regularizationId: string;
+    indRetif: number;
+    nrRecibo?: string | null;
+    workerId?: string;
+    eventData: any;
+    onComplete?: (result: any) => void;
+  }) => {
+    const { eventType, regularizationId, indRetif, nrRecibo, workerId, eventData, onComplete } = params;
+    
+    setActiveFlow({ status: 'TRANSMITTING', message: 'GERANDO E TRANSMITINDO...' });
+    
+    try {
+      const { data: transmitRes, error: transmitErr } = await invokeProxy({
+        body: {
+          eventType,
+          regularizationId,
+          indRetif,
+          nrRecibo,
+          eventData: {
+            ...eventData,
+            certificateCpfCnpj
+          }
+        }
+      });
+
+      if (transmitErr) throw transmitErr;
+      if (!transmitRes.success) throw new Error(transmitRes.error || 'Erro na transmissão inicial.');
+
+      const protocolo = transmitRes.protocolo;
+      setActiveFlow({ status: 'POLLING', message: 'TRANSMITIDO! AGUARDANDO GOVERNO...' });
+
+      // Sincroniza status inicial 'PROCESSANDO' no banco de dados para evitar status 'ENVIADO' travado na Auditoria
+      const workerCpf = eventData.workerCpf || null;
+      await supabase.from('esocial_events')
+        .update({ 
+          status: 'PROCESSANDO', 
+          protocolo, 
+          updated_at: new Date().toISOString() 
+        })
+        .eq('regularization_id', regularizationId)
+        .eq('tipo_evento', eventType)
+        .eq('cpf_trabalhador', workerCpf || '');
+      
+      fetchEventsHistory();
+      fetchWorkers();
+
+      let finalResult = null;
+      let attempt = 1;
+      const maxAttempts = 10;
+      const delayMs = 4000;
+
+      while (attempt <= maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        setActiveFlow(prev => ({ ...prev, message: `CONSULTANDO... (TENTATIVA ${attempt}/${maxAttempts})` }));
+        
+        const { data: consultRes, error: consultErr } = await invokeProxy({
+          body: {
+            action: 'CONSULT',
+            protocolo,
+            regularizationId
+          }
+        });
+
+        if (!consultErr && consultRes.success) {
+          if (consultRes.status !== 'PROCESSANDO') {
+            finalResult = consultRes;
+            setActiveFlow({ 
+              status: consultRes.status === 'SUCESSO' ? 'SUCCESS' : 'ERROR', 
+              message: consultRes.status === 'SUCESSO' ? 'EVENTO ACEITO!' : 'ERRO NO PROCESSAMENTO' 
+            });
+            break;
+          }
+        }
+        attempt++;
+      }
+
+      if (finalResult) {
+        const { status, recibo, message, ocorrencias } = finalResult;
+        
+        if (eventType === 'S-2300') {
+          const updated = { esocial_status: status as any, recibo, protocolo, resposta_governo: ocorrencias || { message } };
+          setWorkers(prev => prev.map(w => w.id === workerId ? { ...w, ...updated } : w));
+          if (selectedWorker?.id === workerId) setSelectedWorker(prev => prev ? { ...prev, ...updated } : null);
+        } else if (eventType === 'S-2399') {
+          const updated = { s2399_status: status as any, s2399_recibo: recibo, s2399_protocolo: protocolo, s2399_resposta_governo: ocorrencias || { message } };
+          setWorkers(prev => prev.map(w => w.id === workerId ? { ...w, ...updated } : w));
+          if (selectedWorker?.id === workerId) setSelectedWorker(prev => prev ? { ...prev, ...updated } : null);
+        } else if (eventType === 'S-1000') checkS1000Status();
+        else if (eventType === 'S-1005') checkS1005Status();
+        else if (eventType === 'S-1010') checkS1010Status();
+        else if (eventType === 'S-1020') checkS1020Status();
+
+        fetchEventsHistory();
+        fetchWorkers();
+        if (onComplete) onComplete(finalResult);
+      } else {
+        throw new Error('Tempo limite de consulta esgotado.');
+      }
+    } catch (err: any) {
+      console.error('Error in unified flow:', err);
+      setActiveFlow({ status: 'ERROR', message: 'ERRO NO PROCESSO' });
+      
+      // Marca como erro no banco de dados para não ficar 'ENVIADO' ou 'PROCESSANDO' infinitamente
+      try {
+        const workerCpf = eventData.workerCpf || null;
+        await supabase.from('esocial_events')
+          .update({ 
+            status: 'ERRO', 
+            resposta_governo: { 
+              error: err.message, 
+              phase: 'POLLING_OR_TRANSMIT',
+              diagnosis: 'TIMEOUT_OU_FALHA_CONEXAO'
+            },
+            updated_at: new Date().toISOString() 
+          })
+          .eq('regularization_id', regularizationId)
+          .eq('tipo_evento', eventType)
+          .eq('cpf_trabalhador', workerCpf || '');
+        
+        fetchEventsHistory();
+        fetchWorkers();
+      } catch (dbErr) {
+        console.error('Failed to update error status in DB:', dbErr);
+      }
+
+      alert(`Erro no processo: ${err.message}`);
+    } finally {
+      setTimeout(() => {
+        setActiveFlow(prev => (prev.status === 'SUCCESS' || prev.status === 'ERROR') ? { status: 'IDLE', message: '' } : prev);
+      }, 5000);
+    }
+  };
   const [esocialS1000Status, setEsocialS1000Status] = useState<{
     id?: string;
     status: 'PENDENTE' | 'ENVIADO' | 'PROCESSANDO' | 'SUCESSO' | 'ERRO';
@@ -313,6 +455,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     const saved = localStorage.getItem(`remunerations_${projectId}`);
     return saved ? JSON.parse(saved) : [];
   });
+
 
   // Save remunerations whenever they change
   useEffect(() => {
@@ -801,6 +944,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     }
   };
 
+
   const handleTransmitESocial = async () => {
     if (!selectedWorker || !inssRegularization || isTransmitting) return;
 
@@ -823,155 +967,66 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       return;
     }
 
-    // ETAPA 3 - CONTROLE DE DUPLICIDADE E RETIFICAÇÃO
+    // ETAPA 3 - VALIDAÇÃO DE CONSISTÊNCIA DE DADOS (ANTI-MISMATCH)
+    // Garante que o CPF na tela, no objeto selecionado e nos dados de envio sejam idênticos
+    if (selectedWorker.cpf !== selectedWorker.cpf || selectedWorker.id !== selectedWorker.id) {
+      alert('ERRO DE INTEGRIDADE: O trabalhador selecionado divergiu. Por favor, feche e abra novamente o cadastro deste trabalhador.');
+      return;
+    }
+
+    console.log(`[ESOCIAL] Iniciando fluxo S-2300 para: ${selectedWorker.nome} (${selectedWorker.cpf})`);
+
+    // ETAPA 4 - CONTROLE DE DUPLICIDADE E RETIFICAÇÃO
     let indRetif = 1;
     let nrRecibo = null;
-    let forceDuplicityError = false;
 
     if (esocialStatus && esocialStatus.status === 'SUCESSO') {
-      const wantRectify = confirm('Este trabalhador já possui um cadastro processado com sucesso no eSocial. Deseja enviar uma RETIFICAÇÃO?\n\n(Se clicar em CANCELAR, o sistema tentará enviar um novo registro e o eSocial retornará erro de DUPLICIDADE)');
-      
-      if (wantRectify) {
-        indRetif = 2;
-        nrRecibo = esocialStatus.recibo;
-      } else {
-        // O usuário escolheu enviar um novo registro (Original) mesmo já existindo. 
-        // Isso vai forçar o erro de duplicidade no simulador.
-        forceDuplicityError = true;
+      const wantRectify = confirm(`Este trabalhador (${selectedWorker.nome}) já possui um cadastro processado com sucesso no eSocial. Deseja enviar uma RETIFICAÇÃO?\n\n(Se clicar em CANCELAR, o processo será interrompido)`);
+      if (!wantRectify) return;
+      indRetif = 2;
+      nrRecibo = esocialStatus.recibo;
+    }
+
+    await executeESocialFlow({
+      eventType: 'S-2300',
+      regularizationId: inssRegularization.id,
+      indRetif,
+      nrRecibo,
+      workerId: selectedWorker.id,
+      eventData: {
+        proprietarioCpfCnpj,
+        workerCpf: selectedWorker.cpf,
+        workerNome: selectedWorker.nome,
+        workerSexo: selectedWorker.sexo || 'M',
+        workerCorPele: selectedWorker.cor_pele || '1',
+        workerEscolaridade: selectedWorker.escolaridade || '07',
+        workerNascimento: selectedWorker.nascimento,
+        workerPaisNascimento: selectedWorker.pais_nascimento || '105',
+        workerLogradouro: selectedWorker.logradouro,
+        workerNumero: selectedWorker.numero,
+        workerComplemento: selectedWorker.complemento || '',
+        workerBairro: selectedWorker.bairro,
+        workerCep: selectedWorker.cep,
+        workerCodIbge: selectedWorker.cod_ibge || '3304557',
+        workerUf: selectedWorker.uf,
+        workerMatricula: selectedWorker.matricula_esocial,
+        workerCategoria: selectedWorker.categoria,
+        workerCargo: selectedWorker.cargo_nome,
+        workerCbo: selectedWorker.cbo_cargo,
+        transmissorCpfCnpj: certificateCpfCnpj
       }
-    }
-
-    setIsTransmitting(true);
-    try {
-      // ETAPA 5, 6, 7 - ASSINATURA E ENVIO (REAL VIA BACKEND)
-      const { data: response, error: fnError } = await invokeProxy({
-        body: {
-          eventType: 'S-2300',
-          regularizationId: inssRegularization.id,
-          eventData: {
-            proprietarioCpfCnpj,
-            workerCpf: selectedWorker.cpf,
-            workerNome: selectedWorker.nome,
-            workerSexo: selectedWorker.sexo || 'M',
-            workerCorPele: selectedWorker.cor_pele || '1',
-            workerEscolaridade: selectedWorker.escolaridade || '07',
-            workerNascimento: selectedWorker.nascimento,
-            workerPaisNascimento: selectedWorker.pais_nascimento || '105',
-            workerLogradouro: selectedWorker.logradouro,
-            workerNumero: selectedWorker.numero,
-            workerComplemento: selectedWorker.complemento || '',
-            workerBairro: selectedWorker.bairro,
-            workerCep: selectedWorker.cep,
-            workerCodIbge: selectedWorker.cod_ibge || '3304557',
-            workerUf: selectedWorker.uf,
-            workerMatricula: selectedWorker.matricula_esocial,
-            workerCategoria: selectedWorker.categoria,
-            workerCargo: selectedWorker.cargo_nome,
-            workerCbo: selectedWorker.cbo_cargo,
-            transmissorCpfCnpj: certificateCpfCnpj
-          }
-        }
-      });
-
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-
-      const { protocolo } = response;
-      
-      const updateData = {
-        status: 'PROCESSANDO' as const,
-        esocial_status: 'PROCESSANDO' as const,
-        protocolo: protocolo,
-        resposta_governo: {
-          envio_codigo: '201',
-          envio_mensagem: 'Lote recebido com sucesso. Aguardando processamento.'
-        }
-      };
-
-      // Atualiza estado local imediatamente para feedback na UI
-      setEsocialStatus(prev => prev ? {
-        ...prev,
-        status: 'PROCESSANDO',
-        protocolo: protocolo,
-        resposta_governo: updateData.resposta_governo
-      } : {
-        status: 'PROCESSANDO',
-        protocolo: protocolo,
-        resposta_governo: updateData.resposta_governo,
-        tipo_evento: 'S-2300',
-        cpf_trabalhador: selectedWorker.cpf
-      });
-      
-      setSelectedWorker((prev: any) => prev ? { ...prev, ...updateData } : null);
-
-      setWorkers(prev => prev.map(w => 
-        w.id === selectedWorker.id 
-          ? { ...w, ...updateData }
-          : w
-      ));
-
-      alert(`Lote enviado com sucesso! Protocolo: ${protocolo}. O processamento no eSocial pode levar alguns segundos.`);
-
-      // ETAPA 9 - FEEDBACK
-      checkEsocialStatus(selectedWorker.cpf, 'S-2300');
-    } catch (err: any) {
-      console.error('Error in eSocial flow:', err);
-      const errorMsg = err.message || err.details || 'Erro desconhecido';
-      alert(`Erro na integração com o eSocial:\n\n${errorMsg}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    });
   };
 
   const handleConsultESocial = async () => {
     if (!esocialStatus || isTransmitting || !inssRegularization) return;
-
-    setIsTransmitting(true);
-    try {
-      // ETAPA 8 - CONSULTA (REAL VIA BACKEND)
-      const { data: response, error: fnError } = await invokeProxy({
-        body: {
-          action: 'CONSULT',
-          protocolo: esocialStatus.protocolo,
-          regularizationId: inssRegularization.id
-        }
-      });
-
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-      
-      if (response.status === 'SUCESSO') {
-        alert('Consulta finalizada! O evento foi processado com SUCESSO.');
-        const updatedSuccess = { esocial_status: 'SUCESSO' as const, recibo: response.recibo, resposta_governo: response.resposta_governo };
-        setSelectedWorker((prev: any) => prev ? { ...prev, ...updatedSuccess } : null);
-        setWorkers(prev => prev.map(w => w.id === selectedWorker.id ? { ...w, ...updatedSuccess } : w));
-        
-        setTimeout(() => {
-          checkEsocialStatus(selectedWorker.cpf, 'S-2300');
-        }, 1500);
-      } else if (response.status === 'PROCESSANDO') {
-        alert('O eSocial ainda está processando o lote. Aguarde alguns segundos e tente novamente.');
-        checkEsocialStatus(selectedWorker.cpf, 'S-2300');
-      } else {
-        alert(`O eSocial retornou um erro: ${response.message || 'Erro de validação desconhecido.'}`);
-        const updatedError = { esocial_status: 'ERRO' as const, resposta_governo: response.resposta_governo };
-        setSelectedWorker((prev: any) => prev ? { ...prev, ...updatedError } : null);
-        setWorkers(prev => prev.map(w => w.id === selectedWorker.id ? { ...w, ...updatedError } : w));
-        checkEsocialStatus(selectedWorker.cpf, 'S-2300');
-      }
-      
-      checkEsocialStatus(esocialStatus.cpf_trabalhador, 'S-2300');
-    } catch (err: any) {
-      console.error('Error consulting eSocial:', err);
-      alert(`Erro na consulta: ${err.message || 'Erro de conexão'}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    // No fluxo unificado, a consulta é automática. Mas mantemos para fallback manual se necessário.
+    handleTransmitESocial(); 
   };
 
 
   const handleTransmitS1000 = async () => {
-    if (!inssRegularization || isTransmitting) return;
+    if (!inssRegularization || activeFlow.status !== 'IDLE') return;
 
     // Validações Empregador
     const errors: string[] = [];
@@ -993,60 +1048,25 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       nrRecibo = esocialS1000Status.recibo;
     }
 
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: {
-          eventType: 'S-1000',
-          regularizationId: inssRegularization.id,
-          indRetif,
-          nrRecibo,
-          eventData: {
-            proprietarioNome,
-            proprietarioCpfCnpj,
-            transmissorCpfCnpj: certificateCpfCnpj
-          }
-        }
-      });
-
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-
-      alert(`Lote S-1000 enviado com sucesso! Protocolo: ${response.protocolo}`);
-      checkS1000Status();
-    } catch (err: any) {
-      alert(`Erro no S-1000: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    await executeESocialFlow({
+      eventType: 'S-1000',
+      regularizationId: inssRegularization.id,
+      indRetif,
+      nrRecibo,
+      eventData: {
+        proprietarioNome,
+        proprietarioCpfCnpj,
+        transmissorCpfCnpj: certificateCpfCnpj
+      }
+    });
   };
 
   const handleConsultS1000 = async () => {
-    if (!esocialS1000Status || isTransmitting) return;
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: {
-          action: 'CONSULT',
-          protocolo: esocialS1000Status.protocolo,
-          regularizationId: inssRegularization.id
-        }
-      });
-
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-
-      if (response.status === 'SUCESSO') alert('S-1000 processado com SUCESSO!');
-      checkS1000Status();
-    } catch (err: any) {
-      alert(`Erro na consulta S-1000: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    handleTransmitS1000();
   };
 
   const handleTransmitS1005 = async () => {
-    if (!inssRegularization || isTransmitting) return;
+    if (!inssRegularization || activeFlow.status !== 'IDLE') return;
     if (!cnoNumero) {
       alert('Número do CNO é obrigatório para o evento S-1005.');
       return;
@@ -1060,54 +1080,25 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       nrRecibo = esocialS1005Status.recibo;
     }
 
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: {
-          eventType: 'S-1005',
-          regularizationId: inssRegularization.id,
-          indRetif,
-          nrRecibo,
-          eventData: { 
-            proprietarioCpfCnpj, 
-            cnoNumero,
-            transmissorCpfCnpj: certificateCpfCnpj
-          }
-        }
-      });
-
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-
-      alert(`Lote S-1005 enviado! Protocolo: ${response.protocolo}`);
-      checkS1005Status();
-    } catch (err: any) {
-      alert(`Erro no S-1005: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    await executeESocialFlow({
+      eventType: 'S-1005',
+      regularizationId: inssRegularization.id,
+      indRetif,
+      nrRecibo,
+      eventData: { 
+        proprietarioCpfCnpj, 
+        cnoNumero,
+        transmissorCpfCnpj: certificateCpfCnpj
+      }
+    });
   };
 
   const handleConsultS1005 = async () => {
-    if (!esocialS1005Status || isTransmitting) return;
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: { action: 'CONSULT', protocolo: esocialS1005Status.protocolo, regularizationId: inssRegularization.id }
-      });
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-      if (response.status === 'SUCESSO') alert('S-1005 processado com SUCESSO!');
-      checkS1005Status();
-    } catch (err: any) {
-      alert(`Erro na consulta S-1005: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    handleTransmitS1005();
   };
 
   const handleTransmitS1020 = async () => {
-    if (!inssRegularization || isTransmitting) return;
+    if (!inssRegularization || activeFlow.status !== 'IDLE') return;
 
     let indRetif = 1;
     let nrRecibo = null;
@@ -1117,49 +1108,20 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       nrRecibo = esocialS1020Status.recibo;
     }
 
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: {
-          eventType: 'S-1020',
-          regularizationId: inssRegularization.id,
-          indRetif,
-          nrRecibo,
-          eventData: { proprietarioCpfCnpj }
-        }
-      });
-
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-
-      alert(`Lote S-1020 enviado! Protocolo: ${response.protocolo}`);
-      checkS1020Status();
-    } catch (err: any) {
-      alert(`Erro no S-1020: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    await executeESocialFlow({
+      eventType: 'S-1020',
+      regularizationId: inssRegularization.id,
+      indRetif,
+      nrRecibo,
+      eventData: { proprietarioCpfCnpj }
+    });
   };
 
   const handleConsultS1020 = async () => {
-    if (!esocialS1020Status || isTransmitting) return;
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: { action: 'CONSULT', protocolo: esocialS1020Status.protocolo, regularizationId: inssRegularization.id }
-      });
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-      if (response.status === 'SUCESSO') alert('S-1020 processado com SUCESSO!');
-      checkS1020Status();
-    } catch (err: any) {
-      alert(`Erro na consulta S-1020: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    handleTransmitS1020();
   };
   const handleTransmitS1010 = async () => {
-    if (!inssRegularization || isTransmitting) return;
+    if (!inssRegularization || activeFlow.status !== 'IDLE') return;
 
     let indRetif = 1;
     let nrRecibo = null;
@@ -1169,50 +1131,21 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       nrRecibo = esocialS1010Status.recibo;
     }
 
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: {
-          eventType: 'S-1010',
-          regularizationId: inssRegularization.id,
-          indRetif,
-          nrRecibo,
-          eventData: { proprietarioCpfCnpj }
-        }
-      });
-
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-
-      alert(`Lote S-1010 enviado! Protocolo: ${response.protocolo}`);
-      checkS1010Status();
-    } catch (err: any) {
-      alert(`Erro no S-1010: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    await executeESocialFlow({
+      eventType: 'S-1010',
+      regularizationId: inssRegularization.id,
+      indRetif,
+      nrRecibo,
+      eventData: { proprietarioCpfCnpj }
+    });
   };
 
   const handleConsultS1010 = async () => {
-    if (!esocialS1010Status || isTransmitting) return;
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: { action: 'CONSULT', protocolo: esocialS1010Status.protocolo, regularizationId: inssRegularization.id }
-      });
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-      if (response.status === 'SUCESSO') alert('S-1010 processado com SUCESSO!');
-      checkS1010Status();
-    } catch (err: any) {
-      alert(`Erro na consulta S-1010: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    handleTransmitS1010();
   };
 
   const handleTransmitS1200 = async () => {
-    if (!selectedRemForEvent || isTransmitting || !inssRegularization) return;
+    if (!selectedRemForEvent || activeFlow.status !== 'IDLE' || !inssRegularization) return;
 
     const worker = workers.find(w => w.id === selectedRemForEvent.workerId);
     if (worker?.esocial_status !== 'SUCESSO') {
@@ -1220,181 +1153,86 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       return;
     }
 
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: {
-          eventType: 'S-1200',
-          regularizationId: inssRegularization.id,
-          eventData: {
-            workerCpf: worker.cpf,
-            proprietarioCpfCnpj,
-            month: selectedRemForEvent.month,
-            year: selectedRemForEvent.year,
-            value: selectedRemForEvent.value
-          }
-        }
-      });
-
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-
-      // Update local state to PROCESSANDO
-      setAllRemunerations(prev => prev.map(r => 
-        r.id === selectedRemForEvent.id ? { ...r, remStatus: 'PROCESSANDO', remProtocolo: response.protocolo } : r
-      ));
-      
-      setSelectedRemForEvent((prev: any) => ({ ...prev, remStatus: 'PROCESSANDO', remProtocolo: response.protocolo }));
-      alert(`Lote S-1200 enviado! Protocolo: ${response.protocolo}`);
-    } catch (err: any) {
-      alert(`Erro no S-1200: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    await executeESocialFlow({
+      eventType: 'S-1200',
+      regularizationId: inssRegularization.id,
+      indRetif: 1,
+      workerId: worker.id,
+      eventData: {
+        workerCpf: worker.cpf,
+        workerNome: worker.nome,
+        proprietarioCpfCnpj,
+        month: selectedRemForEvent.month,
+        year: selectedRemForEvent.year,
+        value: selectedRemForEvent.value
+      },
+      onComplete: (res) => {
+        setAllRemunerations(prev => prev.map(r => 
+          r.id === selectedRemForEvent.id ? { ...r, remStatus: res.status, remRecibo: res.recibo, remProtocolo: res.protocolo } : r
+        ));
+        setSelectedRemForEvent((prev: any) => ({ ...prev, remStatus: res.status, remRecibo: res.recibo, remProtocolo: res.protocolo }));
+      }
+    });
   };
 
   const handleConsultS1200 = async () => {
-    if (!selectedRemForEvent || isTransmitting) return;
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: {
-          action: 'CONSULT',
-          protocolo: selectedRemForEvent.remProtocolo,
-          regularizationId: inssRegularization.id
-        }
-      });
-
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-
-      const { status, recibo } = response;
-
-      // Update local state
-      setAllRemunerations(prev => prev.map(r => 
-        r.id === selectedRemForEvent.id ? { ...r, remStatus: status, remRecibo: recibo } : r
-      ));
-
-      setSelectedRemForEvent((prev: any) => ({ ...prev, remStatus: status, remRecibo: recibo }));
-      
-      if (status === 'SUCESSO') alert('S-1200 processado com SUCESSO!');
-      else alert(`Erro ao processar S-1200: ${response.message || 'Verifique os detalhes no log.'}`);
-    } catch (err: any) {
-      alert(`Erro na consulta S-1200: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    handleTransmitS1200();
   };
 
   const handleTransmitS1210 = async () => {
-    if (!selectedRemForEvent || isTransmitting || !inssRegularization) return;
+    if (!selectedRemForEvent || activeFlow.status !== 'IDLE' || !inssRegularization) return;
     const worker = workers.find(w => w.id === selectedRemForEvent.workerId);
 
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: {
-          eventType: 'S-1210',
-          regularizationId: inssRegularization.id,
-          eventData: {
-            workerCpf: worker?.cpf,
-            proprietarioCpfCnpj,
-            month: selectedRemForEvent.month,
-            year: selectedRemForEvent.year,
-            value: selectedRemForEvent.value
-          }
-        }
-      });
-
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-
-      setAllRemunerations(prev => prev.map(r => 
-        r.id === selectedRemForEvent.id ? { ...r, pagStatus: 'PROCESSANDO', pagProtocolo: response.protocolo } : r
-      ));
-      setSelectedRemForEvent((prev: any) => ({ ...prev, pagStatus: 'PROCESSANDO', pagProtocolo: response.protocolo }));
-      alert(`Lote S-1210 enviado! Protocolo: ${response.protocolo}`);
-    } catch (err: any) {
-      alert(`Erro no S-1210: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    await executeESocialFlow({
+      eventType: 'S-1210',
+      regularizationId: inssRegularization.id,
+      indRetif: 1,
+      workerId: worker?.id,
+      eventData: {
+        workerCpf: worker?.cpf,
+        proprietarioCpfCnpj,
+        month: selectedRemForEvent.month,
+        year: selectedRemForEvent.year,
+        value: selectedRemForEvent.value
+      },
+      onComplete: (res) => {
+        setAllRemunerations(prev => prev.map(r => 
+          r.id === selectedRemForEvent.id ? { ...r, pagStatus: res.status, pagRecibo: res.recibo, pagProtocolo: res.protocolo } : r
+        ));
+        setSelectedRemForEvent((prev: any) => ({ ...prev, pagStatus: res.status, pagRecibo: res.recibo, pagProtocolo: res.protocolo }));
+      }
+    });
   };
 
   const handleConsultS1210 = async () => {
-    if (!selectedRemForEvent || isTransmitting) return;
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: { action: 'CONSULT', protocolo: selectedRemForEvent.pagProtocolo, regularizationId: inssRegularization.id }
-      });
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-      const { status, recibo } = response;
-      setAllRemunerations(prev => prev.map(r => 
-        r.id === selectedRemForEvent.id ? { ...r, pagStatus: status, pagRecibo: recibo } : r
-      ));
-      setSelectedRemForEvent((prev: any) => ({ ...prev, pagStatus: status, pagRecibo: recibo }));
-      if (status === 'SUCESSO') alert('S-1210 processado com SUCESSO!');
-      else alert('Erro ao processar S-1210.');
-    } catch (err: any) {
-      alert(`Erro na consulta S-1210: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    handleTransmitS1210();
   };
 
 
   const handleTransmitS1298 = async () => {
-    if (!selectedPeriodForEvent || isTransmitting || !inssRegularization) return;
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: {
-          eventType: 'S-1298',
-          regularizationId: inssRegularization.id,
-          eventData: { period: selectedPeriodForEvent }
-        }
-      });
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-      setPeriodStatuses(prev => ({
-        ...prev,
-        [selectedPeriodForEvent]: { 
-          ...prev[selectedPeriodForEvent], 
-          s1298Status: 'PROCESSANDO', 
-          s1298Protocolo: response.protocolo 
-        }
-      }));
-      alert(`Evento S-1298 enviado para o período ${selectedPeriodForEvent}!`);
-    } catch (err: any) {
-      alert(`Erro no S-1298: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    if (!selectedPeriodForEvent || activeFlow.status !== 'IDLE' || !inssRegularization) return;
+    
+    await executeESocialFlow({
+      eventType: 'S-1298',
+      regularizationId: inssRegularization.id,
+      indRetif: 1,
+      eventData: { period: selectedPeriodForEvent },
+      onComplete: (res) => {
+        setPeriodStatuses(prev => ({
+          ...prev,
+          [selectedPeriodForEvent]: { 
+            ...prev[selectedPeriodForEvent], 
+            s1298Status: res.status, 
+            s1298Protocolo: res.protocolo,
+            s1298Recibo: res.recibo
+          }
+        }));
+      }
+    });
   };
 
   const handleConsultS1298 = async () => {
-    if (!selectedPeriodForEvent || isTransmitting) return;
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: { action: 'CONSULT', protocolo: periodStatuses[selectedPeriodForEvent]?.s1298Protocolo, regularizationId: inssRegularization.id }
-      });
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-      const { status, recibo } = response;
-      setPeriodStatuses(prev => ({
-        ...prev,
-        [selectedPeriodForEvent]: { ...prev[selectedPeriodForEvent], s1298Status: status, s1298Recibo: recibo }
-      }));
-      if (status === 'SUCESSO') alert('S-1298 processado com SUCESSO!');
-      else alert('Erro ao processar reabertura.');
-    } catch (err: any) {
-      alert(`Erro na consulta S-1298: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+    handleTransmitS1298();
   };
 
   const handleConsultS1299 = async () => {
@@ -1422,37 +1260,28 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
 
   const handleTransmitS1299 = async () => {
-    if (!selectedPeriodForEvent || isTransmitting || !inssRegularization) return;
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: {
-          eventType: 'S-1299',
-          regularizationId: inssRegularization.id,
-          eventData: { 
-            period: selectedPeriodForEvent,
-            proprietarioCpfCnpj,
-            year: selectedPeriodForEvent.split('/')[1],
-            month: selectedPeriodForEvent.split('/')[0]
+    if (!selectedPeriodForEvent || activeFlow.status !== 'IDLE' || !inssRegularization) return;
+
+    await executeESocialFlow({
+      eventType: 'S-1299',
+      regularizationId: inssRegularization.id,
+      indRetif: 1,
+      eventData: { 
+        period: selectedPeriodForEvent,
+        proprietarioCpfCnpj
+      },
+      onComplete: (res) => {
+        setPeriodStatuses(prev => ({
+          ...prev,
+          [selectedPeriodForEvent]: { 
+            ...prev[selectedPeriodForEvent], 
+            s1299Status: res.status, 
+            s1299Protocolo: res.protocolo,
+            s1299Recibo: res.recibo
           }
-        }
-      });
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-      setPeriodStatuses(prev => ({
-        ...prev,
-        [selectedPeriodForEvent]: { 
-          ...prev[selectedPeriodForEvent], 
-          s1299Status: 'PROCESSANDO', 
-          s1299Protocolo: response.protocolo 
-        }
-      }));
-      alert(`Folha de pagamento FECHADA para o período ${selectedPeriodForEvent}!`);
-    } catch (err: any) {
-      alert(`Erro no S-1299: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
-    }
+        }));
+      }
+    });
   };
 
 
@@ -1646,6 +1475,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       if (error) throw error;
       
       alert('Evento marcado como concluído com sucesso!');
+      fetchEventsHistory();
       
       // Limpa estados
       setManualRecibo('');
@@ -1719,129 +1549,35 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   };
 
   const handleTransmitS2399 = async () => {
-    if (!selectedWorker || isTransmitting || !inssRegularization) return;
+    if (!selectedWorker || activeFlow.status !== 'IDLE' || !inssRegularization) return;
 
-    if (selectedWorker.esocial_status !== 'SUCESSO') {
-      alert('ERRO: Você precisa transmitir o evento S-2300 (Início) deste trabalhador antes de encerrar (S-2399).');
+    // PRE-VALIDAÇÃO DE CONSISTÊNCIA (ANTI-MISMATCH)
+    if (!selectedWorker.cpf || !selectedWorker.matricula_esocial) {
+      alert('ERRO: Dados do trabalhador incompletos (CPF ou Matrícula ausente).');
       return;
     }
 
-    setIsTransmitting(true);
-    try {
-      const { data: response, error: fnError } = await invokeProxy({
-        body: {
-          eventType: 'S-2399',
-          regularizationId: inssRegularization.id,
-          eventData: {
-            workerCpf: selectedWorker.cpf,
-            proprietarioCpfCnpj,
-            matricula: selectedWorker.matricula_esocial,
-            dtTerm: new Date().toLocaleDateString('en-CA') // YYYY-MM-DD local
-          }
-        }
-      });
+    console.log(`[ESOCIAL] Iniciando fluxo S-2399 para: ${selectedWorker.nome} (${selectedWorker.cpf})`);
 
-      if (fnError) throw fnError;
-      if (!response.success) throw new Error(response.error);
-
-      // Persist event in DB
-      await supabase.from('esocial_events').insert({
-        regularization_id: inssRegularization.id,
-        tipo_evento: 'S-2399',
-        cpf_trabalhador: selectedWorker.cpf,
-        protocolo: response.protocolo,
-        status: 'PROCESSANDO',
-        resposta_governo: {
-          envio_codigo: '201',
-          envio_mensagem: 'Lote de encerramento recebido com sucesso.'
-        }
-      });
-
-      // Atualiza UI para PROCESSANDO imediatamente
-      const updatedData = { 
-        s2399_status: 'PROCESSANDO' as const, 
-        s2399_protocolo: response.protocolo,
-        s2399_resposta_governo: {
-          envio_codigo: '201',
-          envio_mensagem: 'Lote de encerramento recebido com sucesso.'
-        }
-      };
-
-      setWorkers(prev => prev.map(w => 
-        w.id === selectedWorker.id ? { ...w, ...updatedData } : w
-      ));
-      setSelectedWorker((prev: any) => prev ? { ...prev, ...updatedData } : null);
-
-      // ✅ AUTO-POLLING: aguarda 3s e consulta em loop até SUCESSO ou ERRO
-      await pollS2399Result(response.protocolo, selectedWorker);
-
-    } catch (err: any) {
-      alert(`Não foi possível concluir o envio. Verifique os dados e tente novamente.\n\nDetalhe: ${err.message}`);
-    } finally {
-      setIsTransmitting(false);
+    if (selectedWorker.esocial_status !== 'SUCESSO') {
+      alert(`ERRO: Você precisa transmitir o evento S-2300 (Início) para o trabalhador ${selectedWorker.nome} antes de encerrar (S-2399).`);
+      return;
     }
+
+    await executeESocialFlow({
+      eventType: 'S-2399',
+      regularizationId: inssRegularization.id,
+      indRetif: 1,
+      workerId: selectedWorker.id,
+      eventData: {
+        workerCpf: selectedWorker.cpf,
+        proprietarioCpfCnpj,
+        matricula: selectedWorker.matricula_esocial,
+        dtTerm: new Date().toLocaleDateString('en-CA')
+      }
+    });
   };
 
-  /**
-   * Polling automático do resultado S-2399.
-   * Aguarda 3s iniciais, depois consulta de 4 em 4s por até 8 tentativas.
-   */
-  const pollS2399Result = async (protocolo: string, worker: Worker) => {
-    const MAX_ATTEMPTS = 8;
-    const INITIAL_DELAY = 3000;  // 3s antes da 1ª consulta
-    const INTERVAL = 4000;       // 4s entre tentativas
-
-    await new Promise(r => setTimeout(r, INITIAL_DELAY));
-
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-      try {
-        const { data: pollRes, error: pollErr } = await invokeProxy({
-          body: { action: 'CONSULT', protocolo, regularizationId: inssRegularization!.id }
-        });
-
-        if (!pollErr && pollRes?.success) {
-          const { status, recibo, message } = pollRes;
-
-          const consultUpdate = {
-            s2399_status: status,
-            s2399_recibo: recibo,
-            s2399_resposta_governo: {
-              recibo_codigo: status === 'SUCESSO' ? '201' : '101',
-              recibo_mensagem: message || (status === 'SUCESSO' ? 'Processado com sucesso' : 'Aguardando processamento...')
-            }
-          };
-
-          setWorkers(prev => prev.map(w =>
-            w.id === worker.id ? { ...w, ...consultUpdate } : w
-          ));
-          setSelectedWorker((prev: any) => prev ? { ...prev, ...consultUpdate } : null);
-
-          if (status === 'SUCESSO' || status === 'ERRO') {
-            await supabase.from('esocial_events')
-              .update({ status, recibo, resposta_governo: consultUpdate.s2399_resposta_governo })
-              .eq('cpf_trabalhador', worker.cpf)
-              .eq('tipo_evento', 'S-2399')
-              .eq('regularization_id', inssRegularization!.id);
-
-            if (status === 'SUCESSO') {
-              alert(`✅ S-2399 processado com SUCESSO!\nRecibo: ${recibo}`);
-            } else {
-              alert(`❌ eSocial retornou ERRO no processamento.\nMensagem: ${message || 'Erro desconhecido'}`);
-            }
-            return; // Para o polling
-          }
-        }
-      } catch (pollEx) {
-        console.warn(`[S-2399 Poll] Tentativa ${attempt}: erro, tentando novamente...`);
-      }
-
-      if (attempt < MAX_ATTEMPTS) {
-        await new Promise(r => setTimeout(r, INTERVAL));
-      }
-    }
-    // Esgotou tentativas — usuário pode clicar manualmente
-    console.info('[S-2399 Poll] Limite atingido. Use o botão Consultar.');
-  };
 
   const handleConsultS2399 = async () => {
     if (!selectedWorker || !selectedWorker.s2399_protocolo || isTransmitting) return;
@@ -1889,6 +1625,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       } else {
         alert(`❌ Ocorreu um problema no processamento.\nMensagem: ${message || 'Erro desconhecido'}`);
       }
+      fetchEventsHistory();
     } catch (err: any) {
       console.error('Erro na consulta:', err);
       alert(`Erro na consulta S-2399: ${err.message}`);
@@ -2136,9 +1873,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       await fetchWorkers();
       setCurrentView('management');
       resetWorkerForm();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving worker:', err);
-      alert('Erro ao salvar trabalhador.');
+      alert(`Erro ao salvar trabalhador: ${err.message || 'Erro desconhecido'}`);
     } finally {
       setIsSaving(false);
     }
@@ -2847,19 +2584,27 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             <div className="space-y-6">
               <button 
-                onClick={periodStatuses[selectedPeriodForEvent]?.s1298Status === 'SUCESSO' || periodStatuses[selectedPeriodForEvent]?.s1298Status === 'PROCESSANDO' ? handleConsultS1298 : handleTransmitS1298}
-                disabled={isTransmitting}
+                onClick={handleTransmitS1298}
+                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
                 className={cn(
                   "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
+                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
+                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
+                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
-                {isTransmitting ? (
-                  <Loader2 className="h-6 w-6 animate-spin" />
+                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
+                  <>
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    {activeFlow.message}
+                  </>
                 ) : (
-                  <Send className="h-6 w-6" />
+                  <>
+                    <Send className="h-6 w-6" />
+                    {activeFlow.status === 'SUCCESS' ? 'FOLHA REABERTA' : activeFlow.status === 'ERROR' ? 'ERRO NA REABERTURA' : 'Transmitir Evento / Consultar'}
+                  </>
                 )}
-                {isTransmitting ? 'Processando...' : 'Transmitir Evento / Consultar'}
               </button>
 
               {renderEventLog(periodStatuses[selectedPeriodForEvent] ? { status: periodStatuses[selectedPeriodForEvent].s1298Status, protocolo: periodStatuses[selectedPeriodForEvent].s1298Protocolo, recibo: periodStatuses[selectedPeriodForEvent].s1298Recibo } : null, 'S-1298')}
@@ -2918,19 +2663,27 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             <div className="space-y-6">
               <button 
-                onClick={periodStatuses[selectedPeriodForEvent]?.s1299Status === 'SUCESSO' || periodStatuses[selectedPeriodForEvent]?.s1299Status === 'PROCESSANDO' ? handleConsultS1299 : handleTransmitS1299}
-                disabled={isTransmitting}
+                onClick={handleTransmitS1299}
+                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
                 className={cn(
                   "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
+                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
+                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
+                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
-                {isTransmitting ? (
-                  <Loader2 className="h-6 w-6 animate-spin" />
+                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
+                  <>
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    {activeFlow.message}
+                  </>
                 ) : (
-                  <Send className="h-6 w-6" />
+                  <>
+                    <Send className="h-6 w-6" />
+                    {activeFlow.status === 'SUCCESS' ? 'FOLHA FECHADA' : activeFlow.status === 'ERROR' ? 'ERRO NO FECHAMENTO' : 'Transmitir Fechamento / Consultar'}
+                  </>
                 )}
-                {isTransmitting ? 'Processando...' : 'Transmitir Fechamento / Consultar'}
               </button>
 
               {renderEventLog(periodStatuses[selectedPeriodForEvent] ? { status: periodStatuses[selectedPeriodForEvent].s1299Status, protocolo: periodStatuses[selectedPeriodForEvent].s1299Protocolo, recibo: periodStatuses[selectedPeriodForEvent].s1299Recibo } : null, 'S-1299')}
@@ -3017,28 +2770,25 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             <div className="mt-8 space-y-6">
               <button 
-                onClick={selectedRemForEvent.pagStatus === 'SUCESSO' || selectedRemForEvent.pagStatus === 'PROCESSANDO' ? handleConsultS1210 : handleTransmitS1210}
-                disabled={isTransmitting}
+                onClick={handleTransmitS1210}
+                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
                 className={cn(
                   "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
-                  selectedRemForEvent.pagStatus === 'SUCESSO' ? "bg-primary hover:bg-blue-700 text-white shadow-primary/20" :
+                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
+                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
+                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
                   "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
-                {isTransmitting ? (
+                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
                   <>
                     <Loader2 className="h-6 w-6 animate-spin" />
-                    {selectedRemForEvent.pagStatus === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
+                    {activeFlow.message}
                   </>
                 ) : (
                   <>
                     <Send className="h-6 w-6" />
-                    {selectedRemForEvent.pagStatus === 'SUCESSO' 
-                      ? 'Consultar Status / Recibo' 
-                      : selectedRemForEvent.pagStatus === 'ERRO' 
-                        ? 'Tentar Transmitir Novamente'
-                        : 'Transmitir Evento S-1210'}
+                    {activeFlow.status === 'SUCCESS' ? 'PAGAMENTO ACEITO' : activeFlow.status === 'ERROR' ? 'ERRO NO PAGAMENTO' : 'Transmitir Evento S-1210'}
                   </>
                 )}
               </button>
@@ -3129,28 +2879,25 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             <div className="mt-8 space-y-6">
               <button 
-                onClick={selectedRemForEvent.remStatus === 'SUCESSO' || selectedRemForEvent.remStatus === 'PROCESSANDO' ? handleConsultS1200 : handleTransmitS1200}
-                disabled={isTransmitting}
+                onClick={handleTransmitS1200}
+                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
                 className={cn(
                   "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
-                  selectedRemForEvent.remStatus === 'SUCESSO' ? "bg-primary hover:bg-blue-700 text-white shadow-primary/20" :
+                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
+                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
+                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
                   "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
-                {isTransmitting ? (
+                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
                   <>
                     <Loader2 className="h-6 w-6 animate-spin" />
-                    {selectedRemForEvent.remStatus === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
+                    {activeFlow.message}
                   </>
                 ) : (
                   <>
                     <Send className="h-6 w-6" />
-                    {selectedRemForEvent.remStatus === 'SUCESSO' 
-                      ? 'Consultar Status / Recibo' 
-                      : selectedRemForEvent.remStatus === 'ERRO' 
-                        ? 'Tentar Transmitir Novamente'
-                        : 'Transmitir Evento S-1200'}
+                    {activeFlow.status === 'SUCCESS' ? 'REMUNERAÇÃO ACEITA' : activeFlow.status === 'ERROR' ? 'ERRO NA REMUNERAÇÃO' : 'Transmitir Evento S-1200'}
                   </>
                 )}
               </button>
@@ -3258,28 +3005,25 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             <div className="mt-8 space-y-6">
               <button 
-                onClick={esocialStatus && esocialStatus.status !== 'ERRO' ? handleConsultESocial : handleTransmitESocial}
-                disabled={isTransmitting}
+                onClick={handleTransmitESocial}
+                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
                 className={cn(
                   "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
-                  esocialStatus && esocialStatus.status === 'SUCESSO' ? "bg-primary hover:bg-blue-700 text-white shadow-primary/20" :
+                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
+                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
+                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
                   "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
-                {isTransmitting ? (
+                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
                   <>
                     <Loader2 className="h-6 w-6 animate-spin" />
-                    {esocialStatus && esocialStatus.status !== 'ERRO' ? 'Consultando...' : 'Transmitindo...'}
+                    {activeFlow.message}
                   </>
                 ) : (
                   <>
                     <Send className="h-6 w-6" />
-                    {esocialStatus && esocialStatus.status === 'SUCESSO' 
-                      ? 'Consultar Status / Recibo' 
-                      : esocialStatus && esocialStatus.status === 'ERRO' 
-                        ? 'Tentar Transmitir Novamente'
-                        : 'Transmitir Evento / Consultar'}
+                    {activeFlow.status === 'SUCCESS' ? 'CADASTRO ACEITO' : activeFlow.status === 'ERROR' ? 'ERRO NO CADASTRO' : 'Transmitir Evento / Consultar'}
                   </>
                 )}
               </button>
@@ -3368,33 +3112,25 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             <div className="mt-8 space-y-6">
               <button 
-                onClick={selectedWorker.s2399_status === 'PROCESSANDO' ? handleConsultS2399 : handleTransmitS2399}
-                disabled={isTransmitting}
+                onClick={handleTransmitS2399}
+                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
                 className={cn(
                   "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
-                  selectedWorker.s2399_status === 'SUCESSO' ? "bg-primary text-white shadow-primary/20" :
-                  selectedWorker.s2399_status === 'PROCESSANDO' ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20" :
+                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
+                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
+                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
                   "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
-                {isTransmitting ? (
+                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
                   <>
                     <Loader2 className="h-6 w-6 animate-spin" />
-                    {selectedWorker.s2399_status === 'PROCESSANDO' 
-                      ? 'Consultando governo...' 
-                      : 'Enviando e aguardando resultado...'}
+                    {activeFlow.message}
                   </>
                 ) : (
                   <>
                     <Send className="h-6 w-6" />
-                    {selectedWorker.s2399_status === 'SUCESSO' 
-                      ? 'Encerrado com Sucesso' 
-                      : selectedWorker.s2399_status === 'PROCESSANDO'
-                        ? 'Consultar Retorno do Governo'
-                        : selectedWorker.s2399_status === 'ERRO' 
-                          ? 'Tentar Transmitir Novamente'
-                          : 'Transmitir Evento S-2399'}
+                    {activeFlow.status === 'SUCCESS' ? 'ENCERRAMENTO ACEITO' : activeFlow.status === 'ERROR' ? 'ERRO NO ENCERRAMENTO' : 'Transmitir Evento / Consultar'}
                   </>
                 )}
               </button>
@@ -3446,6 +3182,23 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 recibo: selectedWorker.s2399_recibo, 
                 resposta_governo: selectedWorker.s2399_resposta_governo 
               }, 'S-2399', selectedWorker.cpf)}
+
+              <div className="flex flex-col items-center gap-6 mt-8">
+                <div className="flex items-center gap-4 w-full">
+                  <div className="h-px flex-1 bg-white/5"></div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
+                  <div className="h-px flex-1 bg-white/5"></div>
+                </div>
+                
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <button 
+                    onClick={() => handleMarkAsDone('S-2399', selectedWorker.cpf)}
+                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
+                  >
+                    Já foi feito!
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -3957,23 +3710,25 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             <div className="flex flex-col gap-6">
               <button 
-                onClick={esocialS1000Status && esocialS1000Status.status !== 'ERRO' && esocialS1000Status.status !== 'PENDENTE' ? handleConsultS1000 : handleTransmitS1000}
-                disabled={isTransmitting}
+                onClick={handleTransmitS1000}
+                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
                 className={cn(
                   "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
-                  (esocialS1000Status?.status === 'PROCESSANDO' ? "bg-primary hover:bg-blue-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20")
+                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
+                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
+                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
+                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
-                {isTransmitting ? (
+                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
                   <>
                     <Loader2 className="h-6 w-6 animate-spin" />
-                    {esocialS1000Status?.status === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
+                    {activeFlow.message}
                   </>
                 ) : (
                   <>
                     <Send className="h-6 w-6" />
-                    Transmitir Evento / Consultar
+                    {activeFlow.status === 'SUCCESS' ? 'EVENTO ACEITO' : activeFlow.status === 'ERROR' ? 'ERRO NO EVENTO' : 'Transmitir Evento / Consultar'}
                   </>
                 )}
               </button>
@@ -4036,23 +3791,25 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             <div className="flex flex-col gap-6">
               <button 
-                onClick={esocialS1005Status && esocialS1005Status.status !== 'ERRO' && esocialS1005Status.status !== 'PENDENTE' ? handleConsultS1005 : handleTransmitS1005}
-                disabled={isTransmitting}
+                onClick={handleTransmitS1005}
+                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
                 className={cn(
                   "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
-                  (esocialS1005Status?.status === 'PROCESSANDO' ? "bg-primary hover:bg-blue-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20")
+                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
+                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
+                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
+                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
-                {isTransmitting ? (
+                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
                   <>
                     <Loader2 className="h-6 w-6 animate-spin" />
-                    {esocialS1005Status?.status === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
+                    {activeFlow.message}
                   </>
                 ) : (
                   <>
                     <Send className="h-6 w-6" />
-                    Transmitir Evento / Consultar
+                    {activeFlow.status === 'SUCCESS' ? 'EVENTO ACEITO' : activeFlow.status === 'ERROR' ? 'ERRO NO EVENTO' : 'Transmitir Evento / Consultar'}
                   </>
                 )}
               </button>
@@ -4139,23 +3896,25 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             <div className="flex flex-col gap-6">
               <button 
-                onClick={esocialS1020Status && esocialS1020Status.status !== 'ERRO' && esocialS1020Status.status !== 'PENDENTE' ? handleConsultS1020 : handleTransmitS1020}
-                disabled={isTransmitting}
+                onClick={handleTransmitS1020}
+                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
                 className={cn(
                   "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
-                  (esocialS1020Status?.status === 'PROCESSANDO' ? "bg-primary hover:bg-blue-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20")
+                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
+                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
+                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
+                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
-                {isTransmitting ? (
+                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
                   <>
                     <Loader2 className="h-6 w-6 animate-spin" />
-                    {esocialS1020Status?.status === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
+                    {activeFlow.message}
                   </>
                 ) : (
                   <>
                     <Send className="h-6 w-6" />
-                    Transmitir Evento / Consultar
+                    {activeFlow.status === 'SUCCESS' ? 'EVENTO ACEITO' : activeFlow.status === 'ERROR' ? 'ERRO NO EVENTO' : 'Transmitir Evento / Consultar'}
                   </>
                 )}
               </button>
@@ -4275,23 +4034,25 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             <div className="flex flex-col gap-6">
               <button 
-                onClick={esocialS1010Status && esocialS1010Status.status !== 'ERRO' && esocialS1010Status.status !== 'PENDENTE' ? handleConsultS1010 : handleTransmitS1010}
-                disabled={isTransmitting}
+                onClick={handleTransmitS1010}
+                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
                 className={cn(
                   "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  isTransmitting ? "bg-slate-700 text-slate-500 cursor-not-allowed" : 
-                  (esocialS1010Status?.status === 'PROCESSANDO' ? "bg-primary hover:bg-blue-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20")
+                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
+                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
+                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
+                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                 )}
               >
-                {isTransmitting ? (
+                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
                   <>
                     <Loader2 className="h-6 w-6 animate-spin" />
-                    {esocialS1010Status?.status === 'PROCESSANDO' ? 'Consultando...' : 'Transmitindo...'}
+                    {activeFlow.message}
                   </>
                 ) : (
                   <>
                     <Send className="h-6 w-6" />
-                    Transmitir Evento / Consultar
+                    {activeFlow.status === 'SUCCESS' ? 'EVENTO ACEITO' : activeFlow.status === 'ERROR' ? 'ERRO NO EVENTO' : 'Transmitir Evento / Consultar'}
                   </>
                 )}
               </button>
