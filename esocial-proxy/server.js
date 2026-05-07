@@ -448,15 +448,46 @@ app.post('/consultar', async (req, res) => {
 
     const xmlRes = response.data;
     console.log(`[ESOCIAL] Resposta bruta do governo (Consulta):`, xmlRes);
+
+    // Parsing mais robusto dos resultados
     const statusMatch = xmlRes.match(/<cdResposta>([^<]+)<\/cdResposta>/);
     const reciboMatch = xmlRes.match(/<nrRecibo>([^<]+)<\/nrRecibo>/);
-    const msgMatch = xmlRes.match(/<dscOcorrencia>([^<]+)<\/dscOcorrencia>/);
+    const ocorrencias = [];
+    const occurrencesRegex = /<dscOcorrencia>([^<]+)<\/dscOcorrencia>/g;
+    let match;
+    while ((match = occurrencesRegex.exec(xmlRes)) !== null) {
+      ocorrencias.push(match[1]);
+    }
 
-    const status = statusMatch && statusMatch[1] === '201' ? 'SUCESSO' : 'PROCESSANDO';
+    const responseCode = statusMatch ? statusMatch[1] : 'N/A';
+    const status = responseCode === '201' ? 'SUCESSO' : (responseCode === '101' ? 'PROCESSANDO' : 'ERRO');
     const recibo = reciboMatch ? reciboMatch[1] : null;
-    const message = msgMatch ? msgMatch[1] : null;
 
-    res.json({ success: true, status, recibo, message, response: xmlRes });
+    // PERSISTÊNCIA AUTOMÁTICA DO RESULTADO DA CONSULTA
+    if (protocolo) {
+      try {
+        const { error: dbError } = await supabase.from('esocial_events')
+          .update({
+            status,
+            recibo,
+            xml_retorno: xmlRes,
+            resposta_governo: { 
+              code: responseCode, 
+              message: ocorrencias[0] || 'Processamento finalizado.',
+              ocorrencias 
+            },
+            updated_at: new Date().toISOString()
+          })
+          .eq('protocolo', protocolo);
+        
+        if (dbError) console.error('[DB ERROR] Falha ao atualizar consulta:', dbError.message);
+        else console.log(`[PERSIST] Status da consulta atualizado para ${status} (Protocolo: ${protocolo})`);
+      } catch (err) {
+        console.error('[PERSIST ERROR] Falha na persistência da consulta:', err.message);
+      }
+    }
+
+    res.json({ success: true, status, recibo, message: ocorrencias[0] || '', ocorrencias, response: xmlRes });
   } catch (error) {
     console.error('ERRO /consultar:', error.message);
     res.json({ success: false, error: error.message });

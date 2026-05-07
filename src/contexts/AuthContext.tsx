@@ -164,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const value = {
+  const value = React.useMemo(() => ({
     session,
     user,
     profile,
@@ -202,7 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     isProprietor,
     refreshRole: () => user ? checkRole(user.id) : Promise.resolve(),
-  };
+  }), [session, user, profile, loading, isProprietor]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

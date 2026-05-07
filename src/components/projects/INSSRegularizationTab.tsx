@@ -23,6 +23,7 @@ import {
   Calculator,
   Target,
   Loader2,
+  Terminal,
   ExternalLink,
   Info,
   Calendar,
@@ -257,6 +258,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     cpf_trabalhador: string;
     resposta_governo?: any;
   } | null>(null);
+
+  const [selectedEventDetails, setSelectedEventDetails] = useState<any>(null);
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
 
   const [activeFlow, setActiveFlow] = useState<ESocialFlowState>({ status: 'IDLE', message: '' });
 
@@ -591,14 +595,14 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       checkS1020Status();
       checkS1010Status();
     }
-  }, [inssRegularization, selectedWorker?.id]);
+  }, [inssRegularization?.id, selectedWorker?.id]);
 
   useEffect(() => {
-    if (inssRegularization && selectedWorker) {
+    if (inssRegularization?.id && selectedWorker) {
       checkEsocialStatus(selectedWorker.cpf, 'S-2300');
       checkEsocialStatus(selectedWorker.cpf, 'S-2399');
     }
-  }, [inssRegularization, selectedWorker?.id]);
+  }, [inssRegularization?.id, selectedWorker?.id]);
 
   const checkEsocialStatus = async (cpf: string, tipo: string = 'S-2300') => {
     if (!inssRegularization) return;
@@ -1375,12 +1379,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   };
 
   useEffect(() => {
-    if (inssRegularization) {
+    if (inssRegularization?.id) {
       fetchWorkers();
       fetchCredentials();
       fetchEventsHistory();
     }
-  }, [inssRegularization]);
+  }, [inssRegularization?.id]);
 
   const fetchCredentials = async () => {
     if (!inssRegularization) return;
@@ -3381,6 +3385,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                       <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-widest">Protocolo</th>
                       <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-widest">Recibo</th>
                       <th className="px-4 py-3 text-center font-bold text-[10px] uppercase tracking-widest">Status</th>
+                      <th className="px-4 py-3 text-center font-bold text-[10px] uppercase tracking-widest">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3413,6 +3418,15 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                             )}>
                               {event.status}
                             </span>
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            <button 
+                              onClick={() => { setSelectedEventDetails(event); setIsEventModalOpen(true); }}
+                              className="p-2 hover:bg-white/10 rounded-lg transition-colors text-blue-400"
+                              title="Ver Logs Detalhados"
+                            >
+                              <Terminal className="h-4 w-4" />
+                            </button>
                           </td>
                         </tr>
                       ))
@@ -4209,6 +4223,123 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         </div>
       )}
       {renderManualEntry()}
+
+      {/* MODAL DE DETALHES TÉCNICOS DO EVENTO */}
+      {isEventModalOpen && selectedEventDetails && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-[#1C232E] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl border border-white/10 flex flex-col overflow-hidden">
+            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-500/10 rounded-lg">
+                  <Terminal className="h-5 w-5 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-sm uppercase tracking-widest">Detalhes da Transmissão</h3>
+                  <p className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {selectedEventDetails.id}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsEventModalOpen(false)}
+                className="p-2 hover:bg-white/10 rounded-full text-slate-400 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Status Section */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Status Final</span>
+                  <span className={cn(
+                    "px-2 py-0.5 rounded text-[10px] font-black uppercase",
+                    selectedEventDetails.status === 'SUCESSO' ? "bg-emerald-500/20 text-emerald-500" : "bg-red-500/20 text-red-500"
+                  )}>
+                    {selectedEventDetails.status}
+                  </span>
+                </div>
+                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Protocolo</span>
+                  <span className="text-xs font-mono text-slate-300 break-all">{selectedEventDetails.protocolo || '---'}</span>
+                </div>
+                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Recibo</span>
+                  <span className="text-xs font-bold text-emerald-400">{selectedEventDetails.recibo || 'NÃO GERADO'}</span>
+                </div>
+              </div>
+
+              {/* Message/Errors Section */}
+              <div className="bg-white/5 p-5 rounded-xl border border-white/5">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className="h-4 w-4 text-primary" />
+                  <span className="text-[10px] font-black text-white uppercase tracking-widest">Retorno do Governo (Ocorrências)</span>
+                </div>
+                <div className="space-y-2">
+                  {selectedEventDetails.resposta_governo?.ocorrencias?.length > 0 ? (
+                    selectedEventDetails.resposta_governo.ocorrencias.map((msg: string, i: number) => (
+                      <div key={i} className="text-xs text-slate-400 bg-white/5 p-3 rounded-lg border-l-2 border-primary">
+                        {msg}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-xs text-slate-500 italic">
+                      {selectedEventDetails.resposta_governo?.message || 'Sem mensagens detalhadas retornadas.'}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* XML Sections */}
+              <div className="space-y-4">
+                <div className="group">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">XML Assinado (Enviado)</span>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedEventDetails.xml_assinado || '');
+                        alert('XML copiado para a área de transferência!');
+                      }}
+                      className="p-1.5 hover:bg-white/10 rounded text-slate-500 hover:text-white transition-all flex items-center gap-1.5 text-[10px]"
+                    >
+                      <Copy className="h-3 w-3" /> COPIAR XML
+                    </button>
+                  </div>
+                  <pre className="bg-black/50 p-4 rounded-xl border border-white/5 text-[10px] font-mono text-blue-300 overflow-x-auto max-h-40 whitespace-pre-wrap">
+                    {selectedEventDetails.xml_assinado || 'XML não disponível'}
+                  </pre>
+                </div>
+
+                <div className="group">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">XML de Resposta (Bruto do Governo)</span>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedEventDetails.xml_retorno || '');
+                        alert('XML de resposta copiado!');
+                      }}
+                      className="p-1.5 hover:bg-white/10 rounded text-slate-500 hover:text-white transition-all flex items-center gap-1.5 text-[10px]"
+                    >
+                      <Copy className="h-3 w-3" /> COPIAR RESPOSTA
+                    </button>
+                  </div>
+                  <pre className="bg-black/50 p-4 rounded-xl border border-white/5 text-[10px] font-mono text-emerald-300 overflow-x-auto max-h-40 whitespace-pre-wrap">
+                    {selectedEventDetails.xml_retorno || 'Aguardando processamento ou retorno vazio.'}
+                  </pre>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 bg-white/5 border-t border-white/5 flex justify-end">
+              <button 
+                onClick={() => setIsEventModalOpen(false)}
+                className="px-8 py-2.5 bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-600 transition-all shadow-lg"
+              >
+                Fechar Detalhes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
