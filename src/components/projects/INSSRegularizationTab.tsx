@@ -39,6 +39,7 @@ import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
 import { INSSRegularization } from '../../lib/types';
 import { useAuth } from '../../contexts/AuthContext';
+import { diagnoseESocialError, ESocialDiagnostic } from '../../utils/esocialDiagnostics';
 
 interface Worker {
   id: string;
@@ -540,6 +541,76 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </div>
                 )}
               </div>
+              
+              {event.status === 'ERRO' && event.resposta_governo && (
+                <div className="mt-4 animate-in slide-in-from-top-2 duration-300">
+                  {(() => {
+                    const diag = diagnoseESocialError(event.resposta_governo, tipo);
+                    return (
+                      <div className="bg-[#1C0000] border border-red-500/30 rounded-xl p-5 shadow-2xl shadow-red-900/20 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-red-600"></div>
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 bg-red-500/20 rounded-lg text-red-400 mt-1">
+                            <AlertCircle className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 space-y-4">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="text-sm font-black text-red-400 uppercase tracking-tight">Motor de Diagnóstico Aevum</h4>
+                                <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-red-500/20 text-red-300 border border-red-500/30">
+                                  Erro {diag.codigo} {diag.regra ? `• ${diag.regra}` : ''}
+                                </span>
+                              </div>
+                              <p className="text-xs text-red-200/80 font-medium">{diag.descricao}</p>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <p className="text-[9px] font-black text-red-500/70 uppercase tracking-widest flex items-center gap-1.5">
+                                  <Info className="h-3 w-3" /> Causa Provável
+                                </p>
+                                <ul className="space-y-1.5">
+                                  {diag.causas.map((causa, i) => (
+                                    <li key={i} className="text-[11px] text-red-300/90 font-medium flex items-start gap-1.5">
+                                      <span className="text-red-500 mt-0.5">•</span> {causa}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <p className="text-[9px] font-black text-emerald-500/70 uppercase tracking-widest flex items-center gap-1.5">
+                                  <CheckCircle2 className="h-3 w-3" /> Solução Prática
+                                </p>
+                                <ul className="space-y-1.5">
+                                  {diag.solucao.map((sol, i) => (
+                                    <li key={i} className="text-[11px] text-emerald-300/90 font-medium flex items-start gap-1.5">
+                                      <span className="text-emerald-500 mt-0.5">•</span> {sol}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                            
+                            {diag.dependencias && diag.dependencias.length > 0 && (
+                              <div className="pt-3 border-t border-red-500/20 flex items-center gap-2">
+                                <span className="text-[9px] font-black text-orange-400 uppercase tracking-widest">Dependência Faltante:</span>
+                                <div className="flex gap-1.5">
+                                  {diag.dependencias.map((dep, i) => (
+                                    <span key={i} className="px-2 py-0.5 rounded bg-orange-500/10 text-orange-400 text-[9px] font-bold border border-orange-500/20">
+                                      {dep}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           )}
 
@@ -721,24 +792,24 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           regularizationId: inssRegularization.id,
           eventData: {
             proprietarioCpfCnpj,
-            workerCpf,
-            workerNome,
-            workerSexo,
-            workerCorPele,
-            workerEscolaridade,
-            workerNascimento,
-            workerPaisNascimento,
-            workerLogradouro,
-            workerNumero,
-            workerComplemento,
-            workerBairro,
-            workerCep,
-            workerCodIbge,
-            workerUf,
-            workerMatricula,
-            workerCategoria,
-            workerCargo,
-            workerCbo,
+            workerCpf: selectedWorker.cpf,
+            workerNome: selectedWorker.nome,
+            workerSexo: selectedWorker.sexo || 'M',
+            workerCorPele: selectedWorker.raca_cor || '1',
+            workerEscolaridade: selectedWorker.grau_instrucao || '07',
+            workerNascimento: selectedWorker.nascimento,
+            workerPaisNascimento: selectedWorker.pais_nascimento || '105',
+            workerLogradouro: selectedWorker.logradouro,
+            workerNumero: selectedWorker.numero,
+            workerComplemento: selectedWorker.complemento || '',
+            workerBairro: selectedWorker.bairro,
+            workerCep: selectedWorker.cep,
+            workerCodIbge: selectedWorker.cod_ibge || '3304557',
+            workerUf: selectedWorker.uf,
+            workerMatricula: selectedWorker.matricula_esocial,
+            workerCategoria: selectedWorker.categoria,
+            workerCargo: selectedWorker.cargo_nome,
+            workerCbo: selectedWorker.cbo_cargo,
             transmissorCpfCnpj: certificateCpfCnpj
           }
         }
@@ -749,6 +820,30 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       const { protocolo } = response;
       
+      const updateData = {
+        status: 'PROCESSANDO' as const,
+        esocial_status: 'PROCESSANDO' as const,
+        protocolo: protocolo,
+        resposta_governo: {
+          envio_codigo: '201',
+          envio_mensagem: 'Lote recebido com sucesso. Aguardando processamento.'
+        }
+      };
+
+      // Atualiza estado local imediatamente para feedback na UI
+      setEsocialStatus(prev => ({
+        ...(prev || {}),
+        ...updateData
+      }));
+      
+      setSelectedWorker((prev: any) => prev ? { ...prev, ...updateData } : null);
+
+      setWorkers(prev => prev.map(w => 
+        w.id === selectedWorker.id 
+          ? { ...w, ...updateData }
+          : w
+      ));
+
       alert(`Lote enviado com sucesso! Protocolo: ${protocolo}. O processamento no eSocial pode levar alguns segundos.`);
 
       // ETAPA 9 - FEEDBACK
@@ -781,14 +876,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       
       if (response.status === 'SUCESSO') {
         alert('Consulta finalizada! O evento foi processado com SUCESSO.');
+        const updatedSuccess = { esocial_status: 'SUCESSO' as const, recibo: response.recibo, resposta_governo: response.resposta_governo };
+        setSelectedWorker((prev: any) => prev ? { ...prev, ...updatedSuccess } : null);
+        setWorkers(prev => prev.map(w => w.id === selectedWorker.id ? { ...w, ...updatedSuccess } : w));
+        
         setTimeout(() => {
-          setCurrentView('management');
-          fetchWorkers();
+          checkEsocialStatus(selectedWorker.cpf);
         }, 1500);
       } else if (response.status === 'PROCESSANDO') {
         alert('O eSocial ainda está processando o lote. Aguarde alguns segundos e tente novamente.');
+        checkEsocialStatus(selectedWorker.cpf);
       } else {
         alert(`O eSocial retornou um erro: ${response.message || 'Erro de validação desconhecido.'}`);
+        const updatedError = { esocial_status: 'ERRO' as const, resposta_governo: response.resposta_governo };
+        setSelectedWorker((prev: any) => prev ? { ...prev, ...updatedError } : null);
+        setWorkers(prev => prev.map(w => w.id === selectedWorker.id ? { ...w, ...updatedError } : w));
+        checkEsocialStatus(selectedWorker.cpf);
       }
       
       checkEsocialStatus(esocialStatus.cpf_trabalhador);
@@ -1686,7 +1789,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     }
   };
 
-  const validateCPF = (cpf: string) => {
+  const validateCPF = (cpf: string | null | undefined) => {
+    if (!cpf) return false;
     const cleanCPF = cpf.replace(/[^\d]/g, '');
     if (cleanCPF.length !== 11) return false;
     if (/^(\d)\1{10}$/.test(cleanCPF)) return false;
@@ -1703,7 +1807,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     return true;
   };
 
-  const validateCNPJ = (cnpj: string) => {
+  const validateCNPJ = (cnpj: string | null | undefined) => {
+    if (!cnpj) return false;
     const cleanCNPJ = cnpj.replace(/[^\d]/g, '');
     if (cleanCNPJ.length !== 14) return false;
     if (/^(\d)\1{13}$/.test(cleanCNPJ)) return false;
@@ -3052,7 +3157,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 )}
               </button>
               
-              {renderEventLog({ status: selectedWorker.esocial_status, protocolo: selectedWorker.protocolo, recibo: selectedWorker.recibo, resposta_governo: selectedWorker.resposta_governo }, 'S-2300', selectedWorker.cpf)}
+              {renderEventLog({ 
+                status: esocialStatus?.status || selectedWorker.esocial_status, 
+                protocolo: esocialStatus?.protocolo || selectedWorker.protocolo, 
+                recibo: selectedWorker.recibo, 
+                resposta_governo: esocialStatus?.resposta_governo || selectedWorker.resposta_governo 
+              }, 'S-2300', selectedWorker.cpf)}
               
               <div className="flex flex-col items-center gap-6 mt-8">
                 <div className="flex items-center gap-4 w-full">
