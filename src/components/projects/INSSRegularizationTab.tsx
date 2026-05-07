@@ -314,12 +314,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       let finalResult = null;
       let attempt = 1;
-      const maxAttempts = 10;
-      const delayMs = 4000;
+      const maxAttempts = 15; // Aumentado de 10 para 15
+      const delayMs = 5000;   // Aumentado de 4s para 5s
 
       while (attempt <= maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, delayMs));
-        setActiveFlow(prev => ({ ...prev, message: `CONSULTANDO... (TENTATIVA ${attempt}/${maxAttempts})` }));
+        setActiveFlow(prev => ({ ...prev, message: `CONSULTANDO GOVERNO... (TENTATIVA ${attempt}/${maxAttempts})` }));
         
         const { data: consultRes, error: consultErr } = await invokeProxy({
           body: {
