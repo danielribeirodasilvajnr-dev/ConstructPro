@@ -267,7 +267,14 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [selectedEventDetails, setSelectedEventDetails] = useState<any>(null);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
 
-  const [activeFlow, setActiveFlow] = useState<ESocialFlowState>({ status: 'IDLE', message: '' });
+  const [activeFlow, setActiveFlow] = useState<ESocialFlowState>(() => {
+    const saved = sessionStorage.getItem(`activeESocialFlow_${projectId}`);
+    return saved ? JSON.parse(saved) : { status: 'IDLE', message: '' };
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem(`activeESocialFlow_${projectId}`, JSON.stringify(activeFlow));
+  }, [activeFlow, projectId]);
 
   const executeESocialFlow = async (params: {
     eventType: string;
@@ -438,9 +445,16 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       alert(`Erro no processo: ${err.message}`);
     } finally {
+      // Deixa o status de sucesso/erro visível por mais tempo (30s) para o usuário ler os logs finais
+      // Ou até que o componente seja remontado/atualizado
       setTimeout(() => {
-        setActiveFlow(prev => (prev.status === 'SUCCESS' || prev.status === 'ERROR') ? { status: 'IDLE', message: '', logs: [] } : prev);
-      }, 8000);
+        setActiveFlow(prev => {
+          if (prev.status === 'SUCCESS' || prev.status === 'ERROR') {
+            return { status: 'IDLE', message: '', logs: [] };
+          }
+          return prev;
+        });
+      }, 30000);
     }
   };
   const [esocialS1000Status, setEsocialS1000Status] = useState<{
@@ -893,7 +907,17 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     const isSuccess = activeFlow.status === 'SUCCESS';
 
     return (
-      <div className="mt-8 bg-[#161B22] border border-white/5 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="mt-8 bg-[#161B22] border border-white/5 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+        {/* Botão de Fechar Manual (Apenas se finalizado ou erro) */}
+        {(isSuccess || isError) && (
+          <button 
+            onClick={() => setActiveFlow({ status: 'IDLE', message: '', logs: [] })}
+            className="absolute top-4 right-4 p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-full transition-all z-20"
+            title="Fechar Monitor"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
         <div className="p-6 border-b border-white/5 bg-white/5">
           <div className="flex items-center justify-between mb-8">
              <div className="flex items-center gap-3">
