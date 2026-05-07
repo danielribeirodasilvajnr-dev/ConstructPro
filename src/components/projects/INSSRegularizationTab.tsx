@@ -447,11 +447,15 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       checkS1005Status();
       checkS1020Status();
       checkS1010Status();
-      if (selectedWorker) {
-        checkEsocialStatus(selectedWorker.cpf);
-      }
     }
-  }, [inssRegularization, selectedWorker]);
+  }, [inssRegularization, selectedWorker?.id]);
+
+  useEffect(() => {
+    if (inssRegularization && selectedWorker) {
+      checkEsocialStatus(selectedWorker.cpf, 'S-2300');
+      checkEsocialStatus(selectedWorker.cpf, 'S-2399');
+    }
+  }, [inssRegularization, selectedWorker?.id]);
 
   const checkEsocialStatus = async (cpf: string, tipo: string = 'S-2300') => {
     if (!inssRegularization) return;
@@ -512,6 +516,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const renderEventLog = (event: any, tipo: string, cpf?: string) => {
     if (!event || event.status === 'PENDENTE') return null;
 
+    // Lógica para detectar se o recibo veio no campo de protocolo
+    const isReciboInProtocol = event.protocolo?.startsWith('1.') || event.protocolo?.includes('2026');
+    const displayRecibo = event.recibo || (isReciboInProtocol ? event.protocolo : null);
+    const displayProtocolo = isReciboInProtocol && !event.recibo ? null : event.protocolo;
+
     return (
       <div className="mt-6 border border-white/5 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
@@ -527,7 +536,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         </div>
         
         <div className="p-6 bg-[#161B22] space-y-4">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-1">
               <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Status do Governo</p>
               <div className={cn(
@@ -539,19 +548,21 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 {event.status}
               </div>
             </div>
-            {event.recibo && (
+
+            {displayRecibo && (
               <div className="space-y-1">
-                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Número do Recibo</p>
-                <p className="text-xs font-black text-white font-mono bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 inline-block select-all cursor-copy hover:bg-white/10 transition-all">
-                  {event.recibo}
+                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Número do Recibo</p>
+                <p className="text-xs font-black text-emerald-400 font-mono bg-emerald-500/5 px-3 py-1.5 rounded-lg border border-emerald-500/10 inline-block select-all cursor-copy hover:bg-emerald-500/10 transition-all">
+                  {displayRecibo}
                 </p>
               </div>
             )}
-            {event.protocolo && (
+
+            {displayProtocolo && (
               <div className="space-y-1">
                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Protocolo de Envio</p>
                 <p className="text-xs font-black text-slate-400 font-mono bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 inline-block select-all italic">
-                  {event.protocolo}
+                  {displayProtocolo}
                 </p>
               </div>
             )}
@@ -902,7 +913,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       alert(`Lote enviado com sucesso! Protocolo: ${protocolo}. O processamento no eSocial pode levar alguns segundos.`);
 
       // ETAPA 9 - FEEDBACK
-      checkEsocialStatus(selectedWorker.cpf);
+      checkEsocialStatus(selectedWorker.cpf, 'S-2300');
     } catch (err: any) {
       console.error('Error in eSocial flow:', err);
       const errorMsg = err.message || err.details || 'Erro desconhecido';
@@ -936,20 +947,20 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         setWorkers(prev => prev.map(w => w.id === selectedWorker.id ? { ...w, ...updatedSuccess } : w));
         
         setTimeout(() => {
-          checkEsocialStatus(selectedWorker.cpf);
+          checkEsocialStatus(selectedWorker.cpf, 'S-2300');
         }, 1500);
       } else if (response.status === 'PROCESSANDO') {
         alert('O eSocial ainda está processando o lote. Aguarde alguns segundos e tente novamente.');
-        checkEsocialStatus(selectedWorker.cpf);
+        checkEsocialStatus(selectedWorker.cpf, 'S-2300');
       } else {
         alert(`O eSocial retornou um erro: ${response.message || 'Erro de validação desconhecido.'}`);
         const updatedError = { esocial_status: 'ERRO' as const, resposta_governo: response.resposta_governo };
         setSelectedWorker((prev: any) => prev ? { ...prev, ...updatedError } : null);
         setWorkers(prev => prev.map(w => w.id === selectedWorker.id ? { ...w, ...updatedError } : w));
-        checkEsocialStatus(selectedWorker.cpf);
+        checkEsocialStatus(selectedWorker.cpf, 'S-2300');
       }
       
-      checkEsocialStatus(esocialStatus.cpf_trabalhador);
+      checkEsocialStatus(esocialStatus.cpf_trabalhador, 'S-2300');
     } catch (err: any) {
       console.error('Error consulting eSocial:', err);
       alert(`Erro na consulta: ${err.message || 'Erro de conexão'}`);
@@ -2403,7 +2414,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           </div>
 
           {/* Checklist Section - DARK THEME PREMIUM */}
-          <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden">
+          <div className="bg-[#1C232E] rounded-2xl shadow-xl border border-white/5 overflow-hidden">
             <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Checklist Inicial</span>
               <X className="h-4 w-4 text-slate-500 cursor-pointer hover:text-white transition-colors" />
