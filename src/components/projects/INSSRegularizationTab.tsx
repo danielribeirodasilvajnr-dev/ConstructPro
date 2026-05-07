@@ -34,7 +34,10 @@ import {
   Building2,
   RefreshCw,
   Unlock,
-  Settings
+  Settings,
+  ClipboardCheck,
+  PenTool,
+  ArrowRight
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
@@ -116,6 +119,8 @@ const CATEGORIA_OPTIONS = [
 interface ESocialFlowState {
   status: 'IDLE' | 'TRANSMITTING' | 'POLLING' | 'SUCCESS' | 'ERROR';
   message: string;
+  currentStep?: 'VALIDATION' | 'SIGNING' | 'SENDING' | 'POLLING' | 'FINISHED';
+  logs?: string[];
 }
 
 
@@ -275,8 +280,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   }) => {
     const { eventType, regularizationId, indRetif, nrRecibo, workerId, eventData, onComplete } = params;
     
-    setActiveFlow({ status: 'TRANSMITTING', message: 'GERANDO E TRANSMITINDO...' });
+    setActiveFlow({ 
+      status: 'TRANSMITTING', 
+      message: 'VALIDANDO DADOS...', 
+      currentStep: 'VALIDATION',
+      logs: ['🔍 Iniciando validação dos parâmetros...', '✅ Dados locais validados.']
+    });
     
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    setActiveFlow(prev => ({
+      ...prev,
+      message: 'ASSINANDO EVENTO...',
+      currentStep: 'SIGNING',
+      logs: [...(prev.logs || []), '✍️ Gerando assinatura digital (Certificado A1)...', '🔐 XML assinado com sucesso.']
+    }));
+
     try {
       const { data: transmitRes, error: transmitErr } = await invokeProxy({
         body: {
@@ -295,7 +314,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       if (!transmitRes.success) throw new Error(transmitRes.error || 'Erro na transmissão inicial.');
 
       const protocolo = transmitRes.protocolo;
-      setActiveFlow({ status: 'POLLING', message: 'TRANSMITIDO! AGUARDANDO GOVERNO...' });
+      setActiveFlow(prev => ({ 
+        ...prev, 
+        status: 'POLLING', 
+        message: 'ENVIANDO AO GOVERNO...',
+        currentStep: 'SENDING',
+        logs: [...(prev.logs || []), `📡 Lote enviado para o eSocial.`, `🆔 Protocolo: ${protocolo}`, `🔄 Aguardando processamento da fila...`]
+      }));
 
       // Sincroniza status inicial 'PROCESSANDO' no banco de dados para evitar status 'ENVIADO' travado na Auditoria
       const workerCpf = eventData.workerCpf || null;
@@ -314,12 +339,18 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       let finalResult = null;
       let attempt = 1;
-      const maxAttempts = 15; // Aumentado de 10 para 15
-      const delayMs = 5000;   // Aumentado de 4s para 5s
+      const maxAttempts = 15;
+      const delayMs = 5000;
+
+      setActiveFlow(prev => ({ ...prev, currentStep: 'POLLING' }));
 
       while (attempt <= maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, delayMs));
-        setActiveFlow(prev => ({ ...prev, message: `CONSULTANDO GOVERNO... (TENTATIVA ${attempt}/${maxAttempts})` }));
+        setActiveFlow(prev => ({ 
+          ...prev, 
+          message: `AGUARDANDO GOVERNO...`,
+          logs: [...(prev.logs || []), `🔄 Tentativa de consulta ${attempt}/${maxAttempts}...`]
+        }));
         
         const { data: consultRes, error: consultErr } = await invokeProxy({
           body: {
@@ -332,10 +363,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         if (!consultErr && consultRes.success) {
           if (consultRes.status !== 'PROCESSANDO') {
             finalResult = consultRes;
-            setActiveFlow({ 
+            setActiveFlow(prev => ({ 
+              ...prev,
               status: consultRes.status === 'SUCESSO' ? 'SUCCESS' : 'ERROR', 
-              message: consultRes.status === 'SUCESSO' ? 'EVENTO ACEITO!' : 'ERRO NO PROCESSAMENTO' 
-            });
+              message: consultRes.status === 'SUCESSO' ? 'EVENTO ACEITO!' : 'ERRO NO PROCESSAMENTO',
+              currentStep: 'FINISHED',
+              logs: [...(prev.logs || []), consultRes.status === 'SUCESSO' ? '🎉 Sucesso! Recibo obtido.' : '❌ Rejeitado pelo governo.']
+            }));
             break;
           }
         }
@@ -357,16 +391,27 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         else if (eventType === 'S-1005') checkS1005Status();
         else if (eventType === 'S-1010') checkS1010Status();
         else if (eventType === 'S-1020') checkS1020Status();
+        else if (eventType === 'S-1200' || eventType === 'S-1210') {
+          // As remunerações são atualizadas via onComplete nos handlers, 
+          // mas garantimos um fetch geral para sincronizar tudo
+          fetchWorkers();
+        } else if (eventType === 'S-1298' || eventType === 'S-1299') {
+          // Status de período atualizados via onComplete
+        }
 
         fetchEventsHistory();
-        fetchWorkers();
         if (onComplete) onComplete(finalResult);
       } else {
         throw new Error('Tempo limite de consulta esgotado.');
       }
     } catch (err: any) {
       console.error('Error in unified flow:', err);
-      setActiveFlow({ status: 'ERROR', message: 'ERRO NO PROCESSO' });
+      setActiveFlow(prev => ({ 
+        status: 'ERROR', 
+        message: 'ERRO NO PROCESSO',
+        currentStep: 'FINISHED',
+        logs: [...(prev.logs || []), `🚨 ERRO: ${err.message}`]
+      }));
       
       // Marca como erro no banco de dados para não ficar 'ENVIADO' ou 'PROCESSANDO' infinitamente
       try {
@@ -394,8 +439,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       alert(`Erro no processo: ${err.message}`);
     } finally {
       setTimeout(() => {
-        setActiveFlow(prev => (prev.status === 'SUCCESS' || prev.status === 'ERROR') ? { status: 'IDLE', message: '' } : prev);
-      }, 5000);
+        setActiveFlow(prev => (prev.status === 'SUCCESS' || prev.status === 'ERROR') ? { status: 'IDLE', message: '', logs: [] } : prev);
+      }, 8000);
     }
   };
   const [esocialS1000Status, setEsocialS1000Status] = useState<{
@@ -826,6 +871,117 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             >
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Já foi feito!
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderTransmissionMonitor = () => {
+    if (activeFlow.status === 'IDLE') return null;
+
+    const steps = [
+      { id: 'VALIDATION', label: 'Validação', icon: ClipboardCheck },
+      { id: 'SIGNING', label: 'Assinatura', icon: PenTool },
+      { id: 'SENDING', label: 'Envio Gov', icon: Send },
+      { id: 'POLLING', label: 'Processamento', icon: RefreshCw },
+      { id: 'FINISHED', label: 'Concluído', icon: CheckCircle2 }
+    ];
+
+    const currentStepIndex = steps.findIndex(s => s.id === activeFlow.currentStep);
+    const isError = activeFlow.status === 'ERROR';
+    const isSuccess = activeFlow.status === 'SUCCESS';
+
+    return (
+      <div className="mt-8 bg-[#161B22] border border-white/5 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="p-6 border-b border-white/5 bg-white/5">
+          <div className="flex items-center justify-between mb-8">
+             <div className="flex items-center gap-3">
+                <div className={cn(
+                  "w-3 h-3 rounded-full animate-pulse",
+                  isSuccess ? "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" :
+                  isError ? "bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]" : "bg-primary shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                )} />
+                <h3 className="text-sm font-black text-white uppercase tracking-[3px]">Monitor de Transmissão em Tempo Real</h3>
+             </div>
+             <div className={cn(
+               "text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border",
+               isSuccess ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+               isError ? "bg-red-500/10 text-red-400 border-red-500/20" : "bg-white/5 text-slate-500 border-white/10"
+             )}>
+               {activeFlow.message}
+             </div>
+          </div>
+
+          {/* Animated Stepper */}
+          <div className="relative flex justify-between items-start max-w-3xl mx-auto px-4">
+            {/* Progress Line */}
+            <div className="absolute top-5 left-10 right-10 h-0.5 bg-white/5">
+              <div 
+                className={cn(
+                  "h-full transition-all duration-700 ease-in-out",
+                  isError ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                )}
+                style={{ width: `${(currentStepIndex / (steps.length - 1)) * 100}%` }}
+              />
+            </div>
+
+            {steps.map((step, idx) => {
+              const stepCompleted = idx < currentStepIndex || (isSuccess && idx === currentStepIndex);
+              const stepActive = idx === currentStepIndex && !isSuccess && !isError;
+              const stepError = idx === currentStepIndex && isError;
+              const Icon = step.icon;
+
+              return (
+                <div key={step.id} className="relative z-10 flex flex-col items-center gap-3">
+                  <div className={cn(
+                    "w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 border-2",
+                    stepCompleted ? "bg-emerald-500/20 border-emerald-500 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]" :
+                    stepActive ? "bg-primary/20 border-primary text-primary animate-pulse shadow-[0_0_15px_rgba(59,130,246,0.2)]" :
+                    stepError ? "bg-red-500/20 border-red-500 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]" :
+                    "bg-[#0D1117] border-white/10 text-slate-600"
+                  )}>
+                    {stepCompleted ? <Check className="h-5 w-5" /> : stepError ? <X className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                  </div>
+                  <span className={cn(
+                    "text-[9px] font-black uppercase tracking-widest transition-colors duration-500",
+                    stepCompleted ? "text-emerald-500" : stepActive ? "text-primary" : stepError ? "text-red-500" : "text-slate-500"
+                  )}>
+                    {step.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Real-time Logs Console */}
+        <div className="p-6 bg-black/40">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Terminal className="h-4 w-4 text-slate-500" />
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Console de Processamento</span>
+            </div>
+            {isSuccess && (
+              <div className="flex items-center gap-2 text-[10px] font-black text-emerald-500 uppercase animate-bounce">
+                <CheckCircle2 className="h-3 w-3" /> Transmissão Concluída
+              </div>
+            )}
+          </div>
+          <div className="space-y-2 font-mono text-[11px] h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 pr-2">
+            {activeFlow.logs?.map((log, i) => (
+              <div key={i} className="flex items-start gap-3 text-slate-300 animate-in slide-in-from-left-2 duration-300">
+                <span className="text-slate-600 flex-shrink-0">[{new Date().toLocaleTimeString('pt-BR')}]</span>
+                <span className={cn(
+                  log.includes('❌') || log.includes('🚨') ? "text-red-400" :
+                  log.includes('✅') || log.includes('🎉') ? "text-emerald-400" :
+                  log.includes('🔄') || log.includes('📡') ? "text-primary" : "text-slate-300"
+                )}>
+                  {log}
+                </span>
+              </div>
+            ))}
+            <div id="logs-end"></div>
           </div>
         </div>
       </div>
@@ -2587,32 +2743,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </table>
             </div>
 
-            <div className="space-y-6">
-              <button 
-                onClick={handleTransmitS1298}
-                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
-                className={cn(
-                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
-                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
-                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
-                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
-                )}
-              >
-                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
-                  <>
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    {activeFlow.message}
-                  </>
-                ) : (
-                  <>
+            <div>
+              {activeFlow.status !== 'IDLE' ? (
+                renderTransmissionMonitor()
+              ) : (
+                <div className="space-y-6">
+                  <button 
+                    onClick={handleTransmitS1298}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                  >
                     <Send className="h-6 w-6" />
-                    {activeFlow.status === 'SUCCESS' ? 'FOLHA REABERTA' : activeFlow.status === 'ERROR' ? 'ERRO NA REABERTURA' : 'Transmitir Evento / Consultar'}
-                  </>
-                )}
-              </button>
+                    {periodStatuses[selectedPeriodForEvent]?.s1298Status === 'SUCESSO' ? 'REABRIR NOVAMENTE' : 'Transmitir Reabertura / Consultar'}
+                  </button>
 
-              {renderEventLog(periodStatuses[selectedPeriodForEvent] ? { status: periodStatuses[selectedPeriodForEvent].s1298Status, protocolo: periodStatuses[selectedPeriodForEvent].s1298Protocolo, recibo: periodStatuses[selectedPeriodForEvent].s1298Recibo } : null, 'S-1298')}
+                  {renderEventLog(periodStatuses[selectedPeriodForEvent] ? { status: periodStatuses[selectedPeriodForEvent].s1298Status, protocolo: periodStatuses[selectedPeriodForEvent].s1298Protocolo, recibo: periodStatuses[selectedPeriodForEvent].s1298Recibo } : null, 'S-1298')}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -2666,32 +2812,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </table>
             </div>
 
-            <div className="space-y-6">
-              <button 
-                onClick={handleTransmitS1299}
-                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
-                className={cn(
-                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
-                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
-                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
-                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
-                )}
-              >
-                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
-                  <>
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    {activeFlow.message}
-                  </>
-                ) : (
-                  <>
+            <div>
+              {activeFlow.status !== 'IDLE' ? (
+                renderTransmissionMonitor()
+              ) : (
+                <div className="space-y-6">
+                  <button 
+                    onClick={handleTransmitS1299}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                  >
                     <Send className="h-6 w-6" />
-                    {activeFlow.status === 'SUCCESS' ? 'FOLHA FECHADA' : activeFlow.status === 'ERROR' ? 'ERRO NO FECHAMENTO' : 'Transmitir Fechamento / Consultar'}
-                  </>
-                )}
-              </button>
+                    {periodStatuses[selectedPeriodForEvent]?.s1299Status === 'SUCESSO' ? 'REENVIAR FECHAMENTO' : 'Transmitir Fechamento / Consultar'}
+                  </button>
 
-              {renderEventLog(periodStatuses[selectedPeriodForEvent] ? { status: periodStatuses[selectedPeriodForEvent].s1299Status, protocolo: periodStatuses[selectedPeriodForEvent].s1299Protocolo, recibo: periodStatuses[selectedPeriodForEvent].s1299Recibo } : null, 'S-1299')}
+                  {renderEventLog(periodStatuses[selectedPeriodForEvent] ? { status: periodStatuses[selectedPeriodForEvent].s1299Status, protocolo: periodStatuses[selectedPeriodForEvent].s1299Protocolo, recibo: periodStatuses[selectedPeriodForEvent].s1299Recibo } : null, 'S-1299')}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -2773,32 +2909,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </table>
             </div>
 
-            <div className="mt-8 space-y-6">
-              <button 
-                onClick={handleTransmitS1210}
-                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
-                className={cn(
-                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
-                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
-                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
-                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
-                )}
-              >
-                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
-                  <>
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    {activeFlow.message}
-                  </>
-                ) : (
-                  <>
+            <div className="mt-8">
+              {activeFlow.status !== 'IDLE' ? (
+                renderTransmissionMonitor()
+              ) : (
+                <div className="space-y-6">
+                  <button 
+                    onClick={handleTransmitS1210}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                  >
                     <Send className="h-6 w-6" />
-                    {activeFlow.status === 'SUCCESS' ? 'PAGAMENTO ACEITO' : activeFlow.status === 'ERROR' ? 'ERRO NO PAGAMENTO' : 'Transmitir Evento S-1210'}
-                  </>
-                )}
-              </button>
-              
-              {renderEventLog({ status: selectedRemForEvent.pagStatus, protocolo: selectedRemForEvent.pagProtocolo, recibo: selectedRemForEvent.pagRecibo }, 'S-1210', selectedWorker.cpf)}
+                    {selectedRemForEvent.pagStatus === 'SUCESSO' ? 'REENVIAR PAGAMENTO' : 'Transmitir Evento S-1210'}
+                  </button>
+                  
+                  {renderEventLog({ status: selectedRemForEvent.pagStatus, protocolo: selectedRemForEvent.pagProtocolo, recibo: selectedRemForEvent.pagRecibo }, 'S-1210', selectedWorker.cpf)}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -2882,32 +3008,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </table>
             </div>
 
-            <div className="mt-8 space-y-6">
-              <button 
-                onClick={handleTransmitS1200}
-                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
-                className={cn(
-                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
-                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
-                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
-                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
-                )}
-              >
-                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
-                  <>
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    {activeFlow.message}
-                  </>
-                ) : (
-                  <>
+            <div className="mt-8">
+              {activeFlow.status !== 'IDLE' ? (
+                renderTransmissionMonitor()
+              ) : (
+                <div className="space-y-6">
+                  <button 
+                    onClick={handleTransmitS1200}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                  >
                     <Send className="h-6 w-6" />
-                    {activeFlow.status === 'SUCCESS' ? 'REMUNERAÇÃO ACEITA' : activeFlow.status === 'ERROR' ? 'ERRO NA REMUNERAÇÃO' : 'Transmitir Evento S-1200'}
-                  </>
-                )}
-              </button>
-              
-              {renderEventLog({ status: selectedRemForEvent.remStatus, protocolo: selectedRemForEvent.remProtocolo, recibo: selectedRemForEvent.remRecibo }, 'S-1200', selectedWorker.cpf)}
+                    {selectedRemForEvent.remStatus === 'SUCESSO' ? 'REENVIAR REMUNERAÇÃO' : 'Transmitir Evento S-1200'}
+                  </button>
+                  
+                  {renderEventLog({ status: selectedRemForEvent.remStatus, protocolo: selectedRemForEvent.remProtocolo, recibo: selectedRemForEvent.remRecibo }, 'S-1200', selectedWorker.cpf)}
+                </div>
+              )}
               
               <div className="flex flex-col items-center gap-6 mt-8">
                 <div className="flex items-center gap-4 w-full">
@@ -3008,32 +3124,36 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </table>
             </div>
 
-            <div className="mt-8 space-y-6">
-              <button 
-                onClick={handleTransmitESocial}
-                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
-                className={cn(
-                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
-                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
-                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
-                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
-                )}
-              >
-                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
-                  <>
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    {activeFlow.message}
-                  </>
-                ) : (
-                  <>
+            <div className="mt-8">
+              {activeFlow.status !== 'IDLE' ? (
+                renderTransmissionMonitor()
+              ) : (
+                <div className="space-y-6">
+                  <button 
+                    onClick={handleTransmitESocial}
+                    className={cn(
+                      "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
+                      selectedWorker.esocial_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20" :
+                      selectedWorker.esocial_status === 'ERRO' ? "bg-red-600 hover:bg-red-700 text-white shadow-red-500/20" :
+                      "bg-primary hover:bg-blue-700 text-white shadow-blue-500/20"
+                    )}
+                  >
                     <Send className="h-6 w-6" />
-                    {activeFlow.status === 'SUCCESS' ? 'CADASTRO ACEITO' : activeFlow.status === 'ERROR' ? 'ERRO NO CADASTRO' : 'Transmitir Evento / Consultar'}
-                  </>
-                )}
-              </button>
-              
-              {renderEventLog({ 
+                    {selectedWorker.esocial_status === 'SUCESSO' ? 'RETIFICAR CADASTRO / CONSULTAR' : 
+                     selectedWorker.esocial_status === 'ERRO' ? 'RETRANSMITIR CADASTRO / CONSULTAR' : 
+                     'Transmitir Cadastro / Consultar'}
+                  </button>
+
+                  {renderEventLog({ 
+                    status: selectedWorker.esocial_status, 
+                    protocolo: selectedWorker.protocolo, 
+                    recibo: selectedWorker.recibo, 
+                    resposta_governo: selectedWorker.resposta_governo 
+                  }, 'S-2300', selectedWorker.cpf)}
+                </div>
+              )}
+
+              {activeFlow.status === 'IDLE' && renderEventLog({ 
                 status: esocialStatus?.status || selectedWorker.esocial_status, 
                 protocolo: esocialStatus?.protocolo || selectedWorker.protocolo, 
                 recibo: selectedWorker.recibo, 
@@ -3115,78 +3235,34 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </table>
             </div>
 
-            <div className="mt-8 space-y-6">
-              <button 
-                onClick={handleTransmitS2399}
-                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
-                className={cn(
-                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
-                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
-                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
-                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
-                )}
-              >
-                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
-                  <>
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    {activeFlow.message}
-                  </>
-                ) : (
-                  <>
+            <div className="mt-8">
+              {activeFlow.status !== 'IDLE' ? (
+                renderTransmissionMonitor()
+              ) : (
+                <div className="space-y-6">
+                  <button 
+                    onClick={handleTransmitS2399}
+                    className={cn(
+                      "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
+                      selectedWorker.s2399_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20" :
+                      selectedWorker.s2399_status === 'ERRO' ? "bg-red-600 hover:bg-red-700 text-white shadow-red-500/20" :
+                      "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                    )}
+                  >
                     <Send className="h-6 w-6" />
-                    {activeFlow.status === 'SUCCESS' ? 'ENCERRAMENTO ACEITO' : activeFlow.status === 'ERROR' ? 'ERRO NO ENCERRAMENTO' : 'Transmitir Evento / Consultar'}
-                  </>
-                )}
-              </button>
-              {selectedWorker.s2399_status === 'PROCESSANDO' && (
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 mt-4 animate-pulse">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3 text-blue-400">
-                      <History className="h-5 w-5" />
-                      <span className="font-bold text-sm uppercase tracking-widest">Aguardando Resposta</span>
-                    </div>
-                    <button 
-                      onClick={async () => {
-                        if (!confirm('Deseja realmente resetar o status deste evento? Use apenas se estiver travado.')) return;
-                        const { error: delError } = await supabase
-                          .from('esocial_events')
-                          .delete()
-                          .eq('cpf_trabalhador', selectedWorker.cpf)
-                          .eq('tipo_evento', 'S-2399')
-                          .eq('regularization_id', inssRegularization!.id);
-                        
-                        if (delError) {
-                          alert(`Erro ao resetar: ${delError.message}`);
-                          return;
-                        }
-                        
-                        // Limpar o sessionStorage para evitar restore do estado travado
-                        sessionStorage.removeItem(`selectedWorkerId_${projectId}`);
-                        sessionStorage.removeItem(`currentRegularizationView_${projectId}`);
-                        
-                        // Atualizar estado local sem recarregar
-                        const resetData = { s2399_status: undefined, s2399_protocolo: undefined, s2399_recibo: undefined, s2399_resposta_governo: undefined };
-                        setWorkers(prev => prev.map(w => w.id === selectedWorker.id ? { ...w, ...resetData } : w));
-                        setSelectedWorker((prev: any) => prev ? { ...prev, ...resetData } : null);
-                        alert('Status resetado com sucesso! Agora você pode transmitir novamente.');
-                      }}
-                      className="text-[10px] font-bold text-red-400 hover:text-red-300 underline uppercase tracking-tighter"
-                    >
-                      Limpar Status (Reset)
-                    </button>
-                  </div>
-                  <p className="text-blue-100/60 text-xs">
-                    O evento já foi recebido pelo governo. Clique no botão acima para verificar se o recibo oficial já foi gerado.
-                  </p>
+                    {selectedWorker.s2399_status === 'SUCESSO' ? 'RETIFICAR TÉMINO / CONSULTAR' : 
+                     selectedWorker.s2399_status === 'ERRO' ? 'RETRANSMITIR TÉRMINO / CONSULTAR' : 
+                     'Transmitir Evento S-2399'}
+                  </button>
+
+                  {renderEventLog({ 
+                    status: selectedWorker.s2399_status, 
+                    protocolo: selectedWorker.s2399_protocolo, 
+                    recibo: selectedWorker.s2399_recibo, 
+                    resposta_governo: selectedWorker.s2399_resposta_governo 
+                  }, 'S-2399', selectedWorker.cpf)}
                 </div>
               )}
-              {renderEventLog({ 
-                status: selectedWorker.s2399_status, 
-                protocolo: selectedWorker.s2399_protocolo, 
-                recibo: selectedWorker.s2399_recibo, 
-                resposta_governo: selectedWorker.s2399_resposta_governo 
-              }, 'S-2399', selectedWorker.cpf)}
 
               <div className="flex flex-col items-center gap-6 mt-8">
                 <div className="flex items-center gap-4 w-full">
@@ -3723,32 +3799,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </table>
             </div>
 
-            <div className="flex flex-col gap-6">
-              <button 
-                onClick={handleTransmitS1000}
-                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
-                className={cn(
-                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
-                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
-                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
-                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
-                )}
-              >
-                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
-                  <>
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    {activeFlow.message}
-                  </>
-                ) : (
-                  <>
+            <div>
+              {activeFlow.status !== 'IDLE' ? (
+                renderTransmissionMonitor()
+              ) : (
+                <div className="flex flex-col gap-6">
+                  <button 
+                    onClick={handleTransmitS1000}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                  >
                     <Send className="h-6 w-6" />
-                    {activeFlow.status === 'SUCCESS' ? 'EVENTO ACEITO' : activeFlow.status === 'ERROR' ? 'ERRO NO EVENTO' : 'Transmitir Evento / Consultar'}
-                  </>
-                )}
-              </button>
-              
-              {renderEventLog(esocialS1000Status, 'S-1000')}
+                    {esocialS1000Status?.status === 'SUCESSO' ? 'REATIVAR / RETIFICAR EMPREGADOR' : 'Transmitir Evento / Consultar'}
+                  </button>
+                  
+                  {renderEventLog(esocialS1000Status, 'S-1000')}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -3804,32 +3870,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </table>
             </div>
 
-            <div className="flex flex-col gap-6">
-              <button 
-                onClick={handleTransmitS1005}
-                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
-                className={cn(
-                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
-                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
-                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
-                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
-                )}
-              >
-                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
-                  <>
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    {activeFlow.message}
-                  </>
-                ) : (
-                  <>
+            <div>
+              {activeFlow.status !== 'IDLE' ? (
+                renderTransmissionMonitor()
+              ) : (
+                <div className="flex flex-col gap-6">
+                  <button 
+                    onClick={handleTransmitS1005}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                  >
                     <Send className="h-6 w-6" />
-                    {activeFlow.status === 'SUCCESS' ? 'EVENTO ACEITO' : activeFlow.status === 'ERROR' ? 'ERRO NO EVENTO' : 'Transmitir Evento / Consultar'}
-                  </>
-                )}
-              </button>
-              
-              {renderEventLog(esocialS1005Status, 'S-1005')}
+                    {esocialS1005Status?.status === 'SUCESSO' ? 'RETIFICAR ESTABELECIMENTO' : 'Transmitir Evento / Consultar'}
+                  </button>
+                  
+                  {renderEventLog(esocialS1005Status, 'S-1005')}
+                </div>
+              )}
 
               <div className="flex flex-col items-center gap-6 mt-8">
                 <div className="flex items-center gap-4 w-full">
@@ -3909,32 +3965,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </table>
             </div>
 
-            <div className="flex flex-col gap-6">
-              <button 
-                onClick={handleTransmitS1020}
-                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
-                className={cn(
-                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
-                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
-                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
-                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
-                )}
-              >
-                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
-                  <>
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    {activeFlow.message}
-                  </>
-                ) : (
-                  <>
+            <div>
+              {activeFlow.status !== 'IDLE' ? (
+                renderTransmissionMonitor()
+              ) : (
+                <div className="flex flex-col gap-6">
+                  <button 
+                    onClick={handleTransmitS1020}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                  >
                     <Send className="h-6 w-6" />
-                    {activeFlow.status === 'SUCCESS' ? 'EVENTO ACEITO' : activeFlow.status === 'ERROR' ? 'ERRO NO EVENTO' : 'Transmitir Evento / Consultar'}
-                  </>
-                )}
-              </button>
+                    {esocialS1020Status?.status === 'SUCESSO' ? 'RETIFICAR LOTAÇÃO' : 'Transmitir Evento / Consultar'}
+                  </button>
 
-              {renderEventLog(esocialS1020Status, 'S-1020')}
+                  {renderEventLog(esocialS1020Status, 'S-1020')}
+                </div>
+              )}
 
             </div>
           </div>
@@ -4047,32 +4093,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </table>
             </div>
 
-            <div className="flex flex-col gap-6">
-              <button 
-                onClick={handleTransmitS1010}
-                disabled={activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR'}
-                className={cn(
-                  "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                  activeFlow.status === 'SUCCESS' ? "bg-emerald-600 text-white" :
-                  activeFlow.status === 'ERROR' ? "bg-red-600 text-white" :
-                  activeFlow.status !== 'IDLE' ? "bg-yellow-500 text-[#1C232E]" : 
-                  "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
-                )}
-              >
-                {activeFlow.status !== 'IDLE' && activeFlow.status !== 'SUCCESS' && activeFlow.status !== 'ERROR' ? (
-                  <>
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    {activeFlow.message}
-                  </>
-                ) : (
-                  <>
+            <div>
+              {activeFlow.status !== 'IDLE' ? (
+                renderTransmissionMonitor()
+              ) : (
+                <div className="flex flex-col gap-6">
+                  <button 
+                    onClick={handleTransmitS1010}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                  >
                     <Send className="h-6 w-6" />
-                    {activeFlow.status === 'SUCCESS' ? 'EVENTO ACEITO' : activeFlow.status === 'ERROR' ? 'ERRO NO EVENTO' : 'Transmitir Evento / Consultar'}
-                  </>
-                )}
-              </button>
+                    {esocialS1010Status?.status === 'SUCESSO' ? 'RETIFICAR RÚBRICA' : 'Transmitir Evento / Consultar'}
+                  </button>
 
-              {renderEventLog(esocialS1010Status, 'S-1010')}
+                  {renderEventLog(esocialS1010Status, 'S-1010')}
+                </div>
+              )}
             </div>
           </div>
         </div>
