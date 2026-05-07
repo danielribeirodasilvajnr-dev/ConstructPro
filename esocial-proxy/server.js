@@ -298,9 +298,9 @@ app.post('/esocial', async (req, res) => {
 
       // Mapeamento flexível para suportar nomes com ou sem prefixo 'worker'
       const sexo = eventData.sexo || eventData.workerSexo || 'M';
-      const racaCor = eventData.racaCor || eventData.workerCorPele || '1';
-      const estCiv = eventData.estCiv || '1';
-      const grauInstr = eventData.grauInstr || eventData.workerEscolaridade || '07';
+      const racaCor = String(eventData.racaCor || eventData.workerCorPele || '1');
+      const estCiv = String(eventData.estCiv || '1');
+      const grauInstr = String(eventData.grauInstr || eventData.workerEscolaridade || '07').padStart(2, '0');
       const nascimento = eventData.nascimento || eventData.workerNascimento || '1980-03-05';
       const matricula = eventData.matricula || eventData.workerMatricula || '001';
       const codCateg = eventData.codCateg || eventData.workerCategoria || '701';
@@ -325,11 +325,13 @@ app.post('/esocial', async (req, res) => {
       // FIX #2: Usa brDate (já calculado em BRT) para dtTerm — determinístico em qualquer ambiente
       const brToday = brDate.toISOString().split('T')[0];
       const dtTermFinal = eventData.dtTerm || brToday; 
-      const mtvDesligTSV = String(eventData.mtvDesligTSV || '11').padStart(2, '0');
+      const codCateg = String(eventData.codCateg || '701');
+      const isDiretor = ['721', '722', '723', '771'].includes(codCateg);
+      const mtvDesligTSV = isDiretor ? String(eventData.mtvDesligTSV || '01').padStart(2, '0') : null;
 
       const ideEvento = `<ideEvento><indRetif>${indRetif || 1}</indRetif>${(indRetif == 2 && nrRecibo) ? `<nrRecibo>${nrRecibo}</nrRecibo>` : ''}<tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento>`;
 
-      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVTermino Id="${eventId}">${ideEvento}<ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTrabSemVinculo><cpfTrab>${workerCpf}</cpfTrab><matricula>${matricula}</matricula></ideTrabSemVinculo><infoTSVTermino><dtTerm>${dtTermFinal}</dtTerm><mtvDesligTSV>${mtvDesligTSV}</mtvDesligTSV></infoTSVTermino></evtTSVTermino></eSocial>`;
+      xmlEvento = `<eSocial xmlns="${ns}"><evtTSVTermino Id="${eventId}">${ideEvento}<ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><ideTrabSemVinculo><cpfTrab>${workerCpf}</cpfTrab><matricula>${matricula}</matricula></ideTrabSemVinculo><infoTSVTermino><dtTerm>${dtTermFinal}</dtTerm>${mtvDesligTSV ? `<mtvDesligTSV>${mtvDesligTSV}</mtvDesligTSV>` : ''}</infoTSVTermino></evtTSVTermino></eSocial>`;
     } else if (eventType === 'S-1200') {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtRemun/v_S_01_03_00';
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');

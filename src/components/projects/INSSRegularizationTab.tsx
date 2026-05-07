@@ -1002,8 +1002,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         workerCpf: selectedWorker.cpf,
         workerNome: selectedWorker.nome,
         workerSexo: selectedWorker.sexo || 'M',
-        workerCorPele: selectedWorker.cor_pele || '1',
-        workerEscolaridade: selectedWorker.escolaridade || '07',
+        workerCorPele: (selectedWorker.cor_pele || '1').toString(),
+        workerEscolaridade: (selectedWorker.escolaridade || '07').toString().padStart(2, '0'),
         workerNascimento: selectedWorker.nascimento,
         workerPaisNascimento: selectedWorker.pais_nascimento || '105',
         workerLogradouro: selectedWorker.logradouro,
@@ -1577,7 +1577,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         workerCpf: selectedWorker.cpf,
         proprietarioCpfCnpj,
         matricula: selectedWorker.matricula_esocial,
-        dtTerm: new Date().toLocaleDateString('en-CA')
+        dtTerm: new Date().toLocaleDateString('en-CA'),
+        codCateg: selectedWorker.categoria || '701'
       }
     });
   };
