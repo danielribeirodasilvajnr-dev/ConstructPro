@@ -211,6 +211,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [workerCargo, setWorkerCargo] = useState('Pedreiro');
   const [workerCbo, setWorkerCbo] = useState('715210');
   const [workerMatricula, setWorkerMatricula] = useState('');
+  const [isMarkingDone, setIsMarkingDone] = useState(false);
+  const [manualRecibo, setManualRecibo] = useState('');
+  const [activeManualType, setActiveManualType] = useState<string | null>(null);
+  const [activeManualCpf, setActiveManualCpf] = useState<string | null>(null);
   const [workerCep, setWorkerCep] = useState('');
   const [workerLogradouro, setWorkerLogradouro] = useState('');
   const [workerNumero, setWorkerNumero] = useState('');
@@ -449,7 +453,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     }
   }, [inssRegularization, selectedWorker]);
 
-  const checkEsocialStatus = async (cpf: string) => {
+  const checkEsocialStatus = async (cpf: string, tipo: string = 'S-2300') => {
     if (!inssRegularization) return;
     try {
       const { data, error } = await supabase
@@ -457,28 +461,54 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         .select('*')
         .eq('regularization_id', inssRegularization.id)
         .eq('cpf_trabalhador', cpf)
-        .eq('tipo_evento', 'S-2300')
+        .eq('tipo_evento', tipo)
         .order('created_at', { ascending: false })
         .limit(1);
 
       if (error) throw error;
+      
       if (data && data.length > 0) {
-        setEsocialStatus({
+        const statusData = {
           id: data[0].id,
           status: data[0].status,
           protocolo: data[0].protocolo,
           recibo: data[0].recibo,
-          tipo_evento: data[0].tipo_evento,
-          cpf_trabalhador: data[0].cpf_trabalhador,
           resposta_governo: data[0].resposta_governo
+        };
+
+        if (tipo === 'S-2300') {
+          setEsocialStatus(statusData);
+        }
+
+        setSelectedWorker((prev: any) => {
+          if (!prev || prev.cpf !== cpf) return prev;
+          if (tipo === 'S-2300') {
+            return { 
+              ...prev, 
+              esocial_status: statusData.status, 
+              protocolo: statusData.protocolo, 
+              recibo: statusData.recibo,
+              resposta_governo: statusData.resposta_governo 
+            };
+          } else if (tipo === 'S-2399') {
+            return { 
+              ...prev, 
+              s2399_status: statusData.status, 
+              s2399_protocolo: statusData.protocolo, 
+              s2399_recibo: statusData.recibo,
+              s2399_resposta_governo: statusData.resposta_governo 
+            };
+          }
+          return prev;
         });
-      } else {
+      } else if (tipo === 'S-2300') {
         setEsocialStatus(null);
       }
     } catch (err) {
-      console.error('Error checking esocial status:', err);
+      console.error(`Error checking ${tipo} status:`, err);
     }
   };
+
   const renderEventLog = (event: any, tipo: string, cpf?: string) => {
     if (!event || event.status === 'PENDENTE') return null;
 
@@ -531,18 +561,35 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             <div className="pt-4 border-t border-white/5">
               <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Mensagem do Sistema</p>
               <div className="bg-black/40 rounded-xl p-4 border border-white/5">
-                <p className="text-xs text-slate-300 font-medium leading-relaxed font-mono">
-                  {event.resposta_governo.envio_mensagem || event.resposta_governo.message || (event.status === 'SUCESSO' ? 'Evento processado e aceito pelo eSocial.' : 'Aguardando retorno do processamento...')}
-                </p>
-                {event.resposta_governo.ocorre_mensagem && (
-                  <div className="mt-3 pt-3 border-t border-white/5">
-                    <p className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-1">Ocorrência eSocial:</p>
-                    <p className="text-[11px] text-red-300/80 font-bold">{event.resposta_governo.ocorre_mensagem}</p>
-                  </div>
-                )}
+                <div className="text-xs text-slate-300 font-medium leading-relaxed font-mono space-y-3">
+                  {Array.isArray(event.resposta_governo) ? (
+                    event.resposta_governo.map((oc: any, idx: number) => (
+                      <div key={idx} className={cn(idx < event.resposta_governo.length - 1 && "border-b border-white/5 pb-3")}>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                            oc.tipo === '1' ? "bg-red-500/20 text-red-400 border border-red-500/30" : "bg-orange-500/20 text-orange-400 border border-orange-500/30"
+                          )}>
+                            Ocorrência {oc.codigo}
+                          </span>
+                          {oc.codigo === '401' && (
+                            <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                              Duplicidade Detectada
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] font-bold text-white/90 leading-relaxed">{oc.descricao}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p>
+                      {event.resposta_governo.envio_mensagem || event.resposta_governo.message || (event.status === 'SUCESSO' ? 'Evento processado e aceito pelo eSocial.' : 'Aguardando retorno do processamento...')}
+                    </p>
+                  )}
+                </div>
               </div>
               
-              {event.status === 'ERRO' && event.resposta_governo && (
+              {(event.status === 'ERRO' || (Array.isArray(event.resposta_governo) && event.resposta_governo.some((oc: any) => oc.codigo === '401'))) && event.resposta_governo && (
                 <div className="mt-4 animate-in slide-in-from-top-2 duration-300">
                   {(() => {
                     const diag = diagnoseESocialError(event.resposta_governo, tipo);
@@ -1563,8 +1610,14 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   };
   const handleMarkAsDone = async (tipo: string, cpf?: string) => {
     if (!inssRegularization) return;
-    const recibo = prompt(`Informe o Número do Recibo do evento ${tipo} obtido no portal eSocial:`);
-    if (!recibo) return;
+    
+    // Se não temos o recibo ainda, abre o formulário manual
+    if (!manualRecibo) {
+      setActiveManualType(tipo);
+      setActiveManualCpf(cpf || null);
+      setIsMarkingDone(true);
+      return;
+    }
 
     setIsTransmitting(true);
     try {
@@ -1575,7 +1628,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           tipo_evento: tipo,
           cpf_trabalhador: cpf || null,
           status: 'SUCESSO',
-          recibo: recibo,
+          recibo: manualRecibo,
           resposta_governo: { manual: true, message: 'Marcado manualmente como concluído.' }
         });
 
@@ -1583,12 +1636,18 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       
       alert('Evento marcado como concluído com sucesso!');
       
+      // Limpa estados
+      setManualRecibo('');
+      setIsMarkingDone(false);
+      setActiveManualType(null);
+      setActiveManualCpf(null);
+
       if (tipo === 'S-1000') checkS1000Status();
       else if (tipo === 'S-1005') checkS1005Status();
       else if (tipo === 'S-1020') checkS1020Status();
       else if (tipo === 'S-1010') checkS1010Status();
       else if (cpf) {
-        checkEsocialStatus(cpf);
+        await checkEsocialStatus(cpf, tipo);
         fetchWorkers();
       }
       
@@ -1597,6 +1656,55 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     } finally {
       setIsTransmitting(false);
     }
+  };
+
+  const renderManualEntry = () => {
+    if (!isMarkingDone) return null;
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+        <div className="bg-slate-900 border border-white/10 p-8 rounded-3xl shadow-2xl max-w-md w-full space-y-6">
+          <div className="space-y-2">
+            <h3 className="text-xl font-black text-white uppercase tracking-tight">Inserir Recibo Manual</h3>
+            <p className="text-xs text-slate-400 font-medium leading-relaxed">
+              Informe o número do recibo oficial gerado pelo eSocial para o evento <span className="text-primary font-bold">{activeManualType}</span>.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="relative">
+              <input
+                type="text"
+                value={manualRecibo}
+                onChange={(e) => setManualRecibo(e.target.value)}
+                placeholder="Ex: 1.1.202605.000000000..."
+                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-slate-600"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setIsMarkingDone(false);
+                  setManualRecibo('');
+                  setActiveManualType(null);
+                }}
+                className="flex-1 px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black text-slate-400 hover:text-white transition-all uppercase tracking-widest"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleMarkAsDone(activeManualType!, activeManualCpf || undefined)}
+                disabled={!manualRecibo || isTransmitting}
+                className="flex-[2] px-6 py-4 bg-primary hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-[10px] font-black text-white transition-all shadow-lg shadow-primary/20 uppercase tracking-widest"
+              >
+                {isTransmitting ? 'Salvando...' : 'Confirmar Recibo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const handleTransmitS2399 = async () => {
@@ -4328,6 +4436,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           </div>
         </div>
       )}
+      {renderManualEntry()}
     </div>
   );
 }

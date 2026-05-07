@@ -42,12 +42,12 @@ export const ESOCIAL_ERRORS: Record<string, Partial<ESocialDiagnostic>> = {
     temporario: true
   },
   '401': {
-    descricao: 'Lote inválido.',
-    causas: ['XML malformado', 'Estrutura inválida enviada pelo proxy'],
-    solucao: ['Entrar em contato com o suporte técnico para análise do payload'],
-    tipo: 'XML',
-    nivel: 'CRITICO',
-    bloqueiaTransmissao: true,
+    descricao: 'Conteúdo do evento inválido / Duplicidade.',
+    causas: ['Evento já enviado anteriormente (Duplicidade)', 'Dados informados não condizem com o histórico do eSocial', 'XML malformado ou fora do padrão'],
+    solucao: ['Se for duplicidade, o evento já foi aceito e você pode usar o número do recibo existente', 'Verificar se os dados do trabalhador (CPF, Matrícula) estão corretos', 'Revisar o preenchimento dos campos'],
+    tipo: 'GOVERNO',
+    nivel: 'ALERTA',
+    bloqueiaTransmissao: false,
     temporario: false
   },
   '402': {
@@ -207,8 +207,19 @@ export function diagnoseESocialError(respostaGoverno: any, eventoTipo?: string):
 
   if (!respostaGoverno) return diagnostic;
 
-  const msg = (respostaGoverno.ocorre_mensagem || respostaGoverno.message || respostaGoverno.envio_mensagem || '').toString();
-  const codigo = respostaGoverno.ocorre_codigo?.toString() || respostaGoverno.envio_codigo?.toString();
+  let msg = '';
+  let codigo = '';
+
+  if (Array.isArray(respostaGoverno) && respostaGoverno.length > 0) {
+    // Se for um array de ocorrências (novo padrão do proxy)
+    const principal = respostaGoverno[0];
+    msg = principal.descricao || '';
+    codigo = principal.codigo?.toString() || '';
+  } else {
+    // Fallback para objeto único (padrão antigo)
+    msg = (respostaGoverno.ocorre_mensagem || respostaGoverno.message || respostaGoverno.envio_mensagem || '').toString();
+    codigo = respostaGoverno.ocorre_codigo?.toString() || respostaGoverno.envio_codigo?.toString() || '';
+  }
   
   diagnostic.codigo = codigo || 'N/A';
 
