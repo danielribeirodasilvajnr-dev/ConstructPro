@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Save,
   CheckCircle2,
   Copy,
@@ -185,7 +185,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       setCurrentView('management');
     }
   }, [currentView, selectedWorkerId, editingWorkerId]);
-  
+
   // Form State - Client
   const [name, setName] = useState('');
   const [client, setClient] = useState('');
@@ -202,7 +202,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const [maedDate, setMaedDate] = useState('');
   const [parcelarDate, setParcelarDate] = useState('');
   const [terminationDate, setTerminationDate] = useState(new Date().toISOString().split('T')[0]);
-  
+
   // Form State - Work
   const [address, setAddress] = useState('');
   const [areaConstruida, setAreaConstruida] = useState(0);
@@ -286,14 +286,14 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     onComplete?: (result: any) => void;
   }) => {
     const { eventType, regularizationId, indRetif, nrRecibo, workerId, eventData, onComplete } = params;
-    
-    setActiveFlow({ 
-      status: 'TRANSMITTING', 
-      message: 'VALIDANDO DADOS...', 
+
+    setActiveFlow({
+      status: 'TRANSMITTING',
+      message: 'VALIDANDO DADOS...',
       currentStep: 'VALIDATION',
       logs: ['🔍 Iniciando validação dos parâmetros...', '✅ Dados locais validados.']
     });
-    
+
     await new Promise(resolve => setTimeout(resolve, 800));
 
     setActiveFlow(prev => ({
@@ -321,9 +321,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       if (!transmitRes.success) throw new Error(transmitRes.error || 'Erro na transmissão inicial.');
 
       const protocolo = transmitRes.protocolo;
-      setActiveFlow(prev => ({ 
-        ...prev, 
-        status: 'POLLING', 
+      setActiveFlow(prev => ({
+        ...prev,
+        status: 'POLLING',
         message: 'ENVIANDO AO GOVERNO...',
         currentStep: 'SENDING',
         logs: [...(prev.logs || []), `📡 Lote enviado para o eSocial.`, `🆔 Protocolo: ${protocolo}`, `🔄 Aguardando processamento da fila...`]
@@ -332,15 +332,15 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       // Sincroniza status inicial 'PROCESSANDO' no banco de dados para evitar status 'ENVIADO' travado na Auditoria
       const workerCpf = eventData.workerCpf || null;
       await supabase.from('esocial_events')
-        .update({ 
-          status: 'PROCESSANDO', 
-          protocolo, 
-          updated_at: new Date().toISOString() 
+        .update({
+          status: 'PROCESSANDO',
+          protocolo,
+          updated_at: new Date().toISOString()
         })
         .eq('regularization_id', regularizationId)
         .eq('tipo_evento', eventType)
         .eq('cpf_trabalhador', workerCpf || '');
-      
+
       fetchEventsHistory();
       fetchWorkers();
 
@@ -353,12 +353,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       while (attempt <= maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, delayMs));
-        setActiveFlow(prev => ({ 
-          ...prev, 
+        setActiveFlow(prev => ({
+          ...prev,
           message: `AGUARDANDO GOVERNO...`,
           logs: [...(prev.logs || []), `🔄 Tentativa de consulta ${attempt}/${maxAttempts}...`]
         }));
-        
+
         const { data: consultRes, error: consultErr } = await invokeProxy({
           body: {
             action: 'CONSULT',
@@ -370,9 +370,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         if (!consultErr && consultRes.success) {
           if (consultRes.status !== 'PROCESSANDO') {
             finalResult = consultRes;
-            setActiveFlow(prev => ({ 
+            setActiveFlow(prev => ({
               ...prev,
-              status: consultRes.status === 'SUCESSO' ? 'SUCCESS' : 'ERROR', 
+              status: consultRes.status === 'SUCESSO' ? 'SUCCESS' : 'ERROR',
               message: consultRes.status === 'SUCESSO' ? 'EVENTO ACEITO!' : 'ERRO NO PROCESSAMENTO',
               currentStep: 'FINISHED',
               logs: [...(prev.logs || []), consultRes.status === 'SUCESSO' ? '🎉 Sucesso! Recibo obtido.' : '❌ Rejeitado pelo governo.']
@@ -385,7 +385,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       if (finalResult) {
         const { status, recibo, message, ocorrencias } = finalResult;
-        
+
         if (eventType === 'S-2300') {
           const updated = { esocial_status: status as any, recibo, protocolo, resposta_governo: ocorrencias || { message } };
           setWorkers(prev => prev.map(w => w.id === workerId ? { ...w, ...updated } : w));
@@ -413,30 +413,30 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       }
     } catch (err: any) {
       console.error('Error in unified flow:', err);
-      setActiveFlow(prev => ({ 
-        status: 'ERROR', 
+      setActiveFlow(prev => ({
+        status: 'ERROR',
         message: 'ERRO NO PROCESSO',
         currentStep: 'FINISHED',
         logs: [...(prev.logs || []), `🚨 ERRO: ${err.message}`]
       }));
-      
+
       // Marca como erro no banco de dados para não ficar 'ENVIADO' ou 'PROCESSANDO' infinitamente
       try {
         const workerCpf = eventData.workerCpf || null;
         await supabase.from('esocial_events')
-          .update({ 
-            status: 'ERRO', 
-            resposta_governo: { 
-              error: err.message, 
+          .update({
+            status: 'ERRO',
+            resposta_governo: {
+              error: err.message,
               phase: 'POLLING_OR_TRANSMIT',
               diagnosis: 'TIMEOUT_OU_FALHA_CONEXAO'
             },
-            updated_at: new Date().toISOString() 
+            updated_at: new Date().toISOString()
           })
           .eq('regularization_id', regularizationId)
           .eq('tipo_evento', eventType)
           .eq('cpf_trabalhador', workerCpf || '');
-        
+
         fetchEventsHistory();
         fetchWorkers();
       } catch (dbErr) {
@@ -538,7 +538,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
   const handleSaveRemuneration = async () => {
     if (!targetWorkerForRem) return;
-    
+
     setIsSaving(true);
     try {
       const val = parseFloat(remValue.replace('.', '').replace(',', '.'));
@@ -578,9 +578,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         // User said "travar os dados mensais", so we set locked: true
         existingMap.set(r.id, { ...r, isLocked: true });
       });
-      
+
       setAllRemunerations(Array.from(existingMap.values()));
-      
+
       setIsRemunerationModalOpen(false);
       alert(`Remunerações geradas com sucesso para o período!`);
     } catch (err) {
@@ -647,7 +647,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       setCertificatePassword(inssRegularization.certificate_password || '');
       setCertificateApelido(inssRegularization.certificate_info?.apelido || '');
       setCertificateCpfCnpj(inssRegularization.certificate_info?.cpf_cnpj || '');
-      
+
       fetchWorkers();
       checkS1000Status();
       checkS1005Status();
@@ -676,7 +676,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         .limit(1);
 
       if (error) throw error;
-      
+
       if (data && data.length > 0) {
         const statusData = {
           id: data[0].id,
@@ -693,20 +693,20 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         setSelectedWorker((prev: any) => {
           if (!prev || prev.cpf !== cpf) return prev;
           if (tipo === 'S-2300') {
-            return { 
-              ...prev, 
-              esocial_status: statusData.status, 
-              protocolo: statusData.protocolo, 
+            return {
+              ...prev,
+              esocial_status: statusData.status,
+              protocolo: statusData.protocolo,
               recibo: statusData.recibo,
-              resposta_governo: statusData.resposta_governo 
+              resposta_governo: statusData.resposta_governo
             };
           } else if (tipo === 'S-2399') {
-            return { 
-              ...prev, 
-              s2399_status: statusData.status, 
-              s2399_protocolo: statusData.protocolo, 
+            return {
+              ...prev,
+              s2399_status: statusData.status,
+              s2399_protocolo: statusData.protocolo,
               s2399_recibo: statusData.recibo,
-              s2399_resposta_governo: statusData.resposta_governo 
+              s2399_resposta_governo: statusData.resposta_governo
             };
           }
           return prev;
@@ -733,22 +733,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           <div className="flex items-center gap-3">
             <div className={cn(
               "w-2 h-2 rounded-full animate-pulse",
-              event.status === 'SUCESSO' ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : 
-              event.status === 'ERRO' ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+              event.status === 'SUCESSO' ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" :
+                event.status === 'ERRO' ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]"
             )} />
             <span className="text-[10px] font-black text-white uppercase tracking-[2px]">Log de Processamento eSocial</span>
           </div>
           <span className="text-[10px] font-bold text-slate-500 font-mono">ID: {event.id || 'N/A'}</span>
         </div>
-        
+
         <div className="p-6 bg-[#161B22] space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-1">
               <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Status do Governo</p>
               <div className={cn(
                 "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm",
-                event.status === 'SUCESSO' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : 
-                event.status === 'ERRO' ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-primary/10 text-primary border border-primary/20"
+                event.status === 'SUCESSO' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                  event.status === 'ERRO' ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-primary/10 text-primary border border-primary/20"
               )}>
                 {event.status === 'SUCESSO' ? <Check className="h-3 w-3" /> : event.status === 'ERRO' ? <X className="h-3 w-3" /> : <Loader2 className="h-3 w-3 animate-spin" />}
                 {event.status}
@@ -805,7 +805,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   )}
                 </div>
               </div>
-              
+
               {(event.status === 'ERRO' || (Array.isArray(event.resposta_governo) && event.resposta_governo.some((oc: any) => oc.codigo === '401'))) && event.resposta_governo && (
                 <div className="mt-4 animate-in slide-in-from-top-2 duration-300">
                   {(() => {
@@ -827,7 +827,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                               </div>
                               <p className="text-xs text-red-200/80 font-medium">{diag.descricao}</p>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <p className="text-[9px] font-black text-red-500/70 uppercase tracking-widest flex items-center gap-1.5">
@@ -841,7 +841,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                                   ))}
                                 </ul>
                               </div>
-                              
+
                               <div className="space-y-2">
                                 <p className="text-[9px] font-black text-emerald-500/70 uppercase tracking-widest flex items-center gap-1.5">
                                   <CheckCircle2 className="h-3 w-3" /> Solução Prática
@@ -855,7 +855,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                                 </ul>
                               </div>
                             </div>
-                            
+
                             {diag.dependencias && diag.dependencias.length > 0 && (
                               <div className="pt-3 border-t border-red-500/20 flex items-center gap-2">
                                 <span className="text-[9px] font-black text-orange-400 uppercase tracking-widest">Dependência Faltante:</span>
@@ -879,7 +879,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           )}
 
           <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
-            <button 
+            <button
               onClick={() => handleMarkAsDone(tipo, cpf)}
               className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
             >
@@ -910,7 +910,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       <div className="mt-8 bg-[#161B22] border border-white/5 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
         {/* Botão de Fechar Manual (Apenas se finalizado ou erro) */}
         {(isSuccess || isError) && (
-          <button 
+          <button
             onClick={() => setActiveFlow({ status: 'IDLE', message: '', logs: [] })}
             className="absolute top-4 right-4 p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-full transition-all z-20"
             title="Fechar Monitor"
@@ -920,28 +920,28 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         )}
         <div className="p-6 border-b border-white/5 bg-white/5">
           <div className="flex items-center justify-between mb-8">
-             <div className="flex items-center gap-3">
-                <div className={cn(
-                  "w-3 h-3 rounded-full animate-pulse",
-                  isSuccess ? "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" :
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "w-3 h-3 rounded-full animate-pulse",
+                isSuccess ? "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" :
                   isError ? "bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]" : "bg-primary shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-                )} />
-                <h3 className="text-sm font-black text-white uppercase tracking-[3px]">Monitor de Transmissão em Tempo Real</h3>
-             </div>
-             <div className={cn(
-               "text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border",
-               isSuccess ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
-               isError ? "bg-red-500/10 text-red-400 border-red-500/20" : "bg-white/5 text-slate-500 border-white/10"
-             )}>
-               {activeFlow.message}
-             </div>
+              )} />
+              <h3 className="text-sm font-black text-white uppercase tracking-[3px]">Monitor de Transmissão em Tempo Real</h3>
+            </div>
+            <div className={cn(
+              "text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border",
+              isSuccess ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                isError ? "bg-red-500/10 text-red-400 border-red-500/20" : "bg-white/5 text-slate-500 border-white/10"
+            )}>
+              {activeFlow.message}
+            </div>
           </div>
 
           {/* Animated Stepper */}
           <div className="relative flex justify-between items-start max-w-3xl mx-auto px-4">
             {/* Progress Line */}
             <div className="absolute top-5 left-10 right-10 h-0.5 bg-white/5">
-              <div 
+              <div
                 className={cn(
                   "h-full transition-all duration-700 ease-in-out",
                   isError ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]"
@@ -961,9 +961,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   <div className={cn(
                     "w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 border-2",
                     stepCompleted ? "bg-emerald-500/20 border-emerald-500 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]" :
-                    stepActive ? "bg-primary/20 border-primary text-primary animate-pulse shadow-[0_0_15px_rgba(59,130,246,0.2)]" :
-                    stepError ? "bg-red-500/20 border-red-500 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]" :
-                    "bg-[#0D1117] border-white/10 text-slate-600"
+                      stepActive ? "bg-primary/20 border-primary text-primary animate-pulse shadow-[0_0_15px_rgba(59,130,246,0.2)]" :
+                        stepError ? "bg-red-500/20 border-red-500 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]" :
+                          "bg-[#0D1117] border-white/10 text-slate-600"
                   )}>
                     {stepCompleted ? <Check className="h-5 w-5" /> : stepError ? <X className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
                   </div>
@@ -998,8 +998,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <span className="text-slate-600 flex-shrink-0">[{new Date().toLocaleTimeString('pt-BR')}]</span>
                 <span className={cn(
                   log.includes('❌') || log.includes('🚨') ? "text-red-400" :
-                  log.includes('✅') || log.includes('🎉') ? "text-emerald-400" :
-                  log.includes('🔄') || log.includes('📡') ? "text-primary" : "text-slate-300"
+                    log.includes('✅') || log.includes('🎉') ? "text-emerald-400" :
+                      log.includes('🔄') || log.includes('📡') ? "text-primary" : "text-slate-300"
                 )}>
                   {log}
                 </span>
@@ -1205,7 +1205,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   const handleConsultESocial = async () => {
     if (!esocialStatus || isTransmitting || !inssRegularization) return;
     // No fluxo unificado, a consulta é automática. Mas mantemos para fallback manual se necessário.
-    handleTransmitESocial(); 
+    handleTransmitESocial();
   };
 
 
@@ -1269,8 +1269,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       regularizationId: inssRegularization.id,
       indRetif,
       nrRecibo,
-      eventData: { 
-        proprietarioCpfCnpj, 
+      eventData: {
+        proprietarioCpfCnpj,
         cnoNumero,
         transmissorCpfCnpj: certificateCpfCnpj
       }
@@ -1351,7 +1351,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         value: selectedRemForEvent.value
       },
       onComplete: (res) => {
-        setAllRemunerations(prev => prev.map(r => 
+        setAllRemunerations(prev => prev.map(r =>
           r.id === selectedRemForEvent.id ? { ...r, remStatus: res.status, remRecibo: res.recibo, remProtocolo: res.protocolo } : r
         ));
         setSelectedRemForEvent((prev: any) => ({ ...prev, remStatus: res.status, remRecibo: res.recibo, remProtocolo: res.protocolo }));
@@ -1380,7 +1380,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         value: selectedRemForEvent.value
       },
       onComplete: (res) => {
-        setAllRemunerations(prev => prev.map(r => 
+        setAllRemunerations(prev => prev.map(r =>
           r.id === selectedRemForEvent.id ? { ...r, pagStatus: res.status, pagRecibo: res.recibo, pagProtocolo: res.protocolo } : r
         ));
         setSelectedRemForEvent((prev: any) => ({ ...prev, pagStatus: res.status, pagRecibo: res.recibo, pagProtocolo: res.protocolo }));
@@ -1395,7 +1395,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
   const handleTransmitS1298 = async () => {
     if (!selectedPeriodForEvent || activeFlow.status !== 'IDLE' || !inssRegularization) return;
-    
+
     await executeESocialFlow({
       eventType: 'S-1298',
       regularizationId: inssRegularization.id,
@@ -1404,9 +1404,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       onComplete: (res) => {
         setPeriodStatuses(prev => ({
           ...prev,
-          [selectedPeriodForEvent]: { 
-            ...prev[selectedPeriodForEvent], 
-            s1298Status: res.status, 
+          [selectedPeriodForEvent]: {
+            ...prev[selectedPeriodForEvent],
+            s1298Status: res.status,
             s1298Protocolo: res.protocolo,
             s1298Recibo: res.recibo
           }
@@ -1450,16 +1450,16 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       eventType: 'S-1299',
       regularizationId: inssRegularization.id,
       indRetif: 1,
-      eventData: { 
+      eventData: {
         period: selectedPeriodForEvent,
         proprietarioCpfCnpj
       },
       onComplete: (res) => {
         setPeriodStatuses(prev => ({
           ...prev,
-          [selectedPeriodForEvent]: { 
-            ...prev[selectedPeriodForEvent], 
-            s1299Status: res.status, 
+          [selectedPeriodForEvent]: {
+            ...prev[selectedPeriodForEvent],
+            s1299Status: res.status,
             s1299Protocolo: res.protocolo,
             s1299Recibo: res.recibo
           }
@@ -1482,7 +1482,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     try {
       const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
       const data = await response.json();
-      
+
       if (!data.erro) {
         setWorkerLogradouro(data.logradouro || '');
         setWorkerBairro(data.bairro || '');
@@ -1522,7 +1522,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       const workersWithStatus = (workersData || []).map(worker => {
         const s2300Event = eventsData?.find(e => e.cpf_trabalhador === worker.cpf && e.tipo_evento === 'S-2300');
         const s2399Event = eventsData?.find(e => e.cpf_trabalhador === worker.cpf && e.tipo_evento === 'S-2399');
-        
+
         return {
           ...worker,
           esocial_status: s2300Event?.status || 'PENDENTE',
@@ -1573,7 +1573,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       .select('*')
       .eq('regularization_id', inssRegularization.id)
       .order('created_at', { ascending: false });
-    
+
     if (data && data.length > 0) {
       const creds = data[0];
       setEsocialCredentials(creds);
@@ -1634,7 +1634,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
   };
   const handleMarkAsDone = async (tipo: string, cpf?: string) => {
     if (!inssRegularization) return;
-    
+
     // Se não temos o recibo ainda, abre o formulário manual
     if (!manualRecibo) {
       setActiveManualType(tipo);
@@ -1657,10 +1657,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         });
 
       if (error) throw error;
-      
+
       alert('Evento marcado como concluído com sucesso!');
       fetchEventsHistory();
-      
+
       // Limpa estados
       setManualRecibo('');
       setIsMarkingDone(false);
@@ -1675,7 +1675,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         await checkEsocialStatus(cpf, tipo);
         fetchWorkers();
       }
-      
+
     } catch (err: any) {
       alert(`Erro ao marcar como concluído: ${err.message}`);
     } finally {
@@ -1748,10 +1748,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       return;
     }
 
+    // INTELIGÊNCIA DE RETIFICAÇÃO
+    let indRetif = 1;
+    let nrRecibo = null;
+
+    if (selectedWorker.s2399_status === 'SUCESSO') {
+      const wantRectify = confirm(`Este trabalhador (${selectedWorker.nome}) já possui um ENCERRAMENTO (S-2399) processado com sucesso.\n\nDeseja enviar uma RETIFICAÇÃO?\n\n(Se clicar em CANCELAR, o processo será interrompido)`);
+      if (!wantRectify) return;
+      indRetif = 2;
+      nrRecibo = selectedWorker.s2399_recibo;
+    }
+
     await executeESocialFlow({
       eventType: 'S-2399',
       regularizationId: inssRegularization.id,
-      indRetif: 1,
+      indRetif,
+      nrRecibo,
       workerId: selectedWorker.id,
       eventData: {
         workerCpf: selectedWorker.cpf,
@@ -1780,8 +1792,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       }
 
       const { status, recibo, message } = response;
-      const consultUpdate = { 
-        s2399_status: status, 
+      const consultUpdate = {
+        s2399_status: status,
         s2399_recibo: recibo,
         s2399_resposta_governo: {
           recibo_codigo: status === 'SUCESSO' ? '201' : '101',
@@ -1789,7 +1801,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         }
       };
 
-      setWorkers(prev => prev.map(w => 
+      setWorkers(prev => prev.map(w =>
         w.id === selectedWorker.id ? { ...w, ...consultUpdate } : w
       ));
       setSelectedWorker((prev: any) => prev ? { ...prev, ...consultUpdate } : null);
@@ -1821,13 +1833,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
   const toggleChecklistItem = async (key: string) => {
     if (!inssRegularization || readOnly) return;
-    
+
     const currentStatus = checklistData[key] || 'PENDENTE';
     const newStatus = currentStatus === 'SUCESSO' ? 'PENDENTE' : 'SUCESSO';
     const newChecklist = { ...checklistData, [key]: newStatus };
-    
+
     setChecklistData(newChecklist);
-    
+
     try {
       await supabase
         .from('inss_regularizations')
@@ -1887,7 +1899,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
   const handleSave = async () => {
     if (readOnly) return;
-    
+
     // Validation for Client Modal
     if (isEditModalOpen && !cpfCnpj) {
       alert('O campo CPF / CNPJ é obrigatório.');
@@ -1944,7 +1956,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         alert(`Erro ao salvar: ${error.message}`);
         throw error;
       }
-      
+
       setIsEditModalOpen(false);
       setIsWorkModalOpen(false);
       onRefresh();
@@ -2011,7 +2023,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
   const handleSaveWorker = async () => {
     if (!user || !inssRegularization) return;
-    
+
     setIsSaving(true);
     try {
       const workerData = {
@@ -2096,7 +2108,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <h3 className="text-3xl font-black tracking-tight">{client}</h3>
               <p className="text-slate-400 text-sm mt-1 font-medium">{phone} | {email}</p>
             </div>
-            
+
             {/* CPF/CNPJ Row */}
             <div className="flex border-b border-white/5">
               <div className="w-40 p-4 bg-white/5 border-r border-white/5 flex items-center">
@@ -2143,19 +2155,19 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-2 pt-4">
-            <button 
+            <button
               onClick={() => setIsEditModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-[#636E72] text-white rounded-md text-sm font-medium hover:bg-slate-600 transition-colors shadow-sm"
             >
               <Edit2 className="h-4 w-4" /> Editar
             </button>
-            <button 
+            <button
               onClick={() => { setWorkModalMode('simple'); setIsWorkModalOpen(true); }}
               className="flex items-center gap-2 px-4 py-2.5 bg-[#1B8E5A] text-white rounded-md text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm"
             >
               <Plus className="h-4 w-4" /> Cadastrar Obra
             </button>
-            <button 
+            <button
               onClick={() => setCurrentView('management')}
               className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-md text-sm font-bold hover:bg-blue-700 transition-all shadow-lg uppercase tracking-widest"
             >
@@ -2282,10 +2294,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Certificado Digital A1 - Procurador</label>
                     <div className="flex gap-3">
                       <div className="flex-1 relative">
-                        <input 
-                          type="text" 
-                          readOnly 
-                          value={certificateApelido || (certificateUrl ? 'Certificado Carregado' : '')} 
+                        <input
+                          type="text"
+                          readOnly
+                          value={certificateApelido || (certificateUrl ? 'Certificado Carregado' : '')}
                           placeholder="Clique em escolher arquivo"
                           className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-primary transition-all"
                         />
@@ -2301,8 +2313,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
                   <div className="space-y-2">
                     <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Senha do Certificado</label>
-                    <input 
-                      type="password" 
+                    <input
+                      type="password"
                       value={certificatePassword}
                       onChange={(e) => setCertificatePassword(e.target.value)}
                       placeholder="Senha do arquivo .pfx"
@@ -2317,13 +2329,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     <div className="space-y-1">
                       <p className="text-xs font-black text-emerald-500 uppercase tracking-widest">Status da Credencial</p>
                       <p className="text-[11px] text-emerald-500/80 font-medium leading-relaxed">
-                        {esocialCredentials 
-                          ? '✅ Credenciais salvas com segurança no banco de dados. Os eventos serão assinados no servidor.' 
+                        {esocialCredentials
+                          ? '✅ Credenciais salvas com segurança no banco de dados. Os eventos serão assinados no servidor.'
                           : '⚠️ Nenhuma credencial configurada. Necessário para transmitir eventos ao eSocial.'}
                       </p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={handleSaveCredentials}
                     className="w-full py-4 bg-primary text-white rounded-xl font-black text-sm hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 uppercase tracking-[2px]"
                   >
@@ -2352,7 +2364,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               ].map((item) => (
                 <div key={item.id} className="flex items-center justify-between group">
                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">{item.label}</span>
-                  <button 
+                  <button
                     onClick={() => toggleChecklistItem(item.id)}
                     className={cn(
                       "px-6 py-2 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all",
@@ -2372,7 +2384,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
           {/* Middle Action Buttons */}
           <div className="flex flex-wrap gap-2">
-            <button 
+            <button
               onClick={() => setCurrentView('s1000_view')}
               className={cn(
                 "px-4 py-2 text-white rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
@@ -2382,7 +2394,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               {esocialS1000Status?.status === 'SUCESSO' ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
               Info empregador
             </button>
-            <button 
+            <button
               onClick={() => setCurrentView('s1005_view')}
               className={cn(
                 "px-4 py-2 text-white rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
@@ -2392,7 +2404,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               {esocialS1005Status?.status === 'SUCESSO' ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
               Estabelecimento / obra
             </button>
-            <button 
+            <button
               onClick={() => setCurrentView('s1020_view')}
               className={cn(
                 "px-4 py-2 text-white rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
@@ -2402,7 +2414,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               {esocialS1020Status?.status === 'SUCESSO' ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
               Lotação tributária
             </button>
-            <button 
+            <button
               onClick={() => setCurrentView('s1010_view')}
               className={cn(
                 "px-4 py-2 text-white rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
@@ -2428,7 +2440,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </div>
               <X className="h-4 w-4 text-slate-500 cursor-pointer hover:text-white" />
             </div>
-            
+
             <div className="p-8 space-y-6 bg-[#1C232E]">
               {workers.length > 0 ? (
                 workers.map(worker => (
@@ -2454,7 +2466,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      <button 
+                      <button
                         onClick={() => handleOpenRemunerationModal(worker)}
                         className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-white/10 transition-all shadow-lg uppercase tracking-widest"
                       >
@@ -2463,7 +2475,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                       <button onClick={() => handleEditWorker(worker)} className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-white/10 transition-all shadow-lg uppercase tracking-widest">
                         <Eye className="h-4 w-4 text-primary" /> Ver / Editar
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleClearRemunerations(worker.id)}
                         className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-red-500/20 hover:text-red-500 transition-all shadow-lg uppercase tracking-widest"
                       >
@@ -2478,32 +2490,32 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                       <button onClick={() => handleRemoveWorker(worker.id)} className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-red-500/20 hover:text-red-500 transition-all shadow-lg uppercase tracking-widest">
                         <Trash2 className="h-4 w-4" /> Remover trabalhador
                       </button>
-                      <button 
-                        onClick={() => { 
+                      <button
+                        onClick={() => {
                           setSelectedWorkerId(worker.id);
-                          setSelectedWorker(worker); 
-                          setCurrentView('s2300_view'); 
+                          setSelectedWorker(worker);
+                          setCurrentView('s2300_view');
                         }}
                         className={cn(
                           "flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black text-white transition-all shadow-xl uppercase tracking-widest",
                           worker.esocial_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-primary hover:bg-primary/90"
                         )}
                       >
-                        <Send className="h-4 w-4" /> 
+                        <Send className="h-4 w-4" />
                         {worker.esocial_status === 'SUCESSO' ? 'Evento Enviado' : 'Cadastrar trab'}
                       </button>
-                      <button 
-                        onClick={() => { 
+                      <button
+                        onClick={() => {
                           setSelectedWorkerId(worker.id);
-                          setSelectedWorker(worker); 
-                          setCurrentView('s2399_view'); 
+                          setSelectedWorker(worker);
+                          setCurrentView('s2399_view');
                         }}
                         className={cn(
                           "flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black text-white transition-all shadow-xl uppercase tracking-widest",
                           worker.s2399_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-500 hover:bg-red-600"
                         )}
                       >
-                        <Target className="h-4 w-4" /> 
+                        <Target className="h-4 w-4" />
                         {worker.s2399_status === 'SUCESSO' ? 'Trabalhador Encerrado' : 'Encerrar trab'}
                       </button>
                     </div>
@@ -2514,7 +2526,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               )}
 
               <div className="flex justify-start pt-6">
-                <button 
+                <button
                   onClick={() => { resetWorkerForm(); setCurrentView('worker_form'); }}
                   className="flex items-center gap-3 px-8 py-4 bg-white/5 border border-primary text-primary rounded-xl text-xs font-black hover:bg-primary/10 transition-all shadow-xl shadow-primary/10 uppercase tracking-[2px]"
                 >
@@ -2523,190 +2535,190 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </div>
             </div>
           </div>
-          
+
           {/* Requirement Summary Dashboard - DARK THEME */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-8">
-              <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-2xl space-y-4 hover:border-primary/20 transition-all">
-                <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Total Remunerações</p>
-                <p className="text-3xl font-black text-white">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRemuneration)}
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
-                    <div 
-                      className={cn("h-full transition-all duration-700 ease-out", percentCompleted >= 100 ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(0,122,255,0.5)]")}
-                      style={{ width: `${Math.min(percentCompleted, 100)}%` }}
-                    />
-                  </div>
-                  <span className="text-xs font-black text-slate-400">{percentCompleted.toFixed(1)}%</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-8">
+            <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-2xl space-y-4 hover:border-primary/20 transition-all">
+              <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Total Remunerações</p>
+              <p className="text-3xl font-black text-white">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRemuneration)}
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                  <div
+                    className={cn("h-full transition-all duration-700 ease-out", percentCompleted >= 100 ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(0,122,255,0.5)]")}
+                    style={{ width: `${Math.min(percentCompleted, 100)}%` }}
+                  />
                 </div>
-              </div>
-
-              <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-2xl space-y-4 hover:border-primary/20 transition-all">
-                <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Requisito ({requisitoPercent}%)</p>
-                <p className="text-3xl font-black text-primary">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(targetRequisito)}
-                </p>
-                <p className="text-[10px] text-slate-500 italic font-medium uppercase tracking-widest">Valor alvo baseado na RMT Inicial</p>
-              </div>
-
-              <div className={cn(
-                "p-6 rounded-2xl border shadow-2xl space-y-4 flex flex-col justify-center transition-all",
-                percentCompleted >= 100 
-                  ? "bg-emerald-500/10 border-emerald-500/20" 
-                  : "bg-primary/10 border-primary/20"
-              )}>
-                <div className="flex items-center justify-between">
-                  <p className={cn("text-[11px] font-black uppercase tracking-[2px]", percentCompleted >= 100 ? "text-emerald-500" : "text-primary")}>Status Requisito</p>
-                  {percentCompleted >= 100 ? <CheckCircle2 className="h-6 w-6 text-emerald-500" /> : <AlertCircle className="h-6 w-6 text-primary" />}
-                </div>
-                <p className={cn("text-xl font-black tracking-tighter", percentCompleted >= 100 ? "text-emerald-500" : "text-primary")}>
-                  {percentCompleted >= 100 ? 'REQUISITO ATINGIDO' : 'EM PROCESSAMENTO'}
-                </p>
-                <p className={cn("text-[11px] font-medium leading-relaxed uppercase tracking-widest", percentCompleted >= 100 ? "text-emerald-500/70" : "text-primary/70")}>
-                  {percentCompleted >= 100 ? 'Parabéns! O valor mínimo foi superado.' : `Faltam ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.max(0, targetRequisito - totalRemuneration))} para o alvo.`}
-                </p>
+                <span className="text-xs font-black text-slate-400">{percentCompleted.toFixed(1)}%</span>
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-2xl border border-white/5 shadow-2xl mx-8 mb-8">
-              <table className="w-full text-sm text-left border-collapse">
-                <thead className="bg-[#1C232E] text-slate-500 uppercase text-[10px] font-black tracking-[2px] border-b border-white/5">
-                  <tr>
-                    <th className="p-6 border-r border-white/5">P.A.</th>
-                    {workers.map(w => (
-                      <th key={w.id} className="p-6 border-r border-white/5 text-center">
-                        <span className="text-white">#{w.nome.split(' ')[0]}</span> <br/> <span className="opacity-60">Aut {w.categoria}</span>
-                      </th>
-                    ))}
-                    <th className="p-6 border-r border-white/5 text-center">Correção</th>
-                    <th className="p-6 border-r border-white/5 text-center">Ações</th>
-                    <th className="p-6 border-r border-white/5 text-center">Verificação</th>
-                    <th className="p-6 text-center">INSS Pago</th>
-                  </tr>
-                </thead>
-                <tbody className="text-white bg-[#1C232E]">
-                  {getUniquePAs().length > 0 ? (
-                    getUniquePAs().map(pa => {
-                      const rowTotal = allRemunerations
-                        .filter(r => `${String(r.month).padStart(2, '0')}-${r.year}` === pa)
-                        .reduce((sum, r) => sum + r.value, 0);
-                      
-                      const correcaoPct = 4.37; // Mock percentage
-                      const correcaoVal = rowTotal * (correcaoPct / 100);
+            <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-2xl space-y-4 hover:border-primary/20 transition-all">
+              <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Requisito ({requisitoPercent}%)</p>
+              <p className="text-3xl font-black text-primary">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(targetRequisito)}
+              </p>
+              <p className="text-[10px] text-slate-500 italic font-medium uppercase tracking-widest">Valor alvo baseado na RMT Inicial</p>
+            </div>
 
-                      return (
-                        <tr key={pa} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                          <td className="p-6 font-black text-slate-300 border-r border-white/5 bg-white/5">{pa}</td>
-                          {workers.map(w => {
-                            const rem = allRemunerations.find(r => r.workerId === w.id && `${String(r.month).padStart(2, '0')}-${r.year}` === pa);
-                            return (
-                              <td key={w.id} className="p-6 text-center border-r border-white/5 font-black text-white">
-                                {rem ? (
-                                  <div className="space-y-4">
-                                    <div className="flex items-center justify-center gap-2">
-                                      <span className="text-lg tracking-tighter text-white">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rem.value)}</span>
-                                      {rem.isLocked && <Lock className="h-3.5 w-3.5 text-primary animate-pulse" />}
-                                      <Printer className="h-4 w-4 text-slate-500 cursor-pointer hover:text-white transition-colors" />
-                                    </div>
-                                    <div className="flex items-center justify-center gap-2">
-                                      <button 
-                                          onClick={() => {
-                                            setSelectedWorkerId(w.id);
-                                            setSelectedWorker(w);
-                                            setSelectedRemForEvent(rem);
-                                            setCurrentView('s1200_view');
-                                          }}
-                                        className={cn(
-                                          "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black text-white transition-all shadow-xl uppercase tracking-widest",
-                                          rem.remStatus === 'SUCESSO' ? "bg-emerald-600" : "bg-primary hover:bg-blue-700 shadow-primary/20"
-                                        )}
-                                      >
-                                        <Send className="h-3 w-3" /> Rem
-                                      </button>
-                                      <button 
-                                          onClick={() => {
-                                            setSelectedWorkerId(w.id);
-                                            setSelectedWorker(w);
-                                            setSelectedRemForEvent(rem);
-                                            setCurrentView('s1210_view');
-                                          }}
-                                        className={cn(
-                                          "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black text-white transition-all shadow-xl uppercase tracking-widest",
-                                          rem.pagStatus === 'SUCESSO' ? "bg-emerald-600" : "bg-slate-700 hover:bg-slate-600 shadow-black/20"
-                                        )}
-                                      >
-                                        <Wallet className="h-3 w-3" /> Pag
-                                      </button>
-                                    </div>
+            <div className={cn(
+              "p-6 rounded-2xl border shadow-2xl space-y-4 flex flex-col justify-center transition-all",
+              percentCompleted >= 100
+                ? "bg-emerald-500/10 border-emerald-500/20"
+                : "bg-primary/10 border-primary/20"
+            )}>
+              <div className="flex items-center justify-between">
+                <p className={cn("text-[11px] font-black uppercase tracking-[2px]", percentCompleted >= 100 ? "text-emerald-500" : "text-primary")}>Status Requisito</p>
+                {percentCompleted >= 100 ? <CheckCircle2 className="h-6 w-6 text-emerald-500" /> : <AlertCircle className="h-6 w-6 text-primary" />}
+              </div>
+              <p className={cn("text-xl font-black tracking-tighter", percentCompleted >= 100 ? "text-emerald-500" : "text-primary")}>
+                {percentCompleted >= 100 ? 'REQUISITO ATINGIDO' : 'EM PROCESSAMENTO'}
+              </p>
+              <p className={cn("text-[11px] font-medium leading-relaxed uppercase tracking-widest", percentCompleted >= 100 ? "text-emerald-500/70" : "text-primary/70")}>
+                {percentCompleted >= 100 ? 'Parabéns! O valor mínimo foi superado.' : `Faltam ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.max(0, targetRequisito - totalRemuneration))} para o alvo.`}
+              </p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-white/5 shadow-2xl mx-8 mb-8">
+            <table className="w-full text-sm text-left border-collapse">
+              <thead className="bg-[#1C232E] text-slate-500 uppercase text-[10px] font-black tracking-[2px] border-b border-white/5">
+                <tr>
+                  <th className="p-6 border-r border-white/5">P.A.</th>
+                  {workers.map(w => (
+                    <th key={w.id} className="p-6 border-r border-white/5 text-center">
+                      <span className="text-white">#{w.nome.split(' ')[0]}</span> <br /> <span className="opacity-60">Aut {w.categoria}</span>
+                    </th>
+                  ))}
+                  <th className="p-6 border-r border-white/5 text-center">Correção</th>
+                  <th className="p-6 border-r border-white/5 text-center">Ações</th>
+                  <th className="p-6 border-r border-white/5 text-center">Verificação</th>
+                  <th className="p-6 text-center">INSS Pago</th>
+                </tr>
+              </thead>
+              <tbody className="text-white bg-[#1C232E]">
+                {getUniquePAs().length > 0 ? (
+                  getUniquePAs().map(pa => {
+                    const rowTotal = allRemunerations
+                      .filter(r => `${String(r.month).padStart(2, '0')}-${r.year}` === pa)
+                      .reduce((sum, r) => sum + r.value, 0);
+
+                    const correcaoPct = 4.37; // Mock percentage
+                    const correcaoVal = rowTotal * (correcaoPct / 100);
+
+                    return (
+                      <tr key={pa} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                        <td className="p-6 font-black text-slate-300 border-r border-white/5 bg-white/5">{pa}</td>
+                        {workers.map(w => {
+                          const rem = allRemunerations.find(r => r.workerId === w.id && `${String(r.month).padStart(2, '0')}-${r.year}` === pa);
+                          return (
+                            <td key={w.id} className="p-6 text-center border-r border-white/5 font-black text-white">
+                              {rem ? (
+                                <div className="space-y-4">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <span className="text-lg tracking-tighter text-white">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rem.value)}</span>
+                                    {rem.isLocked && <Lock className="h-3.5 w-3.5 text-primary animate-pulse" />}
+                                    <Printer className="h-4 w-4 text-slate-500 cursor-pointer hover:text-white transition-colors" />
                                   </div>
-                                ) : '-'}
-                              </td>
-                            );
-                          })}
-                          <td className="p-6 text-center border-r border-white/5">
-                            <span className="text-[10px] font-black text-emerald-500 block mb-1 uppercase tracking-widest">{correcaoPct}%</span>
-                            <span className="text-sm font-black text-white tracking-tight">
-                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(correcaoVal)}
-                            </span>
-                          </td>
-                          <td className="p-6 border-r border-white/5">
-                            <div className="flex flex-col items-center gap-2">
-                              <div className="flex flex-col gap-1 w-full">
-                                <button 
-                                  onClick={() => {
-                                    setSelectedPeriodForEvent(pa);
-                                    setCurrentView('s1299_view');
-                                  }}
-                                  className="w-full px-3 py-2 bg-emerald-600 text-[9px] font-black text-white rounded-lg hover:bg-emerald-700 shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-1.5 uppercase tracking-widest"
-                                >
-                                  <Lock className="h-3 w-3" /> Fechar Folha (1299)
-                                </button>
-                                <button 
-                                  onClick={() => {
-                                    setSelectedPeriodForEvent(pa);
-                                    setCurrentView('s1298_view');
-                                  }}
-                                  className="w-full px-3 py-2 bg-slate-700 text-[9px] font-black text-white rounded-lg hover:bg-slate-600 shadow-lg shadow-black/10 flex items-center justify-center gap-1.5 uppercase tracking-widest"
-                                >
-                                  <Unlock className="h-3 w-3" /> Reabrir Folha (1298)
-                                </button>
-                              </div>
-                              <div className="flex items-center gap-2 w-full">
-                                <button className="p-2 bg-white/5 text-slate-400 rounded-lg hover:text-white border border-white/10 transition-colors">
-                                  <Copy className="h-3.5 w-3.5" />
-                                </button>
-                                <button className="flex-1 px-3 py-2 bg-red-500 text-[9px] font-black text-white rounded-lg hover:bg-red-600 shadow-lg shadow-red-500/10 uppercase tracking-widest">
-                                  NF / RPA
-                                </button>
-                              </div>
+                                  <div className="flex items-center justify-center gap-2">
+                                    <button
+                                      onClick={() => {
+                                        setSelectedWorkerId(w.id);
+                                        setSelectedWorker(w);
+                                        setSelectedRemForEvent(rem);
+                                        setCurrentView('s1200_view');
+                                      }}
+                                      className={cn(
+                                        "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black text-white transition-all shadow-xl uppercase tracking-widest",
+                                        rem.remStatus === 'SUCESSO' ? "bg-emerald-600" : "bg-primary hover:bg-blue-700 shadow-primary/20"
+                                      )}
+                                    >
+                                      <Send className="h-3 w-3" /> Rem
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedWorkerId(w.id);
+                                        setSelectedWorker(w);
+                                        setSelectedRemForEvent(rem);
+                                        setCurrentView('s1210_view');
+                                      }}
+                                      className={cn(
+                                        "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black text-white transition-all shadow-xl uppercase tracking-widest",
+                                        rem.pagStatus === 'SUCESSO' ? "bg-emerald-600" : "bg-slate-700 hover:bg-slate-600 shadow-black/20"
+                                      )}
+                                    >
+                                      <Wallet className="h-3 w-3" /> Pag
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : '-'}
+                            </td>
+                          );
+                        })}
+                        <td className="p-6 text-center border-r border-white/5">
+                          <span className="text-[10px] font-black text-emerald-500 block mb-1 uppercase tracking-widest">{correcaoPct}%</span>
+                          <span className="text-sm font-black text-white tracking-tight">
+                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(correcaoVal)}
+                          </span>
+                        </td>
+                        <td className="p-6 border-r border-white/5">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="flex flex-col gap-1 w-full">
+                              <button
+                                onClick={() => {
+                                  setSelectedPeriodForEvent(pa);
+                                  setCurrentView('s1299_view');
+                                }}
+                                className="w-full px-3 py-2 bg-emerald-600 text-[9px] font-black text-white rounded-lg hover:bg-emerald-700 shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-1.5 uppercase tracking-widest"
+                              >
+                                <Lock className="h-3 w-3" /> Fechar Folha (1299)
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedPeriodForEvent(pa);
+                                  setCurrentView('s1298_view');
+                                }}
+                                className="w-full px-3 py-2 bg-slate-700 text-[9px] font-black text-white rounded-lg hover:bg-slate-600 shadow-lg shadow-black/10 flex items-center justify-center gap-1.5 uppercase tracking-widest"
+                              >
+                                <Unlock className="h-3 w-3" /> Reabrir Folha (1298)
+                              </button>
                             </div>
-                          </td>
-                          <td className="p-6 text-center border-r border-white/5 min-w-[140px]">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">RMT: <span className="text-white">R$ 0,00</span></p>
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Porc.: <span className="text-white">0,00 %</span></p>
-                          </td>
-                          <td className="p-6 text-center">
-                            <div className="flex justify-center">
-                              <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center cursor-pointer shadow-lg shadow-emerald-500/20 hover:scale-110 transition-transform">
-                                <Check className="h-4 w-4 text-white" />
-                              </div>
+                            <div className="flex items-center gap-2 w-full">
+                              <button className="p-2 bg-white/5 text-slate-400 rounded-lg hover:text-white border border-white/10 transition-colors">
+                                <Copy className="h-3.5 w-3.5" />
+                              </button>
+                              <button className="flex-1 px-3 py-2 bg-red-500 text-[9px] font-black text-white rounded-lg hover:bg-red-600 shadow-lg shadow-red-500/10 uppercase tracking-widest">
+                                NF / RPA
+                              </button>
                             </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={workers.length + 5} className="p-16 text-center text-slate-600 font-black uppercase tracking-widest text-xs italic bg-white/2">
-                        Adicione remunerações aos trabalhadores para gerar os períodos de apuração.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          
+                          </div>
+                        </td>
+                        <td className="p-6 text-center border-r border-white/5 min-w-[140px]">
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">RMT: <span className="text-white">R$ 0,00</span></p>
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Porc.: <span className="text-white">0,00 %</span></p>
+                        </td>
+                        <td className="p-6 text-center">
+                          <div className="flex justify-center">
+                            <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center cursor-pointer shadow-lg shadow-emerald-500/20 hover:scale-110 transition-transform">
+                              <Check className="h-4 w-4 text-white" />
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={workers.length + 5} className="p-16 text-center text-slate-600 font-black uppercase tracking-widest text-xs italic bg-white/2">
+                      Adicione remunerações aos trabalhadores para gerar os períodos de apuração.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
           {/* Delete Button */}
           <div className="pt-4">
             <button className="px-4 py-2 border border-red-500 text-red-500 rounded text-xs font-bold hover:bg-red-50 transition-colors uppercase tracking-widest">
@@ -2726,7 +2738,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </h2>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Confirme se as informações estão corretas antes de transmitir!</p>
             </div>
-            <button 
+            <button
               onClick={() => { setSelectedPeriodForEvent(null); setCurrentView('management'); }}
               className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
@@ -2772,7 +2784,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 renderTransmissionMonitor()
               ) : (
                 <div className="space-y-6">
-                  <button 
+                  <button
                     onClick={handleTransmitS1298}
                     className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                   >
@@ -2800,7 +2812,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 Encerramento da folha para geração da DCTFWeb
               </p>
             </div>
-            <button 
+            <button
               onClick={() => { setSelectedPeriodForEvent(null); setCurrentView('management'); }}
               className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
@@ -2841,7 +2853,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 renderTransmissionMonitor()
               ) : (
                 <div className="space-y-6">
-                  <button 
+                  <button
                     onClick={handleTransmitS1299}
                     className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                   >
@@ -2867,11 +2879,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 Data Estimada do Pagamento: {new Date(selectedRemForEvent.year, selectedRemForEvent.month, 5).toLocaleDateString('pt-BR')}
               </p>
             </div>
-            <button 
-              onClick={() => { 
+            <button
+              onClick={() => {
                 setSelectedWorkerId(null);
-                setSelectedRemForEvent(null); 
-                setCurrentView('management'); 
+                setSelectedRemForEvent(null);
+                setCurrentView('management');
               }}
               className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
@@ -2938,14 +2950,14 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 renderTransmissionMonitor()
               ) : (
                 <div className="space-y-6">
-                  <button 
+                  <button
                     onClick={handleTransmitS1210}
                     className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                   >
                     <Send className="h-6 w-6" />
                     {selectedRemForEvent.pagStatus === 'SUCESSO' ? 'REENVIAR PAGAMENTO' : 'Transmitir Evento S-1210'}
                   </button>
-                  
+
                   {renderEventLog({ status: selectedRemForEvent.pagStatus, protocolo: selectedRemForEvent.pagProtocolo, recibo: selectedRemForEvent.pagRecibo }, 'S-1210', selectedWorker.cpf)}
                 </div>
               )}
@@ -2966,11 +2978,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 Período de Apuração: <span className="text-primary font-black">{selectedRemForEvent.month}/{selectedRemForEvent.year}</span>
               </p>
             </div>
-            <button 
-              onClick={() => { 
+            <button
+              onClick={() => {
                 setSelectedWorkerId(null);
-                setSelectedRemForEvent(null); 
-                setCurrentView('management'); 
+                setSelectedRemForEvent(null);
+                setCurrentView('management');
               }}
               className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
@@ -3037,27 +3049,27 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 renderTransmissionMonitor()
               ) : (
                 <div className="space-y-6">
-                  <button 
+                  <button
                     onClick={handleTransmitS1200}
                     className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                   >
                     <Send className="h-6 w-6" />
                     {selectedRemForEvent.remStatus === 'SUCESSO' ? 'REENVIAR REMUNERAÇÃO' : 'Transmitir Evento S-1200'}
                   </button>
-                  
+
                   {renderEventLog({ status: selectedRemForEvent.remStatus, protocolo: selectedRemForEvent.remProtocolo, recibo: selectedRemForEvent.remRecibo }, 'S-1200', selectedWorker.cpf)}
                 </div>
               )}
-              
+
               <div className="flex flex-col items-center gap-6 mt-8">
                 <div className="flex items-center gap-4 w-full">
                   <div className="h-px flex-1 bg-white/5"></div>
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
                   <div className="h-px flex-1 bg-white/5"></div>
                 </div>
-                
+
                 <div className="flex flex-wrap items-center justify-center gap-4">
-                  <button 
+                  <button
                     onClick={() => handleMarkAsDone('S-1200')}
                     className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
                   >
@@ -3076,11 +3088,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             <h2 className="text-xl font-black text-white uppercase tracking-tighter">
               Evento S-2300 – Início do Trabalhador Sem Vínculo
             </h2>
-            <button 
-              onClick={() => { 
+            <button
+              onClick={() => {
                 setSelectedWorkerId(null);
-                setSelectedWorker(null); 
-                setCurrentView('management'); 
+                setSelectedWorker(null);
+                setCurrentView('management');
               }}
               className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
@@ -3153,46 +3165,46 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 renderTransmissionMonitor()
               ) : (
                 <div className="space-y-6">
-                  <button 
+                  <button
                     onClick={handleTransmitESocial}
                     className={cn(
                       "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
                       selectedWorker.esocial_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20" :
-                      selectedWorker.esocial_status === 'ERRO' ? "bg-red-600 hover:bg-red-700 text-white shadow-red-500/20" :
-                      "bg-primary hover:bg-blue-700 text-white shadow-blue-500/20"
+                        selectedWorker.esocial_status === 'ERRO' ? "bg-red-600 hover:bg-red-700 text-white shadow-red-500/20" :
+                          "bg-primary hover:bg-blue-700 text-white shadow-blue-500/20"
                     )}
                   >
                     <Send className="h-6 w-6" />
-                    {selectedWorker.esocial_status === 'SUCESSO' ? 'RETIFICAR CADASTRO / CONSULTAR' : 
-                     selectedWorker.esocial_status === 'ERRO' ? 'RETRANSMITIR CADASTRO / CONSULTAR' : 
-                     'Transmitir Cadastro / Consultar'}
+                    {selectedWorker.esocial_status === 'SUCESSO' ? 'RETIFICAR CADASTRO / CONSULTAR' :
+                      selectedWorker.esocial_status === 'ERRO' ? 'RETRANSMITIR CADASTRO / CONSULTAR' :
+                        'Transmitir Cadastro / Consultar'}
                   </button>
 
-                  {renderEventLog({ 
-                    status: selectedWorker.esocial_status, 
-                    protocolo: selectedWorker.protocolo, 
-                    recibo: selectedWorker.recibo, 
-                    resposta_governo: selectedWorker.resposta_governo 
+                  {renderEventLog({
+                    status: selectedWorker.esocial_status,
+                    protocolo: selectedWorker.protocolo,
+                    recibo: selectedWorker.recibo,
+                    resposta_governo: selectedWorker.resposta_governo
                   }, 'S-2300', selectedWorker.cpf)}
                 </div>
               )}
 
-              {activeFlow.status === 'IDLE' && renderEventLog({ 
-                status: esocialStatus?.status || selectedWorker.esocial_status, 
-                protocolo: esocialStatus?.protocolo || selectedWorker.protocolo, 
-                recibo: selectedWorker.recibo, 
-                resposta_governo: esocialStatus?.resposta_governo || selectedWorker.resposta_governo 
+              {activeFlow.status === 'IDLE' && renderEventLog({
+                status: esocialStatus?.status || selectedWorker.esocial_status,
+                protocolo: esocialStatus?.protocolo || selectedWorker.protocolo,
+                recibo: selectedWorker.recibo,
+                resposta_governo: esocialStatus?.resposta_governo || selectedWorker.resposta_governo
               }, 'S-2300', selectedWorker.cpf)}
-              
+
               <div className="flex flex-col items-center gap-6 mt-8">
                 <div className="flex items-center gap-4 w-full">
                   <div className="h-px flex-1 bg-white/5"></div>
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
                   <div className="h-px flex-1 bg-white/5"></div>
                 </div>
-                
+
                 <div className="flex flex-wrap items-center justify-center gap-4">
-                  <button 
+                  <button
                     onClick={() => handleMarkAsDone('S-2300', selectedWorker.cpf)}
                     className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
                   >
@@ -3217,11 +3229,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 Finalização de prestação de serviço
               </p>
             </div>
-            <button 
-              onClick={() => { 
+            <button
+              onClick={() => {
                 setSelectedWorkerId(null);
-                setSelectedWorker(null); 
-                setCurrentView('management'); 
+                setSelectedWorker(null);
+                setCurrentView('management');
               }}
               className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
@@ -3264,26 +3276,26 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 renderTransmissionMonitor()
               ) : (
                 <div className="space-y-6">
-                  <button 
+                  <button
                     onClick={handleTransmitS2399}
                     className={cn(
                       "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
                       selectedWorker.s2399_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20" :
-                      selectedWorker.s2399_status === 'ERRO' ? "bg-red-600 hover:bg-red-700 text-white shadow-red-500/20" :
-                      "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                        selectedWorker.s2399_status === 'ERRO' ? "bg-red-600 hover:bg-red-700 text-white shadow-red-500/20" :
+                          "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                     )}
                   >
                     <Send className="h-6 w-6" />
-                    {selectedWorker.s2399_status === 'SUCESSO' ? 'RETIFICAR TÉMINO / CONSULTAR' : 
-                     selectedWorker.s2399_status === 'ERRO' ? 'RETRANSMITIR TÉRMINO / CONSULTAR' : 
-                     'Transmitir Evento S-2399'}
+                    {selectedWorker.s2399_status === 'SUCESSO' ? 'RETIFICAR TÉMINO / CONSULTAR' :
+                      selectedWorker.s2399_status === 'ERRO' ? 'RETRANSMITIR TÉRMINO / CONSULTAR' :
+                        'Transmitir Evento S-2399'}
                   </button>
 
-                  {renderEventLog({ 
-                    status: selectedWorker.s2399_status, 
-                    protocolo: selectedWorker.s2399_protocolo, 
-                    recibo: selectedWorker.s2399_recibo, 
-                    resposta_governo: selectedWorker.s2399_resposta_governo 
+                  {renderEventLog({
+                    status: selectedWorker.s2399_status,
+                    protocolo: selectedWorker.s2399_protocolo,
+                    recibo: selectedWorker.s2399_recibo,
+                    resposta_governo: selectedWorker.s2399_resposta_governo
                   }, 'S-2399', selectedWorker.cpf)}
                 </div>
               )}
@@ -3294,9 +3306,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
                   <div className="h-px flex-1 bg-white/5"></div>
                 </div>
-                
+
                 <div className="flex flex-wrap items-center justify-center gap-4">
-                  <button 
+                  <button
                     onClick={() => handleMarkAsDone('S-2399', selectedWorker.cpf)}
                     className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
                   >
@@ -3353,12 +3365,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">CEP (apenas números)</label>
                 <div className="relative">
-                  <input 
-                    type="text" 
-                    value={workerCep} 
-                    onChange={e => setWorkerCep(e.target.value.replace(/\D/g, '').substring(0, 8))} 
-                    placeholder="00000000" 
-                    className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none pr-10" 
+                  <input
+                    type="text"
+                    value={workerCep}
+                    onChange={e => setWorkerCep(e.target.value.replace(/\D/g, '').substring(0, 8))}
+                    placeholder="00000000"
+                    className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none pr-10"
                   />
                   {isFetchingCep && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -3468,7 +3480,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   <History className="h-5 w-5 text-primary" />
                   <h3 className="font-bold text-white uppercase tracking-widest text-xs">Histórico de Transmissões (Auditoria)</h3>
                 </div>
-                <button 
+                <button
                   onClick={fetchEventsHistory}
                   className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-slate-400"
                   title="Atualizar Histórico"
@@ -3514,14 +3526,14 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                             <span className={cn(
                               "px-3 py-1 rounded text-[10px] font-black uppercase tracking-tighter",
                               event.status === 'SUCESSO' ? "bg-emerald-500/20 text-emerald-500" :
-                              event.status === 'ERRO' ? "bg-red-500/20 text-red-500" :
-                              "bg-blue-500/20 text-blue-500 animate-pulse"
+                                event.status === 'ERRO' ? "bg-red-500/20 text-red-500" :
+                                  "bg-blue-500/20 text-blue-500 animate-pulse"
                             )}>
                               {event.status}
                             </span>
                           </td>
                           <td className="px-4 py-4 text-center">
-                            <button 
+                            <button
                               onClick={() => { setSelectedEventDetails(event); setIsEventModalOpen(true); }}
                               className="p-2 hover:bg-white/10 rounded-lg transition-colors text-blue-400"
                               title="Ver Logs Detalhados"
@@ -3544,15 +3556,15 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
 
             <div className="flex justify-end gap-3 pt-6 border-t border-white/5 bg-white/5 p-6 -mx-8 -mb-8">
-              <button 
-                onClick={() => { resetWorkerForm(); setCurrentView('management'); }} 
+              <button
+                onClick={() => { resetWorkerForm(); setCurrentView('management'); }}
                 className="px-6 py-2.5 bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-600 transition-all shadow-lg"
               >
                 Voltar para obra
               </button>
-              <button 
-                onClick={handleSaveWorker} 
-                disabled={isSaving} 
+              <button
+                onClick={handleSaveWorker}
+                disabled={isSaving}
                 className="px-10 py-2.5 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all shadow-xl shadow-primary/20 disabled:opacity-50"
               >
                 {isSaving ? (
@@ -3614,21 +3626,21 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">CPF / CNPJ <span className="text-red-500">*</span></label>
                 <div className="relative">
-                  <input 
-                    type="text" 
-                    value={cpfCnpj} 
-                    onChange={e => setCpfCnpj(e.target.value)} 
+                  <input
+                    type="text"
+                    value={cpfCnpj}
+                    onChange={e => setCpfCnpj(e.target.value)}
                     placeholder="Obrigatório"
                     className={cn(
                       "w-full bg-white/5 border rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner",
                       !cpfCnpj ? "border-red-500/30" : "border-white/10"
-                    )} 
+                    )}
                   />
                   {cpfCnpj && (
                     <Check className={cn(
                       "absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4",
-                      (cpfCnpj.replace(/[^\d]/g, '').length <= 11 ? validateCPF(cpfCnpj) : validateCNPJ(cpfCnpj)) 
-                        ? "text-emerald-500" 
+                      (cpfCnpj.replace(/[^\d]/g, '').length <= 11 ? validateCPF(cpfCnpj) : validateCNPJ(cpfCnpj))
+                        ? "text-emerald-500"
                         : "text-red-400"
                     )} />
                   )}
@@ -3787,7 +3799,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <h2 className="text-xl font-black text-white uppercase tracking-tighter">Eventos de Tabela — S-1000</h2>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Informações Iniciais do Empregador/Contribuinte</p>
             </div>
-            <button 
+            <button
               onClick={() => setCurrentView('management')}
               className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
@@ -3828,14 +3840,14 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 renderTransmissionMonitor()
               ) : (
                 <div className="flex flex-col gap-6">
-                  <button 
+                  <button
                     onClick={handleTransmitS1000}
                     className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                   >
                     <Send className="h-6 w-6" />
                     {esocialS1000Status?.status === 'SUCESSO' ? 'REATIVAR / RETIFICAR EMPREGADOR' : 'Transmitir Evento / Consultar'}
                   </button>
-                  
+
                   {renderEventLog(esocialS1000Status, 'S-1000')}
                 </div>
               )}
@@ -3854,7 +3866,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <h2 className="text-xl font-black text-white uppercase tracking-tighter">Evento S-1005 – Tabela de Estabelecimentos</h2>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Informações de Obras de Construção Civil</p>
             </div>
-            <button 
+            <button
               onClick={() => setCurrentView('management')}
               className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
@@ -3899,14 +3911,14 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 renderTransmissionMonitor()
               ) : (
                 <div className="flex flex-col gap-6">
-                  <button 
+                  <button
                     onClick={handleTransmitS1005}
                     className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                   >
                     <Send className="h-6 w-6" />
                     {esocialS1005Status?.status === 'SUCESSO' ? 'RETIFICAR ESTABELECIMENTO' : 'Transmitir Evento / Consultar'}
                   </button>
-                  
+
                   {renderEventLog(esocialS1005Status, 'S-1005')}
                 </div>
               )}
@@ -3917,9 +3929,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
                   <div className="h-px flex-1 bg-white/5"></div>
                 </div>
-                
+
                 <div className="flex flex-wrap items-center justify-center gap-4">
-                  <button 
+                  <button
                     onClick={() => handleMarkAsDone('S-1005')}
                     className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
                   >
@@ -3942,13 +3954,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Classificação das Lotações Tributárias</p>
             </div>
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => setIsLotacaoModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-all shadow-lg"
               >
                 <Settings className="h-3.5 w-3.5" /> Configurar
               </button>
-              <button 
+              <button
                 onClick={() => setCurrentView('management')}
                 className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
               >
@@ -3994,7 +4006,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 renderTransmissionMonitor()
               ) : (
                 <div className="flex flex-col gap-6">
-                  <button 
+                  <button
                     onClick={handleTransmitS1020}
                     className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                   >
@@ -4050,7 +4062,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             {/* Modal Footer */}
             <div className="p-6 bg-white/5 border-t border-white/5 flex items-center gap-3">
               <button onClick={() => setIsLotacaoModalOpen(false)} className="flex-1 py-3 bg-slate-700 text-white font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
-              <button 
+              <button
                 onClick={() => { setIsLotacaoModalOpen(false); setCurrentView('s1020_view'); }}
                 className="flex-1 py-3 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2"
               >
@@ -4070,13 +4082,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Configuração de Incidências Tributárias</p>
             </div>
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => setIsRubricaModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-all shadow-lg"
               >
                 <Settings className="h-3.5 w-3.5" /> Configurar
               </button>
-              <button 
+              <button
                 onClick={() => setCurrentView('management')}
                 className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
               >
@@ -4122,7 +4134,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 renderTransmissionMonitor()
               ) : (
                 <div className="flex flex-col gap-6">
-                  <button 
+                  <button
                     onClick={handleTransmitS1010}
                     className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
                   >
@@ -4195,7 +4207,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             {/* Modal Footer */}
             <div className="p-6 bg-white/5 border-t border-white/5 flex items-center gap-3">
               <button onClick={() => setIsRubricaModalOpen(false)} className="flex-1 py-3 bg-slate-700 text-white font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
-              <button 
+              <button
                 onClick={() => { setIsRubricaModalOpen(false); setCurrentView('s1010_view'); }}
                 className="flex-1 py-3 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2"
               >
@@ -4271,8 +4283,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             {/* Modal Footer */}
             <div className="p-6 bg-white/5 border-t border-white/5 flex justify-end gap-3">
               <button onClick={() => setIsRemunerationModalOpen(false)} className="px-6 py-2.5 bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
-              <button 
-                onClick={handleSaveRemuneration} 
+              <button
+                onClick={handleSaveRemuneration}
                 disabled={isSaving}
                 className="px-8 py-2.5 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2"
               >
@@ -4299,7 +4311,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   <p className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {selectedEventDetails.id}</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setIsEventModalOpen(false)}
                 className="p-2 hover:bg-white/10 rounded-full text-slate-400 transition-colors"
               >
@@ -4355,7 +4367,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <div className="group">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">XML Assinado (Enviado)</span>
-                    <button 
+                    <button
                       onClick={() => {
                         navigator.clipboard.writeText(selectedEventDetails.xml_assinado || '');
                         alert('XML copiado para a área de transferência!');
@@ -4373,7 +4385,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <div className="group">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">XML de Resposta (Bruto do Governo)</span>
-                    <button 
+                    <button
                       onClick={() => {
                         navigator.clipboard.writeText(selectedEventDetails.xml_retorno || '');
                         alert('XML de resposta copiado!');
@@ -4391,7 +4403,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
 
             <div className="p-6 bg-white/5 border-t border-white/5 flex justify-end">
-              <button 
+              <button
                 onClick={() => setIsEventModalOpen(false)}
                 className="px-8 py-2.5 bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-600 transition-all shadow-lg"
               >
