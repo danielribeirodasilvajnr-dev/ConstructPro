@@ -22,7 +22,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
   const [formData, setFormData] = useState<Partial<FinancialItem>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [uploading, setUploading] = useState(false);
-  const VALID_CATEGORIES = ['Material', 'Mão de Obra', 'Equipamento', 'Terceirizado', 'Outros'];
+  const VALID_CATEGORIES = ['Material', 'Equipamento', 'Terceirizado', 'Entrada', 'Outros'];
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'date', direction: 'desc' });
   const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean, title: string, message: string, type?: 'error' | 'success' }>({
     isOpen: false,
@@ -61,7 +61,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
     setUploading(true);
     try {
       const newUrls = { ...formData };
-      
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const MAX_SIZE = 5 * 1024 * 1024;
@@ -108,11 +108,12 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
   };
 
   const handleSave = async () => {
-    if (!formData.budget_item_linked_id) {
+    const isEntrada = formData.category?.toLowerCase() === 'entrada';
+    if (!formData.budget_item_linked_id && !isEntrada) {
       setAlertConfig({
         isOpen: true,
         title: 'Atenção',
-        message: 'Por favor, selecione um item do orçamento para vincular este lançamento.',
+        message: 'Por favor, selecione um item do orçamento para vincular este lançamento (exceto para Entradas).',
         type: 'warning' as any
       });
       return;
@@ -182,21 +183,21 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
   };
 
   const filteredItems = (financialItems || []).filter(i => {
-    const matchesSearch = 
+    const matchesSearch =
       i.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (i.supplier && i.supplier.toLowerCase().includes(searchTerm.toLowerCase())) ||
       i.category.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesDate = (!filters.dateStart || i.date >= filters.dateStart) &&
-                        (!filters.dateEnd || i.date <= filters.dateEnd);
-    
+      (!filters.dateEnd || i.date <= filters.dateEnd);
+
     const matchesCategory = filters.category === 'Todas' || i.category === filters.category;
-    
+
     const matchesAmount = (!filters.minAmount || Number(i.amount) >= Number(filters.minAmount)) &&
-                          (!filters.maxAmount || Number(i.amount) <= Number(filters.maxAmount));
+      (!filters.maxAmount || Number(i.amount) <= Number(filters.maxAmount));
 
     const matchesBudgetItem = !filters.budgetItemId || i.budget_item_linked_id === filters.budgetItemId;
-    
+
     return matchesSearch && matchesDate && matchesCategory && matchesAmount && matchesBudgetItem;
   });
 
@@ -246,7 +247,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
           <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-600 font-mono">v2.1</span>
         </h2>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <button 
+          <button
             onClick={handleExportExcel}
             title="Exportar para Excel"
             className="p-2.5 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500/20 transition-all border border-emerald-500/20 group flex-1 sm:flex-none justify-center flex"
@@ -258,8 +259,8 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
               setEditingItem(null);
               const now = new Date();
               const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-              setFormData({ date: localDate, category: 'Material' }); 
-              setIsModalOpen(true); 
+              setFormData({ date: localDate, category: 'Material' });
+              setIsModalOpen(true);
             }} className="flex-2 sm:flex-none px-4 sm:px-5 py-2.5 bg-[#BCB5AC] text-[#1C232E] text-xs sm:text-sm font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-95 whitespace-nowrap">
               <Plus className="h-4 w-4" /> <span>Novo Lançamento</span>
             </button>
@@ -271,16 +272,16 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
         <div className="flex gap-4">
           <div className="relative flex-1 group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-[#BCB5AC] transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Buscar por descrição, fornecedor ou categoria..." 
-              value={searchTerm} 
-              onChange={e => setSearchTerm(e.target.value)} 
-              className="w-full pl-12 pr-4 py-4 bg-[#1C232E] border border-white/5 text-white rounded-2xl focus:border-[#BCB5AC]/50 outline-none transition-all placeholder:text-slate-600 focus:bg-[#1C232E]" 
+            <input
+              type="text"
+              placeholder="Buscar por descrição, fornecedor ou categoria..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 bg-[#1C232E] border border-white/5 text-white rounded-2xl focus:border-[#BCB5AC]/50 outline-none transition-all placeholder:text-slate-600 focus:bg-[#1C232E]"
             />
           </div>
-          <button 
-            onClick={() => setIsFilterExpanded(!isFilterExpanded)} 
+          <button
+            onClick={() => setIsFilterExpanded(!isFilterExpanded)}
             className={cn(
               "px-6 rounded-2xl border border-white/5 flex items-center gap-2 font-bold text-xs uppercase tracking-widest transition-all relative",
               isFilterExpanded || activeFiltersCount > 0 ? "bg-[#BCB5AC]/10 border-[#BCB5AC]/30 text-[#BCB5AC]" : "bg-[#1C232E] text-slate-400 hover:text-[#1C232E]"
@@ -298,7 +299,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
 
         <AnimatePresence>
           {isFilterExpanded && (
-            <motion.div 
+            <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
@@ -310,18 +311,18 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                     <Calendar className="h-3 w-3" /> Período
                   </label>
                   <div className="flex items-center gap-2 min-w-0">
-                    <input 
-                      type="date" 
-                      value={filters.dateStart} 
-                      onChange={e => setFilters({ ...filters, dateStart: e.target.value })} 
-                      className="flex-1 min-w-0 bg-[#1C232E] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none transition-all" 
+                    <input
+                      type="date"
+                      value={filters.dateStart}
+                      onChange={e => setFilters({ ...filters, dateStart: e.target.value })}
+                      className="flex-1 min-w-0 bg-[#1C232E] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none transition-all"
                     />
                     <span className="text-slate-600 font-bold text-[10px]">à</span>
-                    <input 
-                      type="date" 
-                      value={filters.dateEnd} 
-                      onChange={e => setFilters({ ...filters, dateEnd: e.target.value })} 
-                      className="flex-1 bg-[#1C232E] border border-white/5 rounded-xl px-3 py-2 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none transition-all" 
+                    <input
+                      type="date"
+                      value={filters.dateEnd}
+                      onChange={e => setFilters({ ...filters, dateEnd: e.target.value })}
+                      className="flex-1 bg-[#1C232E] border border-white/5 rounded-xl px-3 py-2 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -330,9 +331,9 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                   <label className="text-[10px] font-black text-[#BCB5AC] uppercase tracking-widest ml-1 flex items-center gap-2">
                     <FilterIcon className="h-3 w-3" /> Categoria
                   </label>
-                  <select 
-                    value={filters.category} 
-                    onChange={e => setFilters({ ...filters, category: e.target.value })} 
+                  <select
+                    value={filters.category}
+                    onChange={e => setFilters({ ...filters, category: e.target.value })}
                     className="w-full bg-[#1C232E] border border-white/5 rounded-xl px-3 py-2.5 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none appearance-none cursor-pointer truncate"
                   >
                     <option value="Todas">Todas</option>
@@ -344,9 +345,9 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                   <label className="text-[10px] font-black text-[#BCB5AC] uppercase tracking-widest ml-1 flex items-center gap-2">
                     <Paperclip className="h-3 w-3" /> Vínculo
                   </label>
-                  <select 
-                    value={filters.budgetItemId} 
-                    onChange={e => setFilters({ ...filters, budgetItemId: e.target.value })} 
+                  <select
+                    value={filters.budgetItemId}
+                    onChange={e => setFilters({ ...filters, budgetItemId: e.target.value })}
                     className="w-full bg-[#1C232E] border border-white/5 rounded-xl px-3 py-2.5 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none appearance-none cursor-pointer truncate"
                   >
                     <option value="">Todos os itens</option>
@@ -363,25 +364,25 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                     <span className="text-[8px] border border-current rounded px-1">R$</span> Valor
                   </label>
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <input 
-                      type="number" 
-                      placeholder="Min" 
-                      value={filters.minAmount} 
-                      onChange={e => setFilters({ ...filters, minAmount: e.target.value })} 
-                      className="w-full min-w-0 bg-[#1C232E] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none placeholder:text-slate-700 transition-all" 
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      value={filters.minAmount}
+                      onChange={e => setFilters({ ...filters, minAmount: e.target.value })}
+                      className="w-full min-w-0 bg-[#1C232E] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none placeholder:text-slate-700 transition-all"
                     />
-                    <input 
-                      type="number" 
-                      placeholder="Max" 
-                      value={filters.maxAmount} 
-                      onChange={e => setFilters({ ...filters, maxAmount: e.target.value })} 
-                      className="w-full min-w-0 bg-[#1C232E] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none placeholder:text-slate-700 transition-all" 
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      value={filters.maxAmount}
+                      onChange={e => setFilters({ ...filters, maxAmount: e.target.value })}
+                      className="w-full min-w-0 bg-[#1C232E] border border-white/5 rounded-xl px-2 py-2 text-[10px] text-white focus:border-[#BCB5AC]/50 outline-none placeholder:text-slate-700 transition-all"
                     />
                   </div>
                 </div>
 
                 <div className="flex items-end min-w-0">
-                  <button 
+                  <button
                     onClick={() => {
                       setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '', budgetItemId: '' });
                       setSearchTerm('');
@@ -406,8 +407,8 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
               onClick={() => setFilters({ ...filters, category: filters.category === cat ? 'Todas' : cat })}
               className={cn(
                 "px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all active:scale-95",
-                filters.category === cat 
-                  ? "bg-[#BCB5AC] border-[#BCB5AC] text-[#1C232E] shadow-lg shadow-black/30" 
+                filters.category === cat
+                  ? "bg-[#BCB5AC] border-[#BCB5AC] text-[#1C232E] shadow-lg shadow-black/30"
                   : "bg-white/5 border-white/5 text-slate-500 hover:text-slate-300 hover:bg-white/10"
               )}
             >
@@ -415,7 +416,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
             </button>
           ))}
           {activeFiltersCount > 0 && (
-            <button 
+            <button
               onClick={() => {
                 setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '', budgetItemId: '' });
                 setSearchTerm('');
@@ -456,7 +457,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                       {item.description}
                       <div className="flex gap-1.5">
                         {[item.receipt_url, item.receipt_url_2, item.receipt_url_3].filter(Boolean).map((url, idx) => (
-                          <button 
+                          <button
                             key={idx}
                             onClick={() => window.open(url, '_blank')}
                             title={`Ver anexo ${idx + 1}`}
@@ -480,11 +481,11 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                 {!readOnly && (
                   <td className="p-4">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => { 
-                        setEditingItem(item); 
+                      <button onClick={() => {
+                        setEditingItem(item);
                         const sanitizedCategory = VALID_CATEGORIES.includes(item.category) ? item.category : 'Material';
-                        setFormData({ ...item, category: sanitizedCategory }); 
-                        setIsModalOpen(true); 
+                        setFormData({ ...item, category: sanitizedCategory });
+                        setIsModalOpen(true);
                       }} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-all"><Edit className="h-4 w-4" /></button>
                       <button onClick={() => handleDelete(item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg text-red-500 transition-all"><Trash2 className="h-4 w-4" /></button>
                     </div>
@@ -509,11 +510,11 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                   {item.description}
                 </h3>
                 <div className="flex flex-wrap items-center gap-3">
-                   <span className="px-2 py-0.5 bg-slate-800 rounded text-[10px] font-black uppercase text-slate-400">
+                  <span className="px-2 py-0.5 bg-slate-800 rounded text-[10px] font-black uppercase text-slate-400">
                     {item.category}
                   </span>
                   {[item.receipt_url, item.receipt_url_2, item.receipt_url_3].filter(Boolean).map((url, idx) => (
-                    <button 
+                    <button
                       key={idx}
                       onClick={() => window.open(url, '_blank')}
                       className="flex items-center gap-1 text-[10px] font-black text-emerald-500 uppercase"
@@ -543,19 +544,19 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
 
             {!readOnly && (
               <div className="flex items-center gap-2 pt-2">
-                <button 
-                  onClick={() => { 
-                    setEditingItem(item); 
+                <button
+                  onClick={() => {
+                    setEditingItem(item);
                     const sanitizedCategory = VALID_CATEGORIES.includes(item.category) ? item.category : 'Material';
-                    setFormData({ ...item, category: sanitizedCategory }); 
-                    setIsModalOpen(true); 
-                  }} 
+                    setFormData({ ...item, category: sanitizedCategory });
+                    setIsModalOpen(true);
+                  }}
                   className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95"
                 >
                   <Edit className="h-4 w-4" /> Editar
                 </button>
-                <button 
-                  onClick={() => handleDelete(item.id)} 
+                <button
+                  onClick={() => handleDelete(item.id)}
                   className="px-4 py-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-red-500 transition-all active:scale-95"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -601,11 +602,11 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
 
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-slate-100 uppercase tracking-widest ml-1 flex items-center gap-2">
-                  Vincular Item do Orçamento <span className="text-red-500">*</span>
+                  Vincular Item do Orçamento {formData.category !== 'Entrada' && <span className="text-red-500">*</span>}
                 </label>
                 <select
                   value={formData.budget_item_linked_id || ''}
-                  required
+                  required={formData.category !== 'Entrada'}
                   onChange={e => {
                     const itemId = e.target.value;
                     const item = budgetItems.find(i => i.id === itemId);
@@ -618,23 +619,42 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                   className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none appearance-none cursor-pointer"
                 >
                   <option value="">Selecione um item do orçamento...</option>
-                  {Array.from(new Set(budgetItems.map(i => i.category))).map(cat => (
-                    <optgroup key={cat} label={cat} className="bg-[#1C232E]">
-                      {budgetItems.filter(i => i.category === cat).map(item => (
-                        <option key={item.id} value={item.id}>
-                          {item.code ? `${item.code} - ` : ''}{item.description}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
+                  {(() => {
+                    const sortedItems = [...budgetItems]
+                      .filter(item => item.category.localeCompare('Mão de Obra', undefined, { sensitivity: 'base' }) !== 0)
+                      .sort((a, b) => 
+                        (a.code || '').localeCompare(b.code || '', undefined, { numeric: true })
+                      );
+                    
+                    const groups: { category: string, items: any[] }[] = [];
+                    let currentGroup: { category: string, items: any[] } | null = null;
+
+                    sortedItems.forEach(item => {
+                      if (!currentGroup || currentGroup.category !== item.category) {
+                        currentGroup = { category: item.category, items: [] };
+                        groups.push(currentGroup);
+                      }
+                      currentGroup.items.push(item);
+                    });
+
+                    return groups.map((group, idx) => (
+                      <optgroup key={`${group.category}-${idx}`} label={group.category} className="bg-[#1C232E]">
+                        {group.items.map(item => (
+                          <option key={item.id} value={item.id}>
+                            {item.code ? `${item.code} - ` : ''}{item.description}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ));
+                  })()}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Categoria</label>
                   <select
-                    value={formData.category || 'Material'} 
-                    onChange={e => setFormData({ ...formData, category: e.target.value })} 
+                    value={formData.category || 'Material'}
+                    onChange={e => setFormData({ ...formData, category: e.target.value })}
                     className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none appearance-none"
                   >
                     {VALID_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -685,7 +705,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                       </div>
                       <div className="flex items-center gap-2">
                         <button onClick={() => window.open(anexo.url, '_blank')} className="text-[10px] font-bold text-emerald-500 hover:underline">Ver</button>
-                        <button onClick={() => removeAttachment(anexo.slot as 1|2|3)} className="p-1.5 text-slate-600 hover:text-red-500 transition-colors"><X className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => removeAttachment(anexo.slot as 1 | 2 | 3)} className="p-1.5 text-slate-600 hover:text-red-500 transition-colors"><X className="h-3.5 w-3.5" /></button>
                       </div>
                     </div>
                   ))}
@@ -735,7 +755,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
         </div>
       )}
 
-      <ConfirmModal 
+      <ConfirmModal
         isOpen={!!deletingItemId}
         onClose={() => setDeletingItemId(null)}
         onConfirm={confirmDelete}

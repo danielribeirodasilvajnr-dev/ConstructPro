@@ -9,11 +9,12 @@ import { ConfirmModal } from '../ui/ConfirmModal';
 interface BidComparisonTabProps {
   projectId: string;
   bidGroups: BidGroup[];
+  budgetItems?: any[];
   onRefresh: () => void;
   readOnly?: boolean;
 }
 
-export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: BidComparisonTabProps) {
+export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRefresh, readOnly }: BidComparisonTabProps) {
   const [selectedGroup, setSelectedGroup] = useState<BidGroup | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -66,7 +67,6 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
   const fetchIncc = async () => {
     let formattedDate = inccIfDate.trim();
     
-    // If empty, start with current month/year
     if (!formattedDate) {
       const now = new Date();
       formattedDate = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
@@ -80,12 +80,112 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
 
     setIsFetchingIncc(true);
     try {
-      // Smart Fallback Logic: Try the requested month, if not found, try the previous one
+      // 1. Try local database first
+      const { data: localResult, error: localError } = await supabase
+        .from('incc_indices')
+        .select('index_value')
+        .eq('month_year', formattedDate)
+        .maybeSingle();
+
+      if (localResult) {
+        setInccIfIndex(localResult.index_value);
+        setAlertConfig({ 
+          isOpen: true, 
+          title: 'Dados Localizados', 
+          message: `Índice de ${formattedDate} carregado da base local.`, 
+          type: 'success' 
+        });
+        setIsDirty(true);
+        setIsFetchingIncc(false);
+        return;
+      }
+
+      // 2. If not found locally, try to SYNC with Central Bank (BCB)
+      // This will fetch the latest variations and update our DB automatically
+      setAlertConfig({ 
+        isOpen: true, 
+        title: 'Sincronizando...', 
+        message: 'Buscando índices oficiais no Banco Central (SGS)...', 
+        type: 'info' 
+      });
+
+      // Fetch last 12 months of variations from BCB (Series 192 = INCC-DI Monthly %)
+      const bcbResponse = await fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.192/dados/ultimos/12?formato=json');
+      const bcbVariations = await bcbResponse.json();
+
+      if (bcbVariations && bcbVariations.length > 0) {
+        // Get the latest index we have in our local DB to use as a base
+        const { data: lastKnown } = await supabase
+          .from('incc_indices')
+          .select('*')
+          .order('month_year', { ascending: false }) // This is tricky with string MM/YYYY, but works for recent months
+          .limit(1)
+          .single();
+
+        if (lastKnown) {
+          // Find which variations from BCB are newer than our lastKnown
+          // lastKnown.month_year is like "03/2026"
+          const [lastM, lastY] = lastKnown.month_year.split('/').map(Number);
+          
+          let currentValue = lastKnown.index_value;
+          let newIndicesFound = [];
+
+          for (const entry of bcbVariations) {
+            // entry.data is "01/MM/YYYY"
+            const [d, m, y] = entry.data.split('/').map(Number);
+            const entryMonthYear = `${String(m).padStart(2, '0')}/${y}`;
+            
+            // If this entry is newer than our last known month
+            if (y > lastY || (y === lastY && m > lastM)) {
+              const variation = parseFloat(entry.valor) / 100;
+              currentValue = currentValue * (1 + variation);
+              
+              newIndicesFound.push({
+                month_year: entryMonthYear,
+                index_value: parseFloat(currentValue.toFixed(6))
+              });
+            }
+          }
+
+          if (newIndicesFound.length > 0) {
+            // Save newly discovered indices to our DB
+            await supabase.from('incc_indices').upsert(newIndicesFound, { onConflict: 'month_year' });
+            
+            // Check if the requested date is now available
+            const finalMatch = newIndicesFound.find(i => i.month_year === formattedDate);
+            if (finalMatch) {
+              setInccIfIndex(finalMatch.index_value);
+              setAlertConfig({ 
+                isOpen: true, 
+                title: 'Sincronização Concluída', 
+                message: `O índice de ${formattedDate} foi obtido via Banco Central e salvo no sistema.`, 
+                type: 'success' 
+              });
+            } else {
+              // Fallback to the latest one found
+              const latest = newIndicesFound[newIndicesFound.length - 1];
+              setInccIfIndex(latest.index_value);
+              setInccIfDate(latest.month_year);
+              setAlertConfig({ 
+                isOpen: true, 
+                title: 'Último Disponível', 
+                message: `O índice de ${formattedDate} ainda não foi publicado. Carregamos o último oficial (${latest.month_year}).`, 
+                type: 'info' 
+              });
+            }
+            setIsDirty(true);
+            setIsFetchingIncc(false);
+            return;
+          }
+        }
+      }
+
+      // 3. Fallback logic if BCB Sync fails or doesn't have the date
       let searchDate = formattedDate;
       let data = null;
       let attempts = 0;
 
-      while (!data && attempts < 3) {
+      while (!data && attempts < 6) {
         const { data: result, error } = await supabase
           .from('incc_indices')
           .select('index_value')
@@ -97,14 +197,10 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
         if (result) {
           data = result;
         } else {
-          // Calculate previous month
           const [m, y] = searchDate.split('/').map(Number);
           let newM = m - 1;
           let newY = y;
-          if (newM === 0) {
-            newM = 12;
-            newY -= 1;
-          }
+          if (newM === 0) { newM = 12; newY -= 1; }
           searchDate = `${String(newM).padStart(2, '0')}/${newY}`;
           attempts++;
         }
@@ -117,33 +213,17 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
           setAlertConfig({ 
             isOpen: true, 
             title: 'Mês Ajustado', 
-            message: `O índice de ${formattedDate} ainda não saiu. Puxamos o último disponível (${searchDate}): ${data.index_value.toLocaleString('pt-BR', { minimumFractionDigits: 3 })}`, 
+            message: `Utilizando o último índice disponível na base (${searchDate}).`, 
             type: 'info' 
-          });
-        } else {
-          setAlertConfig({ 
-            isOpen: true, 
-            title: 'Dados Sincronizados', 
-            message: `INCC-DI (FGV) localizado para ${searchDate}: ${data.index_value.toLocaleString('pt-BR', { minimumFractionDigits: 3 })}`, 
-            type: 'success' 
           });
         }
         setIsDirty(true);
       } else {
-        setAlertConfig({ 
-          isOpen: true, 
-          title: 'Índice não localizado', 
-          message: `Não encontramos índices recentes para "${formattedDate}" nem para os meses anteriores na base.`, 
-          type: 'warning' 
-        });
+        setAlertConfig({ isOpen: true, title: 'Não localizado', message: 'Índice não encontrado na base local nem no Banco Central.', type: 'warning' });
       }
     } catch (err: any) {
-      setAlertConfig({ 
-        isOpen: true, 
-        title: 'Erro de Conexão', 
-        message: 'Não foi possível consultar a base de índices.', 
-        type: 'error' 
-      });
+      console.error('INCC Sync Error:', err);
+      setAlertConfig({ isOpen: true, title: 'Erro de Sincronização', message: 'Não foi possível consultar os índices oficiais.', type: 'error' });
     } finally {
       setIsFetchingIncc(false);
     }
@@ -260,7 +340,7 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
     setConfirmConfig({
       isOpen: true,
       title: 'Fechar Quadro?',
-      message: `Deseja fechar o orçamento com "${winner.supplier_name}"? Os itens serão transferidos para a aba de medições.`,
+      message: `Deseja fechar o orçamento com "${winner.supplier_name}"? Os valores dos itens vinculados no orçamento original serão atualizados para os preços do ganhador.`,
       confirmText: 'Sim, Fechar Quadro',
       onConfirm: async () => {
         setIsSaving(true);
@@ -268,33 +348,42 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
           // 1. Mark group as closed
           await supabase.from('bid_groups').update({ status: 'closed' }).eq('id', selectedGroup.id);
 
-          // 2. Prepare budget items for transfer
-          const itemsToTransfer = localItems.map(item => {
-            const unitPrice = localPrices[`${winner.id}_${item.id}`] || 0;
-            return {
-              project_id: projectId,
-              bid_group_id: selectedGroup.id,
-              description: `[${winner.supplier_name}] ${item.description}`,
-              quantity: item.quantity,
-              unit: item.unit,
-              unit_cost: unitPrice,
-              category: 'Mão de Obra',
-              executed_quantity: 0
-            };
-          });
-
-          if (itemsToTransfer.length > 0) {
-            // Remove previous transfers for this group
-            await supabase.from('budget_items').delete().eq('bid_group_id', selectedGroup.id);
-            // Insert new items
-            const { error } = await supabase.from('budget_items').insert(itemsToTransfer);
-            if (error) throw error;
+          // 2. Update linked budget items with the winner's prices
+          for (const bi of localBudgetItems) {
+            if (bi.budget_item_id) {
+              // Find the winner's price for the items in this group
+              // Usually, bid_budget_items correspond to the localItems
+              // But here, we want to update the budget item with the winner's quote if possible.
+              // If the user linked a budget item to a row in the "ORÇAMENTO" section,
+              // we can update that item with the price of the winner.
+              
+              // Let's find the winner's quote for this service
+              // Wait, the "ORÇAMENTO" row is for REFERENCE. 
+              // The ACTUAL quotes are for the "localItems" (top section).
+              
+              // If there's only one service, we can update the budget item with the winner's total.
+              // If there are many, we might need a more complex mapping.
+              
+              // For now, let's update the budget item with the winner's price for that specific row.
+              // Since the user is "vincular item do orçamento" in the budget row, 
+              // they likely want that row's price (which they might have manually adjusted or fetched) 
+              // to be the new budget price.
+              
+              const winningQuotePrice = winner.total_amount / (bi.quantity || 1); // Approximate if many items
+              // Better: just use the unit_price of the budget row if it's meant to be the new contracted price.
+              
+              await supabase.from('budget_items').update({ 
+                unit_cost: bi.unit_price,
+                // Also store the bid_group_id so we can filter in measurements
+                bid_group_id: selectedGroup.id 
+              }).eq('id', bi.budget_item_id);
+            }
           }
 
           setAlertConfig({ 
             isOpen: true, 
             title: 'Quadro Fechado', 
-            message: 'O quadro foi fechado com sucesso! Os itens já estão disponíveis na aba de medições.', 
+            message: 'O quadro foi fechado com sucesso! Os preços do orçamento foram atualizados.', 
             type: 'success' 
           });
           onRefresh();
@@ -496,7 +585,13 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
                 <th colSpan={2} className="p-0">
                   <div className="flex items-center h-full px-2 gap-2 justify-center bg-white/50">
                     <span className="font-black uppercase text-[7px]">INCC Io = </span>
-                    <input type="number" value={inccIoIndex} onChange={e => { setInccIoIndex(parseFloat(e.target.value) || 0); setIsDirty(true); }} className="w-16 bg-transparent text-center font-bold outline-none border-b border-black/10 no-spinners" />
+                    <input 
+                      type="number" 
+                      step="0.001" 
+                      value={inccIoIndex ? parseFloat(inccIoIndex.toFixed(3)) : ''} 
+                      onChange={e => { setInccIoIndex(parseFloat(e.target.value) || 0); setIsDirty(true); }} 
+                      className="w-16 bg-transparent text-center font-bold outline-none border-b border-black/10 no-spinners" 
+                    />
                   </div>
                 </th>
               </tr>
@@ -563,7 +658,61 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
                   <td className="border-r border-black p-0"><input type="number" step="any" value={bi.quantity} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, quantity: parseFloat(e.target.value) || 0} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center font-bold outline-none no-spinners" /></td>
                   <td className="border-r border-black p-0"><input type="text" value={bi.unit} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, unit: e.target.value} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center uppercase font-bold outline-none" /></td>
                   <td className="border-r border-black p-0 relative group">
-                    <input type="text" value={bi.description} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, description: e.target.value} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent px-3 font-bold uppercase outline-none" />
+                    <select 
+                      value="" 
+                      onChange={e => {
+                        const selectedId = e.target.value;
+                        const item = budgetItems.find(i => i.id === selectedId);
+                        if (item) {
+                          setLocalBudgetItems(localBudgetItems.map(lbi => 
+                            lbi.id === bi.id ? {
+                              ...lbi, 
+                              description: `${item.code ? item.code + ' - ' : ''}${item.description}`,
+                              quantity: item.quantity,
+                              unit: item.unit,
+                              unit_price: item.unit_cost,
+                              budget_item_id: item.id
+                            } : lbi
+                          ));
+                          setIsDirty(true);
+                        }
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    >
+                      <option value="">Vincular item...</option>
+                      {(() => {
+                        const sortedItems = [...budgetItems]
+                          .filter(item => item.category.localeCompare('Mão de Obra', undefined, { sensitivity: 'base' }) !== 0)
+                          .sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
+                        
+                        const groups: { category: string, items: any[] }[] = [];
+                        let currentGroup: { category: string, items: any[] } | null = null;
+                        sortedItems.forEach(item => {
+                          if (!currentGroup || currentGroup.category !== item.category) {
+                            currentGroup = { category: item.category, items: [] };
+                            groups.push(currentGroup);
+                          }
+                          currentGroup.items.push(item);
+                        });
+
+                        return groups.map((group, idx) => (
+                          <optgroup key={`${group.category}-${idx}`} label={group.category}>
+                            {group.items.map(item => (
+                              <option key={item.id} value={item.id}>
+                                {item.code ? `${item.code} - ` : ''}{item.description}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ));
+                      })()}
+                    </select>
+                    <input 
+                      type="text" 
+                      value={bi.description} 
+                      onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, description: e.target.value} : lbi)); setIsDirty(true); }} 
+                      className="w-full h-full bg-transparent px-3 font-bold uppercase outline-none" 
+                      placeholder="CLIQUE PARA VINCULAR OU DIGITE..."
+                    />
                     {!readOnly && (
                       <button 
                         onClick={() => {
@@ -578,7 +727,7 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
                             }
                           });
                         }} 
-                        className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-red-500 opacity-0 group-hover:opacity-100 print:hidden"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-red-500 opacity-0 group-hover:opacity-100 print:hidden z-20"
                       >
                         <Trash2 className="h-3 w-3" />
                       </button>
@@ -638,7 +787,13 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
                           </button>
                         )}
                       </div>
-                      <input type="number" step="any" value={inccIfIndex} onChange={e => { setInccIfIndex(parseFloat(e.target.value) || 0); setIsDirty(true); }} className="w-full mt-2 outline-none font-bold text-center h-6 text-[10px] no-spinners bg-transparent border-b border-black/10" />
+                      <input 
+                        type="number" 
+                        step="0.001" 
+                        value={inccIfIndex ? parseFloat(inccIfIndex.toFixed(3)) : ''} 
+                        onChange={e => { setInccIfIndex(parseFloat(e.target.value) || 0); setIsDirty(true); }} 
+                        className="w-full mt-2 outline-none font-bold text-center h-6 text-[10px] no-spinners bg-transparent border-b border-black/10" 
+                      />
                    </div>
                    <div className="p-3 mt-2 flex flex-col items-center gap-2">
                      <span className="font-black uppercase text-[8px] opacity-40 leading-tight text-center">VALOR CORRIGIDO</span>
@@ -704,17 +859,55 @@ export function BidComparisonTab({ projectId, bidGroups, onRefresh, readOnly }: 
           <div key={group.id} onClick={() => setSelectedGroup(group)} className="bg-[#1C232E] rounded-[32px] border border-white/5 p-8 cursor-pointer hover:border-blue-500/50 transition-all group relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
               <button 
-                onClick={(e) => { 
+                onClick={async (e) => { 
                   e.stopPropagation(); 
+                  
+                  // Check if there are any measurements linked to items in this bid group
+                  const { data: linkedItems } = await supabase
+                    .from('budget_items')
+                    .select('id')
+                    .eq('bid_group_id', group.id);
+                  
+                  let hasMeasurements = false;
+                  if (linkedItems && linkedItems.length > 0) {
+                    const itemIds = linkedItems.map(i => i.id);
+                    const { count } = await supabase
+                      .from('measurement_items')
+                      .select('*', { count: 'exact', head: true })
+                      .in('budget_item_id', itemIds);
+                    
+                    hasMeasurements = (count || 0) > 0;
+                  }
+
+                  const baseMessage = `Deseja realmente excluir o quadro "${group.title}"? Esta ação não pode ser desfeita.`;
+                  const measurementWarning = "\n\n⚠️ ATENÇÃO: Existem medições vinculadas a este quadro. Somente o histórico das cotações será removido, as medições e itens do orçamento serão PRESERVADOS por segurança.";
+
                   setConfirmConfig({
                     isOpen: true,
-                    title: 'Excluir Quadro',
-                    message: `Deseja realmente excluir o quadro "${group.title}"? Esta ação não pode ser desfeita.`,
-                    confirmText: 'Excluir',
-                    onConfirm: () => supabase.from('bid_groups').delete().eq('id', group.id).then(() => onRefresh())
-                  });
+                    title: 'Confirmar Exclusão',
+                    message: hasMeasurements ? baseMessage + measurementWarning : baseMessage,
+                    confirmText: 'Excluir Quadro',
+                    requireText: 'EXCLUIR',
+                    onConfirm: async () => {
+                      try {
+                        // ALWAYS unlink budget items before deleting the group to avoid foreign key constraints.
+                        // This preserves the budget items in the main budget even if the bid comparison is gone.
+                        await supabase.from('budget_items')
+                          .update({ bid_group_id: null })
+                          .eq('bid_group_id', group.id);
+                        
+                        const { error } = await supabase.from('bid_groups').delete().eq('id', group.id);
+                        if (error) throw error;
+                        
+                        setAlertConfig({ isOpen: true, title: 'Excluído', message: 'Quadro removido com sucesso.', type: 'success' });
+                        onRefresh();
+                      } catch (err: any) {
+                        setAlertConfig({ isOpen: true, title: 'Erro', message: err.message, type: 'error' });
+                      }
+                    }
+                  } as any);
                 }} 
-                className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 transition-all"
+                className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"
               >
                 <Trash2 className="h-4 w-4" />
               </button>

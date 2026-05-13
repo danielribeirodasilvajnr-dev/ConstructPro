@@ -40,60 +40,80 @@ function escapeXml(unsafe) {
   });
 }
 
+// SECURITY: PII Masking Helper
+function maskPII(obj) {
+  if (!obj) return obj;
+  if (typeof obj !== 'object') return obj;
+  
+  const masked = Array.isArray(obj) ? [...obj] : { ...obj };
+  const sensitiveKeys = ['cpf', 'cnpj', 'workerCpf', 'empCpfCnpj', 'nrInsc', 'cpfTrab', 'nascimento', 'dtNascto', 'certificate_password', 'passphrase'];
+  
+  Object.keys(masked).forEach(key => {
+    if (sensitiveKeys.includes(key) && typeof masked[key] === 'string') {
+      masked[key] = masked[key].length > 4 ? masked[key].substring(0, 3) + '***' + masked[key].slice(-2) : '***';
+    } else if (typeof masked[key] === 'object' && masked[key] !== null) {
+      masked[key] = maskPII(masked[key]);
+    }
+  });
+  return masked;
+}
+
+// SECURITY: API Key Middleware
+const validateApiKey = (req, res, next) => {
+  const apiKey = req.headers['x-api-key'];
+  if (!process.env.PROXY_API_KEY || apiKey !== process.env.PROXY_API_KEY) {
+    console.warn(`[SECURITY] Unauthorized access attempt from ${req.ip}`);
+    return res.status(401).json({ success: false, error: 'Unauthorized: Invalid or missing API Key' });
+  }
+  next();
+};
+
 const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const URL_ENVIO = 'https://webservices.envio.esocial.gov.br/servicos/empregador/enviarloteeventos/WsEnviarLoteEventos.svc';
 const URL_CONSULTA = 'https://webservices.consulta.esocial.gov.br/servicos/empregador/consultarloteeventos/WsConsultarLoteEventos.svc';
 
+// Apply API Key protection to all routes
+app.use(validateApiKey);
+
 /**
  * Assina o XML usando xml-crypto para C14N real + forge para RSA-SHA256.
- * O digest é calculado sobre o <eSocial> completo usando C14N com enveloped-signature.
- * O URI="" é usado conforme exigência do eSocial para assinatura global.
  */
 function assinarXml(xmlStr, privateKeyPem, certPem) {
-  // 1. Parse do documento
+  // ... (logic remains same but removes debug write)
   const doc = new DOMParser().parseFromString(xmlStr, 'text/xml');
   const eSocialNode = doc.documentElement;
 
-  // 2. Usar xml-crypto para canonicalizar com enveloped-signature (remove futura <Signature>)
   const sigHelper = new SignedXml({ canonicalizationAlgorithm: 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315' });
   const c14nXml = sigHelper.getCanonXml(
     ['http://www.w3.org/2000/09/xmldsig#enveloped-signature', 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315'],
     eSocialNode
   );
 
-  // 3. Digest SHA256 do conteúdo canonicalizado
   const md = forge.md.sha256.create();
   md.update(c14nXml, 'utf8');
   const digestBase64 = forge.util.encode64(md.digest().getBytes());
 
-  // 4. Montar <SignedInfo> com URI="" (exigência do eSocial)
   const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><DigestValue>${digestBase64}</DigestValue></Reference></SignedInfo>`;
 
-  // 5. Canonicalizar o <SignedInfo> antes de assinar (padrão W3C)
   const signedInfoC14n = sigHelper.getCanonXml(
     ['http://www.w3.org/TR/2001/REC-xml-c14n-20010315'],
     new DOMParser().parseFromString(signedInfo, 'text/xml').documentElement
   );
 
-  // 6. Assinar com RSA-SHA256
   const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
   const mdSig = forge.md.sha256.create();
   mdSig.update(signedInfoC14n, 'utf8');
   const signatureValue = forge.util.encode64(privateKey.sign(mdSig));
 
-  // 7. Certificado base64
   const certificate = forge.pki.certificateFromPem(certPem);
   const certBase64 = forge.util.encode64(forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).getBytes());
 
-  // 8. Bloco <Signature> completo
   const signatureBlock = `<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">${signedInfo}<SignatureValue>${signatureValue}</SignatureValue><KeyInfo><X509Data><X509Certificate>${certBase64}</X509Certificate></X509Data></KeyInfo></Signature>`;
 
-  // 9. Inserir assinatura antes do </eSocial>
   const resultado = xmlStr.replace('</eSocial>', `${signatureBlock}</eSocial>`);
 
-  // Debug
-  fs.writeFileSync('debug_xml_assinado.xml', resultado, 'utf8');
-  console.log(`[DEBUG] C14N length: ${c14nXml.length}, Digest: ${digestBase64.substring(0, 20)}...`);
+  // SECURITY: Removed debug write to disk
+  console.log(`[ESOCIAL] XML assinado com sucesso. C14N length: ${c14nXml.length}`);
 
   return resultado;
 }
@@ -109,144 +129,98 @@ app.post('/esocial', async (req, res) => {
       .order('created_at', { ascending: false });
 
     if (credError || !credentialsList || credentialsList.length === 0) {
-      throw new Error(`Credenciais eSocial não encontradas para a regularização ID: ${regularizationId}. Configure o certificado na aba eSocial.`);
+      throw new Error(`Credenciais eSocial não encontradas.`);
     }
 
     const credentials = credentialsList[0];
     const certPath = credentials.certificate_url.split('esocial_files/')[1];
-    console.log(`[DEBUG] Baixando certificado: ${certPath}`);
-
+    
     const { data: pfxBlob, error: downloadError } = await supabase.storage.from('esocial_files').download(certPath);
 
     if (downloadError || !pfxBlob) {
-      throw new Error(`Erro ao baixar certificado (${certPath}): ${downloadError?.message || 'Arquivo não encontrado'}`);
+      throw new Error(`Erro ao baixar certificado.`);
     }
 
     const pfxBuffer = Buffer.from(await pfxBlob.arrayBuffer());
 
     if (action === 'CONSULT') {
       const { protocolo } = req.body;
-      console.log(`[DEBUG] Consultando protocolo: ${protocolo}`);
       const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0"><soapenv:Body><ns:ConsultarLoteEventos><ns:consulta><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_0_0"><consultaLoteEventos><protocoloEnvio>${protocolo}</protocoloEnvio></consultaLoteEventos></eSocial></ns:consulta></ns:ConsultarLoteEventos></soapenv:Body></soapenv:Envelope>`;
 
       const response = await axios.post(URL_CONSULTA, soapRequest, {
         headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0/ServicoConsultarLoteEventos/ConsultarLoteEventos"' },
-        httpsAgent: new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: false, minVersion: 'TLSv1.2' }),
+        // SECURITY: rejectUnauthorized set to true
+        httpsAgent: new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: true, minVersion: 'TLSv1.2' }),
       });
 
       const xmlRes = response.data;
-
-      // Salva resposta completa para debug
-      fs.writeFileSync('debug_consulta_resposta.xml', xmlRes, 'utf8');
-      console.log('[DEBUG] Resposta da consulta salva em debug_consulta_resposta.xml');
 
       const statusMatch = xmlRes.match(/<cdResposta>([^<]+)<\/cdResposta>/);
       const reciboMatch = xmlRes.match(/<nrRecibo>([^<]+)<\/nrRecibo>/);
       const cdRetornoEvt = xmlRes.match(/<cdRetornoEvt>([^<]+)<\/cdRetornoEvt>/);
 
-      // FIX #4: Captura TODAS as ocorrências de erro do governo, não apenas a primeira
       const ocorrencias = [];
       const ocorrenciaRegex = /<ocorrencia>.*?<codigo>([^<]+)<\/codigo>.*?<descricao>([^<]+)<\/descricao>.*?<tipo>([^<]+)<\/tipo>.*?<\/ocorrencia>/gs;
       let ocMatch;
       while ((ocMatch = ocorrenciaRegex.exec(xmlRes)) !== null) {
         ocorrencias.push({ codigo: ocMatch[1], descricao: ocMatch[2], tipo: ocMatch[3] });
       }
-      // Fallback para tag legada dscOcorrencia
-      const msgMatchLegacy = xmlRes.match(/<dscOcorrencia>([^<]+)<\/dscOcorrencia>/);
-      const msgMatch = ocorrencias.length === 0 ? msgMatchLegacy : null;
 
       const cdResposta = statusMatch ? statusMatch[1] : '0';
       const cdEvt = cdRetornoEvt ? cdRetornoEvt[1] : null;
 
-      // Mapeamento completo de códigos de retorno do eSocial
-      // cdResposta = código do lote | cdEvt = código do evento individual
       const CODIGOS_ERRO_CONHECIDOS = {
-        '411': '⛔ Assinante Inválido — O certificado usado não possui procuração eletrônica para enviar este evento, ou não é representante legal do empregador. Acesse o portal eSocial e cadastre a procuração para este CPF.',
-        '401': '✅ Evento em Duplicidade — O eSocial já possui este evento registrado com os mesmos dados (CPF, Matrícula, Data de Término). Isso indica que o evento foi enviado e ACEITO anteriormente com sucesso. Nenhuma ação necessária.',
-        '748': '⛔ Protocolo Inválido — O número de protocolo informado não existe ou pertence a outro envio. Verifique o protocolo gerado no momento do envio.',
-        '501': '⛔ Erro de preenchimento na consulta — Verifique o protocolo enviado.',
-        '403': '⛔ Acesso negado — Certificado sem permissão para acessar os dados deste empregador.',
-        '422': '⛔ Erro de validação de schema — O XML enviado não está em conformidade com o leiaute vigente do eSocial.',
-        '999': '⛔ Erro interno do governo — Tente novamente em alguns minutos.',
+        '411': '⛔ Assinante Inválido — O certificado usado não possui procuração eletrônica.',
+        '401': '✅ Evento em Duplicidade — O eSocial já possui este evento registrado.',
+        '748': '⛔ Protocolo Inválido.',
+        '501': '⛔ Erro de preenchimento na consulta.',
+        '403': '⛔ Acesso negado.',
+        '422': '⛔ Erro de validação de schema.',
+        '999': '⛔ Erro interno do governo.',
       };
 
       let status;
       if (cdResposta === '201') {
-        // Lote processado — verificar código do evento individual
-        if (cdEvt && cdEvt !== '1') {
-          status = 'ERRO';
-        } else {
-          status = 'SUCESSO';
-        }
+        status = (cdEvt && cdEvt !== '1') ? 'ERRO' : 'SUCESSO';
       } else if (cdResposta === '101' || cdResposta === '202') {
         status = 'PROCESSANDO';
       } else {
         status = 'ERRO';
       }
 
-      // Verifica código 411 nas ocorrências mesmo quando cdResposta = 201
-      const has411 = ocorrencias.some(o => o.codigo === '411') ||
-        xmlRes.includes('<cdRetornoEvt>411</cdRetornoEvt>');
-      if (has411) {
+      if (ocorrencias.some(o => o.codigo === '411') || xmlRes.includes('<cdRetornoEvt>411</cdRetornoEvt>')) {
         status = 'ERRO';
-        console.warn('[AVISO] Erro 411 detectado — Assinante Inválido/Sem Procuração Eletrônica');
       }
 
-      // Verifica código 401 — evento duplicado = já foi aceito anteriormente com SUCESSO
-      // Comportamento correto: tratar como SUCESSO, não como ERRO
-      const has401Duplicidade = (ocorrencias.some(o => o.codigo === '401') ||
-        xmlRes.includes('<cdRetornoEvt>401</cdRetornoEvt>')) &&
-        xmlRes.toLowerCase().includes('duplicidade');
-      if (has401Duplicidade) {
-        status = 'SUCESSO'; // Evento já existe no eSocial = foi enviado com sucesso antes
-        console.log('[INFO] Erro 401 de duplicidade detectado — evento já registrado no eSocial. Tratando como SUCESSO.');
+      if ((ocorrencias.some(o => o.codigo === '401') || xmlRes.includes('<cdRetornoEvt>401</cdRetornoEvt>')) && xmlRes.toLowerCase().includes('duplicidade')) {
+        status = 'SUCESSO';
       }
 
       const recibo = reciboMatch ? reciboMatch[1] : null;
-      // Monta mensagem final com todas as ocorrências + descrições amigáveis
       let message;
-      if (has411) {
-        // Erro 411 tem mensagem explicativa especial com orientação de ação
-        message = CODIGOS_ERRO_CONHECIDOS['411'];
-      } else if (ocorrencias.length > 0) {
-        // Para cada ocorrência, substitui pelo texto amigável se houver mapeamento
-        message = ocorrencias.map(o => {
-          const descAmigavel = CODIGOS_ERRO_CONHECIDOS[o.codigo];
-          return descAmigavel ? descAmigavel : `[${o.codigo}] ${o.descricao}`;
-        }).join(' | ');
-      } else if (msgMatch) {
-        message = msgMatch[1];
-      } else if (status === 'ERRO' && CODIGOS_ERRO_CONHECIDOS[cdResposta]) {
-        message = CODIGOS_ERRO_CONHECIDOS[cdResposta];
-      } else {
-        message = status === 'SUCESSO' ? 'Processado com sucesso' : status === 'ERRO' ? `Erro do governo (código ${cdResposta}/${cdEvt || 'N/A'})` : 'Aguardando processamento...';
-      }
+      if (status === 'SUCESSO') message = 'Processado com sucesso';
+      else if (ocorrencias.length > 0) message = ocorrencias.map(o => CODIGOS_ERRO_CONHECIDOS[o.codigo] || o.descricao).join(' | ');
+      else message = `Erro do governo (código ${cdResposta}/${cdEvt || 'N/A'})`;
 
-      console.log(`[DEBUG] Status: ${status}, cdResposta: ${cdResposta}, cdEvt: ${cdEvt}, Recibo: ${recibo}`);
-      if (ocorrencias.length > 0) console.log(`[DEBUG] Ocorrências governo:`, JSON.stringify(ocorrencias));
+      console.log(`[ESOCIAL] Consulta realizada. Status: ${status}`);
 
-      // Atualiza esocial_events com resultado da consulta se houver protocolo
       if (req.body.protocolo && req.body.regularizationId) {
         const updatePayload = { status, updated_at: new Date().toISOString() };
         if (recibo) updatePayload.recibo = recibo;
-        if (ocorrencias.length > 0) updatePayload.resposta_governo = ocorrencias;
-        if (xmlRes) updatePayload.xml_retorno = xmlRes.substring(0, 10000); // Limita tamanho
+        if (ocorrencias.length > 0) updatePayload.resposta_governo = maskPII(ocorrencias);
         await supabase.from('esocial_events')
           .update(updatePayload)
           .eq('regularization_id', req.body.regularizationId)
           .eq('protocolo', req.body.protocolo);
-        console.log(`[PERSIST] Consulta persistida para protocolo: ${req.body.protocolo}, Status: ${status}`);
       }
 
-      // SECURITY: Return only necessary fields, never the full XML response
-      return res.json({ success: true, status, recibo, message, ocorrencias });
+      // SECURITY: Sanitized response (removed raw xmlRes)
+      return res.json({ success: true, status, recibo, message });
     }
 
-    // SECURITY: Sanitize all input data before XML generation
+    // SECURITY: Sanitize all input data
     Object.keys(eventData).forEach(key => {
-      if (typeof eventData[key] === 'string') {
-        eventData[key] = escapeXml(eventData[key]);
-      }
+      if (typeof eventData[key] === 'string') eventData[key] = escapeXml(eventData[key]);
     });
 
     const pfx = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(forge.util.createBuffer(pfxBuffer).getBytes()), credentials.certificate_password);
@@ -257,23 +231,20 @@ app.post('/esocial', async (req, res) => {
     const certPem = forge.pki.certificateToPem(certificate);
     const commonName = certificate.subject.getField('CN').value;
     const transCpfCnpj = commonName.split(':').pop().replace(/\D/g, '');
-    const empCpfCnpj = (eventData.proprietarioCpfCnpj || '25502713865').replace(/\D/g, '');
+    const empCpfCnpj = (eventData.proprietarioCpfCnpj || '').replace(/\D/g, '');
 
-    // Captura a data local ajustada para o fuso do Brasil (GMT-3)
-    // FIX #1: brDate agora é usado no timestamp do eventId (antes usava UTC puro)
     const now = new Date();
-    const offset = -3; // Brasil (Brasília)
+    const offset = -3; 
     const brDate = new Date(now.getTime() + (offset * 3600000));
     const timestamp = brDate.toISOString().replace(/[-:T.Z]/g, '').substring(0, 14);
     const rnd = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
     const empTpInsc = empCpfCnpj.length <= 11 ? '2' : '1';
-    // FIX #3: O ID do evento no eSocial exige que o número de inscrição tenha 14 posições.
-    // Se for CPF (11 dígitos), deve ser completado com zeros à DIREITA (padEnd), conforme manual do desenvolvedor eSocial.
-    const empInscFormatted = empCpfCnpj.replace(/\D/g, '').padEnd(14, '0');
+    const empInscFormatted = empCpfCnpj.padEnd(14, '0');
     const eventId = `ID${empTpInsc}${empInscFormatted}${timestamp}${rnd}`;
 
+    // SECURITY: Masked logging
     console.log(`[ESOCIAL] Gerando evento ${reqEventType || action} | ID: ${eventId}`);
-    if (eventData) console.log(`[ESOCIAL] Dados do evento:`, JSON.stringify(eventData));
+    console.log(`[ESOCIAL] Dados (mascarados):`, JSON.stringify(maskPII(eventData)));
 
     const eventType = reqEventType || (action === 'TRANSMIT_S1000' ? 'S-1000' : 'S-2300');
     let xmlEvento = '';
@@ -296,7 +267,6 @@ app.post('/esocial', async (req, res) => {
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
       const workerNome = (eventData.workerNome || '').toUpperCase();
 
-      // Mapeamento flexível para suportar nomes com ou sem prefixo 'worker'
       const sexo = eventData.sexo || eventData.workerSexo || 'M';
       const racaCor = String(eventData.racaCor || eventData.workerCorPele || '1');
       const estCiv = String(eventData.estCiv || '1');
@@ -322,7 +292,6 @@ app.post('/esocial', async (req, res) => {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtTSVTermino/v_S_01_03_00';
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '');
       const matricula = eventData.matricula || eventData.workerMatricula || '001';
-      // FIX #2: Usa brDate (já calculado em BRT) para dtTerm — determinístico em qualquer ambiente
       const brToday = brDate.toISOString().split('T')[0];
       const dtTermFinal = eventData.dtTerm || brToday; 
       const codCateg = String(eventData.codCateg || '701');
@@ -349,7 +318,7 @@ app.post('/esocial', async (req, res) => {
       const ns = 'http://www.esocial.gov.br/schema/evt/evtFechaEvPer/v_S_01_03_00';
       xmlEvento = `<eSocial xmlns="${ns}"><evtFechaEvPer Id="${eventId}"><ideEvento><perApur>${eventData.period}</perApur><tpAmb>1</tpAmb><procEmi>1</procEmi><verProc>1.0</verProc></ideEvento><ideEmpregador><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEmpregador><infoFech><nmResp>RESPONSAVEL</nmResp><cpfResp>${empCpfCnpj.length <= 11 ? empCpfCnpj : '00000000000'}</cpfResp><ideEstab><tpInsc>${empTpInsc}</tpInsc><nrInsc>${empCpfCnpj}</nrInsc></ideEstab></infoFech></evtFechaEvPer></eSocial>`;
     } else {
-      throw new Error(`Evento ${eventType} não suportado pelo proxy.`);
+      throw new Error(`Evento ${eventType} não suportado.`);
     }
 
     const xmlAssinado = assinarXml(xmlEvento, privateKeyPem, certPem);
@@ -364,16 +333,13 @@ app.post('/esocial', async (req, res) => {
 
     const response = await axios.post(URL_ENVIO, soapRequest, {
       headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_0/ServicoEnviarLoteEventos/EnviarLoteEventos"' },
-      httpsAgent: new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: false, minVersion: 'TLSv1.2' }),
+      httpsAgent: new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: true, minVersion: 'TLSv1.2' }),
     });
 
     const xmlRes = response.data;
-    console.log(`[ESOCIAL] Resposta bruta do governo (Envio):`, xmlRes);
     const protMatch = xmlRes.match(/<protocoloEnvio>([^<]+)<\/protocoloEnvio>/);
     const protocolo = protMatch ? protMatch[1] : null;
 
-    // FIX #3: Persistir protocolo, xml_assinado e status no Supabase após envio bem-sucedido
-    // Isso evita perda de protocolo por falha de rede ou reload da página no frontend
     if (protocolo && regularizationId) {
       const workerCpf = (eventData.workerCpf || '').replace(/\D/g, '') || null;
       const query = supabase
@@ -382,19 +348,12 @@ app.post('/esocial', async (req, res) => {
         .eq('regularization_id', regularizationId)
         .eq('tipo_evento', eventType);
       
-      if (workerCpf) {
-        query.eq('cpf_trabalhador', workerCpf);
-      } else {
-        query.is('cpf_trabalhador', null);
-      }
+      if (workerCpf) query.eq('cpf_trabalhador', workerCpf);
+      else query.is('cpf_trabalhador', null);
 
-      const { data: existingEvt } = await query
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const { data: existingEvt } = await query.order('created_at', { ascending: false }).limit(1).maybeSingle();
 
       if (existingEvt?.id) {
-        // Atualiza o registro existente com o protocolo recém-gerado
         await supabase.from('esocial_events').update({
           protocolo,
           xml_assinado: xmlAssinado,
@@ -402,9 +361,7 @@ app.post('/esocial', async (req, res) => {
           ide_evento_id: eventId,
           updated_at: new Date().toISOString()
         }).eq('id', existingEvt.id);
-        console.log(`[PERSIST] Evento ${eventType} atualizado. Protocolo: ${protocolo}`);
       } else {
-        // Cria novo registro de evento
         await supabase.from('esocial_events').insert({
           regularization_id: regularizationId,
           tipo_evento: eventType,
@@ -414,15 +371,13 @@ app.post('/esocial', async (req, res) => {
           status: 'ENVIADO',
           ide_evento_id: eventId
         });
-        console.log(`[PERSIST] Evento ${eventType} registrado. Protocolo: ${protocolo}`);
       }
     }
 
-    // SECURITY: Return only protocol, never the full sensitive response
     res.json({ success: true, protocolo });
   } catch (error) {
     console.error('ERRO /esocial:', error.message);
-    res.json({ success: false, error: error.message });
+    res.json({ success: false, error: 'Erro no processamento do evento.' });
   }
 });
 
@@ -438,20 +393,17 @@ app.post('/consultar', async (req, res) => {
 
     const certPath = credentials.certificate_url.split('esocial_files/')[1];
     const { data: pfxBlob, error: downloadError } = await supabase.storage.from('esocial_files').download(certPath);
-    if (downloadError || !pfxBlob) throw new Error(`Certificado não encontrado no storage: ${certPath}`);
+    if (downloadError || !pfxBlob) throw new Error(`Certificado não encontrado.`);
 
     const pfxBuffer = Buffer.from(await pfxBlob.arrayBuffer());
     const soapRequest = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0"><soapenv:Body><ns:ConsultarLoteEventos><ns:consulta><eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_0_0"><consultaLoteEventos><protocoloEnvio>${protocolo}</protocoloEnvio></consultaLoteEventos></eSocial></ns:consulta></ns:ConsultarLoteEventos></soapenv:Body></soapenv:Envelope>`;
 
     const response = await axios.post(URL_CONSULTA, soapRequest, {
       headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0/ServicoConsultarLoteEventos/ConsultarLoteEventos"' },
-      httpsAgent: new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: false, minVersion: 'TLSv1.2' }),
+      httpsAgent: new https.Agent({ pfx: pfxBuffer, passphrase: credentials.certificate_password, rejectUnauthorized: true, minVersion: 'TLSv1.2' }),
     });
 
     const xmlRes = response.data;
-    console.log(`[ESOCIAL] Resposta bruta do governo (Consulta):`, xmlRes);
-
-    // Parsing mais robusto dos resultados
     const statusMatch = xmlRes.match(/<cdResposta>([^<]+)<\/cdResposta>/);
     const reciboMatch = xmlRes.match(/<nrRecibo>([^<]+)<\/nrRecibo>/);
     const ocorrencias = [];
@@ -465,35 +417,22 @@ app.post('/consultar', async (req, res) => {
     const status = responseCode === '201' ? 'SUCESSO' : (responseCode === '101' ? 'PROCESSANDO' : 'ERRO');
     const recibo = reciboMatch ? reciboMatch[1] : null;
 
-    // PERSISTÊNCIA AUTOMÁTICA DO RESULTADO DA CONSULTA
     if (protocolo) {
-      try {
-        const { error: dbError } = await supabase.from('esocial_events')
-          .update({
-            status,
-            recibo,
-            xml_retorno: xmlRes,
-            resposta_governo: { 
-              code: responseCode, 
-              message: ocorrencias[0] || 'Processamento finalizado.',
-              ocorrencias 
-            },
-            updated_at: new Date().toISOString()
-          })
-          .eq('protocolo', protocolo);
-        
-        if (dbError) console.error('[DB ERROR] Falha ao atualizar consulta:', dbError.message);
-        else console.log(`[PERSIST] Status da consulta atualizado para ${status} (Protocolo: ${protocolo})`);
-      } catch (err) {
-        console.error('[PERSIST ERROR] Falha na persistência da consulta:', err.message);
-      }
+      await supabase.from('esocial_events')
+        .update({
+          status,
+          recibo,
+          updated_at: new Date().toISOString()
+        })
+        .eq('protocolo', protocolo);
     }
 
-    res.json({ success: true, status, recibo, message: ocorrencias[0] || '', ocorrencias, response: xmlRes });
+    res.json({ success: true, status, recibo, message: ocorrencias[0] || '' });
   } catch (error) {
     console.error('ERRO /consultar:', error.message);
-    res.json({ success: false, error: error.message });
+    res.json({ success: false, error: 'Erro na consulta do protocolo.' });
   }
 });
 
-app.listen(3005, '0.0.0.0', () => console.log('🚀 Proxy C14N+Forge (URI Vazio Real) Online na porta 3005'));
+app.listen(3005, '0.0.0.0', () => console.log('🚀 Proxy eSocial Online e Protegido (Porta 3005)'));
+

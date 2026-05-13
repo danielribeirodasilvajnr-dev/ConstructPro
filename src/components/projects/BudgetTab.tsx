@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Calculator as CalculatorIcon, Wallet, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Calculator as CalculatorIcon, Wallet, AlertCircle, DollarSign, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { BudgetItem, FinancialItem } from '../../lib/types';
 import { cn, formatCurrency } from '../../lib/utils';
@@ -28,11 +28,18 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
     return (items || []).reduce((acc, item) => acc + (Number(item.unit_cost) * Number(item.quantity)), 0);
   };
 
-  const totalBudget = calculateTotalBudget(budgetItems);
-  const totalSpent = (financialItems || []).reduce((acc, item) => acc + Number(item.amount), 0);
+  const displayBudgetItems = [...(budgetItems || [])]
+    .filter(item => item.category.localeCompare('Mão de Obra', undefined, { sensitivity: 'base' }) !== 0)
+    .sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
+
+  const displayItemIds = new Set(displayBudgetItems.map(i => i.id));
+  const filteredFinancialItems = (financialItems || []).filter(f => f.budget_item_linked_id && displayItemIds.has(f.budget_item_linked_id));
+
+  const totalBudget = calculateTotalBudget(displayBudgetItems);
+  const totalSpent = filteredFinancialItems.reduce((acc, item) => acc + Number(item.amount), 0);
   const realizedPercent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
-  const itemsByCategory = (budgetItems || []).reduce((acc: any, item: BudgetItem) => {
+  const itemsByCategory = displayBudgetItems.reduce((acc: any, item: BudgetItem) => {
     if (!acc[item.category]) acc[item.category] = [];
     acc[item.category].push(item);
     return acc;
@@ -78,22 +85,58 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
     }
   };
 
+  const totalIncome = (financialItems || [])
+    .filter(i => i.category.localeCompare('Entrada', undefined, { sensitivity: 'base' }) === 0)
+    .reduce((acc, i) => acc + Number(i.amount), 0);
+
+  const totalExpenses = (financialItems || [])
+    .filter(i => i.category.localeCompare('Entrada', undefined, { sensitivity: 'base' }) !== 0)
+    .reduce((acc, i) => acc + Number(i.amount), 0);
+
+  const realBalance = totalIncome - totalExpenses;
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <div className="bg-[#1C232E] p-6 rounded-2xl border border-[#3B82F6]/30 relative overflow-hidden">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Custo da obra</p>
-          <h3 className="text-3xl font-black text-white">{formatCurrency(totalBudget)}</h3>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Valor do Contrato</p>
+          <h3 className="text-xl font-black text-white">{formatCurrency(totalBudget)}</h3>
           <CalculatorIcon className="absolute right-6 top-1/2 -translate-y-1/2 h-8 w-8 text-[#3B82F6]/20" />
         </div>
 
+        <div className="bg-[#1C232E] p-6 rounded-2xl border border-emerald-500/20 relative overflow-hidden">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Aporte Total (Entradas)</p>
+          <h3 className="text-xl font-black text-emerald-500">{formatCurrency(totalIncome)}</h3>
+          <DollarSign className="absolute right-6 top-1/2 -translate-y-1/2 h-8 w-8 text-emerald-500/10" />
+        </div>
+
+        <div className="bg-[#1C232E] p-6 rounded-2xl border border-red-500/20 relative overflow-hidden">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Valor a Receber</p>
+          <h3 className="text-xl font-black text-red-500">{formatCurrency(Math.max(0, totalBudget - totalIncome))}</h3>
+          <AlertCircle className="absolute right-6 top-1/2 -translate-y-1/2 h-8 w-8 text-red-500/10" />
+        </div>
+
         <div className="bg-[#1C232E] p-6 rounded-2xl border border-white/5 relative overflow-hidden">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Realizado</p>
-          <h3 className="text-3xl font-black text-white">{formatCurrency(totalSpent)}</h3>
-          <p className={`text-xs font-medium mt-1 ${realizedPercent > 100 ? 'text-red-500' : 'text-emerald-500'}`}>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Realizado (Obras)</p>
+          <h3 className="text-xl font-black text-white">{formatCurrency(totalSpent)}</h3>
+          <p className={`text-[10px] font-bold mt-1 ${realizedPercent > 100 ? 'text-red-500' : 'text-slate-500'}`}>
             {realizedPercent.toFixed(1)}% do orçamento
           </p>
-          <Wallet className={`absolute right-6 top-1/2 -translate-y-1/2 h-8 w-8 ${realizedPercent > 100 ? 'text-red-500/10' : 'text-emerald-500/10'}`} />
+          <Wallet className={`absolute right-6 top-1/2 -translate-y-1/2 h-8 w-8 ${realizedPercent > 100 ? 'text-red-500/10' : 'text-white/5'}`} />
+        </div>
+
+        <div className="bg-[#1C232E] p-6 rounded-2xl border border-white/5 relative overflow-hidden shadow-lg shadow-black/20">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Saldo em Caixa</p>
+          <h3 className={cn("text-xl font-black", realBalance >= 0 ? "text-emerald-500" : "text-red-500")}>
+            {formatCurrency(realBalance)}
+          </h3>
+          <p className="text-[10px] text-slate-500 mt-1 font-bold">Aporte - Gastos</p>
+          <div className={cn(
+            "absolute right-6 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center border",
+            realBalance >= 0 ? "border-emerald-500/20 text-emerald-500/40" : "border-red-500/20 text-red-500/40"
+          )}>
+            {realBalance >= 0 ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+          </div>
         </div>
       </div>
 
@@ -122,73 +165,82 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
               </tr>
             </thead>
             <tbody className="text-sm">
-              {Object.keys(itemsByCategory).length === 0 ? (
+              {displayBudgetItems.length === 0 ? (
                 <tr><td colSpan={8} className="py-12 text-center text-slate-500">Nenhum item orçamentário listado.</td></tr>
               ) : (
-                Object.entries(itemsByCategory).map(([category, items]: [any, any]) => {
-                  const catTotal = items.reduce((acc: number, cur: BudgetItem) => acc + (Number(cur.unit_cost) * Number(cur.quantity)), 0);
+                displayBudgetItems.map((item: BudgetItem, index: number) => {
+                  const previousItem = index > 0 ? displayBudgetItems[index - 1] : null;
+                  const showCategory = !previousItem || previousItem.category !== item.category;
+                  
+                  const lineTotal = Number(item.unit_cost) * Number(item.quantity);
+                  const lineSpent = financialItems?.filter((f: any) => f.budget_item_linked_id === item.id).reduce((acc: number, cur: any) => acc + Number(cur.amount), 0) || 0;
+                  const lineBalance = lineTotal - lineSpent;
+                  const linePercent = lineTotal > 0 ? (lineSpent / lineTotal) * 100 : 0;
+
+                  // Calculate category total only for the group starting here
+                  let groupTotal = 0;
+                  if (showCategory) {
+                    for (let i = index; i < displayBudgetItems.length; i++) {
+                      if (displayBudgetItems[i].category !== item.category) break;
+                      groupTotal += Number(displayBudgetItems[i].unit_cost) * Number(displayBudgetItems[i].quantity);
+                    }
+                  }
+
                   return (
-                    <React.Fragment key={category}>
-                      <tr className="bg-[#1C232E]/50 border-y border-white/5">
-                        <td colSpan={5} className="py-3 px-6 text-xs font-bold text-[#3B82F6] uppercase tracking-wider">{category}</td>
-                        <td className="py-3 px-6 text-xs font-bold text-white text-right">{formatCurrency(catTotal)}</td>
-                        <td colSpan={2}></td>
-                      </tr>
-                      {items.map((item: BudgetItem) => {
-                        const lineTotal = Number(item.unit_cost) * Number(item.quantity);
-                        const lineSpent = financialItems?.filter((f: any) => f.budget_item_linked_id === item.id).reduce((acc: number, cur: any) => acc + Number(cur.amount), 0) || 0;
-                        const lineBalance = lineTotal - lineSpent;
-                        const linePercent = lineTotal > 0 ? (lineSpent / lineTotal) * 100 : 0;
-                        
-                        return (
-                          <tr key={item.id} className="border-b border-white/5 hover:bg-white/5 transition-colors group relative">
-                            <td className="py-4 px-6 text-slate-500 font-bold text-[11px]">{item.code}</td>
-                            <td className="py-4 px-6 min-w-[300px]">
-                              <div className="flex flex-col gap-2">
-                                <span className="text-white font-medium">{item.description}</span>
-                                {lineTotal > 0 && (
-                                  <div className="flex items-center gap-3">
-                                    <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                      <div 
-                                        className={cn(
-                                          "h-full rounded-full transition-all duration-500",
-                                          linePercent > 100 ? "bg-red-500" : linePercent > 80 ? "bg-amber-500" : "bg-[#BCB5AC]"
-                                        )}
-                                        style={{ width: `${Math.min(linePercent, 100)}%` }}
-                                      />
-                                    </div>
-                                    <span className={cn(
-                                      "text-[10px] font-bold",
-                                      linePercent > 100 ? "text-red-500" : "text-slate-500"
-                                    )}>
-                                      {linePercent.toFixed(0)}% <span className="text-[8px] opacity-50 ml-0.5">FIN</span>
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                            <td className="py-4 px-6 text-slate-400 text-center text-xs font-bold">{item.unit}</td>
-                            <td className="py-4 px-6 text-slate-300 text-right font-medium">{Number(item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            <td className="py-4 px-6 text-slate-300 text-right font-medium whitespace-nowrap">{formatCurrency(Number(item.unit_cost))}</td>
-                            <td className="py-4 px-6 text-white text-right font-bold w-32 whitespace-nowrap">{formatCurrency(lineTotal)}</td>
-                            <td className="py-4 px-6 text-[#F97316] text-right font-bold w-32 whitespace-nowrap bg-[#F97316]/5">- {formatCurrency(lineSpent)}</td>
-                            <td className={cn(
-                              "py-4 px-6 text-right font-black w-32 pr-8 whitespace-nowrap transition-colors",
-                              lineBalance < 0 ? 'text-red-500 bg-red-500/5' : 'text-[#10B981] bg-[#10B981]/5'
-                            )}>
-                              {formatCurrency(lineBalance)}
-                            </td>
-                            {!readOnly && (
-                              <td className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-100 scale-95 z-20">
-                                <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-2xl">
-                                  <button onClick={() => { setEditingItem(item); setFormData({ ...item }); setIsItemModalOpen(true); }} className="p-2 text-slate-400 hover:text-white transition-colors hover:bg-slate-800 rounded-md"><Edit className="h-4 w-4" /></button>
-                                  <button onClick={() => setDeletingItem(item)} className="p-2 text-slate-400 hover:text-red-500 transition-colors hover:bg-red-500/10 rounded-md"><Trash2 className="h-4 w-4" /></button>
+                    <React.Fragment key={item.id}>
+                      {showCategory && (
+                        <tr className="bg-[#1C232E]/50 border-y border-white/5">
+                          <td colSpan={5} className="py-3 px-6 text-xs font-bold text-[#3B82F6] uppercase tracking-wider">{item.category}</td>
+                          <td className="py-3 px-6 text-xs font-bold text-white text-right">{formatCurrency(groupTotal)}</td>
+                          <td colSpan={2}></td>
+                        </tr>
+                      )}
+                      <tr className="border-b border-white/5 hover:bg-white/5 transition-colors group relative">
+                        <td className="py-4 px-6 text-slate-500 font-bold text-[11px]">{item.code}</td>
+                        <td className="py-4 px-6 min-w-[300px]">
+                          <div className="flex flex-col gap-2">
+                            <span className="text-white font-medium">{item.description}</span>
+                            {lineTotal > 0 && (
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      "h-full rounded-full transition-all duration-500",
+                                      linePercent > 100 ? "bg-red-500" : linePercent > 80 ? "bg-amber-500" : "bg-[#BCB5AC]"
+                                    )}
+                                    style={{ width: `${Math.min(linePercent, 100)}%` }}
+                                  />
                                 </div>
-                              </td>
+                                <span className={cn(
+                                  "text-[10px] font-bold",
+                                  linePercent > 100 ? "text-red-500" : "text-slate-500"
+                                )}>
+                                  {linePercent.toFixed(0)}% <span className="text-[8px] opacity-50 ml-0.5">FIN</span>
+                                </span>
+                              </div>
                             )}
-                          </tr>
-                        );
-                      })}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-slate-400 text-center text-xs font-bold">{item.unit}</td>
+                        <td className="py-4 px-6 text-slate-300 text-right font-medium">{Number(item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td className="py-4 px-6 text-slate-300 text-right font-medium whitespace-nowrap">{formatCurrency(Number(item.unit_cost))}</td>
+                        <td className="py-4 px-6 text-white text-right font-bold w-32 whitespace-nowrap">{formatCurrency(lineTotal)}</td>
+                        <td className="py-4 px-6 text-[#F97316] text-right font-bold w-32 whitespace-nowrap bg-[#F97316]/5">- {formatCurrency(lineSpent)}</td>
+                        <td className={cn(
+                          "py-4 px-6 text-right font-black w-32 pr-8 whitespace-nowrap transition-colors",
+                          lineBalance < 0 ? 'text-red-500 bg-red-500/5' : 'text-[#10B981] bg-[#10B981]/5'
+                        )}>
+                          {formatCurrency(lineBalance)}
+                        </td>
+                        {!readOnly && (
+                          <td className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-100 scale-95 z-20">
+                            <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-2xl">
+                              <button onClick={() => { setEditingItem(item); setFormData({ ...item }); setIsItemModalOpen(true); }} className="p-2 text-slate-400 hover:text-white transition-colors hover:bg-slate-800 rounded-md"><Edit className="h-4 w-4" /></button>
+                              <button onClick={() => setDeletingItem(item)} className="p-2 text-slate-400 hover:text-red-500 transition-colors hover:bg-red-500/10 rounded-md"><Trash2 className="h-4 w-4" /></button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
                     </React.Fragment>
                   );
                 })
@@ -212,10 +264,10 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
             <div className="px-8 pb-8 space-y-6">
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Descrição do Serviço</label>
-                <input 
-                  type="text" 
-                  value={formData.description || ''} 
-                  onChange={e => setFormData({ ...formData, description: e.target.value })} 
+                <input
+                  type="text"
+                  value={formData.description || ''}
+                  onChange={e => setFormData({ ...formData, description: e.target.value })}
                   className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] focus:ring-1 focus:ring-[#BCB5AC] outline-none transition-all placeholder:text-slate-600"
                   placeholder="Ex: Alvenaria de vedação..."
                 />
@@ -223,9 +275,9 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
               <div className="grid grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Categoria</label>
-                  <select 
-                    value={formData.category || 'Outros'} 
-                    onChange={e => setFormData({ ...formData, category: e.target.value })} 
+                  <select
+                    value={formData.category || 'Outros'}
+                    onChange={e => setFormData({ ...formData, category: e.target.value })}
                     className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none appearance-none cursor-pointer"
                   >
                     {['Serviços Preliminares', 'Infraestrutura', 'Superestrutura', 'Alvenaria', 'Esquadrias', 'Cobertura', 'Impermeabilização', 'Forros', 'Inst. Elétricas', 'Inst. Hidráulicas', 'Revestimento', 'Piso', 'Pintura', 'Complementos', 'Louças e Metais', 'Acabamentos', 'Outros'].map(c => <option key={c} value={c}>{c}</option>)}
@@ -233,11 +285,11 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Código</label>
-                  <input 
-                    type="text" 
-                    value={formData.code || ''} 
-                    onChange={e => setFormData({ ...formData, code: e.target.value })} 
-                    className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none transition-all" 
+                  <input
+                    type="text"
+                    value={formData.code || ''}
+                    onChange={e => setFormData({ ...formData, code: e.target.value })}
+                    className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none transition-all"
                     placeholder="01.01"
                   />
                 </div>
@@ -257,14 +309,14 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                 </div>
               </div>
               <div className="pt-6 flex items-center justify-end gap-3">
-                <button 
-                  onClick={() => setIsItemModalOpen(false)} 
+                <button
+                  onClick={() => setIsItemModalOpen(false)}
                   className="px-6 py-2.5 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-white transition-colors"
                 >
                   Cancelar
                 </button>
-                <button 
-                  onClick={handleSave} 
+                <button
+                  onClick={handleSave}
                   className="px-8 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-[0.98]"
                 >
                   Salvar Item
@@ -291,7 +343,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
         </div>
       )}
 
-      <AlertModal 
+      <AlertModal
         isOpen={alertConfig.isOpen}
         onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
         title={alertConfig.title}

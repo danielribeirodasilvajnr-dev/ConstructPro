@@ -39,7 +39,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
     title: '',
     message: ''
   });
-  
+
   // Get relevant previous measurements for columns
   const previousMeasurements = useMemo(() => {
     return (measurements || [])
@@ -48,18 +48,17 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
   }, [measurements, selectedMeasurement]);
 
   const currentMeasurementNumber = previousMeasurements.length + 1;
-
-  const itemsByCategory = useMemo(() => {
-    let filtered = budgetItems || [];
+  const displayItems = useMemo(() => {
+    let filtered = [...(budgetItems || [])];
     if (filterBidGroupId) {
       filtered = filtered.filter(item => (item as any).bid_group_id === filterBidGroupId);
     }
-    return filtered.reduce((acc: any, item: BudgetItem) => {
-      if (!acc[item.category]) acc[item.category] = [];
-      acc[item.category].push(item);
-      return acc;
-    }, {});
-  }, [budgetItems, filterBidGroupId]);
+
+    // Sort by code numerically
+    filtered.sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
+
+    return filtered;
+  }, [budgetItems, filterBidGroupId]);;
 
   // Calculate totals for each budget item across all previous measurements
   const accumulatedQuantities = useMemo(() => {
@@ -77,12 +76,23 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
 
   const handleOpenNew = (bidGroupId?: string) => {
     const group = bidGroups.find(bg => bg.id === bidGroupId);
+    
+    // Find items linked to this bid group to pre-populate the measurement
+    const initialItems: { [key: string]: number } = {};
+    if (bidGroupId) {
+      budgetItems.forEach(item => {
+        if ((item as any).bid_group_id === bidGroupId) {
+          initialItems[item.id] = 0;
+        }
+      });
+    }
+
     setFormData({
       description: `Medição - ${group?.title || formatDate(new Date().toISOString())}`,
       date: new Date().toISOString().split('T')[0],
       status: 'pending'
     });
-    setEditingItems({});
+    setEditingItems(initialItems);
     setFilterBidGroupId(bidGroupId || null);
     setIsModalOpen(true);
   };
@@ -118,7 +128,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
 
       // 2. Save Items
       const measurementId = measurementData.id;
-      
+
       // Delete old items if updating
       if (selectedMeasurement?.id) {
         await supabase.from('measurement_items').delete().eq('measurement_id', measurementId);
@@ -143,7 +153,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
         message: 'Medição salva com sucesso.',
         type: 'success'
       });
-      
+
       setIsModalOpen(false);
       setIsDetailOpen(false);
       onRefresh();
@@ -173,7 +183,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
         }]);
 
       if (error) throw error;
-      
+
       setNewItemFormData({
         category: 'Mão de Obra',
         unit: 'vb',
@@ -283,8 +293,8 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
               <span className={cn(
                 "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 inline-block",
                 selectedMeasurement.status === 'paid' ? 'bg-blue-500/10 text-blue-500' :
-                selectedMeasurement.status === 'authorized' ? 'bg-emerald-500/10 text-emerald-500' :
-                'bg-amber-500/10 text-amber-500'
+                  selectedMeasurement.status === 'authorized' ? 'bg-emerald-500/10 text-emerald-500' :
+                    'bg-amber-500/10 text-amber-500'
               )}>
                 {selectedMeasurement.status === 'paid' ? 'Pago' : selectedMeasurement.status === 'authorized' ? 'Autorizado' : 'Pendente'}
               </span>
@@ -333,7 +343,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                         const prevQty = accumulatedQuantities[item.id] || 0;
                         const totalQty = prevQty + currentQty;
                         const remainingQty = Math.max(0, item.quantity - totalQty);
-                        
+
                         const currentValue = currentQty * item.unit_cost;
                         const totalValue = totalQty * item.unit_cost;
                         const budgetedValue = item.quantity * item.unit_cost;
@@ -410,12 +420,18 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
           <h2 className="text-3xl font-black text-white">Medições de Obra</h2>
           <p className="text-slate-500 text-sm mt-1">Gerencie as medições e autorizações de pagamento de mão de obra</p>
         </div>
+        <button
+          onClick={() => handleOpenNew()}
+          className="px-6 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-black rounded-xl flex items-center gap-2 hover:bg-white transition-all shadow-xl uppercase tracking-widest"
+        >
+          <Plus className="h-4 w-4" /> Nova Medição Geral
+        </button>
       </div>
 
       {/* Contratos Ativos / Quadros Fechados */}
       <div className="mb-12">
         <h3 className="text-xs font-black text-slate-500 uppercase tracking-[3px] mb-6 flex items-center gap-2">
-           <FileText className="h-4 w-4" /> Contratos Ativos (Quadros Fechados)
+          <FileText className="h-4 w-4" /> Contratos Ativos (Quadros Fechados)
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {bidGroups.filter(bg => bg.status === 'closed').length === 0 ? (
@@ -424,8 +440,8 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
             </div>
           ) : (
             bidGroups.filter(bg => bg.status === 'closed').map(group => (
-              <div 
-                key={group.id} 
+              <div
+                key={group.id}
                 onClick={() => handleOpenNew(group.id)}
                 className="bg-[#1C232E] rounded-[24px] border border-emerald-500/20 p-6 cursor-pointer hover:border-emerald-500/50 transition-all group relative"
               >
@@ -436,7 +452,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                 <h3 className="text-lg font-bold text-white mb-2 uppercase group-hover:text-emerald-400 transition-colors">{group.title}</h3>
                 <p className="text-xs text-slate-500 mb-6 line-clamp-1">{group.description || 'Contrato para medição'}</p>
                 <button className="w-full py-3 bg-emerald-600/10 text-emerald-500 text-[10px] font-black rounded-xl uppercase tracking-widest group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                   Iniciar Nova Medição
+                  Iniciar Nova Medição
                 </button>
               </div>
             ))
@@ -445,7 +461,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
       </div>
 
       <h3 className="text-xs font-black text-slate-500 uppercase tracking-[3px] mb-6 flex items-center gap-2">
-         <Ruler className="h-4 w-4" /> Histórico de Medições
+        <Ruler className="h-4 w-4" /> Histórico de Medições
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {measurements.length === 0 ? (
@@ -468,7 +484,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                 className="bg-[#1C232E] rounded-[24px] border border-white/5 p-6 cursor-pointer hover:border-[#BCB5AC]/50 transition-all group relative overflow-hidden"
               >
                 <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
+                  <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteMeasurement(m.id); }}
                     className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"
                   >
@@ -480,8 +496,8 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                   <span className={cn(
                     "px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest",
                     m.status === 'paid' ? 'bg-blue-500/10 text-blue-500' :
-                    m.status === 'authorized' ? 'bg-emerald-500/10 text-emerald-500' :
-                    'bg-amber-500/10 text-amber-500'
+                      m.status === 'authorized' ? 'bg-emerald-500/10 text-emerald-500' :
+                        'bg-amber-500/10 text-amber-500'
                   )}>
                     {m.status === 'paid' ? 'Pago' : m.status === 'authorized' ? 'Autorizado' : 'Pendente'}
                   </span>
@@ -514,45 +530,45 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
           <div className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-7xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
             {/* Header Style like Bid Matrix */}
             <div className="bg-white text-black border-b border-black shrink-0 font-sans p-0">
-               <div className="grid grid-cols-12 border-b border-black">
-                  <div className="col-span-4 bg-[#E5E1DB] p-4 border-r border-black flex items-center justify-center">
-                    <h1 className="text-2xl font-black text-[#1C232E]">AevumPro</h1>
-                  </div>
-                  <div className="col-span-6 p-4 border-r border-black flex items-center justify-center">
-                    <h2 className="text-xl font-black uppercase tracking-tight">Medição de Obra</h2>
-                  </div>
-                  <div className="col-span-2 bg-[#F3F4F6] p-4 flex flex-col items-center justify-center">
-                    <span className="text-[8px] font-black opacity-30">PROJETO</span>
-                    <span className="text-sm font-black uppercase">#MOD-{projectId.slice(0, 4).toUpperCase()}</span>
-                  </div>
-               </div>
-               
-               <div className="grid grid-cols-12 bg-[#F9FAFB]">
-                  <div className="col-span-6 p-3 border-r border-black flex flex-col justify-center">
-                    <span className="text-[9px] font-black uppercase opacity-40">Descrição da Medição:</span>
-                    <input 
-                      type="text" 
-                      value={formData.description || ''} 
-                      onChange={e => setFormData({ ...formData, description: e.target.value })} 
-                      className="bg-transparent border-none outline-none font-bold text-sm uppercase w-full"
-                      placeholder="EX: MEDIÇÃO QUINZENAL 01..."
-                    />
-                  </div>
-                  <div className="col-span-3 p-3 border-r border-black flex flex-col justify-center">
-                    <span className="text-[9px] font-black uppercase opacity-40">Data Base:</span>
-                    <input 
-                      type="date" 
-                      value={formData.date || ''} 
-                      onChange={e => setFormData({ ...formData, date: e.target.value })} 
-                      className="bg-transparent border-none outline-none font-bold text-sm w-full"
-                    />
-                  </div>
-                  <div className="col-span-3 p-3 flex flex-col justify-center items-end pr-8">
-                     {/* Button Removed */}
-                  </div>
-               </div>
+              <div className="grid grid-cols-12 border-b border-black">
+                <div className="col-span-4 bg-[#E5E1DB] p-4 border-r border-black flex items-center justify-center">
+                  <h1 className="text-2xl font-black text-[#1C232E]">AevumPro</h1>
+                </div>
+                <div className="col-span-6 p-4 border-r border-black flex items-center justify-center">
+                  <h2 className="text-xl font-black uppercase tracking-tight">Medição de Obra</h2>
+                </div>
+                <div className="col-span-2 bg-[#F3F4F6] p-4 flex flex-col items-center justify-center">
+                  <span className="text-[8px] font-black opacity-30">PROJETO</span>
+                  <span className="text-sm font-black uppercase">#MOD-{projectId.slice(0, 4).toUpperCase()}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-12 bg-[#F9FAFB]">
+                <div className="col-span-6 p-3 border-r border-black flex flex-col justify-center">
+                  <span className="text-[9px] font-black uppercase opacity-40">Descrição da Medição:</span>
+                  <input
+                    type="text"
+                    value={formData.description || ''}
+                    onChange={e => setFormData({ ...formData, description: e.target.value })}
+                    className="bg-transparent border-none outline-none font-bold text-sm uppercase w-full"
+                    placeholder="EX: MEDIÇÃO QUINZENAL 01..."
+                  />
+                </div>
+                <div className="col-span-3 p-3 border-r border-black flex flex-col justify-center">
+                  <span className="text-[9px] font-black uppercase opacity-40">Data Base:</span>
+                  <input
+                    type="date"
+                    value={formData.date || ''}
+                    onChange={e => setFormData({ ...formData, date: e.target.value })}
+                    className="bg-transparent border-none outline-none font-bold text-sm w-full"
+                  />
+                </div>
+                <div className="col-span-3 p-3 flex flex-col justify-center items-end pr-8">
+                  {/* Button Removed */}
+                </div>
+              </div>
             </div>
-            
+
             <div className="flex-1 overflow-auto bg-white text-black font-sans text-[10px]">
               <div className="min-w-max">
                 <table className="w-full border-collapse">
@@ -563,7 +579,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                       <th className="border-r border-black font-black uppercase text-[7px] text-center w-14">UNID</th>
                       <th className="border-r border-black font-black uppercase text-[7px] text-center w-24">QUANT. TOTAL</th>
                       <th className="border-r border-black font-black uppercase text-[7px] text-center w-24 bg-slate-50">VALOR UNIT.</th>
-                      
+
                       {/* Previous Measurements Columns */}
                       {previousMeasurements.map((pm, idx) => (
                         <th key={pm.id} className="border-r border-black font-black uppercase text-[7px] text-center w-24 bg-blue-50/30">
@@ -580,32 +596,102 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.entries(itemsByCategory).map(([category, items]: [any, any]) => (
-                      <React.Fragment key={category}>
-                        <tr className="bg-[#BDBDBD] border-b border-black h-8">
-                          <td colSpan={9 + previousMeasurements.length} className="px-4 font-black uppercase tracking-[3px] text-[9px]">{category}</td>
-                        </tr>
-                        {items.map((item: BudgetItem, idx: number) => {
-                          const currentVal = editingItems[item.id] || 0;
-                          
-                          // Calculate total from previous measurements
-                          const totalPrevious = previousMeasurements.reduce((acc, pm) => {
-                            const mItem = (pm.measurement_items || []).find((i: any) => i.budget_item_id === item.id);
-                            return acc + (mItem?.quantity || 0);
-                          }, 0);
+                    {/* Empty State / Add Item Button */}
+                    {!readOnly && (
+                      <tr className="border-b border-black h-12 print:hidden">
+                        <td colSpan={8 + previousMeasurements.length} className="p-0">
+                          <div className="relative w-full h-full group">
+                            <select
+                              value=""
+                              onChange={(e) => {
+                                const selectedId = e.target.value;
+                                if (selectedId && !editingItems[selectedId]) {
+                                  setEditingItems({ ...editingItems, [selectedId]: 0 });
+                                }
+                              }}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            >
+                              <option value="">+ CLIQUE PARA ADICIONAR ITEM DO ORÇAMENTO À MEDIÇÃO...</option>
+                              {(() => {
+                                const sortedItems = [...budgetItems]
+                                  .filter(item => item.category.localeCompare('Mão de Obra', undefined, { sensitivity: 'base' }) !== 0)
+                                  .sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
+                                
+                                const groups: { category: string, items: any[] }[] = [];
+                                let currentGroup: { category: string, items: any[] } | null = null;
+                                sortedItems.forEach(item => {
+                                  if (!currentGroup || currentGroup.category !== item.category) {
+                                    currentGroup = { category: item.category, items: [] };
+                                    groups.push(currentGroup);
+                                  }
+                                  currentGroup.items.push(item);
+                                });
 
-                          const totalMeasured = totalPrevious + currentVal;
-                          const remaining = Math.max(0, item.quantity - totalMeasured);
-                          const currentValueMoney = currentVal * (item.unit_cost || 0);
+                                return groups.map((group, idx) => (
+                                  <optgroup key={`${group.category}-${idx}`} label={group.category}>
+                                    {group.items.map(item => (
+                                      <option key={item.id} value={item.id}>
+                                        {item.code ? `${item.code} - ` : ''}{item.description}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                ));
+                              })()}
+                            </select>
+                            <div className="w-full h-full flex items-center justify-center gap-2 text-blue-600 font-black uppercase text-[8px] tracking-[2px] bg-blue-50/30 group-hover:bg-blue-50 transition-colors">
+                              <Plus className="h-3 w-3" /> ADICIONAR ITEM DO ORÇAMENTO PARA MEDIR
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
 
-                          return (
-                            <tr key={item.id} className="border-b border-black h-10 group hover:bg-gray-50">
-                              <td className="border-r border-black text-center font-bold opacity-30">{idx + 1}</td>
-                              <td className="border-r border-black px-3 font-bold uppercase">{item.description}</td>
+                    {/* Filter items that are in editingItems or have previous measurements if filtering by bid */}
+                    {displayItems
+                      .filter(item => editingItems[item.id] !== undefined || (filterBidGroupId && accumulatedQuantities[item.id] > 0))
+                      .map((item: BudgetItem, index: number, filteredList) => {
+                        const previousItem = index > 0 ? filteredList[index - 1] : null;
+                        const showCategory = !previousItem || previousItem.category !== item.category;
+                        const currentVal = editingItems[item.id] || 0;
+
+                        // Calculate total from previous measurements
+                        const totalPrevious = previousMeasurements.reduce((acc, pm) => {
+                          const mItem = (pm.measurement_items || []).find((i: any) => i.budget_item_id === item.id);
+                          return acc + (mItem?.quantity || 0);
+                        }, 0);
+
+                        const totalMeasured = totalPrevious + currentVal;
+                        const remaining = Math.max(0, item.quantity - totalMeasured);
+                        const currentValueMoney = currentVal * (item.unit_cost || 0);
+
+                        return (
+                          <React.Fragment key={item.id}>
+                            {showCategory && (
+                              <tr className="bg-[#BDBDBD] border-b border-black h-8">
+                                <td colSpan={9 + previousMeasurements.length} className="px-4 font-black uppercase tracking-[3px] text-[9px]">{item.category}</td>
+                              </tr>
+                            )}
+                            <tr className="border-b border-black h-10 group hover:bg-gray-50">
+                              <td className="border-r border-black text-center font-bold opacity-30">{item.code}</td>
+                              <td className="border-r border-black px-3 font-bold uppercase relative group">
+                                {item.description}
+                                {!readOnly && (
+                                  <button 
+                                    onClick={() => {
+                                      const newItems = { ...editingItems };
+                                      delete newItems[item.id];
+                                      setEditingItems(newItems);
+                                    }}
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                )}
+                              </td>
                               <td className="border-r border-black text-center font-bold uppercase">{item.unit}</td>
                               <td className="border-r border-black text-center font-bold">{item.quantity.toLocaleString()}</td>
                               <td className="border-r border-black text-center font-bold bg-slate-50">{formatCurrency(item.unit_cost)}</td>
-                              
+
                               {/* Previous Values */}
                               {previousMeasurements.map((pm) => {
                                 const mItem = (pm.measurement_items || []).find((i: any) => i.budget_item_id === item.id);
@@ -629,19 +715,18 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                               <td className="border-r border-black text-center font-bold text-amber-600 bg-amber-50/5">{remaining.toLocaleString()}</td>
                               <td className="text-right px-3 font-black text-slate-900 bg-slate-50">{formatCurrency(currentValueMoney)}</td>
                             </tr>
-                          );
-                        })}
-                      </React.Fragment>
-                    ))}
+                          </React.Fragment>
+                        );
+                      })}
                     {/* Total Row */}
                     <tr className="bg-[#1C232E] text-white border-t-2 border-black h-12">
-                       <td colSpan={8 + previousMeasurements.length} className="text-right px-6 font-black uppercase tracking-widest text-[10px]">Total Geral da Medição:</td>
-                       <td className="bg-white text-[#1C232E] text-right px-3 font-black text-sm">
-                          {formatCurrency(Object.entries(editingItems).reduce((acc, [id, qty]) => {
-                            const item = budgetItems.find(bi => bi.id === id);
-                            return acc + (qty * (item?.unit_cost || 0));
-                          }, 0))}
-                       </td>
+                      <td colSpan={8 + previousMeasurements.length} className="text-right px-6 font-black uppercase tracking-widest text-[10px]">Total Geral da Medição:</td>
+                      <td className="bg-white text-[#1C232E] text-right px-3 font-black text-sm">
+                        {formatCurrency(Object.entries(editingItems).reduce((acc, [id, qty]) => {
+                          const item = budgetItems.find(bi => bi.id === id);
+                          return acc + (qty * (item?.unit_cost || 0));
+                        }, 0))}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -649,27 +734,27 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
             </div>
 
             <div className="p-8 bg-[#E5E1DB] border-t border-black flex items-center justify-between shrink-0">
-               <div className="flex items-center gap-6">
-                  <div className="flex flex-col">
-                    <span className="text-[8px] font-black opacity-40 uppercase">Total Geral Medido (R$)</span>
-                    <span className="text-xl font-black">
-                      {formatCurrency(Object.entries(editingItems).reduce((acc, [id, qty]) => {
-                        const item = budgetItems.find(bi => bi.id === id);
-                        return acc + (qty * (item?.unit_cost || 0));
-                      }, 0))}
-                    </span>
-                  </div>
-               </div>
-               <div className="flex items-center gap-4">
+              <div className="flex items-center gap-6">
+                <div className="flex flex-col">
+                  <span className="text-[8px] font-black opacity-40 uppercase">Total Geral Medido (R$)</span>
+                  <span className="text-xl font-black">
+                    {formatCurrency(Object.entries(editingItems).reduce((acc, [id, qty]) => {
+                      const item = budgetItems.find(bi => bi.id === id);
+                      return acc + (qty * (item?.unit_cost || 0));
+                    }, 0))}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
                 <button onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-black transition-colors">Cancelar</button>
-                <button 
-                  onClick={handleSaveMeasurement} 
+                <button
+                  onClick={handleSaveMeasurement}
                   disabled={isSaving}
                   className="px-10 py-4 bg-[#1C232E] text-white text-[11px] font-black rounded-none uppercase tracking-[2px] hover:bg-black transition-all shadow-xl disabled:opacity-50 border border-black"
                 >
                   {isSaving ? 'SALVANDO...' : 'FINALIZAR MEDIÇÃO'}
                 </button>
-               </div>
+              </div>
             </div>
           </div>
         </div>
@@ -689,10 +774,10 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
             <div className="p-8 space-y-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Descrição do Serviço</label>
-                <input 
-                  type="text" 
-                  value={newItemFormData.description || ''} 
-                  onChange={e => setNewItemFormData({ ...newItemFormData, description: e.target.value })} 
+                <input
+                  type="text"
+                  value={newItemFormData.description || ''}
+                  onChange={e => setNewItemFormData({ ...newItemFormData, description: e.target.value })}
                   className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none"
                   placeholder="Ex: Instalação de porcelanato 60x60..."
                 />
@@ -700,9 +785,9 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Categoria</label>
-                  <select 
-                    value={newItemFormData.category || 'Mão de Obra'} 
-                    onChange={e => setNewItemFormData({ ...newItemFormData, category: e.target.value })} 
+                  <select
+                    value={newItemFormData.category || 'Mão de Obra'}
+                    onChange={e => setNewItemFormData({ ...newItemFormData, category: e.target.value })}
                     className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none appearance-none"
                   >
                     {['Mão de Obra', 'Serviços Preliminares', 'Infraestrutura', 'Alvenaria', 'Inst. Elétricas', 'Inst. Hidráulicas', 'Acabamentos', 'Outros'].map(c => <option key={c} value={c}>{c}</option>)}
@@ -734,7 +819,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
         </div>
       )}
 
-      <AlertModal 
+      <AlertModal
         isOpen={alertConfig.isOpen}
         onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
         title={alertConfig.title}

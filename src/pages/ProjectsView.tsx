@@ -199,6 +199,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           <BidComparisonTab
             projectId={selectedProjectId}
             bidGroups={bidGroups}
+            budgetItems={budgetItems}
             onRefresh={refreshData}
             readOnly={!isEditor}
           />

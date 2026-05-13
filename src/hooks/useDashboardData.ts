@@ -102,10 +102,27 @@ export function useDashboardData() {
 
       const mapped = projects.map((p: any) => {
         // ... (keeping mapping logic same)
-        const ordained = (p.budget_items || []).reduce((acc: number, item: any) => acc + (Number(item.quantity) * Number(item.unit_cost)), 0);
-        const spent = (p.financial_items || []).reduce((acc: number, item: any) => acc + Number(item.amount), 0);
-        const balance = ordained - spent;
-        const financialProgress = ordained > 0 ? (spent / ordained) * 100 : 0;
+        // Consistent filtering with BudgetTab
+        const budgetItemsFiltered = (p.budget_items || []).filter((i: any) => 
+          String(i.category).toLowerCase() !== 'mão de obra'
+        );
+        const filteredItemIds = new Set(budgetItemsFiltered.map((i: any) => i.id));
+        
+        const ordained = budgetItemsFiltered.reduce((acc: number, item: any) => acc + (Number(item.quantity) * Number(item.unit_cost)), 0);
+        
+        const totalIncome = (p.financial_items || []).filter((i: any) => String(i.category).toLowerCase() === 'entrada').reduce((acc: number, item: any) => acc + Number(item.amount), 0);
+        
+        // Budget-linked spent (for progress)
+        const budgetSpent = (p.financial_items || []).filter((i: any) => 
+          i.budget_item_linked_id && filteredItemIds.has(i.budget_item_linked_id)
+        ).reduce((acc: number, item: any) => acc + Number(item.amount), 0);
+
+        // General spent (for cash flow)
+        const spent = (p.financial_items || []).filter((i: any) => String(i.category).toLowerCase() !== 'entrada').reduce((acc: number, item: any) => acc + Number(item.amount), 0);
+        
+        const balanceDue = ordained - totalIncome;
+        const cashBalance = totalIncome - spent;
+        const financialProgress = ordained > 0 ? (budgetSpent / ordained) * 100 : 0;
 
         const scheduleItems = p.schedule_items || [];
         const totalPhysical = scheduleItems.reduce((acc: number, item: any) => acc + Number(item.progress || 0), 0);
@@ -137,7 +154,10 @@ export function useDashboardData() {
           ...p,
           ordained,
           spent,
-          balance,
+          budgetSpent,
+          totalIncome,
+          balanceDue,
+          cashBalance,
           financialProgress: Number(financialProgress.toFixed(1)),
           physicalProgress: Number(physicalProgress.toFixed(1)),
           logs,

@@ -109,27 +109,45 @@ export function DashboardView() {
 
               <div className="p-8 grid grid-cols-1 lg:grid-cols-12 gap-10">
                 <div className="lg:col-span-4 space-y-8">
-                  <div className="grid grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-6 gap-x-4">
                     <div>
                       <div className="flex items-center gap-2 text-slate-500 mb-1.5">
                         <Wallet className="h-[14px] w-[14px]" />
-                        <span className="text-[11px] font-medium">Orçado</span>
+                        <span className="text-[11px] font-bold uppercase tracking-tight">Orçado</span>
                       </div>
-                      <p className="text-sm font-bold text-slate-100">{formatCurrency(project.ordained)}</p>
+                      <p className="text-sm font-black text-slate-100">{formatCurrency(project.ordained)}</p>
                     </div>
                     <div>
                       <div className="flex items-center gap-2 text-slate-500 mb-1.5">
-                        <TrendingUp className="h-[14px] w-[14px]" />
-                        <span className="text-[11px] font-medium">Gasto</span>
+                        <TrendingUp className="h-[14px] w-[14px] text-emerald-500" />
+                        <span className="text-[11px] font-bold uppercase tracking-tight">Aporte</span>
                       </div>
-                      <p className="text-sm font-bold text-[#FF8A00]">{formatCurrency(project.spent)}</p>
+                      <p className="text-sm font-black text-emerald-500">{formatCurrency(project.totalIncome)}</p>
                     </div>
                     <div>
                       <div className="flex items-center gap-2 text-slate-500 mb-1.5">
-                        <AlertCircle className="h-[14px] w-[14px]" />
-                        <span className="text-[11px] font-medium">Saldo</span>
+                        <AlertCircle className="h-[14px] w-[14px] text-red-500" />
+                        <span className="text-[11px] font-bold uppercase tracking-tight">A Receber</span>
                       </div>
-                      <p className="text-sm font-bold text-[#00E57A]">{formatCurrency(project.balance)}</p>
+                      <p className="text-sm font-black text-red-500">{formatCurrency(project.balanceDue)}</p>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 text-slate-500 mb-1.5">
+                        <div className="w-[14px] h-[14px] bg-amber-500/10 rounded flex items-center justify-center">
+                          <TrendingUp className="h-[10px] w-[10px] text-amber-500" />
+                        </div>
+                        <span className="text-[11px] font-bold uppercase tracking-tight">Gasto (Obras)</span>
+                      </div>
+                      <p className="text-sm font-black text-[#FF8A00]">{formatCurrency(project.budgetSpent)}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <div className="flex items-center gap-2 text-slate-500 mb-1.5">
+                        <AlertCircle className={cn("h-[14px] w-[14px]", project.cashBalance >= 0 ? "text-emerald-500" : "text-red-500")} />
+                        <span className="text-[11px] font-bold uppercase tracking-tight">Saldo em Caixa</span>
+                      </div>
+                      <p className={cn("text-sm font-black", project.cashBalance >= 0 ? "text-[#00E57A]" : "text-red-500")}>
+                        {formatCurrency(project.cashBalance)}
+                      </p>
                     </div>
                   </div>
 
