@@ -61,8 +61,13 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
     dailyLogs,
     measurements,
     loading: loadingData,
+    canEditBudget,
+    canAccessFinance,
+    canAccessBids,
+    canAccessMeasurements,
+    canAccessDailyLog,
+    isAdmin,
     userRole,
-    isEditor,
     refresh: refreshData
   } = useProjectData(selectedProjectId);
 
@@ -155,13 +160,13 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
 
         <div className="flex border-b border-slate-800 mb-6 md:mb-10 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
           {[
-            { id: 'orcamento', label: 'Orçamento' },
-            { id: 'financeiro', label: 'Financeiro' },
-            { id: 'concorrencia', label: 'Quadro de Concorrência' },
-            { id: 'cronograma', label: 'Cronograma' },
-            { id: 'medicoes', label: 'Medições' },
-            { id: 'diario', label: 'Diário de Obra' },
-          ].map((tab) => (
+            { id: 'orcamento', label: 'Orçamento', visible: canEditBudget },
+            { id: 'financeiro', label: 'Financeiro', visible: canAccessFinance },
+            { id: 'concorrencia', label: 'Quadro de Concorrência', visible: canAccessBids },
+            { id: 'cronograma', label: 'Cronograma', visible: canAccessBids },
+            { id: 'medicoes', label: 'Medições', visible: canAccessMeasurements },
+            { id: 'diario', label: 'Diário de Obra', visible: canAccessDailyLog },
+          ].filter(tab => tab.visible).map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
@@ -183,7 +188,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             budgetItems={budgetItems}
             financialItems={financialItems}
             onRefresh={refreshData}
-            readOnly={!isEditor}
+            readOnly={!canEditBudget}
           />
         )}
         {activeTab === 'financeiro' && (
@@ -192,7 +197,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             financialItems={financialItems}
             budgetItems={budgetItems}
             onRefresh={refreshData}
-            readOnly={!isEditor}
+            readOnly={!canAccessFinance}
           />
         )}
         {activeTab === 'concorrencia' && (
@@ -201,7 +206,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             bidGroups={bidGroups}
             budgetItems={budgetItems}
             onRefresh={refreshData}
-            readOnly={!isEditor}
+            readOnly={!canAccessBids}
           />
         )}
         {activeTab === 'cronograma' && (
@@ -209,7 +214,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             projectId={selectedProjectId}
             scheduleItems={scheduleItems}
             onRefresh={refreshData}
-            readOnly={!isEditor}
+            readOnly={!canAccessBids}
           />
         )}
         {activeTab === 'medicoes' && (
@@ -219,7 +224,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             measurements={measurements}
             bidGroups={bidGroups}
             onRefresh={refreshData}
-            readOnly={!isEditor}
+            readOnly={!canAccessMeasurements}
           />
         )}
         {activeTab === 'diario' && (
@@ -227,7 +232,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             projectId={selectedProjectId}
             dailyLogs={dailyLogs}
             onRefresh={refreshData}
-            readOnly={!isEditor}
+            readOnly={!canAccessDailyLog}
           />
         )}
         {activeTab === 'colaboradores' && (
@@ -254,12 +259,14 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           <h2 className="text-3xl font-extrabold tracking-tight text-white">Projetos</h2>
           <p className="text-slate-500 text-sm mt-1">{projects.length} obra(s) no portfólio AevumPro</p>
         </div>
-        <button
-          onClick={handleNew}
-          className="px-6 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-bold rounded-xl flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 uppercase tracking-widest active:scale-95"
-        >
-          <Plus className="h-4 w-4" /> Novo Projeto
-        </button>
+        {isAdmin && (
+          <button
+            onClick={handleNew}
+            className="px-6 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-bold rounded-xl flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 uppercase tracking-widest active:scale-95"
+          >
+            <Plus className="h-4 w-4" /> Novo Projeto
+          </button>
+        )}
       </div>
 
 
@@ -282,7 +289,12 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                 className="bg-[#1C232E] rounded-[24px] border border-slate-800 overflow-hidden flex flex-col group hover:shadow-2xl hover:border-[#BCB5AC]/50 cursor-pointer transition-all relative animate-in fade-in duration-500"
               >
                 <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 z-10">
-                  {project.user_id === projects.find(p => p.id === project.id)?.user_id && (
+                  {/* Logic for project list actions: 
+                      Only show Edit/Delete if user is the creator (owner) or an admin.
+                      Note: Detailed role for every project is not fetched here for performance, 
+                      so we primarily rely on project.user_id for 'owner' status.
+                  */}
+                  {project.user_id === user?.id && (
                     <>
                       <button
                         onClick={(e) => handleEdit(e, project)}

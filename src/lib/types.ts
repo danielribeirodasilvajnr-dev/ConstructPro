@@ -93,7 +93,7 @@ export interface ProjectCollaborator {
   id: string;
   project_id: string;
   user_id: string;
-  role: 'editor' | 'viewer' | 'proprietor';
+  role: 'editor' | 'viewer' | 'proprietor' | 'assistant' | 'intern';
   created_at: string;
   profile?: Profile;
 }

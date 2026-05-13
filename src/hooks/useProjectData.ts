@@ -13,8 +13,8 @@ export function useProjectData(projectId: string | null) {
   const [measurements, setMeasurements] = useState<any[]>([]);
   const [bidGroups, setBidGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [userRole, setUserRole] = useState<'owner' | 'editor' | 'viewer' | 'proprietor' | null>(null);
-  const { user } = useAuth();
+  const [userRole, setUserRole] = useState<'owner' | 'editor' | 'assistant' | 'intern' | 'viewer' | 'proprietor' | null>(null);
+  const { user, isAdmin: globalAdmin, isProprietor } = useAuth();
 
   const fetchData = async () => {
     if (!projectId) return;
@@ -80,7 +80,7 @@ export function useProjectData(projectId: string | null) {
               { data: finance },
               { data: logs },
               { data: docs },
-              { data: { role: null } }, // Role logic will be handled below
+              { data: { role: null } }, 
               { data: collabList }
             ];
           }
@@ -104,7 +104,7 @@ export function useProjectData(projectId: string | null) {
         if (project?.user_id === user?.id) {
           setUserRole('owner');
         } else if (collab?.data) {
-          setUserRole(collab.data.role as 'editor' | 'viewer' | 'proprietor');
+          setUserRole(collab.data.role as any);
         } else {
           setUserRole(null);
         }
@@ -122,6 +122,9 @@ export function useProjectData(projectId: string | null) {
     fetchData();
   }, [projectId]);
 
+  const isAdmin = globalAdmin || userRole === 'owner' || userRole === 'editor';
+  const isAssistant = userRole === 'assistant';
+
   return {
     budgetItems,
     scheduleItems,
@@ -133,7 +136,13 @@ export function useProjectData(projectId: string | null) {
     bidGroups,
     loading,
     userRole,
-    isEditor: userRole === 'owner' || userRole === 'editor',
+    isEditor: isAdmin || isAssistant,
+    isAdmin: isAdmin,
+    canEditBudget: isAdmin,
+    canAccessFinance: isAdmin,
+    canAccessBids: isAdmin || isAssistant,
+    canAccessMeasurements: isAdmin || isAssistant,
+    canAccessDailyLog: !isProprietor && (isAdmin || isAssistant || userRole === 'intern' || userRole === 'viewer' || userRole === null),
     refresh: fetchData
   };
 }

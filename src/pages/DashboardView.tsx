@@ -21,7 +21,7 @@ import { cn, formatCurrency } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 
 export function DashboardView() {
-  const { isProprietor, user } = useAuth();
+  const { isProprietor, isAdmin, user } = useAuth();
   const { data: dashboardProjects, loading, error: dashError, debugInfo: hookDebug } = useDashboardData();
   const [rawDiagnostic, setRawDiagnostic] = useState<string>('Not run');
 
@@ -51,7 +51,7 @@ export function DashboardView() {
     runDiagnostic();
   }, []);
 
-  if (isProprietor) return null;
+  if (isProprietor || !isAdmin) return null;
 
   if (loading) {
     return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div></div>;

@@ -8,6 +8,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   loading: boolean;
   isProprietor: boolean;
+  isStaff: boolean;
+  isAdmin: boolean;
   profile: any;
   refreshRole: () => Promise<void>;
 }
@@ -26,6 +28,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
   });
+  const [isStaff, setIsStaff] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   const checkRole = async (userId: string) => {
     try {
@@ -35,22 +39,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const supabaseCalls = Promise.all([
         supabase.from('project_collaborators').select('role').eq('user_id', userId),
-        supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+        supabase.from('projects').select('id').eq('user_id', userId).limit(1)
       ]);
 
-      let collaborations: any = { data: [] };
+      let collaborations: any[] = [];
       let profileData: any = null;
+      let ownedProjects: any[] = [];
 
       try {
         const results = await Promise.race([supabaseCalls, timeoutPromise]);
-        collaborations = results[0].data;
+        collaborations = results[0].data || [];
         profileData = results[1].data;
+        ownedProjects = results[2].data || [];
       } catch (e) {
         console.warn('Supabase hung in checkRole, moving to fallback');
       }
 
       // RETRY LOGIC FOR F5 RACE CONDITION: Bypass Supabase JS completely
-      if (!profileData || !collaborations || collaborations.length === 0) {
+      if (!profileData || (collaborations.length === 0 && ownedProjects.length === 0)) {
         try {
           const sessionStr = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
           if (sessionStr) {
@@ -61,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const id = setTimeout(() => controller.abort(), 5000);
 
               try {
-                const [rawCollabsRes, rawProfileRes] = await Promise.all([
+                const [rawCollabsRes, rawProfileRes, rawOwnedRes] = await Promise.all([
                   fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/project_collaborators?select=role&user_id=eq.${userId}`, {
                     headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` },
                     signal: controller.signal
@@ -69,16 +76,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?select=*&id=eq.${userId}`, {
                     headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` },
                     signal: controller.signal
+                  }),
+                  fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/projects?select=id&user_id=eq.${userId}&limit=1`, {
+                    headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` },
+                    signal: controller.signal
                   })
                 ]);
                 
                 clearTimeout(id);
                 
-                if (rawCollabsRes.ok && rawProfileRes.ok) {
-                  const rawCollabs = await rawCollabsRes.json();
+                if (rawCollabsRes.ok && rawProfileRes.ok && rawOwnedRes.ok) {
+                  collaborations = await rawCollabsRes.json();
                   const rawProfile = await rawProfileRes.json();
+                  ownedProjects = await rawOwnedRes.json();
                   
-                  if (rawCollabs && rawCollabs.length > 0) collaborations = rawCollabs;
                   if (rawProfile && rawProfile.length > 0) profileData = rawProfile[0];
                 }
               } catch (e) {
@@ -98,15 +109,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(null);
       }
 
-      // Check for proprietor status safely
       const roles = collaborations || [];
-      const proprietorRole = roles.find((c: any) => c.role === 'proprietor');
+      const hasProprietor = roles.some((c: any) => c.role === 'proprietor');
+      const hasStaffRoles = roles.some((c: any) => c.role !== 'proprietor');
+      const hasAdminRoles = roles.some((c: any) => c.role === 'owner' || c.role === 'editor');
+      const hasAnyRole = roles.length > 0;
       
-      // Assume NOT proprietor if we can't verify ownership quickly, 
-      // or just trust the role if it's explicitly proprietor.
-      setIsProprietor(!!proprietorRole);
+      // If the user has no roles yet, or has staff roles, or owns projects, they are staff.
+      const isActuallyProprietor = hasProprietor && !hasStaffRoles && ownedProjects.length === 0;
       
-      if (proprietorRole) {
+      setIsProprietor(isActuallyProprietor);
+      
+      // Global Admin rights for: 
+      // - Users with no roles yet (new accounts)
+      // - Users who own projects
+      // - Users who are editors/owners in collaborators list
+      const shouldBeAdmin = !isActuallyProprietor && (!hasAnyRole || hasAdminRoles || ownedProjects.length > 0);
+      
+      setIsAdmin(shouldBeAdmin);
+      setIsStaff(!isActuallyProprietor);
+      
+      if (isActuallyProprietor) {
         localStorage.setItem('is-proprietor', 'true');
       } else {
         localStorage.removeItem('is-proprietor');
@@ -201,8 +224,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     loading,
     isProprietor,
+    isStaff,
+    isAdmin,
     refreshRole: () => user ? checkRole(user.id) : Promise.resolve(),
-  }), [session, user, profile, loading, isProprietor]);
+  }), [session, user, profile, loading, isProprietor, isStaff, isAdmin]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

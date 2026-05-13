@@ -212,8 +212,10 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                   className="bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none appearance-none cursor-pointer"
                 >
                   <option value="editor">Editor</option>
-                  <option value="viewer">Leitor/Cliente</option>
-                  <option value="proprietor">Proprietário (Cliente)</option>
+                  <option value="assistant">Assistente de Engenharia</option>
+                  <option value="intern">Estagiário</option>
+                  <option value="viewer">Apenas Leitura</option>
+                  <option value="proprietor">Proprietário/Cliente</option>
                 </select>
               </div>
             </div>
@@ -358,11 +360,15 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                         <span className="text-sm font-bold text-slate-100 block truncate max-w-[150px]">{c.profile?.email}</span>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           {c.role === 'proprietor' ? (
-                            <><Verified className="h-3 w-3 text-[#FF8A00]" /><span className="text-[10px] text-[#FF8A00] font-bold uppercase tracking-wider">Proprietário</span></>
+                            <><Verified className="h-3 w-3 text-[#FF8A00]" /><span className="text-[10px] text-[#FF8A00] font-bold uppercase tracking-wider">Proprietário/Cliente</span></>
                           ) : c.role === 'editor' ? (
                             <><Shield className="h-3 w-3 text-[#BCB5AC]" /><span className="text-[10px] text-[#BCB5AC] font-bold uppercase tracking-wider">Editor</span></>
+                          ) : c.role === 'assistant' ? (
+                            <><Shield className="h-3 w-3 text-emerald-500" /><span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Assistente</span></>
+                          ) : c.role === 'intern' ? (
+                            <><Shield className="h-3 w-3 text-blue-500" /><span className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Estagiário</span></>
                           ) : (
-                            <><Eye className="h-3 w-3 text-slate-500" /><span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Leitor</span></>
+                            <><Eye className="h-3 w-3 text-slate-500" /><span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Apenas Leitura</span></>
                           )}
                           {c.profile?.job_title && (
                             <span className="text-[9px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400 font-bold ml-1">{c.profile.job_title}</span>

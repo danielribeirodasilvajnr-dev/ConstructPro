@@ -15,7 +15,7 @@ import { FileSpreadsheet } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 
 export default function App() {
-  const { user, isProprietor, loading: authLoading } = useAuth();
+  const { user, isProprietor, isAdmin, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<string | null>(() => {
     return sessionStorage.getItem('activeTab') || null;
   });
@@ -89,10 +89,10 @@ export default function App() {
       }
     } else {
       if (!activeTab || activeTab === 'safety') {
-        setActiveTab('dashboard');
+        setActiveTab(isAdmin ? 'dashboard' : 'projects');
       }
     }
-  }, [user, isProprietor, authLoading]);
+  }, [user, isProprietor, authLoading, isAdmin]);
 
   // Failsafe: if activeTab is still null after 3 seconds of having a user, force it to dashboard
   React.useEffect(() => {
@@ -127,9 +127,14 @@ export default function App() {
 
 
   const renderView = () => {
+    // Hard lock for Proprietor profile: Prevents tab state manipulation via DevTools/sessionStorage
+    if (isProprietor) {
+      return <ProprietorView selectedProjectId={selectedProjectId} onBack={() => setSelectedProjectId(null)} />;
+    }
+
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView />;
+        return isAdmin ? <DashboardView /> : <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'projects':
         return <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'schedule':
@@ -139,13 +144,13 @@ export default function App() {
       case 'logs':
         return <LogsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'calculator':
-        return <CalculatorView />;
+        return isAdmin ? <CalculatorView /> : <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'regularization':
-        return <RegularizationView />;
+        return isAdmin ? <RegularizationView /> : <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'safety':
-        return <ProprietorView selectedProjectId={selectedProjectId} />;
+        return <ProprietorView selectedProjectId={selectedProjectId} onBack={() => setSelectedProjectId(null)} />;
       default:
-        return null;
+        return <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
     }
   };
 

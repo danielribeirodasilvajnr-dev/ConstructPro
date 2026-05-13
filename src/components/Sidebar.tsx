@@ -31,18 +31,22 @@ export function Sidebar({
   isMobileOpen,
   setIsMobileOpen
 }: SidebarProps) {
-  const { signOut } = useAuth();
+  const { signOut, isProprietor, isAdmin, isStaff } = useAuth();
   const allNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'projects', label: 'Projetos', icon: ClipboardList },
-    { id: 'calculator', label: 'Calculadora INSS', icon: Calculator },
-    { id: 'regularization', label: 'Regularização INSS', icon: FileSpreadsheet },
+    { id: 'calculator', label: 'Calculadora INSS', icon: Calculator, adminOnly: true },
+    { id: 'regularization', label: 'Regularização INSS', icon: FileSpreadsheet, adminOnly: true },
     { id: 'safety', label: 'Painel do Proprietário', icon: ShieldCheck },
   ];
 
-  const navItems = isClient
+  const navItems = isProprietor
     ? allNavItems.filter(item => item.id === 'safety')
-    : allNavItems;
+    : allNavItems.filter(item => {
+        if (item.id === 'safety') return false; // Hide proprietor panel for staff
+        if (item.adminOnly && !isAdmin) return false; // Hide admin tools for non-admins
+        return true;
+      });
 
   return (
     <>

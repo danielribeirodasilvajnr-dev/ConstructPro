@@ -44,8 +44,8 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
       // Filter out the owner/administrator from the bottom list since they are shown separately
       const others = (data || []).filter(c => c.user_id !== project.user_id);
       
-      // Sort by role hierarchy: proprietor -> editor -> viewer
-      const roleOrder = { 'proprietor': 0, 'editor': 1, 'viewer': 2 };
+      // Sort by role hierarchy: proprietor -> editor -> assistant -> intern -> viewer
+      const roleOrder = { 'proprietor': 0, 'editor': 1, 'assistant': 2, 'intern': 3, 'viewer': 4 };
       others.sort((a, b) => (roleOrder[a.role as keyof typeof roleOrder] || 10) - (roleOrder[b.role as keyof typeof roleOrder] || 10));
       
       setCollaborators(others);
@@ -256,9 +256,11 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                   onChange={e => setInviteRole(e.target.value as any)}
                   className="w-full bg-black/20 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none appearance-none cursor-pointer"
                 >
-                  <option value="editor">Editor / Gestor</option>
+                  <option value="editor">Editor</option>
+                  <option value="assistant">Assistente de Engenharia</option>
+                  <option value="intern">Estagiário</option>
                   <option value="viewer">Apenas Leitura</option>
-                  <option value="proprietor">Proprietário (Cliente)</option>
+                  <option value="proprietor">Proprietário/Cliente</option>
                 </select>
               </div>
 
@@ -437,7 +439,10 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                             c.role === 'editor' ? 'bg-[#BCB5AC]/10 text-[#BCB5AC]' :
                             'bg-slate-800 text-slate-500'
                           )}>
-                            {c.role === 'proprietor' ? 'Proprietário' : c.role === 'editor' ? 'Editor' : 'Leitor'}
+                            {c.role === 'proprietor' ? 'Proprietário/Cliente' : 
+                             c.role === 'editor' ? 'Editor' : 
+                             c.role === 'assistant' ? 'Assistente de Engenharia' :
+                             c.role === 'intern' ? 'Estagiário' : 'Apenas Leitura'}
                           </div>
                           {c.profile?.job_title && (
                             <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold uppercase tracking-widest border-l border-white/10 pl-2">
