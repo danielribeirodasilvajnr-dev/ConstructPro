@@ -125,52 +125,63 @@ export function DashboardView() {
 
                 <div className="p-10">
                   {/* Bento Grid Layout */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* Key Metrics - Left Bento Column */}
-                    <div className="lg:col-span-4 space-y-8">
-                      <div className="grid grid-cols-2 gap-4">
-                        {[
-                          { label: 'Orçado', value: formatCurrency(project.ordained), icon: Wallet, color: 'text-white' },
-                          { label: 'Aporte', value: formatCurrency(project.totalIncome), icon: TrendingUp, color: 'text-primary' },
-                          { label: 'Pendente', value: formatCurrency(project.balanceDue), icon: AlertCircle, color: 'text-error' },
-                          { label: 'Caixa', value: formatCurrency(project.cashBalance), icon: TrendingUp, color: project.cashBalance >= 0 ? 'text-primary' : 'text-error', highlight: true }
-                        ].map((stat, idx) => (
-                          <div key={idx} className={cn(
-                            "p-5 rounded-2xl border border-white/5 transition-all duration-300 hover:border-primary/30 group/card",
-                            stat.highlight ? "bg-primary/5 lg:col-span-2 border-primary/10" : "bg-white/2"
-                          )}>
-                            <div className="flex items-center gap-2 mb-3">
-                              <stat.icon className={cn("h-3.5 w-3.5 opacity-50", stat.color)} />
-                              <span className="text-[9px] font-display font-bold text-on-surface-variant uppercase tracking-widest">{stat.label}</span>
-                            </div>
-                            <p className={cn("text-lg font-display font-bold tracking-tight", stat.color)}>{stat.value}</p>
-                          </div>
-                        ))}
+                  {/* Key Metrics - Full Width Row */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12">
+                    {[
+                      { label: 'VALOR DO CONTRATO', value: formatCurrency(project.ordained), icon: Wallet, color: 'text-white' },
+                      { label: 'APORTE TOTAL (ENTRADAS)', value: formatCurrency(project.totalIncome), icon: TrendingUp, color: 'text-primary' },
+                      { label: 'VALOR A RECEBER', value: formatCurrency(project.balanceDue), icon: AlertCircle, color: 'text-error' },
+                      { label: 'REALIZADO (OBRAS)', value: formatCurrency(project.budgetSpent || 0), icon: Wallet, color: 'text-white' },
+                      { label: 'SALDO EM CAIXA', value: formatCurrency(project.cashBalance), icon: TrendingUp, color: project.cashBalance >= 0 ? 'text-primary' : 'text-error', highlight: true }
+                    ].map((stat, idx) => (
+                      <div key={idx} className={cn(
+                        "p-8 rounded-[28px] border border-white/5 backdrop-blur-xl transition-all duration-500 hover:border-primary/40 group/card relative overflow-hidden",
+                        stat.highlight ? "bg-primary/5 border-primary/10" : "bg-surface-container-low/40"
+                      )}>
+                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-20 transition-opacity">
+                          <stat.icon className={cn("h-12 w-12", stat.color)} />
+                        </div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <span className="text-[10px] font-display font-bold text-on-surface-variant uppercase tracking-[3px]">{stat.label}</span>
+                        </div>
+                        <p className={cn("text-2xl font-display font-bold tracking-tight", stat.color)}>{stat.value}</p>
+                        {stat.label === 'SALDO EM CAIXA' && (
+                          <p className="text-[9px] text-slate-500 mt-2 font-bold uppercase tracking-widest">Aporte - Gastos</p>
+                        )}
+                        {stat.label === 'REALIZADO (OBRAS)' && (
+                          <p className="text-[9px] text-slate-500 mt-2 font-bold uppercase tracking-widest">{project.physicalProgress}% do orçamento</p>
+                        )}
                       </div>
+                    ))}
+                  </div>
 
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                    {/* Progress & Timeline - Left Bento Column */}
+                    <div className="lg:col-span-4 space-y-12">
                       {/* Progress Sections */}
-                      <div className="space-y-6 bg-background/40 p-6 rounded-3xl border border-white/5">
+                      <div className="space-y-8 bg-surface-container-low/40 p-10 rounded-[32px] border border-white/5 backdrop-blur-xl">
+                        <h5 className="text-[10px] font-display font-bold text-white uppercase tracking-[4px] mb-2">Monitoramento de Fluxo</h5>
                         <div>
-                          <div className="flex justify-between items-end mb-3">
-                            <span className="text-[10px] font-display font-bold text-white uppercase tracking-widest">Execução Financeira</span>
-                            <span className="text-xs font-display font-bold text-primary">{project.financialProgress}%</span>
+                          <div className="flex justify-between items-end mb-4">
+                            <span className="text-[10px] font-display font-bold text-on-surface-variant uppercase tracking-widest">Execução Financeira</span>
+                            <span className="text-sm font-display font-bold text-primary">{project.financialProgress}%</span>
                           </div>
-                          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden p-[1px]">
+                          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden p-[1px]">
                             <motion.div 
                               initial={{ width: 0 }}
                               animate={{ width: `${project.financialProgress}%` }}
                               transition={{ duration: 1, ease: "easeOut" }}
-                              className="h-full bg-primary rounded-full shadow-[0_0_10px_rgba(34,255,136,0.5)]" 
+                              className="h-full bg-primary rounded-full shadow-[0_0_15px_rgba(34,255,136,0.6)]" 
                             />
                           </div>
                         </div>
 
                         <div>
-                          <div className="flex justify-between items-end mb-3">
-                            <span className="text-[10px] font-display font-bold text-white uppercase tracking-widest">Avanço Físico</span>
-                            <span className="text-xs font-display font-bold text-white/80">{project.physicalProgress}%</span>
+                          <div className="flex justify-between items-end mb-4">
+                            <span className="text-[10px] font-display font-bold text-on-surface-variant uppercase tracking-widest">Avanço Físico</span>
+                            <span className="text-sm font-display font-bold text-white">{project.physicalProgress}%</span>
                           </div>
-                          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden p-[1px]">
+                          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden p-[1px]">
                             <motion.div 
                               initial={{ width: 0 }}
                               animate={{ width: `${project.physicalProgress}%` }}
@@ -182,21 +193,21 @@ export function DashboardView() {
                       </div>
 
                       {/* Timeline Bento Card */}
-                      <div className="bg-background/20 rounded-3xl border border-white/5 p-6 relative overflow-hidden group/timeline">
+                      <div className="bg-surface-container-low/20 rounded-[32px] border border-white/5 p-10 relative overflow-hidden group/timeline backdrop-blur-xl">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl opacity-0 group-hover/timeline:opacity-100 transition-opacity" />
-                        <h5 className="text-[10px] font-display font-bold text-white uppercase tracking-[3px] mb-6 flex items-center gap-2">
-                          <Clock className="h-3 w-3 text-primary" /> Histórico Operacional
+                        <h5 className="text-[10px] font-display font-bold text-white uppercase tracking-[4px] mb-8 flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-primary" /> Histórico Operacional
                         </h5>
-                        <div className="space-y-6">
+                        <div className="space-y-8">
                           {project.logs.slice(0, 3).map((log: any, j: number) => (
-                            <div key={j} className="flex gap-4 items-start group/log">
+                            <div key={j} className="flex gap-6 items-start group/log">
                               <div className="relative">
-                                <div className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover/log:bg-primary group-hover/log:scale-150 transition-all duration-300 mt-1.5 relative z-10" />
-                                {j !== 2 && <div className="absolute left-[2.5px] top-4 w-[1px] h-10 bg-white/5" />}
+                                <div className="w-2 h-2 rounded-full bg-primary/30 group-hover/log:bg-primary group-hover/log:scale-125 transition-all duration-300 mt-1.5 relative z-10" />
+                                {j !== 2 && <div className="absolute left-[3.5px] top-5 w-[1px] h-12 bg-white/5" />}
                               </div>
                               <div>
-                                <p className="text-[9px] font-display font-bold text-primary tracking-widest uppercase mb-1">{log.date}</p>
-                                <p className="text-[11px] text-on-surface-variant font-medium leading-relaxed group-hover:text-white transition-colors">{log.desc}</p>
+                                <p className="text-[10px] font-display font-bold text-primary tracking-widest uppercase mb-1.5">{log.date}</p>
+                                <p className="text-xs text-on-surface-variant font-medium leading-relaxed group-hover:text-white transition-colors">{log.desc}</p>
                               </div>
                             </div>
                           ))}
