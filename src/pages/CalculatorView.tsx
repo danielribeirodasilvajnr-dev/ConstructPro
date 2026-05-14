@@ -214,7 +214,7 @@ export function CalculatorView() {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Resumo INSS - AevumPro</title>
+          <title>Resumo INSS - 360Pro</title>
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');

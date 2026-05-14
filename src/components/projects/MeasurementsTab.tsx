@@ -532,7 +532,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
             <div className="bg-white text-black border-b border-black shrink-0 font-sans p-0">
               <div className="grid grid-cols-12 border-b border-black">
                 <div className="col-span-4 bg-[#E5E1DB] p-4 border-r border-black flex items-center justify-center">
-                  <h1 className="text-2xl font-black text-[#1C232E]">AevumPro</h1>
+                  <h1 className="text-2xl font-black text-[#1C232E]">360Pro</h1>
                 </div>
                 <div className="col-span-6 p-4 border-r border-black flex items-center justify-center">
                   <h2 className="text-xl font-black uppercase tracking-tight">Medição de Obra</h2>

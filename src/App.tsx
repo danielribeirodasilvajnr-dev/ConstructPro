@@ -88,7 +88,7 @@ export default function App() {
         checkProprietor();
       }
     } else {
-      if (!activeTab || activeTab === 'safety') {
+      if (!activeTab) {
         setActiveTab(isAdmin ? 'dashboard' : 'projects');
       }
     }
@@ -110,16 +110,20 @@ export default function App() {
 
   if (authLoading || activeTab === null) {
     return (
-      <div className="fixed inset-0 bg-[#1C232E] flex flex-col items-center justify-center gap-6 z-[1000]">
+      <div className="fixed inset-0 bg-background flex flex-col items-center justify-center gap-6 z-[1000]">
         <div className="relative">
-          <div className="h-20 w-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center animate-pulse">
-            <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="h-24 w-24 rounded-3xl bg-primary/5 border border-primary/10 flex items-center justify-center animate-pulse overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-transparent animate-pulse" />
+            <div className="h-12 w-12 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
-          <div className="absolute -inset-4 bg-primary/5 blur-3xl rounded-full animate-pulse" />
+          <div className="absolute -inset-8 bg-primary/5 blur-3xl rounded-full animate-pulse" />
         </div>
-        <div className="text-center space-y-2">
-          <h2 className="text-xl font-black text-white uppercase tracking-[4px]">AevumPro</h2>
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sincronizando ambiente seguro...</p>
+        <div className="text-center space-y-3">
+          <h2 className="text-2xl font-display font-bold text-white uppercase tracking-[8px] animate-pulse">360Pro</h2>
+          <div className="flex items-center gap-2 justify-center">
+            <div className="h-1 w-1 bg-primary rounded-full animate-ping" />
+            <p className="text-[10px] font-medium text-on-surface-variant uppercase tracking-[3px]">Inicializando Sistemas...</p>
+          </div>
         </div>
       </div>
     );
@@ -164,7 +168,7 @@ export default function App() {
       case 'calculator': return 'Calculadora INSS';
       case 'regularization': return 'Regularização INSS';
       case 'safety': return 'Painel do Proprietário';
-      default: return 'AevumPro';
+      default: return '360Pro';
     }
   };
 

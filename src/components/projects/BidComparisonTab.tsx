@@ -534,7 +534,7 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
             <thead>
               <tr className="border-b border-black h-20">
                 <th colSpan={4} className="border-r border-black bg-[#E5E1DB] p-4 text-center">
-                  <h1 className="text-2xl font-black text-[#1C232E]">AevumPro</h1>
+                  <h1 className="text-2xl font-black text-[#1C232E]">360Pro</h1>
                 </th>
                 <th colSpan={quoteCount * 2} className="border-r border-black p-4 text-center">
                   <input type="text" value={groupTitle} onChange={e => { setGroupTitle(e.target.value); setIsDirty(true); }} className="text-xl font-black uppercase text-center w-full bg-transparent outline-none border-none" />

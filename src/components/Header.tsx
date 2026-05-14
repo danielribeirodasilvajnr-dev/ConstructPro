@@ -38,33 +38,33 @@ export function Header({ title, onMenuClick }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-16 md:h-20 items-center justify-between border-b border-slate-800 bg-[#1C232E]/85 px-4 md:px-8 backdrop-blur-md">
-        <div className="flex items-center gap-4 md:gap-8">
+      <header className="sticky top-0 z-40 flex h-20 md:h-24 items-center justify-between border-b border-white/5 bg-surface/80 px-4 md:px-12 backdrop-blur-xl">
+        <div className="flex items-center gap-6 md:gap-12">
           <button
             onClick={onMenuClick}
-            className="p-2 -ml-2 text-slate-400 hover:text-white"
+            className="p-3 -ml-3 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-2xl transition-all duration-300 active:scale-90"
           >
             <Menu className="h-6 w-6" />
           </button>
 
-          <div className="relative hidden xl:block">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <div className="relative hidden xl:block group">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors" />
             <input
               type="text"
-              placeholder="Pesquisar no AevumPro..."
-              className="w-96 rounded-xl border border-slate-800 bg-[#2B3647] py-2.5 pl-10 pr-4 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none transition-all placeholder:text-slate-600 focus:ring-1 focus:ring-[#BCB5AC]/20"
+              placeholder="PESQUISAR NO 360PRO..."
+              className="w-[450px] rounded-2xl border border-white/5 bg-background/50 py-3.5 pl-12 pr-4 text-xs font-display tracking-widest text-white focus:border-primary/50 outline-none transition-all placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 shadow-inner"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-6">
+        <div className="flex items-center gap-3 md:gap-8">
           <div className="relative">
             <button
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className="relative p-2.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+              className="relative p-3 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-2xl transition-all duration-300"
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#BCB5AC] ring-2 ring-[#1C232E]" />
+              <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-primary shadow-[0_0_10px_rgba(34,255,136,0.8)] animate-pulse" />
             </button>
 
             <AnimatePresence>
@@ -72,37 +72,37 @@ export function Header({ title, onMenuClick }: HeaderProps) {
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setIsNotificationsOpen(false)} />
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 15, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-3 w-80 bg-[#1C232E] rounded-2xl border border-white/5 shadow-2xl p-4 z-20"
+                    exit={{ opacity: 0, y: 15, scale: 0.95 }}
+                    className="absolute right-0 mt-4 w-96 bg-surface-container-high/95 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] p-6 z-20"
                   >
-                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/5">
-                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Notificações</h3>
-                      <span className="px-2 py-0.5 bg-[#BCB5AC]/10 text-[#BCB5AC] text-[8px] font-bold rounded">2 Novas</span>
+                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+                      <h3 className="text-xs font-display font-bold text-white uppercase tracking-[3px]">Notificações</h3>
+                      <span className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-display font-bold rounded-lg border border-primary/20">2 ATIVAS</span>
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex gap-3 p-2 hover:bg-white/5 rounded-xl transition-colors cursor-pointer group">
-                        <div className="h-8 w-8 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    <div className="space-y-4">
+                      <div className="flex gap-4 p-3 hover:bg-white/5 rounded-2xl transition-all duration-300 cursor-pointer group border border-transparent hover:border-white/5">
+                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 group-hover:bg-primary/20 transition-colors">
+                          <CheckCircle2 className="h-5 w-5 text-primary" />
                         </div>
-                        <div>
-                          <p className="text-[11px] font-bold text-slate-200 line-clamp-1 group-hover:text-white">Pagamento Confirmado</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">A fatura da obra "Residencial..."</p>
+                        <div className="flex-1">
+                          <p className="text-xs font-bold text-white group-hover:text-primary transition-colors">PAGAMENTO CONFIRMADO</p>
+                          <p className="text-[11px] text-on-surface-variant mt-1 leading-relaxed">A fatura da obra "Residencial Horizonte" foi processada com sucesso.</p>
                         </div>
                       </div>
-                      <div className="flex gap-3 p-2 hover:bg-white/5 rounded-xl transition-colors cursor-pointer group">
-                        <div className="h-8 w-8 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
-                          <AlertCircle className="h-4 w-4 text-amber-500" />
+                      <div className="flex gap-4 p-3 hover:bg-white/5 rounded-2xl transition-all duration-300 cursor-pointer group border border-transparent hover:border-white/5">
+                        <div className="h-10 w-10 rounded-xl bg-error/10 flex items-center justify-center shrink-0 border border-error/20 group-hover:bg-error/20 transition-colors">
+                          <AlertCircle className="h-5 w-5 text-error" />
                         </div>
-                        <div>
-                          <p className="text-[11px] font-bold text-slate-200 line-clamp-1 group-hover:text-white">Atraso na Entrega</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">O fornecedor de cimento atrasou...</p>
+                        <div className="flex-1">
+                          <p className="text-xs font-bold text-white group-hover:text-error transition-colors">ALERTA DE PRAZO</p>
+                          <p className="text-[11px] text-on-surface-variant mt-1 leading-relaxed">O fornecedor reportou atraso logístico na entrega de insumos críticos.</p>
                         </div>
                       </div>
                     </div>
-                    <button className="w-full mt-4 py-2 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">
-                      Ver todas as notificações
+                    <button className="w-full mt-6 py-3 text-[10px] font-display font-bold text-on-surface-variant uppercase tracking-[3px] hover:text-primary transition-all border border-white/5 hover:border-primary/20 rounded-xl bg-background/50">
+                      CENTRAL DE NOTIFICAÇÕES
                     </button>
                   </motion.div>
                 </>
@@ -110,26 +110,27 @@ export function Header({ title, onMenuClick }: HeaderProps) {
             </AnimatePresence>
           </div>
 
-          <button className="p-2.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+          <button className="p-3 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-2xl transition-all duration-300">
             <CircleHelp className="h-5 w-5" />
           </button>
 
-          <div className="h-8 w-px bg-white/5 mx-2" />
+          <div className="h-10 w-px bg-white/10 mx-2" />
 
           <div className="relative">
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center gap-3 p-1.5 md:pl-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all group active:scale-95"
+              className="flex items-center gap-4 p-2 pl-4 bg-background/50 hover:bg-background/80 rounded-2xl border border-white/5 transition-all duration-300 group active:scale-95"
             >
               <div className="flex-col items-end hidden md:flex">
-                <span className="text-xs font-black text-white tracking-tight group-hover:text-[#BCB5AC] transition-colors line-clamp-1 max-w-[150px]">
+                <span className="text-xs font-display font-bold text-white tracking-wider group-hover:text-primary transition-colors line-clamp-1 max-w-[150px] uppercase">
                   {formatDisplayName(profile?.full_name || user?.email?.split('@')[0])}
                 </span>
-                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[1px]">
-                  {isProprietor ? 'Proprietário' : 'Administrador'}
+                <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-[2px] opacity-70">
+                  {isProprietor ? 'Proprietário' : 'Gestor Elite'}
                 </span>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-[#BCB5AC]/10 flex items-center justify-center text-[#BCB5AC] font-black border border-[#BCB5AC]/20 overflow-hidden shadow-inner group-hover:border-[#BCB5AC]/40 transition-all">
+              <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black border border-primary/20 overflow-hidden shadow-inner group-hover:border-primary/50 transition-all relative">
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 {profile?.avatar_url && !imageError ? (
                   <img
                     src={profile.avatar_url}
@@ -138,7 +139,7 @@ export function Header({ title, onMenuClick }: HeaderProps) {
                     onError={() => setImageError(true)}
                   />
                 ) : (
-                  <User className="h-5 w-5 text-[#BCB5AC]" />
+                  <User className="h-6 w-6 text-primary" />
                 )}
               </div>
             </button>
@@ -148,13 +149,13 @@ export function Header({ title, onMenuClick }: HeaderProps) {
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setIsProfileOpen(false)} />
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 15, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-3 w-64 bg-[#1C232E] rounded-2xl border border-white/5 shadow-2xl overflow-hidden z-20"
+                    exit={{ opacity: 0, y: 15, scale: 0.95 }}
+                    className="absolute right-0 mt-4 w-72 bg-surface-container-high/95 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden z-20"
                   >
-                    <div className="p-4 bg-gradient-to-br from-[#BCB5AC]/20 via-[#BCB5AC]/5 to-transparent border-b border-white/5 flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-xl bg-[#BCB5AC]/10 flex items-center justify-center text-[#BCB5AC] font-black text-xl shadow-lg border border-[#BCB5AC]/20 overflow-hidden">
+                    <div className="p-6 bg-gradient-to-br from-primary/10 via-transparent to-transparent border-b border-white/5 flex items-center gap-4">
+                      <div className="h-14 w-14 rounded-2xl bg-background flex items-center justify-center text-primary font-black text-xl shadow-xl border border-primary/20 overflow-hidden relative group">
                         {profile?.avatar_url && !imageError ? (
                           <img
                             src={profile.avatar_url}
@@ -162,36 +163,36 @@ export function Header({ title, onMenuClick }: HeaderProps) {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <User className="h-6 w-6" />
+                          <User className="h-7 w-7" />
                         )}
                       </div>
                       <div className="overflow-hidden">
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">
-                          {isProprietor ? 'Proprietário' : 'Administrador'}
+                        <p className="text-[10px] text-primary font-display font-bold uppercase tracking-[2px] mb-1">
+                          {isProprietor ? 'PROPRIETÁRIO' : 'GESTOR ELITE'}
                         </p>
-                        <p className="text-sm font-bold text-white truncate">{user?.email}</p>
+                        <p className="text-[11px] font-bold text-white truncate opacity-90">{user?.email}</p>
                       </div>
                     </div>
 
-                    <div className="p-2">
+                    <div className="p-3">
                       <button
                         onClick={() => { setIsProfileModalOpen(true); setIsProfileOpen(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group"
+                        className="w-full flex items-center gap-4 px-4 py-4 text-[11px] font-display font-bold text-on-surface-variant uppercase tracking-widest hover:text-white hover:bg-white/5 rounded-xl transition-all group"
                       >
-                        <User className="h-4 w-4 group-hover:text-[#BCB5AC]" /> Detalhes do Perfil
+                        <User className="h-4 w-4 group-hover:text-primary transition-colors" /> Detalhes do Perfil
                       </button>
                       <button
                         onClick={() => { setIsSettingsModalOpen(true); setIsProfileOpen(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group"
+                        className="w-full flex items-center gap-4 px-4 py-4 text-[11px] font-display font-bold text-on-surface-variant uppercase tracking-widest hover:text-white hover:bg-white/5 rounded-xl transition-all group"
                       >
-                        <Settings className="h-4 w-4 group-hover:text-[#BCB5AC]" /> Configurações
+                        <Settings className="h-4 w-4 group-hover:text-primary transition-colors" /> Configurações
                       </button>
-                      <div className="h-px bg-white/5 my-2 mx-2"></div>
+                      <div className="h-px bg-white/5 my-2 mx-4"></div>
                       <button
                         onClick={signOut}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-red-500 hover:text-red-400 hover:bg-red-500/5 rounded-xl transition-all"
+                        className="w-full flex items-center gap-4 px-4 py-4 text-[11px] font-display font-bold text-error uppercase tracking-widest hover:text-white hover:bg-error/20 rounded-xl transition-all"
                       >
-                        <LogOut className="h-4 w-4" /> Sair da Conta
+                        <LogOut className="h-4 w-4" /> Encerrar Sessão
                       </button>
                     </div>
                   </motion.div>

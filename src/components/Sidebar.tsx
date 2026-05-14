@@ -43,8 +43,7 @@ export function Sidebar({
   const navItems = isProprietor
     ? allNavItems.filter(item => item.id === 'safety')
     : allNavItems.filter(item => {
-        if (item.id === 'safety') return false; // Hide proprietor panel for staff
-        if (item.adminOnly && !isAdmin) return false; // Hide admin tools for non-admins
+        if (item.adminOnly && !isAdmin) return false;
         return true;
       });
 
@@ -59,24 +58,27 @@ export function Sidebar({
       )}
 
       <aside className={cn(
-        "fixed left-0 top-0 z-50 h-screen flex-col bg-[#1C232E] border-r border-slate-800 shadow-2xl transition-all duration-300 overflow-hidden",
-        // Desktop/Tablet: Either full width (w-72) or completely hidden (w-0)
+        "fixed left-0 top-0 z-50 h-screen flex-col bg-surface/90 backdrop-blur-xl border-r border-white/5 shadow-2xl transition-all duration-300 overflow-hidden",
         isCollapsed ? "w-0 -translate-x-full hidden" : "w-72 translate-x-0 flex",
-        // Mobile: Controlled by isMobileOpen, always full width when open
         isMobileOpen ? "flex w-72 translate-x-0 !inline-flex" : "max-md:hidden max-md:w-0 max-md:-translate-x-full"
       )}>
         {/* Brand Section */}
-        <div className="flex items-center gap-3 p-6 mb-2 overflow-hidden">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#BCB5AC]">
-            <img src="/logo.png" alt="AevumPro" className="w-full h-full object-cover" />
+        <div className="flex items-center gap-4 p-8 mb-4 overflow-hidden relative">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-surface relative group">
+            <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-primary/5 opacity-50 group-hover:opacity-100 transition-opacity" />
+            <img src="/logo.png" alt="360Pro" className="w-full h-full object-cover relative z-10 group-hover:scale-110 transition-transform duration-500 [filter:invert(1)_hue-rotate(180deg)]" />
           </div>
-          <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-            <h2 className="text-sm font-bold tracking-tight text-white">AevumPro</h2>
-            <p className="text-[10px] font-bold uppercase tracking-[2px] text-[#BCB5AC] opacity-80 mt-0.5 whitespace-nowrap">Gestão de Obras</p>
+          <div className="animate-in fade-in slide-in-from-left-4 duration-500">
+            <h2 className="text-xl font-display font-bold tracking-[2px] text-white">360<span className="text-primary">PRO</span></h2>
+            <div className="flex items-center gap-1.5">
+              <div className="h-1 w-1 bg-primary rounded-full animate-pulse" />
+              <p className="text-[10px] font-bold uppercase tracking-[3px] text-on-surface-variant whitespace-nowrap">Engineering Elite</p>
+            </div>
           </div>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-1 p-4">
+        <nav className="flex flex-1 flex-col gap-2 p-6">
           {navItems.map((item) => (
             <button
               key={item.id}
@@ -85,33 +87,47 @@ export function Sidebar({
                 setIsMobileOpen(false);
               }}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-150 relative w-full",
+                "group flex items-center gap-4 rounded-2xl px-5 py-4 transition-all duration-300 relative w-full overflow-hidden",
+                "hover:scale-[1.02] active:scale-[0.98]",
                 activeTab === item.id
-                  ? "bg-[#BCB5AC] text-[#1C232E] shadow-lg shadow-black/20 scale-[1.02] border border-white/10"
-                  : "text-slate-400 hover:bg-white/5"
+                  ? "bg-primary text-background shadow-[0_0_25px_-5px_rgba(34,255,136,0.4)] font-bold"
+                  : "text-on-surface-variant hover:text-white hover:bg-white/5"
               )}
             >
-              <item.icon className="h-5 w-5 shrink-0" />
-              <span className="text-sm font-semibold tracking-tight">{item.label}</span>
+              {activeTab === item.id && (
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent" />
+              )}
+              <item.icon className={cn(
+                "h-5 w-5 shrink-0 transition-transform duration-300 group-hover:rotate-6",
+                activeTab === item.id ? "text-background" : "group-hover:text-primary"
+              )} />
+              <span className="text-sm font-display uppercase tracking-wider relative z-10 whitespace-nowrap">{item.label}</span>
+              
+              {activeTab === item.id && (
+                <div className="absolute right-3 h-1.5 w-1.5 rounded-full bg-background/50" />
+              )}
             </button>
           ))}
         </nav>
 
-        <div className="p-6 mt-auto border-t border-slate-800 bg-slate-900/10">
-
-          <div className="flex flex-col gap-1 w-full">
+        <div className="p-8 mt-auto border-t border-white/5 bg-background/20">
+          <div className="flex flex-col gap-3 w-full">
             <button
-              className="flex items-center gap-3 text-sm text-slate-400 hover:text-primary transition-colors px-4 py-2"
+              className="flex items-center gap-4 text-xs font-display uppercase tracking-[2px] text-on-surface-variant hover:text-primary transition-all duration-300 group"
             >
-              <CircleHelp className="h-5 w-5" />
-              <span>Suporte</span>
+              <div className="p-2 rounded-lg group-hover:bg-primary/10 transition-colors">
+                <CircleHelp className="h-4 w-4" />
+              </div>
+              <span>Suporte Técnico</span>
             </button>
             <button
               onClick={signOut}
-              className="flex items-center gap-3 text-sm text-slate-400 hover:text-error transition-colors px-4 py-2"
+              className="flex items-center gap-4 text-xs font-display uppercase tracking-[2px] text-on-surface-variant hover:text-error transition-all duration-300 group"
             >
-              <LogOut className="h-5 w-5" />
-              <span>Sair</span>
+              <div className="p-2 rounded-lg group-hover:bg-error/10 transition-colors">
+                <LogOut className="h-4 w-4" />
+              </div>
+              <span>Encerrar Sessão</span>
             </button>
           </div>
         </div>

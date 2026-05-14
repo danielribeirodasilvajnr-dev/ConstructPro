@@ -127,42 +127,51 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
     }
 
     return (
-      <div className="space-y-8 max-w-[1400px] mx-auto pb-24 relative animate-in fade-in duration-300">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <button onClick={() => onSelectProject(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white shrink-0">
-              <ChevronLeft className="h-6 w-6" />
+      <div className="space-y-12 max-w-[1400px] mx-auto pb-24 relative animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={() => onSelectProject(null)} 
+              className="p-4 bg-white/5 hover:bg-primary/10 rounded-2xl transition-all duration-300 text-on-surface-variant hover:text-primary border border-white/5 group active:scale-90"
+            >
+              <ChevronLeft className="h-6 w-6 group-hover:-translate-x-1 transition-transform" />
             </button>
             <div className="min-w-0">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-xl md:text-3xl font-bold tracking-tight text-white truncate">{selectedProject.name}</h2>
-                <span className="px-2.5 py-0.5 text-[10px] md:text-xs font-bold rounded-md bg-[#FFF3D6] text-[#C48C00] shrink-0">
+              <div className="flex items-center gap-4 flex-wrap">
+                <h2 className="text-3xl md:text-4xl font-display font-bold tracking-tight text-white uppercase">{selectedProject.name}</h2>
+                <div className={cn(
+                  "px-4 py-1.5 text-[10px] font-display font-bold rounded-lg border backdrop-blur-xl uppercase tracking-[2px]",
+                  selectedProject.status === 'Em andamento' ? 'bg-primary/10 text-primary border-primary/20 shadow-[0_0_10px_rgba(34,255,136,0.2)]' : 'bg-white/5 text-on-surface-variant border-white/10'
+                )}>
                   {selectedProject.status}
-                </span>
+                </div>
               </div>
-              <p className="text-slate-400 text-xs md:text-sm mt-1 truncate">{selectedProject.location} • Início: {selectedProject.start_date || 'N/D'}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="h-1 w-1 bg-primary rounded-full animate-pulse" />
+                <p className="text-on-surface-variant text-[11px] font-display uppercase tracking-[3px]">{selectedProject.location} • INÍCIO: {selectedProject.start_date || 'N/D'}</p>
+              </div>
             </div>
           </div>
           {userRole === 'owner' && (
             <button
               onClick={() => setActiveTab('colaboradores')}
               className={cn(
-                "w-full md:w-auto px-4 py-2 text-[10px] md:text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-colors border",
+                "w-full md:w-auto px-6 py-4 text-[10px] font-display font-bold uppercase tracking-[2px] rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 border active:scale-95",
                 activeTab === 'colaboradores'
-                  ? "bg-[#BCB5AC] text-[#1C232E] border-[#BCB5AC]"
-                  : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                  ? "bg-primary text-background border-primary shadow-[0_0_20px_rgba(34,255,136,0.3)]"
+                  : "bg-surface-container-high/40 text-on-surface-variant border-white/5 hover:border-primary/30 hover:text-white"
               )}
             >
-              <Users className="h-4 w-4" /> Colaboradores
+              <Users className="h-4 w-4" /> Gestão de Equipe
             </button>
           )}
         </div>
 
-        <div className="flex border-b border-slate-800 mb-6 md:mb-10 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="flex border-b border-white/5 mb-10 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 gap-2">
           {[
             { id: 'orcamento', label: 'Orçamento', visible: canEditBudget },
             { id: 'financeiro', label: 'Financeiro', visible: canAccessFinance },
-            { id: 'concorrencia', label: 'Quadro de Concorrência', visible: canAccessBids },
+            { id: 'concorrencia', label: 'Concorrência', visible: canAccessBids },
             { id: 'cronograma', label: 'Cronograma', visible: canAccessBids },
             { id: 'medicoes', label: 'Medições', visible: canAccessMeasurements },
             { id: 'diario', label: 'Diário de Obra', visible: canAccessDailyLog },
@@ -171,76 +180,80 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={cn(
-                "px-5 md:px-8 py-4 md:py-5 text-[10px] md:text-[11px] font-bold uppercase tracking-[1px] md:tracking-[2px] border-b-2 transition-all whitespace-nowrap",
+                "px-8 py-5 text-[10px] font-display font-bold uppercase tracking-[3px] border-b-2 transition-all duration-300 whitespace-nowrap relative group",
                 activeTab === tab.id
-                  ? "border-[#BCB5AC] text-[#BCB5AC]"
-                  : "border-transparent text-slate-500 hover:text-slate-300"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-on-surface-variant hover:text-white"
               )}
             >
               {tab.label}
+              {activeTab === tab.id && <div className="absolute inset-0 bg-primary/5 blur-xl -z-10" />}
             </button>
           ))}
         </div>
 
-        {activeTab === 'orcamento' && (
-          <BudgetTab
-            projectId={selectedProjectId}
-            budgetItems={budgetItems}
-            financialItems={financialItems}
-            onRefresh={refreshData}
-            readOnly={!canEditBudget}
-          />
-        )}
-        {activeTab === 'financeiro' && (
-          <FinanceTab
-            projectId={selectedProjectId}
-            financialItems={financialItems}
-            budgetItems={budgetItems}
-            onRefresh={refreshData}
-            readOnly={!canAccessFinance}
-          />
-        )}
-        {activeTab === 'concorrencia' && (
-          <BidComparisonTab
-            projectId={selectedProjectId}
-            bidGroups={bidGroups}
-            budgetItems={budgetItems}
-            onRefresh={refreshData}
-            readOnly={!canAccessBids}
-          />
-        )}
-        {activeTab === 'cronograma' && (
-          <ScheduleTab
-            projectId={selectedProjectId}
-            scheduleItems={scheduleItems}
-            onRefresh={refreshData}
-            readOnly={!canAccessBids}
-          />
-        )}
-        {activeTab === 'medicoes' && (
-          <MeasurementsTab
-            projectId={selectedProjectId}
-            budgetItems={budgetItems}
-            measurements={measurements}
-            bidGroups={bidGroups}
-            onRefresh={refreshData}
-            readOnly={!canAccessMeasurements}
-          />
-        )}
-        {activeTab === 'diario' && (
-          <DailyLogTab
-            projectId={selectedProjectId}
-            dailyLogs={dailyLogs}
-            onRefresh={refreshData}
-            readOnly={!canAccessDailyLog}
-          />
-        )}
-        {activeTab === 'colaboradores' && (
-          <CollaboratorsTab
-            project={selectedProject}
-            onRefresh={refreshData}
-          />
-        )}
+        <div className="relative">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 blur-[100px] rounded-full pointer-events-none" />
+          {activeTab === 'orcamento' && (
+            <BudgetTab
+              projectId={selectedProjectId}
+              budgetItems={budgetItems}
+              financialItems={financialItems}
+              onRefresh={refreshData}
+              readOnly={!canEditBudget}
+            />
+          )}
+          {activeTab === 'financeiro' && (
+            <FinanceTab
+              projectId={selectedProjectId}
+              financialItems={financialItems}
+              budgetItems={budgetItems}
+              onRefresh={refreshData}
+              readOnly={!canAccessFinance}
+            />
+          )}
+          {activeTab === 'concorrencia' && (
+            <BidComparisonTab
+              projectId={selectedProjectId}
+              bidGroups={bidGroups}
+              budgetItems={budgetItems}
+              onRefresh={refreshData}
+              readOnly={!canAccessBids}
+            />
+          )}
+          {activeTab === 'cronograma' && (
+            <ScheduleTab
+              projectId={selectedProjectId}
+              scheduleItems={scheduleItems}
+              onRefresh={refreshData}
+              readOnly={!canAccessBids}
+            />
+          )}
+          {activeTab === 'medicoes' && (
+            <MeasurementsTab
+              projectId={selectedProjectId}
+              budgetItems={budgetItems}
+              measurements={measurements}
+              bidGroups={bidGroups}
+              onRefresh={refreshData}
+              readOnly={!canAccessMeasurements}
+            />
+          )}
+          {activeTab === 'diario' && (
+            <DailyLogTab
+              projectId={selectedProjectId}
+              dailyLogs={dailyLogs}
+              onRefresh={refreshData}
+              readOnly={!canAccessDailyLog}
+            />
+          )}
+          {activeTab === 'colaboradores' && (
+            <CollaboratorsTab
+              project={selectedProject}
+              onRefresh={refreshData}
+            />
+          )}
+        </div>
 
         {isCollaboratorsModalOpen && selectedProject && (
           <CollaboratorsModal
@@ -253,58 +266,67 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
   }
 
   return (
-    <div className="space-y-8 max-w-[1400px] mx-auto pb-24 relative">
-      <div className="flex items-end justify-between mb-10">
+    <div className="space-y-12 max-w-[1400px] mx-auto pb-24 relative">
+      <div className="flex flex-col md:flex-row items-end justify-between gap-8 mb-16 relative">
+        <div className="absolute -top-10 -left-10 w-64 h-64 bg-primary/5 blur-[120px] rounded-full animate-pulse" />
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-white">Projetos</h2>
-          <p className="text-slate-500 text-sm mt-1">{projects.length} obra(s) no portfólio AevumPro</p>
+          <h2 className="text-4xl md:text-5xl font-display font-bold tracking-tight text-white uppercase group">
+            CENTRAL DE <span className="text-primary group-hover:drop-shadow-[0_0_15px_rgba(34,255,136,0.5)] transition-all">PROJETOS</span>
+          </h2>
+          <div className="flex items-center gap-3 mt-3">
+            <div className="h-[1px] w-12 bg-primary/30" />
+            <p className="text-on-surface-variant text-[11px] font-display uppercase tracking-[4px]">{projects.length} OPERAÇÕES EM MONITORAMENTO</p>
+          </div>
         </div>
         {isAdmin && (
           <button
             onClick={handleNew}
-            className="px-6 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-bold rounded-xl flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-black/20 uppercase tracking-widest active:scale-95"
+            className="w-full md:w-auto px-8 py-5 bg-primary text-background text-[11px] font-display font-bold rounded-2xl flex items-center justify-center gap-3 hover:scale-105 transition-all shadow-[0_0_30px_-5px_rgba(34,255,136,0.4)] uppercase tracking-[3px] active:scale-95"
           >
-            <Plus className="h-4 w-4" /> Novo Projeto
+            <Plus className="h-5 w-5" /> Iniciar Nova Obra
           </button>
         )}
       </div>
 
-
-
       {loadingProjects ? (
-        <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div></div>
+        <div className="flex flex-col items-center justify-center py-32 gap-6">
+          <div className="h-16 w-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+          <p className="text-[10px] font-display font-bold text-on-surface-variant uppercase tracking-[4px] animate-pulse">Sincronizando Portfólio...</p>
+        </div>
       ) : (
         <>
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-2xl mb-8">
-              <h3 className="text-red-500 font-bold mb-2 flex items-center gap-2"><AlertCircle className="h-5 w-5" /> Erro ao carregar projetos</h3>
-              <p className="text-sm text-red-400">{error}</p>
+            <div className="bg-error/5 border border-error/20 p-8 rounded-[32px] mb-12 flex items-center gap-6">
+              <div className="p-4 bg-error/10 rounded-2xl text-error">
+                <AlertCircle className="h-8 w-8" />
+              </div>
+              <div>
+                <h3 className="text-error font-display font-bold uppercase tracking-[2px] mb-1">ERRO DE SINCRONIZAÇÃO</h3>
+                <p className="text-sm text-on-surface-variant opacity-80">{error}</p>
+              </div>
             </div>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-8">
             {projects.map((project) => (
               <div
                 key={project.id}
                 onClick={() => onSelectProject(project.id)}
-                className="bg-[#1C232E] rounded-[24px] border border-slate-800 overflow-hidden flex flex-col group hover:shadow-2xl hover:border-[#BCB5AC]/50 cursor-pointer transition-all relative animate-in fade-in duration-500"
+                className="group relative bg-surface-container-low/40 backdrop-blur-xl rounded-[32px] border border-white/5 overflow-hidden flex flex-col hover:border-primary/40 cursor-pointer transition-all duration-500 hover:translate-y-[-8px] shadow-2xl"
               >
-                <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 z-10">
-                  {/* Logic for project list actions: 
-                      Only show Edit/Delete if user is the creator (owner) or an admin.
-                      Note: Detailed role for every project is not fetched here for performance, 
-                      so we primarily rely on project.user_id for 'owner' status.
-                  */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                
+                <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 z-20">
                   {project.user_id === user?.id && (
                     <>
                       <button
                         onClick={(e) => handleEdit(e, project)}
-                        className="p-2 bg-slate-900/90 text-slate-400 hover:text-white border border-slate-800 rounded-lg backdrop-blur-md transition-all shadow-xl"
+                        className="p-3 bg-background/80 text-on-surface-variant hover:text-primary border border-white/10 rounded-xl backdrop-blur-xl transition-all hover:border-primary/50"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeletingProject(project); }}
-                        className="p-2 bg-slate-900/90 text-slate-400 hover:text-red-500 border border-slate-800 rounded-lg backdrop-blur-md transition-all shadow-xl"
+                        className="p-3 bg-background/80 text-on-surface-variant hover:text-error border border-white/10 rounded-xl backdrop-blur-xl transition-all hover:border-error/50"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -312,39 +334,47 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                   )}
                 </div>
 
-                <div className="p-8 flex-1">
-                  <div className="flex items-start justify-between mb-6">
-                    <span className={cn(
-                      "px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider",
-                      project.status === 'Em andamento' ? 'bg-[#FFF3D6] text-[#C48C00]' :
-                        project.status === 'Finalizada' ? 'bg-emerald-500/10 text-emerald-500' :
-                          'bg-slate-800 text-slate-400'
+                <div className="p-10 flex-1 relative z-10">
+                  <div className="flex items-start justify-between mb-8">
+                    <div className={cn(
+                      "px-4 py-1.5 rounded-lg text-[9px] font-display font-bold uppercase tracking-[2px] border",
+                      project.status === 'Em andamento' ? 'bg-primary/10 text-primary border-primary/20 shadow-[0_0_10px_rgba(34,255,136,0.2)]' :
+                        project.status === 'Finalizada' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                          'bg-white/5 text-on-surface-variant border-white/10'
                     )}>
                       {project.status}
-                    </span>
+                    </div>
                   </div>
 
-                  <h3 className="text-xl font-bold text-slate-100 tracking-tight group-hover:text-[#BCB5AC] transition-colors line-clamp-2 min-h-[56px]">{project.name}</h3>
+                  <h3 className="text-2xl font-display font-bold text-white tracking-tight group-hover:text-primary transition-colors line-clamp-2 min-h-[64px] uppercase leading-tight">{project.name}</h3>
 
-                  <div className="mt-6 space-y-4">
-                    <div className="flex items-center gap-3 text-slate-500">
-                      <MapIcon className="h-4 w-4 text-slate-600" />
-                      <span className="text-xs font-medium">Local: {project.location || 'Local não definido'}</span>
+                  <div className="mt-8 space-y-5">
+                    <div className="flex items-center gap-4 group/item">
+                      <div className="p-2 rounded-lg bg-white/5 group-hover/item:bg-primary/10 transition-colors">
+                        <MapIcon className="h-4 w-4 text-on-surface-variant group-hover/item:text-primary" />
+                      </div>
+                      <span className="text-[11px] font-display font-bold text-on-surface-variant uppercase tracking-widest">{project.location || 'LOCAL NÃO DEFINIDO'}</span>
                     </div>
-                    <div className="flex items-center gap-3 text-slate-500">
-                      <div className="w-4 h-4 flex items-center justify-center font-bold text-[9px] border border-slate-700 rounded-sm">m²</div>
-                      <span className="text-xs font-medium">Área: {project.area || '0'},00 m²</span>
+                    <div className="flex items-center gap-4 group/item">
+                      <div className="p-2 rounded-lg bg-white/5 group-hover/item:bg-primary/10 transition-colors">
+                        <div className="w-4 h-4 flex items-center justify-center font-display font-bold text-[9px] text-on-surface-variant group-hover/item:text-primary uppercase">m²</div>
+                      </div>
+                      <span className="text-[11px] font-display font-bold text-on-surface-variant uppercase tracking-widest">{project.area || '0'},00 M² DE ÁREA</span>
                     </div>
-                    <div className="flex items-center gap-3 text-slate-500">
-                      <CalendarIcon className="h-4 w-4 text-slate-600" />
-                      <span className="text-xs font-medium">Prazo: {project.deadline || 'Sem prazo'}</span>
+                    <div className="flex items-center gap-4 group/item">
+                      <div className="p-2 rounded-lg bg-white/5 group-hover/item:bg-primary/10 transition-colors">
+                        <CalendarIcon className="h-4 w-4 text-on-surface-variant group-hover/item:text-primary" />
+                      </div>
+                      <span className="text-[11px] font-display font-bold text-on-surface-variant uppercase tracking-widest">ENTREGA: {project.deadline || 'EM ANÁLISE'}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="px-8 py-6 bg-slate-900/30 border-t border-slate-800 flex items-center justify-between group-hover:bg-[#BCB5AC]/5 transition-colors">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Acessar Obra</span>
-                  <ChevronLeft className="h-4 w-4 text-slate-600 rotate-180 group-hover:text-[#BCB5AC] transform translate-x-0 group-hover:translate-x-1 transition-all" />
+                <div className="px-10 py-6 bg-white/2 border-t border-white/5 flex items-center justify-between group-hover:bg-primary/5 transition-all duration-500">
+                  <span className="text-[10px] font-display font-bold text-on-surface-variant uppercase tracking-[3px] group-hover:text-primary transition-colors">Acessar Unidade</span>
+                  <div className="p-2 rounded-lg bg-white/5 group-hover:bg-primary text-on-surface-variant group-hover:text-background transition-all duration-500 shadow-[0_0_15px_rgba(34,255,136,0)] group-hover:shadow-[0_0_15px_rgba(34,255,136,0.4)]">
+                    <ChevronLeft className="h-4 w-4 rotate-180" />
+                  </div>
                 </div>
               </div>
             ))}

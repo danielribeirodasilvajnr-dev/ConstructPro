@@ -1,39 +1,51 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
   
-  --color-primary: #BCB5AC;
-  --color-on-primary: #1C232E;
-  --color-primary-container: #8C8479;
-  --color-secondary: #FFFAF0;
-  --color-on-secondary: #1C232E;
-  --color-secondary-container: #E5E0D6;
-  --color-surface: #2B3647;
-  --color-surface-container-low: #1C232E;
-  --color-surface-container-high: #3A475C;
-  --color-surface-container-highest: #495973;
-  --color-on-surface: #FFFAF0;
-  --color-on-surface-variant: #BCB5AC;
-  --color-outline-variant: #3A475C;
-  --color-error: #ef4444;
-  --color-error-container: #7f1d1d;
+  --color-primary: #22ff88;
+  --color-on-primary: #050505;
+  --color-primary-container: rgba(34, 255, 136, 0.1);
+  
+  --color-background: #050505;
+  --color-surface: #0f1115;
+  --color-surface-container-low: #080808;
+  --color-surface-container-high: #1a1d23;
+  --color-surface-container-highest: #242932;
+  
+  --color-on-surface: #ffffff;
+  --color-on-surface-variant: #64748b;
+  --color-outline: rgba(255, 255, 255, 0.05);
+  --color-outline-variant: rgba(255, 255, 255, 0.1);
+  
+  --color-error: #ff4444;
+  --color-error-container: #441111;
 }
 
 @layer base {
   body {
-    @apply bg-surface text-on-surface font-sans antialiased;
+    @apply bg-background text-on-surface font-sans antialiased selection:bg-primary/30 selection:text-primary;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-bold tracking-tight;
   }
 }
 
 .glass-panel {
-  @apply bg-white/85 backdrop-blur-xl border border-white/20;
+  @apply bg-surface/40 backdrop-blur-xl border border-white/5;
 }
 
-.construction-shadow {
-  box-shadow: 0 32px 64px -4px rgba(25, 28, 29, 0.06);
+.premium-glow {
+  box-shadow: 0 0 20px -5px rgba(34, 255, 136, 0.2);
 }
+
+.hover-glow:hover {
+  box-shadow: 0 0 30px -5px rgba(34, 255, 136, 0.3);
+}
+
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;

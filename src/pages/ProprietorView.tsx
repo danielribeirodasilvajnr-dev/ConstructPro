@@ -670,7 +670,7 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
             </div>
 
             <div className="p-6 border-t border-white/5 bg-slate-900/20 text-center shrink-0">
-              <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[3px]">AevumPro • Relatório de Progresso</p>
+              <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[3px]">360Pro • Relatório de Progresso</p>
             </div>
           </motion.div>
         </div>
