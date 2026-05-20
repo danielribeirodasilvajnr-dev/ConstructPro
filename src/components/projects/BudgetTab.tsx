@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Calculator as CalculatorIcon, Wallet, AlertCircle, DollarSign, CheckCircle2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Calculator as CalculatorIcon, Wallet, AlertCircle, DollarSign, CheckCircle2, ChevronDown, ChevronRight, ListTree } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { BudgetItem, FinancialItem } from '../../lib/types';
 import { cn, formatCurrency } from '../../lib/utils';
 import { AlertModal } from '../ui/AlertModal';
+import { BudgetSubItemsPanel } from './BudgetSubItemsPanel';
 
 interface BudgetTabProps {
   projectId: string;
   budgetItems: BudgetItem[];
   financialItems: FinancialItem[];
+  contractValue?: number;
   onRefresh: () => void;
   readOnly?: boolean;
 }
 
-export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, readOnly }: BudgetTabProps) {
+export function BudgetTab({ projectId, budgetItems, financialItems, contractValue, onRefresh, readOnly }: BudgetTabProps) {
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<BudgetItem | null>(null);
   const [deletingItem, setDeletingItem] = useState<BudgetItem | null>(null);
@@ -23,6 +25,17 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
     title: '',
     message: ''
   });
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  const toggleItemExpand = (id: string) => {
+    const newExpanded = new Set(expandedItems);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedItems(newExpanded);
+  };
 
   const calculateTotalBudget = (items: BudgetItem[]) => {
     return (items || []).reduce((acc, item) => acc + (Number(item.unit_cost) * Number(item.quantity)), 0);
@@ -35,7 +48,8 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
   const displayItemIds = new Set(displayBudgetItems.map(i => i.id));
   const filteredFinancialItems = (financialItems || []).filter(f => f.budget_item_linked_id && displayItemIds.has(f.budget_item_linked_id));
 
-  const totalBudget = calculateTotalBudget(displayBudgetItems);
+  const sumOfItems = calculateTotalBudget(displayBudgetItems);
+  const totalBudget = contractValue && contractValue > 0 ? contractValue : sumOfItems;
   const totalSpent = filteredFinancialItems.reduce((acc, item) => acc + Number(item.amount), 0);
   const realizedPercent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
@@ -47,15 +61,34 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
 
   const handleSave = async () => {
     try {
-      const { error } = await supabase
-        .from('budget_items')
-        .upsert({
-          ...formData,
-          project_id: projectId,
-          id: editingItem?.id || undefined
-        });
+      const payload: any = {
+        ...formData,
+        project_id: projectId,
+        id: editingItem?.id || undefined
+      };
 
-      if (error) throw error;
+      try {
+        const { error } = await supabase.from('budget_items').upsert(payload);
+        if (error) {
+          if (error.message && error.message.includes('incidence')) {
+            console.warn('Upsert with incidence failed, retrying without:', error);
+            const { incidence, ...safePayload } = payload;
+            const { error: retryError } = await supabase.from('budget_items').upsert(safePayload);
+            if (retryError) throw retryError;
+          } else {
+            throw error;
+          }
+        }
+      } catch (upsertErr: any) {
+        if (upsertErr.message && upsertErr.message.includes('incidence')) {
+          const { incidence, ...safePayload } = payload;
+          const { error: retryError } = await supabase.from('budget_items').upsert(safePayload);
+          if (retryError) throw retryError;
+        } else {
+          throw upsertErr;
+        }
+      }
+
       setIsItemModalOpen(false);
       onRefresh();
     } catch (err: any) {
@@ -199,7 +232,14 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                         <td className="py-4 px-6 text-slate-500 font-bold text-[11px]">{item.code}</td>
                         <td className="py-4 px-6 min-w-[300px]">
                           <div className="flex flex-col gap-2">
-                            <span className="text-white font-medium">{item.description}</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-white font-medium">{item.description}</span>
+                              {contractValue && contractValue > 0 && (
+                                <span className="text-[9px] font-bold text-[#3b82f6] bg-[#3b82f6]/10 border border-[#3b82f6]/20 px-2 py-0.5 rounded uppercase">
+                                  {(item.incidence || (lineTotal / contractValue) * 100).toFixed(2)}% inc.
+                                </span>
+                              )}
+                            </div>
                             {lineTotal > 0 && (
                               <div className="flex items-center gap-3">
                                 <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
@@ -235,12 +275,27 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                         {!readOnly && (
                           <td className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-100 scale-95 z-20">
                             <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-2xl">
+                              <button onClick={() => toggleItemExpand(item.id)} className="p-2 text-[#3B82F6] hover:text-white transition-colors hover:bg-[#3B82F6]/10 rounded-md" title="Gerenciar Sub Itens"><ListTree className="h-4 w-4" /></button>
                               <button onClick={() => { setEditingItem(item); setFormData({ ...item }); setIsItemModalOpen(true); }} className="p-2 text-slate-400 hover:text-white transition-colors hover:bg-slate-800 rounded-md"><Edit className="h-4 w-4" /></button>
                               <button onClick={() => setDeletingItem(item)} className="p-2 text-slate-400 hover:text-red-500 transition-colors hover:bg-red-500/10 rounded-md"><Trash2 className="h-4 w-4" /></button>
                             </div>
                           </td>
                         )}
                       </tr>
+                      {expandedItems.has(item.id) && (
+                        <tr className="bg-[#0b0f19] border-b border-white/5">
+                          <td colSpan={8} className="p-0">
+                            <div className="px-6 pb-4">
+                                <BudgetSubItemsPanel 
+                                  budgetItemId={item.id} 
+                                  totalBudgetItemAmount={lineTotal} 
+                                  readOnly={readOnly}
+                                  onClose={() => toggleItemExpand(item.id)}
+                                />
+                            </div>
+                          </td>
+                        </tr>
+                      )}
                     </React.Fragment>
                   );
                 })
@@ -294,19 +349,67 @@ export function BudgetTab({ projectId, budgetItems, financialItems, onRefresh, r
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-5">
+              <div className="grid grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Unidade</label>
                   <input type="text" value={formData.unit || ''} onChange={e => setFormData({ ...formData, unit: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none" placeholder="m2" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Qtd</label>
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Quantidade</label>
                   <input type="number" placeholder="0,00" value={formData.quantity || ''} onChange={e => setFormData({ ...formData, quantity: e.target.value === '' ? 0 : Number(e.target.value) })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none" />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Custo Unit.</label>
-                  <input type="number" placeholder="0,00" value={formData.unit_cost || ''} onChange={e => setFormData({ ...formData, unit_cost: e.target.value === '' ? 0 : Number(e.target.value) })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none" />
-                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-5">
+                {contractValue && contractValue > 0 ? (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Incidência (%)</label>
+                      <input 
+                        type="number" 
+                        step="0.0001"
+                        placeholder="0,00" 
+                        value={formData.incidence !== undefined ? formData.incidence : (formData.unit_cost && contractValue ? (formData.unit_cost / contractValue) * 100 : 0)} 
+                        onChange={(e) => {
+                          const inc = e.target.value === '' ? 0 : Number(e.target.value);
+                          setFormData({ 
+                            ...formData, 
+                            incidence: inc,
+                            unit_cost: contractValue * (inc / 100)
+                          });
+                        }} 
+                        className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Custo Unit. (R$)</label>
+                      <input 
+                        type="number" 
+                        placeholder="0,00" 
+                        value={formData.unit_cost !== undefined ? formData.unit_cost : ''} 
+                        onChange={(e) => {
+                          const cost = e.target.value === '' ? 0 : Number(e.target.value);
+                          setFormData({ 
+                            ...formData, 
+                            unit_cost: cost,
+                            incidence: (cost / contractValue) * 100
+                          });
+                        }} 
+                        className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none" 
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-2 col-span-2">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Custo Unitário (R$)</label>
+                    <input 
+                      type="number" 
+                      placeholder="0,00" 
+                      value={formData.unit_cost !== undefined ? formData.unit_cost : ''} 
+                      onChange={e => setFormData({ ...formData, unit_cost: e.target.value === '' ? 0 : Number(e.target.value) })} 
+                      className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-[#BCB5AC] outline-none" 
+                    />
+                  </div>
+                )}
               </div>
               <div className="pt-6 flex items-center justify-end gap-3">
                 <button

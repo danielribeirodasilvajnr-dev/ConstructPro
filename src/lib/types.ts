@@ -10,6 +10,7 @@ export interface Project {
   deadline: string;
   status: string;
   description: string;
+  contract_value?: number;
 }
 
 export interface BudgetItem {
@@ -22,6 +23,16 @@ export interface BudgetItem {
   quantity: number;
   unit_cost: number;
   executed_quantity: number;
+  incidence?: number;
+}
+
+export interface BudgetSubItem {
+  id: string;
+  budget_item_id: string;
+  description: string;
+  amount: number;
+  percentage?: number;
+  created_at?: string;
 }
 
 export interface ScheduleItem {

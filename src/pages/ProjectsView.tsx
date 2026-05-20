@@ -28,6 +28,7 @@ import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { ProprietorView } from './ProprietorView';
 import { useAuth } from '../contexts/AuthContext';
 import { useEffect } from 'react';
+import * as XLSX from 'xlsx';
 
 
 interface ProjectsViewProps {
@@ -45,6 +46,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
   const [formData, setFormData] = useState<Partial<Project>>({});
+  const [pciItems, setPciItems] = useState<any[]>([]);
   const [isCollaboratorsModalOpen, setIsCollaboratorsModalOpen] = useState(false);
   const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean, title: string, message: string, type?: 'error' | 'success' | 'warning' }>({
     isOpen: false,
@@ -74,15 +76,18 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
   const handleEdit = (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
     setEditingProject(project);
+    setPciItems([]);
     setFormData(project);
     setIsModalOpen(true);
   };
 
   const handleNew = () => {
     setEditingProject(null);
+    setPciItems([]);
     setFormData({
       status: 'Planejamento',
       area: 0,
+      contract_value: 0,
       start_date: new Date().toISOString().split('T')[0],
       name: '',
       client: '',
@@ -95,7 +100,13 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
 
   const handleSaveProject = async () => {
     try {
-      await saveProject(formData);
+      const contractValue = formData.contract_value || 0;
+      const itemsToSave = pciItems.map(item => ({
+        ...item,
+        unit_cost: contractValue * (item.incidence / 100)
+      }));
+
+      await saveProject(formData, itemsToSave);
       setIsModalOpen(false);
       refreshProjects();
     } catch (err: any) {
@@ -107,6 +118,116 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         type: 'error'
       });
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        
+        // Procurar a aba "1 PCI" ou similar
+        const sheetName = wb.SheetNames.find(n => n.includes('PCI') || n.includes('Proposta') || n.includes('1'));
+        if (!sheetName) {
+          setAlertConfig({ isOpen: true, title: 'Erro', message: 'Aba PCI não encontrada na planilha.', type: 'error' });
+          return;
+        }
+
+        const ws = wb.Sheets[sheetName];
+        const data = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1 });
+        
+        let headerRowIdx = -1;
+        let colItem = -1, colServico = -1, colIncidencia = -1;
+        
+        // Scan first 200 rows to find headers globally
+        for (let i = 0; i < Math.min(data.length, 200); i++) {
+          const row = data[i];
+          if (!row) continue;
+          
+          for (let j = 0; j < row.length; j++) {
+            const cell = String(row[j] || '').toLowerCase().trim();
+            if ((cell === 'item' || cell === 'código') && colItem === -1) colItem = j;
+            if ((cell === 'serviço' || cell === 'serviços' || cell === 'descrição') && colServico === -1) colServico = j;
+            if ((cell === 'incidência' || cell === 'incidencia' || cell === 'peso') && colIncidencia === -1) {
+              colIncidencia = j;
+              headerRowIdx = i; // A tabela começa logo após a linha da Incidência
+            }
+          }
+          
+          if (colItem !== -1 && colServico !== -1 && colIncidencia !== -1 && headerRowIdx !== -1) {
+            break;
+          }
+        }
+
+        if (headerRowIdx === -1) {
+          setAlertConfig({ isOpen: true, title: 'Erro', message: 'Cabeçalhos (Item, Serviço, Incidência) não encontrados.', type: 'error' });
+          return;
+        }
+        
+        const extractedItems = [];
+
+        for (let i = headerRowIdx + 1; i < data.length; i++) {
+          const row = data[i];
+          if (!row || row.length === 0) continue;
+          
+          const itemVal = String(row[colItem] || '').trim();
+          const servicoVal = String(row[colServico] || '').trim();
+          let incVal = row[colIncidencia];
+          
+          if (!servicoVal && !itemVal) continue;
+          
+          // Parar se qualquer célula na linha contiver indicadores de total/fim da tabela principal
+          const rowText = row.map(cell => String(cell || '').toLowerCase().trim()).join(' ');
+          if (
+            rowText.includes('custo total') || 
+            rowText.includes('totais') || 
+            rowText.includes('total de serviços') ||
+            rowText.includes('total de servicos') ||
+            rowText.includes('resumo dos custos')
+          ) {
+            break;
+          }
+          
+          let incidence = 0;
+          if (typeof incVal === 'number') {
+            incidence = incVal < 1 ? incVal * 100 : incVal;
+          } else if (typeof incVal === 'string') {
+            incidence = parseFloat(incVal.replace(',', '.').replace('%', ''));
+            if (isNaN(incidence)) incidence = 0;
+          }
+
+          if (itemVal && servicoVal) {
+            // A categoria será baseada no próprio nome do serviço (pegando a primeira parte antes dos parênteses)
+            let catName = servicoVal.split('(')[0].trim().toUpperCase();
+            if (itemVal === '1' || catName.includes('BARRAC')) catName = 'SERVIÇOS PRELIMINARES';
+            
+            extractedItems.push({
+              code: itemVal,
+              description: servicoVal,
+              incidence: incidence,
+              category: catName,
+              unit: 'vb',
+              quantity: 1
+            });
+          }
+        }
+
+        setPciItems(extractedItems);
+        setAlertConfig({ isOpen: true, title: 'Sucesso', message: `${extractedItems.length} itens importados!`, type: 'success' });
+        
+        // Clear input so it can be selected again
+        e.target.value = '';
+
+      } catch (err) {
+        console.error(err);
+        setAlertConfig({ isOpen: true, title: 'Erro', message: 'Erro ao ler o arquivo.', type: 'error' });
+      }
+    };
+    reader.readAsBinaryString(file);
   };
 
   const confirmDelete = async () => {
@@ -197,6 +318,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           {activeTab === 'orcamento' && (
             <BudgetTab
               projectId={selectedProjectId}
+              contractValue={selectedProject.contract_value}
               budgetItems={budgetItems}
               financialItems={financialItems}
               onRefresh={refreshData}
@@ -422,6 +544,28 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Localização</label>
                   <input type="text" placeholder="Endereço da obra" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Valor do Contrato (R$)</label>
+                  <input 
+                    type="text" 
+                    placeholder="0,00" 
+                    value={formData.contract_value ? formData.contract_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''} 
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      setFormData({ ...formData, contract_value: value ? Number(value) / 100 : 0 });
+                    }} 
+                    className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Planilha PCI (Opcional)</label>
+                  <label className="flex items-center justify-center w-full bg-[#1C232E] border border-slate-800 border-dashed rounded-xl px-4 py-2 text-sm text-white hover:border-[#BCB5AC] cursor-pointer transition-colors h-[46px] relative group">
+                    <span className="truncate group-hover:text-[#BCB5AC] transition-colors">{pciItems.length > 0 ? `${pciItems.length} itens carregados` : 'Anexar Planilha (.xlsx)'}</span>
+                    <input type="file" accept=".xlsx,.xlsm,.xls" onChange={handleFileUpload} className="hidden" />
+                  </label>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
