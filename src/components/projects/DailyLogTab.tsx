@@ -66,29 +66,64 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      try {
-        // Revoke old preview if exists
-        if (photosToUpload[index].previewUrl && !photosToUpload[index].existingId) {
-          URL.revokeObjectURL(photosToUpload[index].previewUrl!);
-        }
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-        const compressedBlob = await compressImage(file);
-        handleUpdatePhoto(index, {
-          file: compressedBlob,
-          previewUrl: URL.createObjectURL(compressedBlob),
-          description: formData.activities ? formData.activities.slice(0, 50) : file.name
-        });
+    try {
+      const firstFile = files[0];
+      
+      // Revoke old preview if exists
+      if (photosToUpload[index].previewUrl && !photosToUpload[index].existingId) {
+        URL.revokeObjectURL(photosToUpload[index].previewUrl!);
+      }
+
+      let firstFileObj: any = firstFile;
+      let firstPreviewUrl = URL.createObjectURL(firstFile);
+
+      try {
+        const compressedBlob = await compressImage(firstFile);
+        firstFileObj = compressedBlob;
+        firstPreviewUrl = URL.createObjectURL(compressedBlob);
       } catch (err) {
         console.error('Error compressing image:', err);
-        // Fallback to original file if compression fails
-        handleUpdatePhoto(index, {
-          file,
-          previewUrl: URL.createObjectURL(file),
-          description: formData.activities ? formData.activities.slice(0, 50) : file.name
-        });
       }
+
+      handleUpdatePhoto(index, {
+        file: firstFileObj,
+        previewUrl: firstPreviewUrl,
+        description: formData.activities ? formData.activities.slice(0, 50) : firstFile.name
+      });
+
+      // Handle remaining files by creating new slots
+      if (files.length > 1) {
+        const newSlots: PhotoUploadItem[] = [];
+        for (let i = 1; i < files.length; i++) {
+          const file = files[i];
+          let fileObj: any = file;
+          let previewUrl = URL.createObjectURL(file);
+
+          try {
+            const compressedBlob = await compressImage(file);
+            fileObj = compressedBlob;
+            previewUrl = URL.createObjectURL(compressedBlob);
+          } catch (err) {
+            console.error('Error compressing image:', err);
+          }
+
+          newSlots.push({
+            file: fileObj,
+            previewUrl,
+            description: formData.activities ? formData.activities.slice(0, 50) : file.name,
+            id: Math.random().toString(36).slice(2)
+          });
+        }
+        
+        setPhotosToUpload(prev => [...prev, ...newSlots]);
+      }
+    } catch (err) {
+      console.error('Error handling multiple files:', err);
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -217,38 +252,42 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
   };
 
   const handleQuickPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, logId: string) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setUploading(true);
     try {
-      const compressedBlob = await compressImage(file);
-      const sanitizedName = sanitizeFileName(file.name);
-      const fileName = `${projectId}/${logId}/${Date.now()}-${sanitizedName}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('daily_logs')
-        .upload(fileName, compressedBlob);
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const compressedBlob = await compressImage(file);
+        const sanitizedName = sanitizeFileName(file.name);
+        const fileName = `${projectId}/${logId}/${Date.now()}-${sanitizedName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('daily_logs')
+          .upload(fileName, compressedBlob);
 
-      if (uploadError) {
-        console.error('Quick upload storage error:', uploadError);
-        throw new Error('Falha ao enviar o arquivo para o servidor.');
-      }
+        if (uploadError) {
+          console.error('Quick upload storage error:', uploadError);
+          throw new Error(`Falha ao enviar o arquivo ${file.name}.`);
+        }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('daily_logs')
-        .getPublicUrl(fileName);
+        const { data: { publicUrl } } = supabase.storage
+          .from('daily_logs')
+          .getPublicUrl(fileName);
 
-      const { error: insertError } = await supabase.from('daily_log_photos').insert({
-        log_id: logId,
-        image_url: publicUrl,
-        description: file.name
+        const { error: insertError } = await supabase.from('daily_log_photos').insert({
+          log_id: logId,
+          image_url: publicUrl,
+          description: file.name
+        });
+
+        if (insertError) {
+          console.error('Quick upload database error:', insertError);
+          throw new Error(`Falha ao registrar a foto ${file.name}.`);
+        }
       });
 
-      if (insertError) {
-        console.error('Quick upload database error:', insertError);
-        throw new Error('Falha ao registrar a foto no diário.');
-      }
+      await Promise.all(uploadPromises);
 
       onRefresh();
     } catch (err: any) {
@@ -261,6 +300,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
       });
     } finally {
       setUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -356,7 +396,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                     <label className="w-40 aspect-square flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-[#BCB5AC]/50 hover:bg-[#BCB5AC]/5 transition-all text-slate-500 hover:text-[#BCB5AC]">
                         <Camera className="h-6 w-6" />
                         <span className="text-[10px] mt-1 font-bold">Adicionar Foto</span>
-                        <input type="file" className="hidden" onChange={(e) => handleQuickPhotoUpload(e, log.id)} disabled={uploading} />
+                        <input type="file" multiple className="hidden" accept="image/*" onChange={(e) => handleQuickPhotoUpload(e, log.id)} disabled={uploading} />
                     </label>
                   )}
                 </div>
@@ -456,7 +496,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                                 <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Selecionar Foto</span>
                               </>
                             )}
-                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, index)} />
+                            <input type="file" multiple className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, index)} />
                           </label>
                         </div>
                         <div className="space-y-2 flex flex-col h-full">
