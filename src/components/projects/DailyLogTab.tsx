@@ -91,7 +91,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
       handleUpdatePhoto(index, {
         file: firstFileObj,
         previewUrl: firstPreviewUrl,
-        description: formData.activities ? formData.activities.slice(0, 50) : firstFile.name
+        description: photosToUpload[index].description || ''
       });
 
       // Handle remaining files by creating new slots
@@ -113,7 +113,7 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
           newSlots.push({
             file: fileObj,
             previewUrl,
-            description: formData.activities ? formData.activities.slice(0, 50) : file.name,
+            description: '',
             id: Math.random().toString(36).slice(2)
           });
         }
