@@ -10,6 +10,7 @@ import { ProjectsView } from './pages/ProjectsView';
 import { ProprietorView } from './pages/ProprietorView';
 import { CalculatorView } from './pages/CalculatorView';
 import { RegularizationView } from './pages/RegularizationView';
+import { HousingSimulatorView } from './pages/HousingSimulatorView';
 import { AuthView } from './pages/AuthView';
 import { FileSpreadsheet } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
@@ -119,7 +120,7 @@ export default function App() {
           <div className="absolute -inset-8 bg-primary/5 blur-3xl rounded-full animate-pulse" />
         </div>
         <div className="text-center space-y-3">
-          <h2 className="text-2xl font-display font-bold text-white uppercase tracking-[8px] animate-pulse">360Pro</h2>
+          <h2 className="text-2xl font-display font-bold text-on-surface uppercase tracking-[8px] animate-pulse">360Pro</h2>
           <div className="flex items-center gap-2 justify-center">
             <div className="h-1 w-1 bg-primary rounded-full animate-ping" />
             <p className="text-[10px] font-medium text-on-surface-variant uppercase tracking-[3px]">Inicializando Sistemas...</p>
@@ -149,6 +150,8 @@ export default function App() {
         return <LogsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'calculator':
         return isAdmin ? <CalculatorView /> : <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
+      case 'simulator':
+        return isAdmin ? <HousingSimulatorView /> : <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'regularization':
         return isAdmin ? <RegularizationView /> : <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'safety':
@@ -166,6 +169,7 @@ export default function App() {
       case 'financials': return 'Financeiro da Obra';
       case 'logs': return 'Diário de Obra';
       case 'calculator': return 'Calculadora INSS';
+      case 'simulator': return 'Simulador Habitacional';
       case 'regularization': return 'Regularização INSS';
       case 'safety': return 'Painel do Proprietário';
       default: return '360Pro';

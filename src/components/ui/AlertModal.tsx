@@ -21,14 +21,14 @@ export function AlertModal({ isOpen, onClose, title, message, type = 'error' }: 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-sm"
+            className="absolute inset-0 bg-surface-container-low/90 backdrop-blur-sm"
           />
           
           <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-sm overflow-hidden"
+            className="relative bg-surface rounded-[32px] shadow-2xl border border-outline w-full max-w-sm overflow-hidden"
           >
             <div className="p-8 text-center">
               <div className={cn(
@@ -42,8 +42,8 @@ export function AlertModal({ isOpen, onClose, title, message, type = 'error' }: 
                 {type === 'warning' && <AlertCircle className="h-8 w-8" />}
               </div>
 
-              <h3 className="text-xl font-bold text-white mb-2 tracking-tight">{title}</h3>
-              <p className="text-sm text-slate-400 leading-relaxed px-2">
+              <h3 className="text-xl font-bold text-on-surface mb-2 tracking-tight">{title}</h3>
+              <p className="text-sm text-on-surface-variant leading-relaxed px-2">
                 {message}
               </p>
 
@@ -52,9 +52,9 @@ export function AlertModal({ isOpen, onClose, title, message, type = 'error' }: 
                   onClick={onClose}
                   className={cn(
                     "w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-[2px] transition-all active:scale-[0.98] shadow-lg",
-                    type === 'error' && "bg-red-500 text-white shadow-red-500/20 hover:bg-red-600",
-                    type === 'success' && "bg-emerald-500 text-white shadow-emerald-500/20 hover:bg-emerald-600",
-                    type === 'warning' && "bg-amber-500 text-white shadow-amber-500/20 hover:bg-amber-600"
+                    type === 'error' && "bg-red-500 text-on-surface shadow-red-500/20 hover:bg-red-600",
+                    type === 'success' && "bg-emerald-500 text-on-surface shadow-emerald-500/20 hover:bg-emerald-600",
+                    type === 'warning' && "bg-amber-500 text-on-surface shadow-amber-500/20 hover:bg-amber-600"
                   )}
                 >
                   Entendido
@@ -64,7 +64,7 @@ export function AlertModal({ isOpen, onClose, title, message, type = 'error' }: 
 
             <button 
               onClick={onClose}
-              className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors"
+              className="absolute top-6 right-6 text-on-surface-variant hover:text-on-surface transition-colors"
             >
               <X className="h-5 w-5" />
             </button>

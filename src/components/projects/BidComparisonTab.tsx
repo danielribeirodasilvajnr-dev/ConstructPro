@@ -491,25 +491,25 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
       <div className="animate-in fade-in duration-300">
         <div className="flex items-center justify-between mb-6 print:hidden">
           <div className="flex items-center gap-4">
-            <button onClick={handleClose} className="flex items-center gap-2 text-slate-400 hover:text-white bg-white/5 px-4 py-2 rounded-lg"><X className="h-4 w-4" /> Fechar</button>
+            <button onClick={handleClose} className="flex items-center gap-2 text-on-surface-variant hover:text-on-surface bg-surface-container-low px-4 py-2 rounded-lg"><X className="h-4 w-4" /> Fechar</button>
             {isDirty && <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest animate-pulse flex items-center gap-2"><AlertCircle className="h-3 w-3" /> Alterações não salvas</span>}
           </div>
           <div className="flex items-center gap-3">
             {!readOnly && selectedGroup.status !== 'closed' && (
               <button 
                 onClick={handleCloseBid} 
-                className="px-6 py-3 bg-emerald-600 text-white text-xs font-black rounded-xl flex items-center gap-2 hover:bg-emerald-500 uppercase tracking-widest shadow-xl shadow-emerald-600/20 active:scale-95 transition-all"
+                className="px-6 py-3 bg-emerald-600 text-on-surface text-xs font-black rounded-xl flex items-center gap-2 hover:bg-emerald-500 uppercase tracking-widest shadow-xl shadow-emerald-600/20 active:scale-95 transition-all"
               >
                 <CheckCircle2 className="h-4 w-4" /> Fechar Quadro
               </button>
             )}
             {selectedGroup.status === 'closed' && (
-              <div className="px-6 py-3 bg-slate-800 text-slate-400 text-xs font-black rounded-xl flex items-center gap-2 uppercase tracking-widest border border-white/5">
+              <div className="px-6 py-3 bg-surface-container-high text-on-surface-variant text-xs font-black rounded-xl flex items-center gap-2 uppercase tracking-widest border border-outline">
                 <CheckCircle2 className="h-4 w-4" /> Quadro Fechado
               </div>
             )}
-            <button onClick={handleSaveAll} disabled={isSaving} className="px-8 py-3 bg-blue-600 text-white text-xs font-black rounded-xl flex items-center gap-2 hover:bg-blue-500 uppercase tracking-widest shadow-xl"><Save className="h-4 w-4" /> {isSaving ? 'Salvando...' : 'Salvar Tudo'}</button>
-            <button onClick={() => window.print()} className="px-4 py-2 bg-slate-800 text-white rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-colors"><Printer className="h-4 w-4" /> Imprimir</button>
+            <button onClick={handleSaveAll} disabled={isSaving} className="px-8 py-3 bg-blue-600 text-on-surface text-xs font-black rounded-xl flex items-center gap-2 hover:bg-blue-500 uppercase tracking-widest shadow-xl"><Save className="h-4 w-4" /> {isSaving ? 'Salvando...' : 'Salvar Tudo'}</button>
+            <button onClick={() => window.print()} className="px-4 py-2 bg-surface-container-high text-on-surface rounded-lg flex items-center gap-2 hover:opacity-90 transition-colors"><Printer className="h-4 w-4" /> Imprimir</button>
           </div>
         </div>
 
@@ -534,7 +534,7 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
             <thead>
               <tr className="border-b border-black h-20">
                 <th colSpan={4} className="border-r border-black bg-[#E5E1DB] p-4 text-center">
-                  <h1 className="text-2xl font-black text-[#1C232E]">360Pro</h1>
+                  <h1 className="text-2xl font-black text-on-primary">360Pro</h1>
                 </th>
                 <th colSpan={quoteCount * 2} className="border-r border-black p-4 text-center">
                   <input type="text" value={groupTitle} onChange={e => { setGroupTitle(e.target.value); setIsDirty(true); }} className="text-xl font-black uppercase text-center w-full bg-transparent outline-none border-none" />
@@ -560,11 +560,11 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                           <div className="flex gap-1"><span className="font-black opacity-40 w-10 uppercase">Cont.:</span> <input type="text" value={q.contact_name || ''} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, contact_name: e.target.value} : lq)); setIsDirty(true); }} className="w-full bg-transparent outline-none" /></div>
                           <div className="flex gap-1"><span className="font-black opacity-40 w-10 uppercase">Tel:</span> <input type="text" value={q.phone || ''} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, phone: e.target.value} : lq)); setIsDirty(true); }} className="w-full bg-transparent outline-none" /></div>
                           <div className="absolute right-1 top-1 flex flex-col gap-1 opacity-0 group-hover/supplier:opacity-100 transition-opacity print:hidden">
-                            <button onClick={() => handleSelectWinner(q.id)} className={cn("p-1 rounded bg-white shadow-sm", q.is_selected ? "text-emerald-600" : "text-slate-300 hover:text-emerald-500")} title="Selecionar como vencedor"><Trophy className="h-3 w-3" /></button>
+                            <button onClick={() => handleSelectWinner(q.id)} className={cn("p-1 rounded bg-white shadow-sm", q.is_selected ? "text-emerald-600" : "text-on-surface-variant hover:text-emerald-500")} title="Selecionar como vencedor"><Trophy className="h-3 w-3" /></button>
                             <button onClick={() => handleDeleteQuote(q.id)} className="p-1 rounded bg-white shadow-sm text-red-300 hover:text-red-500" title="Excluir fornecedor"><Trash2 className="h-3 w-3" /></button>
                           </div>
                         </div>
-                      ) : ( !readOnly && <button onClick={() => { setLocalQuotes([...localQuotes, { id: `temp_${Date.now()}`, supplier_name: 'Novo Fornecedor' }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center text-slate-300 hover:text-blue-500 print:hidden"><Plus className="h-4 w-4" /></button> )}
+                      ) : ( !readOnly && <button onClick={() => { setLocalQuotes([...localQuotes, { id: `temp_${Date.now()}`, supplier_name: 'Novo Fornecedor' }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center text-on-surface-variant hover:text-blue-500 print:hidden"><Plus className="h-4 w-4" /></button> )}
                     </th>
                   );
                 })}
@@ -583,7 +583,7 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                 <th className="border-r border-black px-3 font-black uppercase text-left">Descrição</th>
                 {[...Array(quoteCount)].map((_, i) => ( <th key={i} colSpan={2} className="border-r border-black font-black text-center text-[7px] uppercase">PREÇOS (Unitário / Total)</th> ))}
                 <th colSpan={2} className="p-0">
-                  <div className="flex items-center h-full px-2 gap-2 justify-center bg-white/50">
+                  <div className="flex items-center h-full px-2 gap-2 justify-center bg-surface-container-low0">
                     <span className="font-black uppercase text-[7px]">INCC Io = </span>
                     <input 
                       type="number" 
@@ -646,7 +646,7 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                   <td className="bg-gray-50/20"></td>
                 </tr>
               ))}
-              {!readOnly && ( <tr className="border-b border-black h-8 print:hidden"><td colSpan={quoteCount * 2 + 6}><button onClick={() => { setLocalItems([...localItems, { id: `temp_${Date.now()}`, description: '', quantity: 1, unit: 'un' }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center gap-2 text-slate-300 hover:text-blue-600 font-black uppercase text-[7px] tracking-widest">+ ADICIONAR ITEM DE SERVIÇO</button></td></tr> )}
+              {!readOnly && ( <tr className="border-b border-black h-8 print:hidden"><td colSpan={quoteCount * 2 + 6}><button onClick={() => { setLocalItems([...localItems, { id: `temp_${Date.now()}`, description: '', quantity: 1, unit: 'un' }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center gap-2 text-on-surface-variant hover:text-blue-600 font-black uppercase text-[7px] tracking-widest">+ ADICIONAR ITEM DE SERVIÇO</button></td></tr> )}
 
               <tr className="bg-[#BDBDBD] border-b border-black h-8">
                 <td colSpan={quoteCount * 2 + 6} className="text-center font-black uppercase tracking-[3px] text-[9px]">ORÇAMENTO</td>
@@ -742,7 +742,7 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                   </td>
                 </tr>
               ))}
-              {!readOnly && ( <tr className="border-b border-black h-8 print:hidden"><td colSpan={quoteCount * 2 + 6}><button onClick={() => { setLocalBudgetItems([...localBudgetItems, { id: `temp_b_${Date.now()}`, description: '', quantity: 1, unit: 'VB', unit_price: 0 }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center gap-2 text-slate-300 hover:text-emerald-600 font-black uppercase text-[7px] tracking-widest">+ ADICIONAR ITEM AO ORÇAMENTO</button></td></tr> )}
+              {!readOnly && ( <tr className="border-b border-black h-8 print:hidden"><td colSpan={quoteCount * 2 + 6}><button onClick={() => { setLocalBudgetItems([...localBudgetItems, { id: `temp_b_${Date.now()}`, description: '', quantity: 1, unit: 'VB', unit_price: 0 }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center gap-2 text-on-surface-variant hover:text-emerald-600 font-black uppercase text-[7px] tracking-widest">+ ADICIONAR ITEM AO ORÇAMENTO</button></td></tr> )}
 
               <tr className="bg-[#E5E7EB] font-black border-b border-black h-12">
                 <td colSpan={4} className="px-6 text-right uppercase tracking-[4px] border-r border-black pr-10 text-[11px]">TOTAL FINAL</td>
@@ -807,9 +807,9 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                 <td colSpan={4} className="p-6 text-center font-black uppercase tracking-[5px] border-r border-black text-[11px]">APROVAÇÕES</td>
                 <td colSpan={quoteCount * 2} className="p-0 border-r border-black">
                   <div className="grid grid-cols-3 h-full min-h-[90px]">
-                    <div className="p-4 border-r border-black flex flex-col justify-end gap-2"><div className="h-px bg-black/30"></div><div className="text-[7px] font-black uppercase text-center text-slate-500 font-bold">G.O. (OBRA)</div></div>
-                    <div className="p-4 border-r border-black flex flex-col justify-end gap-2"><div className="h-px bg-black/30"></div><div className="text-[7px] font-black uppercase text-center text-slate-500 font-bold">G.G.O. (GERAL)</div></div>
-                    <div className="p-4 flex flex-col justify-end gap-2"><div className="h-px bg-black/30"></div><div className="text-[7px] font-black uppercase text-center text-slate-500 font-bold">DIRETOR</div></div>
+                    <div className="p-4 border-r border-black flex flex-col justify-end gap-2"><div className="h-px bg-black/30"></div><div className="text-[7px] font-black uppercase text-center text-on-surface-variant font-bold">G.O. (OBRA)</div></div>
+                    <div className="p-4 border-r border-black flex flex-col justify-end gap-2"><div className="h-px bg-black/30"></div><div className="text-[7px] font-black uppercase text-center text-on-surface-variant font-bold">G.G.O. (GERAL)</div></div>
+                    <div className="p-4 flex flex-col justify-end gap-2"><div className="h-px bg-black/30"></div><div className="text-[7px] font-black uppercase text-center text-on-surface-variant font-bold">DIRETOR</div></div>
                   </div>
                 </td>
                 <td colSpan={2} className="bg-[#E5E1DB]"></td>
@@ -844,11 +844,11 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
     <div className="animate-in fade-in duration-500">
       <div className="flex justify-between items-end mb-10">
         <div>
-          <h2 className="text-3xl font-black text-white tracking-tight">Quadro de Concorrência</h2>
-          <p className="text-slate-500 text-sm mt-1">Comparativo técnico unificado.</p>
+          <h2 className="text-3xl font-black text-on-surface tracking-tight">Quadro de Concorrência</h2>
+          <p className="text-on-surface-variant text-sm mt-1">Comparativo técnico unificado.</p>
         </div>
         {!readOnly && (
-          <button onClick={() => setIsModalOpen(true)} className="px-6 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-black rounded-xl flex items-center gap-2 hover:bg-white transition-all shadow-xl uppercase tracking-widest">
+          <button onClick={() => setIsModalOpen(true)} className="px-6 py-3 bg-primary text-on-primary text-xs font-black rounded-xl flex items-center gap-2 hover:bg-white transition-all shadow-xl uppercase tracking-widest">
             <Plus className="h-4 w-4" /> Novo Quadro
           </button>
         )}
@@ -856,7 +856,7 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {bidGroups.map((group) => (
-          <div key={group.id} onClick={() => setSelectedGroup(group)} className="bg-[#1C232E] rounded-[32px] border border-white/5 p-8 cursor-pointer hover:border-blue-500/50 transition-all group relative overflow-hidden">
+          <div key={group.id} onClick={() => setSelectedGroup(group)} className="bg-surface rounded-[32px] border border-outline p-8 cursor-pointer hover:border-blue-500/50 transition-all group relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
               <button 
                 onClick={async (e) => { 
@@ -907,29 +907,29 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                     }
                   } as any);
                 }} 
-                className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"
+                className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-on-surface transition-all"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>
-            <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tight">{group.title}</h3>
-            <p className="text-sm text-slate-500 line-clamp-2">{group.description || 'Ver detalhes...'}</p>
+            <h3 className="text-xl font-black text-on-surface mb-2 uppercase tracking-tight">{group.title}</h3>
+            <p className="text-sm text-on-surface-variant line-clamp-2">{group.description || 'Ver detalhes...'}</p>
           </div>
         ))}
       </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="absolute inset-0 bg-surface-container-low/90 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
+          <div className="relative bg-surface rounded-[32px] shadow-2xl border border-outline w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-8 pb-4 flex items-center justify-between">
-              <h3 className="text-xl font-black text-white uppercase tracking-tight">Novo Quadro</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-white p-2 hover:bg-slate-800 rounded-full"><Plus className="h-5 w-5 rotate-45" /></button>
+              <h3 className="text-xl font-black text-on-surface uppercase tracking-tight">Novo Quadro</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-on-surface-variant hover:text-on-surface p-2 hover:bg-surface-container-high rounded-full"><Plus className="h-5 w-5 rotate-45" /></button>
             </div>
             <div className="p-8 space-y-5">
-              <input type="text" value={groupTitle} onChange={e => setGroupTitle(e.target.value)} className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500" placeholder="Título" />
-              <textarea value={groupDesc} onChange={e => setGroupDesc(e.target.value)} className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 h-24 resize-none" placeholder="Descrição" />
-              <button onClick={handleCreateGroup} className="w-full py-4 bg-blue-600 text-white text-xs font-black rounded-xl uppercase tracking-widest hover:bg-blue-500">CRIAR QUADRO</button>
+              <input type="text" value={groupTitle} onChange={e => setGroupTitle(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface outline-none focus:border-blue-500" placeholder="Título" />
+              <textarea value={groupDesc} onChange={e => setGroupDesc(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface outline-none focus:border-blue-500 h-24 resize-none" placeholder="Descrição" />
+              <button onClick={handleCreateGroup} className="w-full py-4 bg-blue-600 text-on-surface text-xs font-black rounded-xl uppercase tracking-widest hover:bg-blue-500">CRIAR QUADRO</button>
             </div>
           </div>
         </div>

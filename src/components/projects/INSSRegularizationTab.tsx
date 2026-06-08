@@ -728,23 +728,23 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     const displayProtocolo = isReciboInProtocol && !event.recibo ? null : event.protocolo;
 
     return (
-      <div className="mt-6 border border-white/5 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+      <div className="mt-6 border border-outline rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="p-4 bg-surface-container-low border-b border-outline flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={cn(
               "w-2 h-2 rounded-full animate-pulse",
               event.status === 'SUCESSO' ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" :
                 event.status === 'ERRO' ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]"
             )} />
-            <span className="text-[10px] font-black text-white uppercase tracking-[2px]">Log de Processamento eSocial</span>
+            <span className="text-[10px] font-black text-on-surface uppercase tracking-[2px]">Log de Processamento eSocial</span>
           </div>
-          <span className="text-[10px] font-bold text-slate-500 font-mono">ID: {event.id || 'N/A'}</span>
+          <span className="text-[10px] font-bold text-on-surface-variant font-mono">ID: {event.id || 'N/A'}</span>
         </div>
 
         <div className="p-6 bg-[#161B22] space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-1">
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Status do Governo</p>
+              <p className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest">Status do Governo</p>
               <div className={cn(
                 "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm",
                 event.status === 'SUCESSO' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
@@ -766,8 +766,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             {displayProtocolo && (
               <div className="space-y-1">
-                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Protocolo de Envio</p>
-                <p className="text-xs font-black text-slate-400 font-mono bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 inline-block select-all italic">
+                <p className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest">Protocolo de Envio</p>
+                <p className="text-xs font-black text-on-surface-variant font-mono bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline inline-block select-all italic">
                   {displayProtocolo}
                 </p>
               </div>
@@ -775,13 +775,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           </div>
 
           {event.resposta_governo && (
-            <div className="pt-4 border-t border-white/5">
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Mensagem do Sistema</p>
-              <div className="bg-black/40 rounded-xl p-4 border border-white/5">
-                <div className="text-xs text-slate-300 font-medium leading-relaxed font-mono space-y-3">
+            <div className="pt-4 border-t border-outline">
+              <p className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest mb-2">Mensagem do Sistema</p>
+              <div className="bg-black/40 rounded-xl p-4 border border-outline">
+                <div className="text-xs text-on-surface-variant font-medium leading-relaxed font-mono space-y-3">
                   {Array.isArray(event.resposta_governo) ? (
                     event.resposta_governo.map((oc: any, idx: number) => (
-                      <div key={idx} className={cn(idx < event.resposta_governo.length - 1 && "border-b border-white/5 pb-3")}>
+                      <div key={idx} className={cn(idx < event.resposta_governo.length - 1 && "border-b border-outline pb-3")}>
                         <div className="flex items-center gap-2 mb-1.5">
                           <span className={cn(
                             "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
@@ -795,7 +795,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] font-bold text-white/90 leading-relaxed">{oc.descricao}</p>
+                        <p className="text-[11px] font-bold text-on-surface/90 leading-relaxed">{oc.descricao}</p>
                       </div>
                     ))
                   ) : (
@@ -878,10 +878,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+          <div className="flex justify-end gap-3 pt-4 border-t border-outline">
             <button
               onClick={() => handleMarkAsDone(tipo, cpf)}
-              className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
+              className="px-4 py-2 bg-surface-container-low border border-outline text-on-surface rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-surface-container-high transition-all flex items-center gap-2"
             >
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Já foi feito!
             </button>
@@ -907,18 +907,18 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     const isSuccess = activeFlow.status === 'SUCCESS';
 
     return (
-      <div className="mt-8 bg-[#161B22] border border-white/5 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+      <div className="mt-8 bg-[#161B22] border border-outline rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
         {/* Botão de Fechar Manual (Apenas se finalizado ou erro) */}
         {(isSuccess || isError) && (
           <button
             onClick={() => setActiveFlow({ status: 'IDLE', message: '', logs: [] })}
-            className="absolute top-4 right-4 p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-full transition-all z-20"
+            className="absolute top-4 right-4 p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-full transition-all z-20"
             title="Fechar Monitor"
           >
             <X className="h-5 w-5" />
           </button>
         )}
-        <div className="p-6 border-b border-white/5 bg-white/5">
+        <div className="p-6 border-b border-outline bg-surface-container-low">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className={cn(
@@ -926,12 +926,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 isSuccess ? "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" :
                   isError ? "bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]" : "bg-primary shadow-[0_0_15px_rgba(59,130,246,0.5)]"
               )} />
-              <h3 className="text-sm font-black text-white uppercase tracking-[3px]">Monitor de Transmissão em Tempo Real</h3>
+              <h3 className="text-sm font-black text-on-surface uppercase tracking-[3px]">Monitor de Transmissão em Tempo Real</h3>
             </div>
             <div className={cn(
               "text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border",
               isSuccess ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
-                isError ? "bg-red-500/10 text-red-400 border-red-500/20" : "bg-white/5 text-slate-500 border-white/10"
+                isError ? "bg-red-500/10 text-red-400 border-red-500/20" : "bg-surface-container-low text-on-surface-variant border-outline"
             )}>
               {activeFlow.message}
             </div>
@@ -940,7 +940,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           {/* Animated Stepper */}
           <div className="relative flex justify-between items-start max-w-3xl mx-auto px-4">
             {/* Progress Line */}
-            <div className="absolute top-5 left-10 right-10 h-0.5 bg-white/5">
+            <div className="absolute top-5 left-10 right-10 h-0.5 bg-surface-container-low">
               <div
                 className={cn(
                   "h-full transition-all duration-700 ease-in-out",
@@ -963,13 +963,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     stepCompleted ? "bg-emerald-500/20 border-emerald-500 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]" :
                       stepActive ? "bg-primary/20 border-primary text-primary animate-pulse shadow-[0_0_15px_rgba(59,130,246,0.2)]" :
                         stepError ? "bg-red-500/20 border-red-500 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]" :
-                          "bg-[#0D1117] border-white/10 text-slate-600"
+                          "bg-[#0D1117] border-outline text-on-surface-variant"
                   )}>
                     {stepCompleted ? <Check className="h-5 w-5" /> : stepError ? <X className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
                   </div>
                   <span className={cn(
                     "text-[9px] font-black uppercase tracking-widest transition-colors duration-500",
-                    stepCompleted ? "text-emerald-500" : stepActive ? "text-primary" : stepError ? "text-red-500" : "text-slate-500"
+                    stepCompleted ? "text-emerald-500" : stepActive ? "text-primary" : stepError ? "text-red-500" : "text-on-surface-variant"
                   )}>
                     {step.label}
                   </span>
@@ -983,8 +983,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         <div className="p-6 bg-black/40">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Terminal className="h-4 w-4 text-slate-500" />
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Console de Processamento</span>
+              <Terminal className="h-4 w-4 text-on-surface-variant" />
+              <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Console de Processamento</span>
             </div>
             {isSuccess && (
               <div className="flex items-center gap-2 text-[10px] font-black text-emerald-500 uppercase animate-bounce">
@@ -994,12 +994,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           </div>
           <div className="space-y-2 font-mono text-[11px] h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 pr-2">
             {activeFlow.logs?.map((log, i) => (
-              <div key={i} className="flex items-start gap-3 text-slate-300 animate-in slide-in-from-left-2 duration-300">
-                <span className="text-slate-600 flex-shrink-0">[{new Date().toLocaleTimeString('pt-BR')}]</span>
+              <div key={i} className="flex items-start gap-3 text-on-surface-variant animate-in slide-in-from-left-2 duration-300">
+                <span className="text-on-surface-variant flex-shrink-0">[{new Date().toLocaleTimeString('pt-BR')}]</span>
                 <span className={cn(
                   log.includes('❌') || log.includes('🚨') ? "text-red-400" :
                     log.includes('✅') || log.includes('🎉') ? "text-emerald-400" :
-                      log.includes('🔄') || log.includes('📡') ? "text-primary" : "text-slate-300"
+                      log.includes('🔄') || log.includes('📡') ? "text-primary" : "text-on-surface-variant"
                 )}>
                   {log}
                 </span>
@@ -1687,10 +1687,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
     if (!isMarkingDone) return null;
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-        <div className="bg-slate-900 border border-white/10 p-8 rounded-3xl shadow-2xl max-w-md w-full space-y-6">
+        <div className="bg-surface border border-outline p-8 rounded-3xl shadow-2xl max-w-md w-full space-y-6">
           <div className="space-y-2">
-            <h3 className="text-xl font-black text-white uppercase tracking-tight">Inserir Recibo Manual</h3>
-            <p className="text-xs text-slate-400 font-medium leading-relaxed">
+            <h3 className="text-xl font-black text-on-surface uppercase tracking-tight">Inserir Recibo Manual</h3>
+            <p className="text-xs text-on-surface-variant font-medium leading-relaxed">
               Informe o número do recibo oficial gerado pelo eSocial para o evento <span className="text-primary font-bold">{activeManualType}</span>.
             </p>
           </div>
@@ -1702,7 +1702,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 value={manualRecibo}
                 onChange={(e) => setManualRecibo(e.target.value)}
                 placeholder="Ex: 1.1.202605.000000000..."
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-slate-600"
+                className="w-full bg-surface-container-low border border-outline rounded-2xl px-5 py-4 text-on-surface text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant"
                 autoFocus
               />
             </div>
@@ -1714,14 +1714,14 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   setManualRecibo('');
                   setActiveManualType(null);
                 }}
-                className="flex-1 px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black text-slate-400 hover:text-white transition-all uppercase tracking-widest"
+                className="flex-1 px-6 py-4 bg-surface-container-low border border-outline rounded-2xl text-[10px] font-black text-on-surface-variant hover:text-on-surface transition-all uppercase tracking-widest"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => handleMarkAsDone(activeManualType!, activeManualCpf || undefined)}
                 disabled={!manualRecibo || isTransmitting}
-                className="flex-[2] px-6 py-4 bg-primary hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-[10px] font-black text-white transition-all shadow-lg shadow-primary/20 uppercase tracking-widest"
+                className="flex-[2] px-6 py-4 bg-primary hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-[10px] font-black text-on-surface transition-all shadow-lg shadow-primary/20 uppercase tracking-widest"
               >
                 {isTransmitting ? 'Salvando...' : 'Confirmar Recibo'}
               </button>
@@ -2103,29 +2103,29 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       {currentView === 'summary' && (
         <div className="space-y-6 animate-in fade-in duration-500">
           {/* Header Summary Card - DARK THEME */}
-          <div className="bg-[#1C232E] rounded-2xl shadow-sm border border-white/5 overflow-hidden text-white mb-6">
-            <div className="p-8 border-b border-white/5 bg-gradient-to-r from-primary/10 to-transparent">
+          <div className="bg-surface rounded-2xl shadow-sm border border-outline overflow-hidden text-on-surface mb-6">
+            <div className="p-8 border-b border-outline bg-gradient-to-r from-primary/10 to-transparent">
               <h3 className="text-3xl font-black tracking-tight">{client}</h3>
-              <p className="text-slate-400 text-sm mt-1 font-medium">{phone} | {email}</p>
+              <p className="text-on-surface-variant text-sm mt-1 font-medium">{phone} | {email}</p>
             </div>
 
             {/* CPF/CNPJ Row */}
-            <div className="flex border-b border-white/5">
-              <div className="w-40 p-4 bg-white/5 border-r border-white/5 flex items-center">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">CPF / CNPJ:</span>
+            <div className="flex border-b border-outline">
+              <div className="w-40 p-4 bg-surface-container-low border-r border-outline flex items-center">
+                <span className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">CPF / CNPJ:</span>
               </div>
               <div className="flex-1 p-4 flex items-center">
-                <span className="text-white font-bold">{proprietarioCpfCnpj || 'Não informado'}</span>
+                <span className="text-on-surface font-bold">{proprietarioCpfCnpj || 'Não informado'}</span>
               </div>
             </div>
 
             {/* Obras Row */}
-            <div className="flex border-b border-white/5">
-              <div className="w-40 p-4 bg-white/5 border-r border-white/5 flex items-center">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Obras:</span>
+            <div className="flex border-b border-outline">
+              <div className="w-40 p-4 bg-surface-container-low border-r border-outline flex items-center">
+                <span className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">Obras:</span>
               </div>
               <div className="flex-1 p-4 flex items-center gap-2">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#D94141] text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg shadow-red-500/20">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#D94141] text-on-surface rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg shadow-red-500/20">
                   <Hammer className="h-3.5 w-3.5 fill-white" />
                   {name} / {areaConstruida.toFixed(2)}m²
                 </div>
@@ -2133,22 +2133,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
 
             {/* Prazos Row */}
-            <div className="flex border-b border-white/5">
-              <div className="w-40 p-4 bg-white/5 border-r border-white/5 flex items-center">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Prazos:</span>
+            <div className="flex border-b border-outline">
+              <div className="w-40 p-4 bg-surface-container-low border-r border-outline flex items-center">
+                <span className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">Prazos:</span>
               </div>
               <div className="flex-1 p-4 flex items-center">
-                <span className="text-slate-300 text-sm font-medium">{prazos}</span>
+                <span className="text-on-surface-variant text-sm font-medium">{prazos}</span>
               </div>
             </div>
 
             {/* OBS Row */}
             <div className="flex">
-              <div className="w-40 p-4 bg-white/5 border-r border-white/5 flex items-center">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">OBS:</span>
+              <div className="w-40 p-4 bg-surface-container-low border-r border-outline flex items-center">
+                <span className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">OBS:</span>
               </div>
               <div className="flex-1 p-4">
-                <span className="text-slate-400 text-sm leading-relaxed italic">{observations}</span>
+                <span className="text-on-surface-variant text-sm leading-relaxed italic">{observations}</span>
               </div>
             </div>
           </div>
@@ -2157,19 +2157,19 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           <div className="flex flex-wrap gap-2 pt-4">
             <button
               onClick={() => setIsEditModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[#636E72] text-white rounded-md text-sm font-medium hover:bg-slate-600 transition-colors shadow-sm"
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#636E72] text-on-surface rounded-md text-sm font-medium hover:bg-slate-600 transition-colors shadow-sm"
             >
               <Edit2 className="h-4 w-4" /> Editar
             </button>
             <button
               onClick={() => { setWorkModalMode('simple'); setIsWorkModalOpen(true); }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[#1B8E5A] text-white rounded-md text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm"
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#1B8E5A] text-on-surface rounded-md text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm"
             >
               <Plus className="h-4 w-4" /> Cadastrar Obra
             </button>
             <button
               onClick={() => setCurrentView('management')}
-              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-md text-sm font-bold hover:bg-blue-700 transition-all shadow-lg uppercase tracking-widest"
+              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-on-surface rounded-md text-sm font-bold hover:bg-blue-700 transition-all shadow-lg uppercase tracking-widest"
             >
               <Hammer className="h-4 w-4" /> Gerenciar Obra
             </button>
@@ -2181,12 +2181,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       {currentView === 'management' && (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
           {/* Management Header Card - DARK THEME PREMIUM */}
-          <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden text-white">
+          <div className="bg-surface rounded-2xl shadow-2xl border border-outline overflow-hidden text-on-surface">
             {/* Header: Name and Phone */}
-            <div className="p-8 border-b border-white/5 bg-gradient-to-r from-primary/10 to-transparent">
+            <div className="p-8 border-b border-outline bg-gradient-to-r from-primary/10 to-transparent">
               <div className="flex items-center gap-3 mb-2">
                 <h2 className="text-4xl font-black tracking-tight">{client}</h2>
-                <button onClick={() => copyToClipboard(client)} className="p-1.5 bg-white/5 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white">
+                <button onClick={() => copyToClipboard(client)} className="p-1.5 bg-surface-container-low rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant hover:text-on-surface">
                   <Copy className="h-4 w-4" />
                 </button>
               </div>
@@ -2197,12 +2197,12 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
 
             {/* Row 2: Status */}
-            <div className="flex border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-              <div className="w-48 p-4 bg-white/5 border-r border-white/5 flex items-center">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Status</span>
+            <div className="flex border-b border-outline hover:bg-white/[0.02] transition-colors">
+              <div className="w-48 p-4 bg-surface-container-low border-r border-outline flex items-center">
+                <span className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">Status</span>
               </div>
               <div className="flex-1 p-4">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-600 text-on-surface rounded-lg text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20">
                   <MessageSquare className="h-4 w-4" />
                   {status} ➔ {status} ➔
                 </div>
@@ -2210,37 +2210,37 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
 
             {/* Row 3: CPF / CNPJ */}
-            <div className="flex border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-              <div className="w-48 p-4 bg-white/5 border-r border-white/5 flex items-center">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">CPF / CNPJ</span>
+            <div className="flex border-b border-outline hover:bg-white/[0.02] transition-colors">
+              <div className="w-48 p-4 bg-surface-container-low border-r border-outline flex items-center">
+                <span className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">CPF / CNPJ</span>
               </div>
               <div className="flex-1 p-4 flex items-center gap-3">
-                <button onClick={() => copyToClipboard(proprietarioCpfCnpj)} className="p-1.5 bg-white/5 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white">
+                <button onClick={() => copyToClipboard(proprietarioCpfCnpj)} className="p-1.5 bg-surface-container-low rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant hover:text-on-surface">
                   <Copy className="h-4 w-4" />
                 </button>
-                <span className="text-slate-400 font-bold">||</span>
-                <span className="text-xl font-bold text-slate-300 tracking-wider font-mono">{proprietarioCpfCnpj}</span>
+                <span className="text-on-surface-variant font-bold">||</span>
+                <span className="text-xl font-bold text-on-surface-variant tracking-wider font-mono">{proprietarioCpfCnpj}</span>
               </div>
             </div>
 
-            <div className="flex border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-              <div className="w-48 p-4 bg-white/5 border-r border-white/5 flex items-center">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">RMT Inicial</span>
+            <div className="flex border-b border-outline hover:bg-white/[0.02] transition-colors">
+              <div className="w-48 p-4 bg-surface-container-low border-r border-outline flex items-center">
+                <span className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">RMT Inicial</span>
               </div>
               <div className="flex-1 p-4 flex items-center gap-3">
-                <span className="text-xl font-bold text-slate-300 tracking-wider font-mono">
+                <span className="text-xl font-bold text-on-surface-variant tracking-wider font-mono">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rmtInicial || 0)}
                 </span>
               </div>
             </div>
 
             {/* Row 5: Obras */}
-            <div className="flex border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-              <div className="w-48 p-4 bg-white/5 border-r border-white/5 flex items-center">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Obras</span>
+            <div className="flex border-b border-outline hover:bg-white/[0.02] transition-colors">
+              <div className="w-48 p-4 bg-surface-container-low border-r border-outline flex items-center">
+                <span className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">Obras</span>
               </div>
               <div className="flex-1 p-4 flex items-center gap-3">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#D94141] text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-red-500/20">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#D94141] text-on-surface rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-red-500/20">
                   <Hammer className="h-4 w-4 fill-white" />
                   {name} / {areaConstruida.toFixed(2)}m²
                 </div>
@@ -2248,50 +2248,50 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
 
             {/* Row 6: Prazos */}
-            <div className="flex border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-              <div className="w-48 p-4 bg-white/5 border-r border-white/5 flex items-center">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Prazos:</span>
+            <div className="flex border-b border-outline hover:bg-white/[0.02] transition-colors">
+              <div className="w-48 p-4 bg-surface-container-low border-r border-outline flex items-center">
+                <span className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">Prazos:</span>
               </div>
               <div className="flex-1 p-4 flex items-center">
-                <span className="text-slate-300 text-base font-bold tracking-tight">{prazos}</span>
+                <span className="text-on-surface-variant text-base font-bold tracking-tight">{prazos}</span>
               </div>
             </div>
 
             {/* Row 7: OBS */}
             <div className="flex hover:bg-white/[0.02] transition-colors">
-              <div className="w-48 p-4 bg-white/5 border-r border-white/5 flex items-center">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">OBS:</span>
+              <div className="w-48 p-4 bg-surface-container-low border-r border-outline flex items-center">
+                <span className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">OBS:</span>
               </div>
               <div className="flex-1 p-4">
-                <span className="text-slate-400 text-sm leading-relaxed italic">{observations}</span>
+                <span className="text-on-surface-variant text-sm leading-relaxed italic">{observations}</span>
               </div>
             </div>
           </div>
 
           {/* Management Buttons */}
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => { setWorkModalMode('detailed'); setIsWorkModalOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-[#636E72] text-white rounded text-sm font-bold hover:bg-slate-600 transition-colors shadow-md">
+            <button onClick={() => { setWorkModalMode('detailed'); setIsWorkModalOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-[#636E72] text-on-surface rounded text-sm font-bold hover:bg-slate-600 transition-colors shadow-md">
               <Edit2 className="h-4 w-4" /> Editar Obra
             </button>
-            <button onClick={() => setCurrentView('summary')} className="flex items-center gap-2 px-4 py-2 bg-[#007AFF] text-white rounded text-sm font-bold hover:bg-blue-600 transition-colors shadow-md">
+            <button onClick={() => setCurrentView('summary')} className="flex items-center gap-2 px-4 py-2 bg-[#007AFF] text-on-surface rounded text-sm font-bold hover:bg-blue-600 transition-colors shadow-md">
               <Undo2 className="h-4 w-4 rotate-180" /> Voltar
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-[#1B8E5A] text-white rounded text-sm font-bold hover:bg-emerald-700 transition-colors shadow-md">
+            <button className="flex items-center gap-2 px-4 py-2 bg-[#1B8E5A] text-on-surface rounded text-sm font-bold hover:bg-emerald-700 transition-colors shadow-md">
               <DollarSign className="h-4 w-4" /> DARFs ➔
             </button>
           </div>
 
           {/* Certificate Configuration - DARK THEME */}
-          <div className="bg-[#1C232E] rounded-2xl shadow-xl border border-white/5 overflow-hidden">
-            <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
-              <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Configuração do certificado</span>
-              <X className="h-4 w-4 text-slate-500 cursor-pointer hover:text-white" />
+          <div className="bg-surface rounded-2xl shadow-xl border border-outline overflow-hidden">
+            <div className="p-4 bg-surface-container-low border-b border-outline flex items-center justify-between">
+              <span className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Configuração do certificado</span>
+              <X className="h-4 w-4 text-on-surface-variant cursor-pointer hover:text-on-surface" />
             </div>
             <div className="p-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Certificado Digital A1 - Procurador</label>
+                    <label className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Certificado Digital A1 - Procurador</label>
                     <div className="flex gap-3">
                       <div className="flex-1 relative">
                         <input
@@ -2299,11 +2299,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                           readOnly
                           value={certificateApelido || (certificateUrl ? 'Certificado Carregado' : '')}
                           placeholder="Clique em escolher arquivo"
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-primary transition-all"
+                          className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface outline-none focus:border-primary transition-all"
                         />
                         {certificateUrl && <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />}
                       </div>
-                      <label className="px-5 py-3 bg-white/5 text-white rounded-xl text-xs font-black hover:bg-white/10 cursor-pointer transition-all flex items-center gap-2 border border-white/10 shadow-lg uppercase tracking-widest">
+                      <label className="px-5 py-3 bg-surface-container-low text-on-surface rounded-xl text-xs font-black hover:bg-surface-container-high cursor-pointer transition-all flex items-center gap-2 border border-outline shadow-lg uppercase tracking-widest">
                         {isUploadingCert ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-4 w-4" />}
                         Escolher
                         <input type="file" className="hidden" accept=".pfx,.p12" onChange={handleUploadCertificate} disabled={isUploadingCert} />
@@ -2312,20 +2312,20 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Senha do Certificado</label>
+                    <label className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Senha do Certificado</label>
                     <input
                       type="password"
                       value={certificatePassword}
                       onChange={(e) => setCertificatePassword(e.target.value)}
                       placeholder="Senha do arquivo .pfx"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-lg"
+                      className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-lg"
                     />
                   </div>
                 </div>
 
                 <div className="flex flex-col justify-end gap-4">
                   <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-start gap-4">
-                    <div className="p-2 bg-emerald-500 rounded-lg text-white shadow-lg shadow-emerald-500/20"><CheckCircle2 className="h-5 w-5" /></div>
+                    <div className="p-2 bg-emerald-500 rounded-lg text-on-surface shadow-lg shadow-emerald-500/20"><CheckCircle2 className="h-5 w-5" /></div>
                     <div className="space-y-1">
                       <p className="text-xs font-black text-emerald-500 uppercase tracking-widest">Status da Credencial</p>
                       <p className="text-[11px] text-emerald-500/80 font-medium leading-relaxed">
@@ -2337,7 +2337,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </div>
                   <button
                     onClick={handleSaveCredentials}
-                    className="w-full py-4 bg-primary text-white rounded-xl font-black text-sm hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 uppercase tracking-[2px]"
+                    className="w-full py-4 bg-primary text-on-surface rounded-xl font-black text-sm hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 uppercase tracking-[2px]"
                   >
                     <Save className="h-4 w-4" />
                     Salvar Configurações
@@ -2348,10 +2348,10 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           </div>
 
           {/* Checklist Section - DARK THEME PREMIUM */}
-          <div className="bg-[#1C232E] rounded-2xl shadow-xl border border-white/5 overflow-hidden">
-            <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Checklist Inicial</span>
-              <X className="h-4 w-4 text-slate-500 cursor-pointer hover:text-white transition-colors" />
+          <div className="bg-surface rounded-2xl shadow-xl border border-outline overflow-hidden">
+            <div className="p-4 bg-surface-container-low border-b border-outline flex items-center justify-between">
+              <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Checklist Inicial</span>
+              <X className="h-4 w-4 text-on-surface-variant cursor-pointer hover:text-on-surface transition-colors" />
             </div>
             <div className="p-8 space-y-6">
               {[
@@ -2363,11 +2363,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 { id: 'recibos', label: 'Confirmar recibos de autônomo ou NF de MEI' }
               ].map((item) => (
                 <div key={item.id} className="flex items-center justify-between group">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">{item.label}</span>
+                  <span className="text-xs font-black text-on-surface-variant uppercase tracking-widest group-hover:text-on-surface transition-colors">{item.label}</span>
                   <button
                     onClick={() => toggleChecklistItem(item.id)}
                     className={cn(
-                      "px-6 py-2 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all",
+                      "px-6 py-2 text-on-surface rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all",
                       checklistData[item.id] === 'SUCESSO' ? "bg-emerald-600 shadow-emerald-500/20" : "bg-[#E23F3F] hover:bg-red-600 shadow-red-500/10"
                     )}
                   >
@@ -2387,7 +2387,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             <button
               onClick={() => setCurrentView('s1000_view')}
               className={cn(
-                "px-4 py-2 text-white rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
+                "px-4 py-2 text-on-surface rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
                 esocialS1000Status?.status === 'SUCESSO' ? "bg-emerald-600" : "bg-[#E27676]"
               )}
             >
@@ -2397,7 +2397,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             <button
               onClick={() => setCurrentView('s1005_view')}
               className={cn(
-                "px-4 py-2 text-white rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
+                "px-4 py-2 text-on-surface rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
                 esocialS1005Status?.status === 'SUCESSO' ? "bg-emerald-600" : "bg-[#E27676]"
               )}
             >
@@ -2407,7 +2407,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             <button
               onClick={() => setCurrentView('s1020_view')}
               className={cn(
-                "px-4 py-2 text-white rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
+                "px-4 py-2 text-on-surface rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
                 esocialS1020Status?.status === 'SUCESSO' ? "bg-emerald-600" : "bg-[#E27676]"
               )}
             >
@@ -2417,7 +2417,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             <button
               onClick={() => setCurrentView('s1010_view')}
               className={cn(
-                "px-4 py-2 text-white rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
+                "px-4 py-2 text-on-surface rounded text-xs font-bold opacity-90 hover:opacity-100 shadow-sm flex items-center gap-1",
                 esocialS1010Status?.status === 'SUCESSO' ? "bg-emerald-600" : "bg-[#E27676]"
               )}
             >
@@ -2426,28 +2426,28 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </button>
           </div>
 
-          <p className="text-slate-400 text-[10px] italic font-medium uppercase tracking-wider">Cadastre trabalhador e remunerações para liberar os botões acima.</p>
+          <p className="text-on-surface-variant text-[10px] italic font-medium uppercase tracking-wider">Cadastre trabalhador e remunerações para liberar os botões acima.</p>
 
           {/* Workers Section - DARK THEME */}
-          <div className="bg-[#1C232E] rounded-2xl shadow-xl border border-white/5 overflow-hidden">
-            <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+          <div className="bg-surface rounded-2xl shadow-xl border border-outline overflow-hidden">
+            <div className="p-4 bg-surface-container-low border-b border-outline flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Trabalhadores</span>
-                <div className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black text-slate-400 uppercase tracking-widest shadow-lg">
+                <span className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Trabalhadores</span>
+                <div className="flex items-center gap-2 px-3 py-1 bg-surface-container-low border border-outline rounded-lg text-[10px] font-black text-on-surface-variant uppercase tracking-widest shadow-lg">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                   {workers.filter(w => w.esocial_status === 'SUCESSO').length} de {workers.length} Transmitidos
                 </div>
               </div>
-              <X className="h-4 w-4 text-slate-500 cursor-pointer hover:text-white" />
+              <X className="h-4 w-4 text-on-surface-variant cursor-pointer hover:text-on-surface" />
             </div>
 
-            <div className="p-8 space-y-6 bg-[#1C232E]">
+            <div className="p-8 space-y-6 bg-surface">
               {workers.length > 0 ? (
                 workers.map(worker => (
-                  <div key={worker.id} className="bg-white/5 p-8 rounded-2xl border border-white/5 shadow-2xl space-y-8 group hover:border-primary/30 transition-all">
+                  <div key={worker.id} className="bg-surface-container-low p-8 rounded-2xl border border-outline shadow-2xl space-y-8 group hover:border-primary/30 transition-all">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-3xl font-black text-white tracking-tight">{worker.nome}</h3>
+                        <h3 className="text-3xl font-black text-on-surface tracking-tight">{worker.nome}</h3>
                         <p className="text-primary font-black uppercase tracking-[2px] text-xs mt-1">
                           {CATEGORIA_OPTIONS.find(opt => opt.value === worker.categoria)?.label || worker.categoria}
                         </p>
@@ -2468,26 +2468,26 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                       <button
                         onClick={() => handleOpenRemunerationModal(worker)}
-                        className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-white/10 transition-all shadow-lg uppercase tracking-widest"
+                        className="flex items-center justify-center gap-2 px-4 py-3 bg-surface-container-low border border-outline rounded-xl text-xs font-black text-on-surface hover:bg-surface-container-high transition-all shadow-lg uppercase tracking-widest"
                       >
                         <DollarSign className="h-4 w-4 text-emerald-500" /> Add Remuneração
                       </button>
-                      <button onClick={() => handleEditWorker(worker)} className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-white/10 transition-all shadow-lg uppercase tracking-widest">
+                      <button onClick={() => handleEditWorker(worker)} className="flex items-center justify-center gap-2 px-4 py-3 bg-surface-container-low border border-outline rounded-xl text-xs font-black text-on-surface hover:bg-surface-container-high transition-all shadow-lg uppercase tracking-widest">
                         <Eye className="h-4 w-4 text-primary" /> Ver / Editar
                       </button>
                       <button
                         onClick={() => handleClearRemunerations(worker.id)}
-                        className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-red-500/20 hover:text-red-500 transition-all shadow-lg uppercase tracking-widest"
+                        className="flex items-center justify-center gap-2 px-4 py-3 bg-surface-container-low border border-outline rounded-xl text-xs font-black text-on-surface hover:bg-red-500/20 hover:text-red-500 transition-all shadow-lg uppercase tracking-widest"
                       >
                         <Eraser className="h-4 w-4" /> Limpar remunerações
                       </button>
-                      <button className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-white/10 transition-all shadow-lg uppercase tracking-widest">
-                        <Printer className="h-4 w-4 text-slate-400" /> Gerar recibos
+                      <button className="flex items-center justify-center gap-2 px-4 py-3 bg-surface-container-low border border-outline rounded-xl text-xs font-black text-on-surface hover:bg-surface-container-high transition-all shadow-lg uppercase tracking-widest">
+                        <Printer className="h-4 w-4 text-on-surface-variant" /> Gerar recibos
                       </button>
-                      <button className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-white/10 transition-all shadow-lg uppercase tracking-widest">
-                        <Calculator className="h-4 w-4 text-slate-400" /> Totalizar 1
+                      <button className="flex items-center justify-center gap-2 px-4 py-3 bg-surface-container-low border border-outline rounded-xl text-xs font-black text-on-surface hover:bg-surface-container-high transition-all shadow-lg uppercase tracking-widest">
+                        <Calculator className="h-4 w-4 text-on-surface-variant" /> Totalizar 1
                       </button>
-                      <button onClick={() => handleRemoveWorker(worker.id)} className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-white hover:bg-red-500/20 hover:text-red-500 transition-all shadow-lg uppercase tracking-widest">
+                      <button onClick={() => handleRemoveWorker(worker.id)} className="flex items-center justify-center gap-2 px-4 py-3 bg-surface-container-low border border-outline rounded-xl text-xs font-black text-on-surface hover:bg-red-500/20 hover:text-red-500 transition-all shadow-lg uppercase tracking-widest">
                         <Trash2 className="h-4 w-4" /> Remover trabalhador
                       </button>
                       <button
@@ -2497,7 +2497,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                           setCurrentView('s2300_view');
                         }}
                         className={cn(
-                          "flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black text-white transition-all shadow-xl uppercase tracking-widest",
+                          "flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black text-on-surface transition-all shadow-xl uppercase tracking-widest",
                           worker.esocial_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-primary hover:bg-primary/90"
                         )}
                       >
@@ -2511,7 +2511,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                           setCurrentView('s2399_view');
                         }}
                         className={cn(
-                          "flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black text-white transition-all shadow-xl uppercase tracking-widest",
+                          "flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black text-on-surface transition-all shadow-xl uppercase tracking-widest",
                           worker.s2399_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-500 hover:bg-red-600"
                         )}
                       >
@@ -2522,13 +2522,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   </div>
                 ))
               ) : (
-                <div className="text-center py-16 text-slate-600 font-black uppercase tracking-widest italic text-xs">Nenhum trabalhador cadastrado.</div>
+                <div className="text-center py-16 text-on-surface-variant font-black uppercase tracking-widest italic text-xs">Nenhum trabalhador cadastrado.</div>
               )}
 
               <div className="flex justify-start pt-6">
                 <button
                   onClick={() => { resetWorkerForm(); setCurrentView('worker_form'); }}
-                  className="flex items-center gap-3 px-8 py-4 bg-white/5 border border-primary text-primary rounded-xl text-xs font-black hover:bg-primary/10 transition-all shadow-xl shadow-primary/10 uppercase tracking-[2px]"
+                  className="flex items-center gap-3 px-8 py-4 bg-surface-container-low border border-primary text-primary rounded-xl text-xs font-black hover:bg-primary/10 transition-all shadow-xl shadow-primary/10 uppercase tracking-[2px]"
                 >
                   <UserPlus className="h-5 w-5" /> Novo Trabalhador
                 </button>
@@ -2538,28 +2538,28 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
           {/* Requirement Summary Dashboard - DARK THEME */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-8">
-            <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-2xl space-y-4 hover:border-primary/20 transition-all">
-              <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Total Remunerações</p>
-              <p className="text-3xl font-black text-white">
+            <div className="bg-surface-container-low p-6 rounded-2xl border border-outline shadow-2xl space-y-4 hover:border-primary/20 transition-all">
+              <p className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">Total Remunerações</p>
+              <p className="text-3xl font-black text-on-surface">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRemuneration)}
               </p>
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                <div className="flex-1 h-2 bg-surface-container-low rounded-full overflow-hidden">
                   <div
                     className={cn("h-full transition-all duration-700 ease-out", percentCompleted >= 100 ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(0,122,255,0.5)]")}
                     style={{ width: `${Math.min(percentCompleted, 100)}%` }}
                   />
                 </div>
-                <span className="text-xs font-black text-slate-400">{percentCompleted.toFixed(1)}%</span>
+                <span className="text-xs font-black text-on-surface-variant">{percentCompleted.toFixed(1)}%</span>
               </div>
             </div>
 
-            <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-2xl space-y-4 hover:border-primary/20 transition-all">
-              <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Requisito ({requisitoPercent}%)</p>
+            <div className="bg-surface-container-low p-6 rounded-2xl border border-outline shadow-2xl space-y-4 hover:border-primary/20 transition-all">
+              <p className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">Requisito ({requisitoPercent}%)</p>
               <p className="text-3xl font-black text-primary">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(targetRequisito)}
               </p>
-              <p className="text-[10px] text-slate-500 italic font-medium uppercase tracking-widest">Valor alvo baseado na RMT Inicial</p>
+              <p className="text-[10px] text-on-surface-variant italic font-medium uppercase tracking-widest">Valor alvo baseado na RMT Inicial</p>
             </div>
 
             <div className={cn(
@@ -2581,23 +2581,23 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-white/5 shadow-2xl mx-8 mb-8">
+          <div className="overflow-x-auto rounded-2xl border border-outline shadow-2xl mx-8 mb-8">
             <table className="w-full text-sm text-left border-collapse">
-              <thead className="bg-[#1C232E] text-slate-500 uppercase text-[10px] font-black tracking-[2px] border-b border-white/5">
+              <thead className="bg-surface text-on-surface-variant uppercase text-[10px] font-black tracking-[2px] border-b border-outline">
                 <tr>
-                  <th className="p-6 border-r border-white/5">P.A.</th>
+                  <th className="p-6 border-r border-outline">P.A.</th>
                   {workers.map(w => (
-                    <th key={w.id} className="p-6 border-r border-white/5 text-center">
-                      <span className="text-white">#{w.nome.split(' ')[0]}</span> <br /> <span className="opacity-60">Aut {w.categoria}</span>
+                    <th key={w.id} className="p-6 border-r border-outline text-center">
+                      <span className="text-on-surface">#{w.nome.split(' ')[0]}</span> <br /> <span className="opacity-60">Aut {w.categoria}</span>
                     </th>
                   ))}
-                  <th className="p-6 border-r border-white/5 text-center">Correção</th>
-                  <th className="p-6 border-r border-white/5 text-center">Ações</th>
-                  <th className="p-6 border-r border-white/5 text-center">Verificação</th>
+                  <th className="p-6 border-r border-outline text-center">Correção</th>
+                  <th className="p-6 border-r border-outline text-center">Ações</th>
+                  <th className="p-6 border-r border-outline text-center">Verificação</th>
                   <th className="p-6 text-center">INSS Pago</th>
                 </tr>
               </thead>
-              <tbody className="text-white bg-[#1C232E]">
+              <tbody className="text-on-surface bg-surface">
                 {getUniquePAs().length > 0 ? (
                   getUniquePAs().map(pa => {
                     const rowTotal = allRemunerations
@@ -2608,18 +2608,18 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     const correcaoVal = rowTotal * (correcaoPct / 100);
 
                     return (
-                      <tr key={pa} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                        <td className="p-6 font-black text-slate-300 border-r border-white/5 bg-white/5">{pa}</td>
+                      <tr key={pa} className="border-b border-outline hover:bg-white/[0.02] transition-colors">
+                        <td className="p-6 font-black text-on-surface-variant border-r border-outline bg-surface-container-low">{pa}</td>
                         {workers.map(w => {
                           const rem = allRemunerations.find(r => r.workerId === w.id && `${String(r.month).padStart(2, '0')}-${r.year}` === pa);
                           return (
-                            <td key={w.id} className="p-6 text-center border-r border-white/5 font-black text-white">
+                            <td key={w.id} className="p-6 text-center border-r border-outline font-black text-on-surface">
                               {rem ? (
                                 <div className="space-y-4">
                                   <div className="flex items-center justify-center gap-2">
-                                    <span className="text-lg tracking-tighter text-white">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rem.value)}</span>
+                                    <span className="text-lg tracking-tighter text-on-surface">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rem.value)}</span>
                                     {rem.isLocked && <Lock className="h-3.5 w-3.5 text-primary animate-pulse" />}
-                                    <Printer className="h-4 w-4 text-slate-500 cursor-pointer hover:text-white transition-colors" />
+                                    <Printer className="h-4 w-4 text-on-surface-variant cursor-pointer hover:text-on-surface transition-colors" />
                                   </div>
                                   <div className="flex items-center justify-center gap-2">
                                     <button
@@ -2630,7 +2630,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                                         setCurrentView('s1200_view');
                                       }}
                                       className={cn(
-                                        "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black text-white transition-all shadow-xl uppercase tracking-widest",
+                                        "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black text-on-surface transition-all shadow-xl uppercase tracking-widest",
                                         rem.remStatus === 'SUCESSO' ? "bg-emerald-600" : "bg-primary hover:bg-blue-700 shadow-primary/20"
                                       )}
                                     >
@@ -2644,8 +2644,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                                         setCurrentView('s1210_view');
                                       }}
                                       className={cn(
-                                        "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black text-white transition-all shadow-xl uppercase tracking-widest",
-                                        rem.pagStatus === 'SUCESSO' ? "bg-emerald-600" : "bg-slate-700 hover:bg-slate-600 shadow-black/20"
+                                        "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black text-on-surface transition-all shadow-xl uppercase tracking-widest",
+                                        rem.pagStatus === 'SUCESSO' ? "bg-emerald-600" : "bg-slate-700 hover:bg-slate-600 shadow-sm"
                                       )}
                                     >
                                       <Wallet className="h-3 w-3" /> Pag
@@ -2656,13 +2656,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                             </td>
                           );
                         })}
-                        <td className="p-6 text-center border-r border-white/5">
+                        <td className="p-6 text-center border-r border-outline">
                           <span className="text-[10px] font-black text-emerald-500 block mb-1 uppercase tracking-widest">{correcaoPct}%</span>
-                          <span className="text-sm font-black text-white tracking-tight">
+                          <span className="text-sm font-black text-on-surface tracking-tight">
                             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(correcaoVal)}
                           </span>
                         </td>
-                        <td className="p-6 border-r border-white/5">
+                        <td className="p-6 border-r border-outline">
                           <div className="flex flex-col items-center gap-2">
                             <div className="flex flex-col gap-1 w-full">
                               <button
@@ -2670,7 +2670,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                                   setSelectedPeriodForEvent(pa);
                                   setCurrentView('s1299_view');
                                 }}
-                                className="w-full px-3 py-2 bg-emerald-600 text-[9px] font-black text-white rounded-lg hover:bg-emerald-700 shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-1.5 uppercase tracking-widest"
+                                className="w-full px-3 py-2 bg-emerald-600 text-[9px] font-black text-on-surface rounded-lg hover:bg-emerald-700 shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-1.5 uppercase tracking-widest"
                               >
                                 <Lock className="h-3 w-3" /> Fechar Folha (1299)
                               </button>
@@ -2679,29 +2679,29 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                                   setSelectedPeriodForEvent(pa);
                                   setCurrentView('s1298_view');
                                 }}
-                                className="w-full px-3 py-2 bg-slate-700 text-[9px] font-black text-white rounded-lg hover:bg-slate-600 shadow-lg shadow-black/10 flex items-center justify-center gap-1.5 uppercase tracking-widest"
+                                className="w-full px-3 py-2 bg-slate-700 text-[9px] font-black text-on-surface rounded-lg hover:bg-slate-600 shadow-lg shadow-black/10 flex items-center justify-center gap-1.5 uppercase tracking-widest"
                               >
                                 <Unlock className="h-3 w-3" /> Reabrir Folha (1298)
                               </button>
                             </div>
                             <div className="flex items-center gap-2 w-full">
-                              <button className="p-2 bg-white/5 text-slate-400 rounded-lg hover:text-white border border-white/10 transition-colors">
+                              <button className="p-2 bg-surface-container-low text-on-surface-variant rounded-lg hover:text-on-surface border border-outline transition-colors">
                                 <Copy className="h-3.5 w-3.5" />
                               </button>
-                              <button className="flex-1 px-3 py-2 bg-red-500 text-[9px] font-black text-white rounded-lg hover:bg-red-600 shadow-lg shadow-red-500/10 uppercase tracking-widest">
+                              <button className="flex-1 px-3 py-2 bg-red-500 text-[9px] font-black text-on-surface rounded-lg hover:bg-red-600 shadow-lg shadow-red-500/10 uppercase tracking-widest">
                                 NF / RPA
                               </button>
                             </div>
                           </div>
                         </td>
-                        <td className="p-6 text-center border-r border-white/5 min-w-[140px]">
-                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">RMT: <span className="text-white">R$ 0,00</span></p>
-                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Porc.: <span className="text-white">0,00 %</span></p>
+                        <td className="p-6 text-center border-r border-outline min-w-[140px]">
+                          <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-1">RMT: <span className="text-on-surface">R$ 0,00</span></p>
+                          <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Porc.: <span className="text-on-surface">0,00 %</span></p>
                         </td>
                         <td className="p-6 text-center">
                           <div className="flex justify-center">
                             <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center cursor-pointer shadow-lg shadow-emerald-500/20 hover:scale-110 transition-transform">
-                              <Check className="h-4 w-4 text-white" />
+                              <Check className="h-4 w-4 text-on-surface" />
                             </div>
                           </div>
                         </td>
@@ -2710,7 +2710,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   })
                 ) : (
                   <tr>
-                    <td colSpan={workers.length + 5} className="p-16 text-center text-slate-600 font-black uppercase tracking-widest text-xs italic bg-white/2">
+                    <td colSpan={workers.length + 5} className="p-16 text-center text-on-surface-variant font-black uppercase tracking-widest text-xs italic bg-white/2">
                       Adicione remunerações aos trabalhadores para gerar os períodos de apuração.
                     </td>
                   </tr>
@@ -2730,50 +2730,50 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       {/* S-1298 Event View */}
       {currentView === 's1298_view' && selectedPeriodForEvent && (
-        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+        <div className="bg-surface rounded-2xl shadow-2xl border border-outline overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
             <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter">
+              <h2 className="text-xl font-black text-on-surface uppercase tracking-tighter">
                 Transmitir eventos para o eSocial
               </h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Confirme se as informações estão corretas antes de transmitir!</p>
+              <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mt-1">Confirme se as informações estão corretas antes de transmitir!</p>
             </div>
             <button
               onClick={() => { setSelectedPeriodForEvent(null); setCurrentView('management'); }}
-              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-on-surface rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <h3 className="text-lg font-black text-white mb-6 uppercase tracking-tight flex items-center gap-2">
+            <h3 className="text-lg font-black text-on-surface mb-6 uppercase tracking-tight flex items-center gap-2">
               <RefreshCw className="h-5 w-5 text-emerald-500" />
               Evento S-1298 – Reabertura dos Eventos Periódicos
             </h3>
 
-            <div className="border border-white/5 rounded-2xl overflow-hidden mb-8 shadow-inner bg-white/[0.02]">
+            <div className="border border-outline rounded-2xl overflow-hidden mb-8 shadow-inner bg-white/[0.02]">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-white/5">
-                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
-                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
+                  <tr className="border-b border-outline">
+                    <td className="w-1/3 p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Procurador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
-                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Empregador:</td>
+                    <td className="p-4 text-on-surface font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
-                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CPF Empregador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Evento:</td>
                     <td className="p-4 text-primary font-black">1298</td>
                   </tr>
                   <tr>
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período:</td>
-                    <td className="p-4 text-white font-black font-mono">{selectedPeriodForEvent.split('-')[1]}-{selectedPeriodForEvent.split('-')[0]}</td>
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Período:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{selectedPeriodForEvent.split('-')[1]}-{selectedPeriodForEvent.split('-')[0]}</td>
                   </tr>
                 </tbody>
               </table>
@@ -2786,7 +2786,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <div className="space-y-6">
                   <button
                     onClick={handleTransmitS1298}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-on-surface shadow-emerald-500/20"
                   >
                     <Send className="h-6 w-6" />
                     {periodStatuses[selectedPeriodForEvent]?.s1298Status === 'SUCESSO' ? 'REABRIR NOVAMENTE' : 'Transmitir Reabertura / Consultar'}
@@ -2802,47 +2802,47 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       {/* S-1299 Event View */}
       {currentView === 's1299_view' && selectedPeriodForEvent && (
-        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+        <div className="bg-surface rounded-2xl shadow-2xl border border-outline overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
             <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter">
+              <h2 className="text-xl font-black text-on-surface uppercase tracking-tighter">
                 Evento S-1299 – Fechamento dos Eventos Periódicos
               </h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 italic">
+              <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mt-1 italic">
                 Encerramento da folha para geração da DCTFWeb
               </p>
             </div>
             <button
               onClick={() => { setSelectedPeriodForEvent(null); setCurrentView('management'); }}
-              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-on-surface rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <div className="border border-white/5 rounded-2xl overflow-hidden mb-8 shadow-inner bg-white/[0.02]">
+            <div className="border border-outline rounded-2xl overflow-hidden mb-8 shadow-inner bg-white/[0.02]">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-white/5">
-                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
-                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
+                  <tr className="border-b border-outline">
+                    <td className="w-1/3 p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Procurador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
-                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Empregador:</td>
+                    <td className="p-4 text-on-surface font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
-                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CPF Empregador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Evento:</td>
                     <td className="p-4 text-primary font-black">1299</td>
                   </tr>
                   <tr>
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período:</td>
-                    <td className="p-4 text-white font-black font-mono">{selectedPeriodForEvent.split('-')[1]}-{selectedPeriodForEvent.split('-')[0]}</td>
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Período:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{selectedPeriodForEvent.split('-')[1]}-{selectedPeriodForEvent.split('-')[0]}</td>
                   </tr>
                 </tbody>
               </table>
@@ -2855,7 +2855,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <div className="space-y-6">
                   <button
                     onClick={handleTransmitS1299}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-on-surface shadow-emerald-500/20"
                   >
                     <Send className="h-6 w-6" />
                     {periodStatuses[selectedPeriodForEvent]?.s1299Status === 'SUCESSO' ? 'REENVIAR FECHAMENTO' : 'Transmitir Fechamento / Consultar'}
@@ -2869,13 +2869,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
         </div>
       )}
       {currentView === 's1210_view' && selectedWorker && selectedRemForEvent && (
-        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+        <div className="bg-surface rounded-2xl shadow-2xl border border-outline overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
             <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter">
+              <h2 className="text-xl font-black text-on-surface uppercase tracking-tighter">
                 Evento S-1210 – Pagamentos de Rendimentos do Trabalho
               </h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 italic">
+              <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mt-1 italic">
                 Data Estimada do Pagamento: {new Date(selectedRemForEvent.year, selectedRemForEvent.month, 5).toLocaleDateString('pt-BR')}
               </p>
             </div>
@@ -2885,61 +2885,61 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 setSelectedRemForEvent(null);
                 setCurrentView('management');
               }}
-              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-on-surface rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02]">
+            <div className="border border-outline rounded-2xl overflow-hidden shadow-inner bg-white/[0.02]">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-white/5">
-                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
-                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
+                  <tr className="border-b border-outline">
+                    <td className="w-1/3 p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Procurador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
-                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Empregador:</td>
+                    <td className="p-4 text-on-surface font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
-                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CPF Empregador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período Apuração:</td>
-                    <td className="p-4 text-white font-black font-mono">{selectedRemForEvent.year}-{String(selectedRemForEvent.month).padStart(2, '0')}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Período Apuração:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{selectedRemForEvent.year}-{String(selectedRemForEvent.month).padStart(2, '0')}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Beneficiário:</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Beneficiário:</td>
                     <td className="p-4 text-primary font-black uppercase tracking-tight">{selectedWorker.nome}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Beneficiário:</td>
-                    <td className="p-4 text-white font-black font-mono">{selectedWorker.cpf}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CPF Beneficiário:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{selectedWorker.cpf}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Data Pagto:</td>
-                    <td className="p-4 text-white font-black">{new Date(selectedRemForEvent.year, selectedRemForEvent.month, 5).toLocaleDateString('pt-BR')}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Data Pagto:</td>
+                    <td className="p-4 text-on-surface font-black">{new Date(selectedRemForEvent.year, selectedRemForEvent.month, 5).toLocaleDateString('pt-BR')}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Tipo Pagto:</td>
-                    <td className="p-4 text-white font-medium">1 - Pagamento de rendimentos do trabalho</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Tipo Pagto:</td>
+                    <td className="p-4 text-on-surface font-medium">1 - Pagamento de rendimentos do trabalho</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Valor Líquido:</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Valor Líquido:</td>
                     <td className="p-4 text-emerald-500 font-black text-2xl tracking-tighter">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedRemForEvent.value)}
                     </td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Evento:</td>
                     <td className="p-4 text-primary font-black">1210</td>
                   </tr>
                   <tr>
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Transmissão:</td>
-                    <td className="p-4 text-slate-400 font-bold font-mono">{new Date().toLocaleDateString('pt-BR')}</td>
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Transmissão:</td>
+                    <td className="p-4 text-on-surface-variant font-bold font-mono">{new Date().toLocaleDateString('pt-BR')}</td>
                   </tr>
                 </tbody>
               </table>
@@ -2952,7 +2952,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <div className="space-y-6">
                   <button
                     onClick={handleTransmitS1210}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-on-surface shadow-emerald-500/20"
                   >
                     <Send className="h-6 w-6" />
                     {selectedRemForEvent.pagStatus === 'SUCESSO' ? 'REENVIAR PAGAMENTO' : 'Transmitir Evento S-1210'}
@@ -2968,13 +2968,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       {/* S-1200 Event View */}
       {currentView === 's1200_view' && selectedWorker && selectedRemForEvent && (
-        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+        <div className="bg-surface rounded-2xl shadow-2xl border border-outline overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
             <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter">
+              <h2 className="text-xl font-black text-on-surface uppercase tracking-tighter">
                 Evento S-1200 – Remuneração de Trabalhador
               </h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+              <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mt-1">
                 Período de Apuração: <span className="text-primary font-black">{selectedRemForEvent.month}/{selectedRemForEvent.year}</span>
               </p>
             </div>
@@ -2984,61 +2984,61 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 setSelectedRemForEvent(null);
                 setCurrentView('management');
               }}
-              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-on-surface rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02]">
+            <div className="border border-outline rounded-2xl overflow-hidden shadow-inner bg-white/[0.02]">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-white/5">
-                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
-                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
+                  <tr className="border-b border-outline">
+                    <td className="w-1/3 p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Procurador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
-                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Empregador:</td>
+                    <td className="p-4 text-on-surface font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
-                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CPF Empregador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período Apuração:</td>
-                    <td className="p-4 text-white font-black font-mono">{selectedRemForEvent.year}-{String(selectedRemForEvent.month).padStart(2, '0')}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Período Apuração:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{selectedRemForEvent.year}-{String(selectedRemForEvent.month).padStart(2, '0')}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Trabalhador:</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Trabalhador:</td>
                     <td className="p-4 text-primary font-black uppercase tracking-tight">{selectedWorker.nome}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Trabalhador:</td>
-                    <td className="p-4 text-white font-black font-mono">{selectedWorker.cpf}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CPF Trabalhador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{selectedWorker.cpf}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Matrícula:</td>
-                    <td className="p-4 text-white font-black font-mono">{selectedWorker.matricula_esocial}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Matrícula:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{selectedWorker.matricula_esocial}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Categoria:</td>
-                    <td className="p-4 text-white font-bold">{selectedWorker.categoria}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Categoria:</td>
+                    <td className="p-4 text-on-surface font-bold">{selectedWorker.categoria}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Remuneração:</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Remuneração:</td>
                     <td className="p-4 text-emerald-500 font-black text-2xl tracking-tighter">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedRemForEvent.value)}
                     </td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Evento:</td>
                     <td className="p-4 text-primary font-black">1200</td>
                   </tr>
                   <tr>
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Transmissão:</td>
-                    <td className="p-4 text-slate-400 font-bold font-mono">{new Date().toLocaleDateString('pt-BR')}</td>
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Transmissão:</td>
+                    <td className="p-4 text-on-surface-variant font-bold font-mono">{new Date().toLocaleDateString('pt-BR')}</td>
                   </tr>
                 </tbody>
               </table>
@@ -3051,7 +3051,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <div className="space-y-6">
                   <button
                     onClick={handleTransmitS1200}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-on-surface shadow-emerald-500/20"
                   >
                     <Send className="h-6 w-6" />
                     {selectedRemForEvent.remStatus === 'SUCESSO' ? 'REENVIAR REMUNERAÇÃO' : 'Transmitir Evento S-1200'}
@@ -3063,15 +3063,15 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
               <div className="flex flex-col items-center gap-6 mt-8">
                 <div className="flex items-center gap-4 w-full">
-                  <div className="h-px flex-1 bg-white/5"></div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
-                  <div className="h-px flex-1 bg-white/5"></div>
+                  <div className="h-px flex-1 bg-surface-container-low"></div>
+                  <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-[3px]">Ações Auxiliares</p>
+                  <div className="h-px flex-1 bg-surface-container-low"></div>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center gap-4">
                   <button
                     onClick={() => handleMarkAsDone('S-1200')}
-                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
+                    className="px-6 py-2.5 bg-surface-container-low border border-outline rounded-xl text-[10px] font-black text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all uppercase tracking-widest"
                   >
                     Já foi feito!
                   </button>
@@ -3083,9 +3083,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       )}
 
       {currentView === 's2300_view' && selectedWorker && (
-        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
-            <h2 className="text-xl font-black text-white uppercase tracking-tighter">
+        <div className="bg-surface rounded-2xl shadow-2xl border border-outline overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
+            <h2 className="text-xl font-black text-on-surface uppercase tracking-tighter">
               Evento S-2300 – Início do Trabalhador Sem Vínculo
             </h2>
             <button
@@ -3094,67 +3094,67 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 setSelectedWorker(null);
                 setCurrentView('management');
               }}
-              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-on-surface rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02]">
+            <div className="border border-outline rounded-2xl overflow-hidden shadow-inner bg-white/[0.02]">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-white/5">
-                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
-                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
+                  <tr className="border-b border-outline">
+                    <td className="w-1/3 p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Procurador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">CPF/CNPJ: {certificateCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
-                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Empregador:</td>
+                    <td className="p-4 text-on-surface font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
-                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CPF Empregador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Trabalhador:</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Trabalhador:</td>
                     <td className="p-4 text-primary font-black uppercase tracking-tight">{selectedWorker.nome}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Trabalhador:</td>
-                    <td className="p-4 text-white font-black font-mono">{selectedWorker.cpf}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CPF Trabalhador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{selectedWorker.cpf}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Matrícula:</td>
-                    <td className="p-4 text-white font-black font-mono">{selectedWorker.matricula_esocial}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Matrícula:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{selectedWorker.matricula_esocial}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CEP:</td>
-                    <td className="p-4 text-white font-black font-mono">{selectedWorker.cep}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CEP:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{selectedWorker.cep}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Nascimento:</td>
-                    <td className="p-4 text-white font-black">{selectedWorker.nascimento}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Nascimento:</td>
+                    <td className="p-4 text-on-surface font-black">{selectedWorker.nascimento}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Escolaridade:</td>
-                    <td className="p-4 text-white font-bold">{selectedWorker.escolaridade}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Escolaridade:</td>
+                    <td className="p-4 text-on-surface font-bold">{selectedWorker.escolaridade}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Cargo:</td>
-                    <td className="p-4 text-white font-black uppercase">{selectedWorker.cargo_nome}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Cargo:</td>
+                    <td className="p-4 text-on-surface font-black uppercase">{selectedWorker.cargo_nome}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CBO Cargo:</td>
-                    <td className="p-4 text-white font-black font-mono">{selectedWorker.cbo_cargo}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CBO Cargo:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{selectedWorker.cbo_cargo}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Categoria:</td>
-                    <td className="p-4 text-white font-black font-mono">{selectedWorker.categoria}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Categoria:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{selectedWorker.categoria}</td>
                   </tr>
                   <tr>
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Data Evento:</td>
-                    <td className="p-4 text-slate-400 font-bold font-mono">{new Date().toISOString().split('T')[0]}</td>
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Data Evento:</td>
+                    <td className="p-4 text-on-surface-variant font-bold font-mono">{new Date().toISOString().split('T')[0]}</td>
                   </tr>
                 </tbody>
               </table>
@@ -3169,9 +3169,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     onClick={handleTransmitESocial}
                     className={cn(
                       "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                      selectedWorker.esocial_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20" :
-                        selectedWorker.esocial_status === 'ERRO' ? "bg-red-600 hover:bg-red-700 text-white shadow-red-500/20" :
-                          "bg-primary hover:bg-blue-700 text-white shadow-blue-500/20"
+                      selectedWorker.esocial_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700 text-on-surface shadow-emerald-500/20" :
+                        selectedWorker.esocial_status === 'ERRO' ? "bg-red-600 hover:bg-red-700 text-on-surface shadow-red-500/20" :
+                          "bg-primary hover:bg-blue-700 text-on-surface shadow-blue-500/20"
                     )}
                   >
                     <Send className="h-6 w-6" />
@@ -3198,15 +3198,15 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
               <div className="flex flex-col items-center gap-6 mt-8">
                 <div className="flex items-center gap-4 w-full">
-                  <div className="h-px flex-1 bg-white/5"></div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
-                  <div className="h-px flex-1 bg-white/5"></div>
+                  <div className="h-px flex-1 bg-surface-container-low"></div>
+                  <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-[3px]">Ações Auxiliares</p>
+                  <div className="h-px flex-1 bg-surface-container-low"></div>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center gap-4">
                   <button
                     onClick={() => handleMarkAsDone('S-2300', selectedWorker.cpf)}
-                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
+                    className="px-6 py-2.5 bg-surface-container-low border border-outline rounded-xl text-[10px] font-black text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all uppercase tracking-widest"
                   >
                     Já foi feito!
                   </button>
@@ -3219,13 +3219,13 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       {/* S-2399 Event View */}
       {currentView === 's2399_view' && selectedWorker && (
-        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+        <div className="bg-surface rounded-2xl shadow-2xl border border-outline overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
             <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter">
+              <h2 className="text-xl font-black text-on-surface uppercase tracking-tighter">
                 Evento S-2399 – Término do Trabalhador Sem Vínculo
               </h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+              <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mt-1">
                 Finalização de prestação de serviço
               </p>
             </div>
@@ -3235,36 +3235,36 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 setSelectedWorker(null);
                 setCurrentView('management');
               }}
-              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-on-surface rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02]">
+            <div className="border border-outline rounded-2xl overflow-hidden shadow-inner bg-white/[0.02]">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-white/5">
-                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Trabalhador:</td>
+                  <tr className="border-b border-outline">
+                    <td className="w-1/3 p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Trabalhador:</td>
                     <td className="p-4 text-primary font-black uppercase tracking-tight">{selectedWorker.nome}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Trabalhador:</td>
-                    <td className="p-4 text-white font-black font-mono">{selectedWorker.cpf}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CPF Trabalhador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{selectedWorker.cpf}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Matrícula:</td>
-                    <td className="p-4 text-white font-black font-mono">{selectedWorker.matricula_esocial}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Matrícula:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{selectedWorker.matricula_esocial}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Data de Término (Hoje):</td>
-                    <td className="p-4 text-white font-black font-mono">
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Data de Término (Hoje):</td>
+                    <td className="p-4 text-on-surface font-black font-mono">
                       {new Date().toLocaleDateString('pt-BR')}
                     </td>
                   </tr>
                   <tr>
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Evento:</td>
                     <td className="p-4 text-primary font-black">2399</td>
                   </tr>
                 </tbody>
@@ -3280,9 +3280,9 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     onClick={handleTransmitS2399}
                     className={cn(
                       "w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter",
-                      selectedWorker.s2399_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20" :
-                        selectedWorker.s2399_status === 'ERRO' ? "bg-red-600 hover:bg-red-700 text-white shadow-red-500/20" :
-                          "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                      selectedWorker.s2399_status === 'SUCESSO' ? "bg-emerald-600 hover:bg-emerald-700 text-on-surface shadow-emerald-500/20" :
+                        selectedWorker.s2399_status === 'ERRO' ? "bg-red-600 hover:bg-red-700 text-on-surface shadow-red-500/20" :
+                          "bg-emerald-600 hover:bg-emerald-700 text-on-surface shadow-emerald-500/20"
                     )}
                   >
                     <Send className="h-6 w-6" />
@@ -3302,15 +3302,15 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
               <div className="flex flex-col items-center gap-6 mt-8">
                 <div className="flex items-center gap-4 w-full">
-                  <div className="h-px flex-1 bg-white/5"></div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
-                  <div className="h-px flex-1 bg-white/5"></div>
+                  <div className="h-px flex-1 bg-surface-container-low"></div>
+                  <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-[3px]">Ações Auxiliares</p>
+                  <div className="h-px flex-1 bg-surface-container-low"></div>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center gap-4">
                   <button
                     onClick={() => handleMarkAsDone('S-2399', selectedWorker.cpf)}
-                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
+                    className="px-6 py-2.5 bg-surface-container-low border border-outline rounded-xl text-[10px] font-black text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all uppercase tracking-widest"
                   >
                     Já foi feito!
                   </button>
@@ -3324,53 +3324,53 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       {/* New Worker Form View - DARK */}
       {currentView === 'worker_form' && (
-        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
-            <h2 className="text-xl font-black text-white uppercase tracking-tighter">
+        <div className="bg-surface rounded-2xl shadow-2xl border border-outline overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+          <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
+            <h2 className="text-xl font-black text-on-surface uppercase tracking-tighter">
               {editingWorkerId ? 'Editar Trabalhador' : 'Novo Trabalhador'} — Obra #{projectId.substring(0, 4)}
             </h2>
-            <button onClick={() => { resetWorkerForm(); setCurrentView('management'); }} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-              <X className="h-5 w-5 text-slate-400 hover:text-white" />
+            <button onClick={() => { resetWorkerForm(); setCurrentView('management'); }} className="p-2 hover:bg-surface-container-high rounded-full transition-colors">
+              <X className="h-5 w-5 text-on-surface-variant hover:text-on-surface" />
             </button>
           </div>
 
           <div className="p-8 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">CPF</label>
-                <input type="text" value={workerCpf} onChange={e => setWorkerCpf(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" placeholder="000.000.000-00" />
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">CPF</label>
+                <input type="text" value={workerCpf} onChange={e => setWorkerCpf(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner" placeholder="000.000.000-00" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Nome Completo</label>
-                <input type="text" value={workerNome} onChange={e => setWorkerNome(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner uppercase" placeholder="Nome do Trabalhador" />
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Nome Completo</label>
+                <input type="text" value={workerNome} onChange={e => setWorkerNome(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner uppercase" placeholder="Nome do Trabalhador" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nome do cargo</label>
-                <input type="text" value={workerCargo} onChange={e => setWorkerCargo(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Nome do cargo</label>
+                <input type="text" value={workerCargo} onChange={e => setWorkerCargo(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">CBO Cargo IBGE (pedreiro = 715210)</label>
-                <input type="text" value={workerCbo} onChange={e => setWorkerCbo(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">CBO Cargo IBGE (pedreiro = 715210)</label>
+                <input type="text" value={workerCbo} onChange={e => setWorkerCbo(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Matricula (eSocial)</label>
-                <input type="text" value={workerMatricula} onChange={e => setWorkerMatricula(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Matricula (eSocial)</label>
+                <input type="text" value={workerMatricula} onChange={e => setWorkerMatricula(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">CEP (apenas números)</label>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">CEP (apenas números)</label>
                 <div className="relative">
                   <input
                     type="text"
                     value={workerCep}
                     onChange={e => setWorkerCep(e.target.value.replace(/\D/g, '').substring(0, 8))}
                     placeholder="00000000"
-                    className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none pr-10"
+                    className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none pr-10"
                   />
                   {isFetchingCep && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -3380,66 +3380,66 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 </div>
               </div>
               <div className="md:col-span-3 space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Logradouro</label>
-                <input type="text" value={workerLogradouro} onChange={e => setWorkerLogradouro(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Logradouro</label>
+                <input type="text" value={workerLogradouro} onChange={e => setWorkerLogradouro(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nº</label>
-                <input type="text" value={workerNumero} onChange={e => setWorkerNumero(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Nº</label>
+                <input type="text" value={workerNumero} onChange={e => setWorkerNumero(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Complemento</label>
-                <input type="text" value={workerComplemento} onChange={e => setWorkerComplemento(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Complemento</label>
+                <input type="text" value={workerComplemento} onChange={e => setWorkerComplemento(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="md:col-span-1 space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Bairro</label>
-                <input type="text" value={workerBairro} onChange={e => setWorkerBairro(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Bairro</label>
+                <input type="text" value={workerBairro} onChange={e => setWorkerBairro(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">UF</label>
-                <input type="text" value={workerUf} onChange={e => setWorkerUf(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">UF</label>
+                <input type="text" value={workerUf} onChange={e => setWorkerUf(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cod IBGE</label>
-                <input type="text" value={workerCodIbge} onChange={e => setWorkerCodIbge(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Cod IBGE</label>
+                <input type="text" value={workerCodIbge} onChange={e => setWorkerCodIbge(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cidade</label>
-                <input type="text" value={workerCidade} onChange={e => setWorkerCidade(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Cidade</label>
+                <input type="text" value={workerCidade} onChange={e => setWorkerCidade(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nascimento</label>
-                <input type="date" value={workerNascimento} onChange={e => setWorkerNascimento(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Nascimento</label>
+                <input type="date" value={workerNascimento} onChange={e => setWorkerNascimento(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sexo</label>
-                <select value={workerSexo} onChange={e => setWorkerSexo(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none">
-                  <option value="" className="bg-[#1C232E]">--</option>
-                  <option value="M" className="bg-[#1C232E]">Masculino</option>
-                  <option value="F" className="bg-[#1C232E]">Feminino</option>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Sexo</label>
+                <select value={workerSexo} onChange={e => setWorkerSexo(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none">
+                  <option value="" className="bg-surface">--</option>
+                  <option value="M" className="bg-surface">Masculino</option>
+                  <option value="F" className="bg-surface">Feminino</option>
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Escolaridade</label>
-                <select value={workerEscolaridade} onChange={e => setWorkerEscolaridade(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none">
-                  <option value="" className="bg-[#1C232E]">--</option>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Escolaridade</label>
+                <select value={workerEscolaridade} onChange={e => setWorkerEscolaridade(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none">
+                  <option value="" className="bg-surface">--</option>
                   {ESCOLARIDADE_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value} className="bg-[#1C232E]">{opt.label}</option>
+                    <option key={opt.value} value={opt.value} className="bg-surface">{opt.label}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cor da Pele</label>
-                <select value={workerCorPele} onChange={e => setWorkerCorPele(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none">
-                  <option value="" className="bg-[#1C232E]">--</option>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Cor da Pele</label>
+                <select value={workerCorPele} onChange={e => setWorkerCorPele(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none">
+                  <option value="" className="bg-surface">--</option>
                   {COR_PELE_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value} className="bg-[#1C232E]">{opt.label}</option>
+                    <option key={opt.value} value={opt.value} className="bg-surface">{opt.label}</option>
                   ))}
                 </select>
               </div>
@@ -3447,42 +3447,42 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
             <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">País nascimento (Brasil = 105)</label>
-                <input type="text" value={workerPaisNascimento} onChange={e => setWorkerPaisNascimento(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">País nascimento (Brasil = 105)</label>
+                <input type="text" value={workerPaisNascimento} onChange={e => setWorkerPaisNascimento(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Categoria</label>
-                <select value={workerCategoria} onChange={e => setWorkerCategoria(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none">
-                  <option value="" className="bg-[#1C232E]">--</option>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Categoria</label>
+                <select value={workerCategoria} onChange={e => setWorkerCategoria(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none">
+                  <option value="" className="bg-surface">--</option>
                   {CATEGORIA_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value} className="bg-[#1C232E]">{opt.label}</option>
+                    <option key={opt.value} value={opt.value} className="bg-surface">{opt.label}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tab. Rúbrica</label>
-                <input type="text" value={workerTabRubrica} onChange={e => setWorkerTabRubrica(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tab. Rúbrica</label>
+                <input type="text" value={workerTabRubrica} onChange={e => setWorkerTabRubrica(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cód. Rúbrica</label>
-                <input type="text" value={workerCodRubrica} onChange={e => setWorkerCodRubrica(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Cód. Rúbrica</label>
+                <input type="text" value={workerCodRubrica} onChange={e => setWorkerCodRubrica(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cód. Lotação</label>
-                <input type="text" value={workerCodLotacao} onChange={e => setWorkerCodLotacao(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Cód. Lotação</label>
+                <input type="text" value={workerCodLotacao} onChange={e => setWorkerCodLotacao(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-md px-3 py-2 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
             </div>
 
             {/* Transmission History - PREMIUM AUDIT VIEW (DARK) */}
-            <div className="bg-[#1C232E] rounded-2xl shadow-xl border border-white/5 overflow-hidden mb-8">
-              <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
+            <div className="bg-surface rounded-2xl shadow-xl border border-outline overflow-hidden mb-8">
+              <div className="p-4 border-b border-outline bg-surface-container-low flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <History className="h-5 w-5 text-primary" />
-                  <h3 className="font-bold text-white uppercase tracking-widest text-xs">Histórico de Transmissões (Auditoria)</h3>
+                  <h3 className="font-bold text-on-surface uppercase tracking-widest text-xs">Histórico de Transmissões (Auditoria)</h3>
                 </div>
                 <button
                   onClick={fetchEventsHistory}
-                  className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-slate-400"
+                  className="p-1.5 hover:bg-surface-container-high rounded-md transition-colors text-on-surface-variant"
                   title="Atualizar Histórico"
                 >
                   <RefreshCw className="h-4 w-4" />
@@ -3491,7 +3491,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-white/5 text-slate-500 border-b border-white/5">
+                    <tr className="bg-surface-container-low text-on-surface-variant border-b border-outline">
                       <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-widest">Evento</th>
                       <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-widest">Identificador</th>
                       <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-widest">Data/Hora</th>
@@ -3504,22 +3504,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                   <tbody>
                     {allEvents && allEvents.length > 0 ? (
                       allEvents.map((event: any) => (
-                        <tr key={event.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                        <tr key={event.id} className="border-b border-outline hover:bg-white/[0.02] transition-colors">
                           <td className="px-4 py-4">
-                            <span className="font-black text-white">{event.tipo_evento}</span>
+                            <span className="font-black text-on-surface">{event.tipo_evento}</span>
                           </td>
-                          <td className="px-4 py-4 text-slate-400 font-mono text-xs">
+                          <td className="px-4 py-4 text-on-surface-variant font-mono text-xs">
                             {event.cpf_trabalhador}
                           </td>
-                          <td className="px-4 py-4 text-slate-500 text-xs">
+                          <td className="px-4 py-4 text-on-surface-variant text-xs">
                             {new Date(event.updated_at).toLocaleString('pt-BR')}
                           </td>
-                          <td className="px-4 py-4 text-slate-500 font-mono text-[10px]">
+                          <td className="px-4 py-4 text-on-surface-variant font-mono text-[10px]">
                             {event.protocolo || '---'}
                           </td>
-                          <td className="px-4 py-4 text-slate-300 font-bold">
+                          <td className="px-4 py-4 text-on-surface-variant font-bold">
                             {event.recibo || (
-                              <span className="text-[10px] text-slate-600 italic font-normal">Aguardando...</span>
+                              <span className="text-[10px] text-on-surface-variant italic font-normal">Aguardando...</span>
                             )}
                           </td>
                           <td className="px-4 py-4 text-center">
@@ -3535,7 +3535,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                           <td className="px-4 py-4 text-center">
                             <button
                               onClick={() => { setSelectedEventDetails(event); setIsEventModalOpen(true); }}
-                              className="p-2 hover:bg-white/10 rounded-lg transition-colors text-blue-400"
+                              className="p-2 hover:bg-surface-container-high rounded-lg transition-colors text-blue-400"
                               title="Ver Logs Detalhados"
                             >
                               <Terminal className="h-4 w-4" />
@@ -3545,7 +3545,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} className="px-4 py-12 text-center text-slate-600 italic text-xs">
+                        <td colSpan={6} className="px-4 py-12 text-center text-on-surface-variant italic text-xs">
                           Nenhum evento transmitido até o momento.
                         </td>
                       </tr>
@@ -3555,17 +3555,17 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-6 border-t border-white/5 bg-white/5 p-6 -mx-8 -mb-8">
+            <div className="flex justify-end gap-3 pt-6 border-t border-outline bg-surface-container-low p-6 -mx-8 -mb-8">
               <button
                 onClick={() => { resetWorkerForm(); setCurrentView('management'); }}
-                className="px-6 py-2.5 bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-600 transition-all shadow-lg"
+                className="px-6 py-2.5 bg-slate-700 text-on-surface text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-600 transition-all shadow-lg"
               >
                 Voltar para obra
               </button>
               <button
                 onClick={handleSaveWorker}
                 disabled={isSaving}
-                className="px-10 py-2.5 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all shadow-xl shadow-primary/20 disabled:opacity-50"
+                className="px-10 py-2.5 bg-primary text-on-surface text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all shadow-xl shadow-primary/20 disabled:opacity-50"
               >
                 {isSaving ? (
                   <div className="flex items-center gap-2">
@@ -3581,14 +3581,14 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       {/* Edit Client Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#1C232E] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-white/10">
+          <div className="bg-surface w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-outline">
             {/* Modal Header */}
-            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
-              <div className="flex items-center gap-2 text-white font-black uppercase tracking-widest text-xs">
+            <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
+              <div className="flex items-center gap-2 text-on-surface font-black uppercase tracking-widest text-xs">
                 <Edit2 className="h-4 w-4 text-primary" />
                 <span>Editar Cliente</span>
               </div>
-              <button onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400">
+              <button onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-surface-container-high rounded-full transition-colors text-on-surface-variant">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -3596,35 +3596,35 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             {/* Modal Body */}
             <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Nome</label>
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Nome</label>
                 <div className="relative">
-                  <input type="text" value={client} onChange={e => setClient(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                  <input type="text" value={client} onChange={e => setClient(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner" />
                   <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Fone</label>
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Fone</label>
                 <div className="relative">
-                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner" />
                   <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Parceiro</label>
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Parceiro</label>
                 <div className="relative">
-                  <select value={parceiro} onChange={e => setParceiro(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
-                    <option value="- nenhum -" className="bg-[#1C232E]">- nenhum -</option>
-                    <option value="Parceiro 1" className="bg-[#1C232E]">Parceiro 1</option>
-                    <option value="Parceiro 2" className="bg-[#1C232E]">Parceiro 2</option>
+                  <select value={parceiro} onChange={e => setParceiro(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    <option value="- nenhum -" className="bg-surface">- nenhum -</option>
+                    <option value="Parceiro 1" className="bg-surface">Parceiro 1</option>
+                    <option value="Parceiro 2" className="bg-surface">Parceiro 2</option>
                   </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant pointer-events-none" />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">CPF / CNPJ <span className="text-red-500">*</span></label>
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">CPF / CNPJ <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <input
                     type="text"
@@ -3632,8 +3632,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     onChange={e => setCpfCnpj(e.target.value)}
                     placeholder="Obrigatório"
                     className={cn(
-                      "w-full bg-white/5 border rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner",
-                      !cpfCnpj ? "border-red-500/30" : "border-white/10"
+                      "w-full bg-surface-container-low border rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner",
+                      !cpfCnpj ? "border-red-500/30" : "border-outline"
                     )}
                   />
                   {cpfCnpj && (
@@ -3648,41 +3648,41 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">link</label>
-                <input type="text" value={link} onChange={e => setLink(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">link</label>
+                <input type="text" value={link} onChange={e => setLink(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">cod</label>
-                <input type="text" value={cod} onChange={e => setCod(e.target.value)} autoComplete="off" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">cod</label>
+                <input type="text" value={cod} onChange={e => setCod(e.target.value)} autoComplete="off" className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">senha</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" title="Senha" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">senha</label>
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" title="Senha" className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">obs</label>
-                <textarea value={observations} onChange={e => setObservations(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner min-h-[80px]" />
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">obs</label>
+                <textarea value={observations} onChange={e => setObservations(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner min-h-[80px]" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">MAED</label>
-                  <input type="date" value={maedDate} onChange={e => setMaedDate(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                  <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">MAED</label>
+                  <input type="date" value={maedDate} onChange={e => setMaedDate(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Parcelar</label>
-                  <input type="date" value={parcelarDate} onChange={e => setParcelarDate(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                  <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Parcelar</label>
+                  <input type="date" value={parcelarDate} onChange={e => setParcelarDate(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner" />
                 </div>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 bg-white/5 border-t border-white/5 flex justify-end gap-3">
-              <button onClick={() => setIsEditModalOpen(false)} className="px-6 py-2.5 bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Fechar</button>
-              <button onClick={handleSave} disabled={isSaving} className="px-6 py-2.5 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all shadow-lg shadow-primary/20 disabled:opacity-50">
+            <div className="p-6 bg-surface-container-low border-t border-outline flex justify-end gap-3">
+              <button onClick={() => setIsEditModalOpen(false)} className="px-6 py-2.5 bg-slate-700 text-on-surface text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Fechar</button>
+              <button onClick={handleSave} disabled={isSaving} className="px-6 py-2.5 bg-primary text-on-surface text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all shadow-lg shadow-primary/20 disabled:opacity-50">
                 {isSaving ? 'Salvando...' : 'Salvar Alterações'}
               </button>
             </div>
@@ -3693,14 +3693,14 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       {/* Work Modal (Simple for Create, Detailed for Edit) */}
       {isWorkModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#1C232E] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-white/10">
+          <div className="bg-surface w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-outline">
             {/* Modal Header */}
-            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
-              <div className="flex items-center gap-2 text-white font-black uppercase tracking-widest text-xs">
+            <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
+              <div className="flex items-center gap-2 text-on-surface font-black uppercase tracking-widest text-xs">
                 <Building2 className="h-4 w-4 text-primary" />
                 <span>Dados da Obra (eSocial)</span>
               </div>
-              <button onClick={() => setIsWorkModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400">
+              <button onClick={() => setIsWorkModalOpen(false)} className="p-2 hover:bg-surface-container-high rounded-full transition-colors text-on-surface-variant">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -3708,32 +3708,32 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             {/* Modal Body */}
             <div className="p-8 space-y-6 max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Nome da obra</label>
-                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="CASA / COMERCIO / GALPÃO" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner uppercase" />
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Nome da obra</label>
+                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="CASA / COMERCIO / GALPÃO" className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner uppercase" />
               </div>
 
               {workModalMode === 'detailed' && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Nome proprietário</label>
-                    <input type="text" value={proprietarioNome} onChange={e => setProprietarioNome(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner uppercase" />
+                    <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Nome proprietário</label>
+                    <input type="text" value={proprietarioNome} onChange={e => setProprietarioNome(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner uppercase" />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">CPF / CNPJ do Proprietário</label>
-                    <input type="text" value={proprietarioCpfCnpj} onChange={e => setProprietarioCpfCnpj(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner font-mono" />
+                    <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">CPF / CNPJ do Proprietário</label>
+                    <input type="text" value={proprietarioCpfCnpj} onChange={e => setProprietarioCpfCnpj(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner font-mono" />
                   </div>
                 </>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Área construída</label>
-                  <input type="number" value={areaConstruida || ''} onChange={e => setAreaConstruida(Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                  <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Área construída</label>
+                  <input type="number" value={areaConstruida || ''} onChange={e => setAreaConstruida(Number(e.target.value))} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">CNO</label>
-                  <input type="text" value={cnoNumero} onChange={e => setCnoNumero(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner font-mono" />
+                  <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">CNO</label>
+                  <input type="text" value={cnoNumero} onChange={e => setCnoNumero(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner font-mono" />
                 </div>
               </div>
             </div>
@@ -3745,45 +3745,45 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               {workModalMode === 'detailed' && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">RMT Inicial</label>
-                    <input type="number" value={rmtInicial || ''} onChange={e => setRmtInicial(Number(e.target.value))} placeholder="0,00" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                    <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">RMT Inicial</label>
+                    <input type="number" value={rmtInicial || ''} onChange={e => setRmtInicial(Number(e.target.value))} placeholder="0,00" className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner" />
                   </div>
 
                   <div className="space-y-1">
                     <div className="flex justify-between items-center mb-1">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Requisito (%)</label>
+                      <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Requisito (%)</label>
                       <span className="text-[9px] text-primary font-bold italic">Lei 10/2021 - Verificar no portal SERO</span>
                     </div>
-                    <input type="number" value={requisitoPercent || ''} onChange={e => setRequisitoPercent(Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                    <input type="number" value={requisitoPercent || ''} onChange={e => setRequisitoPercent(Number(e.target.value))} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner" />
                   </div>
                 </>
               )}
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Endereço Completo</label>
-                <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner uppercase" />
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Endereço Completo</label>
+                <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner uppercase" />
               </div>
 
               {workModalMode === 'detailed' && (
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Emitir Documento Mensal?</label>
-                  <select value={emitirDocumento} onChange={e => setEmitirDocumento(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner">
-                    <option value="Não" className="bg-[#1C232E]">Não</option>
-                    <option value="Sim" className="bg-[#1C232E]">Sim</option>
+                  <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Emitir Documento Mensal?</label>
+                  <select value={emitirDocumento} onChange={e => setEmitirDocumento(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner">
+                    <option value="Não" className="bg-surface">Não</option>
+                    <option value="Sim" className="bg-surface">Sim</option>
                   </select>
                 </div>
               )}
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Observações do Projeto</label>
-                <textarea value={observations} onChange={e => setObservations(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner min-h-[80px]" />
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Observações do Projeto</label>
+                <textarea value={observations} onChange={e => setObservations(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner min-h-[80px]" />
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 bg-white/5 border-t border-white/5 flex justify-end gap-3">
-              <button onClick={() => setIsWorkModalOpen(false)} className="px-6 py-2.5 bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
-              <button onClick={handleSave} disabled={isSaving} className="px-6 py-2.5 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all shadow-lg shadow-primary/20 disabled:opacity-50">
+            <div className="p-6 bg-surface-container-low border-t border-outline flex justify-end gap-3">
+              <button onClick={() => setIsWorkModalOpen(false)} className="px-6 py-2.5 bg-slate-700 text-on-surface text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
+              <button onClick={handleSave} disabled={isSaving} className="px-6 py-2.5 bg-primary text-on-surface text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all shadow-lg shadow-primary/20 disabled:opacity-50">
                 {isSaving ? 'Salvando...' : 'Salvar Alterações'}
               </button>
             </div>
@@ -3793,43 +3793,43 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       {/* S-1000 Event View */}
       {currentView === 's1000_view' && inssRegularization && (
-        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+        <div className="bg-surface rounded-2xl shadow-2xl border border-outline overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
+          <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
             <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter">Eventos de Tabela — S-1000</h2>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Informações Iniciais do Empregador/Contribuinte</p>
+              <h2 className="text-xl font-black text-on-surface uppercase tracking-tighter">Eventos de Tabela — S-1000</h2>
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mt-1">Informações Iniciais do Empregador/Contribuinte</p>
             </div>
             <button
               onClick={() => setCurrentView('management')}
-              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-on-surface rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02] mb-8">
+            <div className="border border-outline rounded-2xl overflow-hidden shadow-inner bg-white/[0.02] mb-8">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-white/5">
-                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
-                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
+                  <tr className="border-b border-outline">
+                    <td className="w-1/3 p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Procurador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
-                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Empregador:</td>
+                    <td className="p-4 text-on-surface font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
-                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CPF Empregador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Evento:</td>
                     <td className="p-4 text-primary font-black">1000</td>
                   </tr>
                   <tr>
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período:</td>
-                    <td className="p-4 text-slate-400 font-bold font-mono">{new Date().toISOString().substring(0, 7)}</td>
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Período:</td>
+                    <td className="p-4 text-on-surface-variant font-bold font-mono">{new Date().toISOString().substring(0, 7)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -3842,7 +3842,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <div className="flex flex-col gap-6">
                   <button
                     onClick={handleTransmitS1000}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-on-surface shadow-emerald-500/20"
                   >
                     <Send className="h-6 w-6" />
                     {esocialS1000Status?.status === 'SUCESSO' ? 'REATIVAR / RETIFICAR EMPREGADOR' : 'Transmitir Evento / Consultar'}
@@ -3860,47 +3860,47 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       {/* S-1005 Event View - DARK */}
       {currentView === 's1005_view' && inssRegularization && (
-        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+        <div className="bg-surface rounded-2xl shadow-2xl border border-outline overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
+          <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
             <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter">Evento S-1005 – Tabela de Estabelecimentos</h2>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Informações de Obras de Construção Civil</p>
+              <h2 className="text-xl font-black text-on-surface uppercase tracking-tighter">Evento S-1005 – Tabela de Estabelecimentos</h2>
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mt-1">Informações de Obras de Construção Civil</p>
             </div>
             <button
               onClick={() => setCurrentView('management')}
-              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-on-surface rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
             >
               Voltar para obra
             </button>
           </div>
 
           <div className="p-8">
-            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02] mb-8">
+            <div className="border border-outline rounded-2xl overflow-hidden shadow-inner bg-white/[0.02] mb-8">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-white/5">
-                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
-                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
+                  <tr className="border-b border-outline">
+                    <td className="w-1/3 p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Procurador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
-                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Empregador:</td>
+                    <td className="p-4 text-on-surface font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
-                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CPF Empregador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CNO:</td>
-                    <td className="p-4 text-white font-black font-mono">{cnoNumero}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CNO:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{cnoNumero}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Evento:</td>
                     <td className="p-4 text-primary font-black">1005</td>
                   </tr>
                   <tr>
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período:</td>
-                    <td className="p-4 text-slate-400 font-bold font-mono">{new Date().toISOString().substring(0, 7)}</td>
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Período:</td>
+                    <td className="p-4 text-on-surface-variant font-bold font-mono">{new Date().toISOString().substring(0, 7)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -3913,7 +3913,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <div className="flex flex-col gap-6">
                   <button
                     onClick={handleTransmitS1005}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-on-surface shadow-emerald-500/20"
                   >
                     <Send className="h-6 w-6" />
                     {esocialS1005Status?.status === 'SUCESSO' ? 'RETIFICAR ESTABELECIMENTO' : 'Transmitir Evento / Consultar'}
@@ -3925,15 +3925,15 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
               <div className="flex flex-col items-center gap-6 mt-8">
                 <div className="flex items-center gap-4 w-full">
-                  <div className="h-px flex-1 bg-white/5"></div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Ações Auxiliares</p>
-                  <div className="h-px flex-1 bg-white/5"></div>
+                  <div className="h-px flex-1 bg-surface-container-low"></div>
+                  <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-[3px]">Ações Auxiliares</p>
+                  <div className="h-px flex-1 bg-surface-container-low"></div>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center gap-4">
                   <button
                     onClick={() => handleMarkAsDone('S-1005')}
-                    className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
+                    className="px-6 py-2.5 bg-surface-container-low border border-outline rounded-xl text-[10px] font-black text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all uppercase tracking-widest"
                   >
                     Já foi feito!
                   </button>
@@ -3947,22 +3947,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       {/* S-1020 Event View - DARK */}
       {currentView === 's1020_view' && inssRegularization && (
-        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+        <div className="bg-surface rounded-2xl shadow-2xl border border-outline overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
+          <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
             <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter">Evento S-1020 – Tabela de Lotações</h2>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Classificação das Lotações Tributárias</p>
+              <h2 className="text-xl font-black text-on-surface uppercase tracking-tighter">Evento S-1020 – Tabela de Lotações</h2>
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mt-1">Classificação das Lotações Tributárias</p>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsLotacaoModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-all shadow-lg"
+                className="flex items-center gap-2 px-4 py-1.5 bg-surface-container-low border border-outline text-on-surface rounded-lg text-xs font-black uppercase tracking-widest hover:bg-surface-container-high transition-all shadow-lg"
               >
                 <Settings className="h-3.5 w-3.5" /> Configurar
               </button>
               <button
                 onClick={() => setCurrentView('management')}
-                className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+                className="flex items-center gap-2 px-4 py-1.5 bg-primary text-on-surface rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
               >
                 Voltar para obra
               </button>
@@ -3970,32 +3970,32 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           </div>
 
           <div className="p-8">
-            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02] mb-8">
+            <div className="border border-outline rounded-2xl overflow-hidden shadow-inner bg-white/[0.02] mb-8">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-white/5">
-                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
-                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
+                  <tr className="border-b border-outline">
+                    <td className="w-1/3 p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Procurador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Empregador:</td>
-                    <td className="p-4 text-white font-black uppercase">{proprietarioNome}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Empregador:</td>
+                    <td className="p-4 text-on-surface font-black uppercase">{proprietarioNome}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">CPF Empregador:</td>
-                    <td className="p-4 text-white font-black font-mono">{proprietarioCpfCnpj}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">CPF Empregador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{proprietarioCpfCnpj}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Tipo Lotação:</td>
-                    <td className="p-4 text-white font-bold">{tipoLotacao}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Tipo Lotação:</td>
+                    <td className="p-4 text-on-surface font-bold">{tipoLotacao}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Evento:</td>
                     <td className="p-4 text-primary font-black">1020</td>
                   </tr>
                   <tr>
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período:</td>
-                    <td className="p-4 text-slate-400 font-bold font-mono">{new Date().toISOString().substring(0, 7)}</td>
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Período:</td>
+                    <td className="p-4 text-on-surface-variant font-bold font-mono">{new Date().toISOString().substring(0, 7)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -4008,7 +4008,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <div className="flex flex-col gap-6">
                   <button
                     onClick={handleTransmitS1020}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-on-surface shadow-emerald-500/20"
                   >
                     <Send className="h-6 w-6" />
                     {esocialS1020Status?.status === 'SUCESSO' ? 'RETIFICAR LOTAÇÃO' : 'Transmitir Evento / Consultar'}
@@ -4026,11 +4026,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       {/* Lotacao Modal (S-1020) - DARK */}
       {isLotacaoModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#1C232E] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-white/10">
+          <div className="bg-surface w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-outline">
             {/* Modal Header */}
-            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
-              <span className="text-white font-black uppercase tracking-widest text-xs">Informações da Lotação</span>
-              <button onClick={() => setIsLotacaoModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400">
+            <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
+              <span className="text-on-surface font-black uppercase tracking-widest text-xs">Informações da Lotação</span>
+              <button onClick={() => setIsLotacaoModalOpen(false)} className="p-2 hover:bg-surface-container-high rounded-full transition-colors text-on-surface-variant">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -4038,33 +4038,33 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             {/* Modal Body */}
             <div className="p-8 space-y-6">
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Código lotação</label>
-                <input type="text" value="01" readOnly className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-400 outline-none shadow-inner cursor-not-allowed" />
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Código lotação</label>
+                <input type="text" value="01" readOnly className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface-variant outline-none shadow-inner cursor-not-allowed" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Tipo lotação</label>
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Tipo lotação</label>
                 <div className="relative">
-                  <select value={tipoLotacao} onChange={(e) => setTipoLotacao(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
-                    <option value="21" className="bg-[#1C232E]">21 - obra própria de pessoa física</option>
-                    <option value="01" className="bg-[#1C232E]">01 - classificação de atividades econômicas</option>
+                  <select value={tipoLotacao} onChange={(e) => setTipoLotacao(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    <option value="21" className="bg-surface">21 - obra própria de pessoa física</option>
+                    <option value="01" className="bg-surface">01 - classificação de atividades econômicas</option>
                   </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant pointer-events-none" />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Informações FPAS</label>
-                <input type="text" value={infoFpas} onChange={(e) => setInfoFpas(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner" />
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Informações FPAS</label>
+                <input type="text" value={infoFpas} onChange={(e) => setInfoFpas(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner" />
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 bg-white/5 border-t border-white/5 flex items-center gap-3">
-              <button onClick={() => setIsLotacaoModalOpen(false)} className="flex-1 py-3 bg-slate-700 text-white font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
+            <div className="p-6 bg-surface-container-low border-t border-outline flex items-center gap-3">
+              <button onClick={() => setIsLotacaoModalOpen(false)} className="flex-1 py-3 bg-slate-700 text-on-surface font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
               <button
                 onClick={() => { setIsLotacaoModalOpen(false); setCurrentView('s1020_view'); }}
-                className="flex-1 py-3 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-primary text-on-surface font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2"
               >
                 <Plus className="h-4 w-4" /> Criar Lotação
               </button>
@@ -4075,22 +4075,22 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
 
       {/* S-1010 Event View - DARK */}
       {currentView === 's1010_view' && inssRegularization && (
-        <div className="bg-[#1C232E] rounded-2xl shadow-2xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+        <div className="bg-surface rounded-2xl shadow-2xl border border-outline overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300 mt-6">
+          <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
             <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter">Evento S-1010 – Tabela de Rúbricas</h2>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Configuração de Incidências Tributárias</p>
+              <h2 className="text-xl font-black text-on-surface uppercase tracking-tighter">Evento S-1010 – Tabela de Rúbricas</h2>
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mt-1">Configuração de Incidências Tributárias</p>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsRubricaModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-all shadow-lg"
+                className="flex items-center gap-2 px-4 py-1.5 bg-surface-container-low border border-outline text-on-surface rounded-lg text-xs font-black uppercase tracking-widest hover:bg-surface-container-high transition-all shadow-lg"
               >
                 <Settings className="h-3.5 w-3.5" /> Configurar
               </button>
               <button
                 onClick={() => setCurrentView('management')}
-                className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+                className="flex items-center gap-2 px-4 py-1.5 bg-primary text-on-surface rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
               >
                 Voltar para obra
               </button>
@@ -4098,32 +4098,32 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
           </div>
 
           <div className="p-8">
-            <div className="border border-white/5 rounded-2xl overflow-hidden shadow-inner bg-white/[0.02] mb-8">
+            <div className="border border-outline rounded-2xl overflow-hidden shadow-inner bg-white/[0.02] mb-8">
               <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr className="border-b border-white/5">
-                    <td className="w-1/3 p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Procurador:</td>
-                    <td className="p-4 text-white font-black font-mono">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
+                  <tr className="border-b border-outline">
+                    <td className="w-1/3 p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Procurador:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">CPF/CNPJ: {certificateCpfCnpj || '161.196.598-54'}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Descrição:</td>
-                    <td className="p-4 text-white font-black uppercase">{descRubrica}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Descrição:</td>
+                    <td className="p-4 text-on-surface font-black uppercase">{descRubrica}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Cód. Rúbrica:</td>
-                    <td className="p-4 text-white font-black font-mono">{codRubrica}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Cód. Rúbrica:</td>
+                    <td className="p-4 text-on-surface font-black font-mono">{codRubrica}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Inc. Prev:</td>
-                    <td className="p-4 text-white font-bold">{incidPrev}</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Inc. Prev:</td>
+                    <td className="p-4 text-on-surface font-bold">{incidPrev}</td>
                   </tr>
-                  <tr className="border-b border-white/5">
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Evento:</td>
+                  <tr className="border-b border-outline">
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Evento:</td>
                     <td className="p-4 text-primary font-black">1010</td>
                   </tr>
                   <tr>
-                    <td className="p-4 bg-white/5 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-r border-white/5">Período:</td>
-                    <td className="p-4 text-slate-400 font-bold font-mono">{new Date().toISOString().substring(0, 7)}</td>
+                    <td className="p-4 bg-surface-container-low text-on-surface-variant font-bold uppercase text-[10px] tracking-widest border-r border-outline">Período:</td>
+                    <td className="p-4 text-on-surface-variant font-bold font-mono">{new Date().toISOString().substring(0, 7)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -4136,7 +4136,7 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                 <div className="flex flex-col gap-6">
                   <button
                     onClick={handleTransmitS1010}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                    className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-black transition-all shadow-2xl text-lg uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700 text-on-surface shadow-emerald-500/20"
                   >
                     <Send className="h-6 w-6" />
                     {esocialS1010Status?.status === 'SUCESSO' ? 'RETIFICAR RÚBRICA' : 'Transmitir Evento / Consultar'}
@@ -4153,11 +4153,11 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       {/* Rubrica Modal (S-1010) - DARK */}
       {isRubricaModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#1C232E] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-white/10">
+          <div className="bg-surface w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-outline">
             {/* Modal Header */}
-            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
-              <span className="text-white font-black uppercase tracking-widest text-xs">Informações da Rúbrica</span>
-              <button onClick={() => setIsRubricaModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400">
+            <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
+              <span className="text-on-surface font-black uppercase tracking-widest text-xs">Informações da Rúbrica</span>
+              <button onClick={() => setIsRubricaModalOpen(false)} className="p-2 hover:bg-surface-container-high rounded-full transition-colors text-on-surface-variant">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -4166,50 +4166,50 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Código rúbrica</label>
-                  <input type="text" value={codRubrica} onChange={(e) => setCodRubrica(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner font-mono" />
+                  <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Código rúbrica</label>
+                  <input type="text" value={codRubrica} onChange={(e) => setCodRubrica(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner font-mono" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Tab rúbrica</label>
-                  <input type="text" value={tabRubrica} onChange={(e) => setTabRubrica(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner font-mono" />
+                  <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Tab rúbrica</label>
+                  <input type="text" value={tabRubrica} onChange={(e) => setTabRubrica(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner font-mono" />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Descrição</label>
-                <textarea value={descRubrica} onChange={(e) => setDescRubrica(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner min-h-[60px] uppercase" />
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Descrição</label>
+                <textarea value={descRubrica} onChange={(e) => setDescRubrica(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner min-h-[60px] uppercase" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Inc. Previdência</label>
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Inc. Previdência</label>
                 <div className="relative">
-                  <select value={incidPrev} onChange={(e) => setIncidPrev(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
-                    <option value="13" className="bg-[#1C232E]">13 - Base de cálculo (13º)</option>
-                    <option value="00" className="bg-[#1C232E]">00 - Não é base</option>
-                    <option value="11" className="bg-[#1C232E]">11 - Base de cálculo mensal</option>
+                  <select value={incidPrev} onChange={(e) => setIncidPrev(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    <option value="13" className="bg-surface">13 - Base de cálculo (13º)</option>
+                    <option value="00" className="bg-surface">00 - Não é base</option>
+                    <option value="11" className="bg-surface">11 - Base de cálculo mensal</option>
                   </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant pointer-events-none" />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Incidência IRRF</label>
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Incidência IRRF</label>
                 <div className="relative">
-                  <select value={incidIrrf} onChange={(e) => setIncidIrrf(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
-                    <option value="11" className="bg-[#1C232E]">11 - Remuneração mensal</option>
-                    <option value="00" className="bg-[#1C232E]">00 - Não é base</option>
+                  <select value={incidIrrf} onChange={(e) => setIncidIrrf(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    <option value="11" className="bg-surface">11 - Remuneração mensal</option>
+                    <option value="00" className="bg-surface">00 - Não é base</option>
                   </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant pointer-events-none" />
                 </div>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 bg-white/5 border-t border-white/5 flex items-center gap-3">
-              <button onClick={() => setIsRubricaModalOpen(false)} className="flex-1 py-3 bg-slate-700 text-white font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
+            <div className="p-6 bg-surface-container-low border-t border-outline flex items-center gap-3">
+              <button onClick={() => setIsRubricaModalOpen(false)} className="flex-1 py-3 bg-slate-700 text-on-surface font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
               <button
                 onClick={() => { setIsRubricaModalOpen(false); setCurrentView('s1010_view'); }}
-                className="flex-1 py-3 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-primary text-on-surface font-black text-[10px] uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2"
               >
                 <Plus className="h-4 w-4" /> Criar Rúbrica
               </button>
@@ -4220,14 +4220,14 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       {/* Remuneration Modal - DARK */}
       {isRemunerationModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#1C232E] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-white/10">
+          <div className="bg-surface w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-outline">
             {/* Modal Header */}
-            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
-              <div className="flex items-center gap-2 text-white font-black uppercase tracking-widest text-xs">
+            <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
+              <div className="flex items-center gap-2 text-on-surface font-black uppercase tracking-widest text-xs">
                 <DollarSign className="h-4 w-4 text-emerald-500" />
                 <span>Cadastrar Remunerações</span>
               </div>
-              <button onClick={() => setIsRemunerationModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400">
+              <button onClick={() => setIsRemunerationModalOpen(false)} className="p-2 hover:bg-surface-container-high rounded-full transition-colors text-on-surface-variant">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -4237,56 +4237,56 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 flex gap-3">
                 <Info className="h-5 w-5 text-primary flex-shrink-0" />
                 <p className="text-[11px] text-primary/80 font-medium leading-relaxed uppercase tracking-wider">
-                  Os valores gerados serão <span className="text-white font-black">BLOQUEADOS</span> para edição manual após a criação. Use o botão "Limpar" para destravar.
+                  Os valores gerados serão <span className="text-on-surface font-black">BLOQUEADOS</span> para edição manual após a criação. Use o botão "Limpar" para destravar.
                 </p>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Valor Mensal</label>
+                <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Valor Mensal</label>
                 <div className="relative">
-                  <input type="text" value={remValue} onChange={(e) => setRemValue(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-lg text-white focus:border-primary outline-none transition-all shadow-inner font-black" />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-xs">BRL</span>
+                  <input type="text" value={remValue} onChange={(e) => setRemValue(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-lg text-on-surface focus:border-primary outline-none transition-all shadow-inner font-black" />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold text-xs">BRL</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Mês Inicial</label>
-                  <select value={remStartMonth} onChange={(e) => setRemStartMonth(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
-                    {[...Array(12)].map((_, i) => (<option key={i + 1} value={i + 1} className="bg-[#1C232E]">{i + 1}</option>))}
+                  <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Mês Inicial</label>
+                  <select value={remStartMonth} onChange={(e) => setRemStartMonth(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    {[...Array(12)].map((_, i) => (<option key={i + 1} value={i + 1} className="bg-surface">{i + 1}</option>))}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Ano Inicial</label>
-                  <select value={remStartYear} onChange={(e) => setRemStartYear(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
-                    {[2021, 2022, 2023, 2024, 2025, 2026, 2027].map(y => (<option key={y} value={y} className="bg-[#1C232E]">{y}</option>))}
+                  <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Ano Inicial</label>
+                  <select value={remStartYear} onChange={(e) => setRemStartYear(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    {[2021, 2022, 2023, 2024, 2025, 2026, 2027].map(y => (<option key={y} value={y} className="bg-surface">{y}</option>))}
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Mês Final</label>
-                  <select value={remEndMonth} onChange={(e) => setRemEndMonth(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
-                    {[...Array(12)].map((_, i) => (<option key={i + 1} value={i + 1} className="bg-[#1C232E]">{i + 1}</option>))}
+                  <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Mês Final</label>
+                  <select value={remEndMonth} onChange={(e) => setRemEndMonth(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    {[...Array(12)].map((_, i) => (<option key={i + 1} value={i + 1} className="bg-surface">{i + 1}</option>))}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Ano Final</label>
-                  <select value={remEndYear} onChange={(e) => setRemEndYear(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none transition-all shadow-inner appearance-none">
-                    {[2021, 2022, 2023, 2024, 2025, 2026, 2027].map(y => (<option key={y} value={y} className="bg-[#1C232E]">{y}</option>))}
+                  <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block">Ano Final</label>
+                  <select value={remEndYear} onChange={(e) => setRemEndYear(e.target.value)} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner appearance-none">
+                    {[2021, 2022, 2023, 2024, 2025, 2026, 2027].map(y => (<option key={y} value={y} className="bg-surface">{y}</option>))}
                   </select>
                 </div>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 bg-white/5 border-t border-white/5 flex justify-end gap-3">
-              <button onClick={() => setIsRemunerationModalOpen(false)} className="px-6 py-2.5 bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
+            <div className="p-6 bg-surface-container-low border-t border-outline flex justify-end gap-3">
+              <button onClick={() => setIsRemunerationModalOpen(false)} className="px-6 py-2.5 bg-slate-700 text-on-surface text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-600 transition-all">Cancelar</button>
               <button
                 onClick={handleSaveRemuneration}
                 disabled={isSaving}
-                className="px-8 py-2.5 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2"
+                className="px-8 py-2.5 bg-emerald-600 text-on-surface text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2"
               >
                 {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Gerar Remunerações
@@ -4300,20 +4300,20 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
       {/* MODAL DE DETALHES TÉCNICOS DO EVENTO */}
       {isEventModalOpen && selectedEventDetails && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-[#1C232E] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl border border-white/10 flex flex-col overflow-hidden">
-            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+          <div className="bg-surface w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl border border-outline flex flex-col overflow-hidden">
+            <div className="p-6 border-b border-outline flex items-center justify-between bg-surface-container-low">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-500/10 rounded-lg">
                   <Terminal className="h-5 w-5 text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-sm uppercase tracking-widest">Detalhes da Transmissão</h3>
-                  <p className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {selectedEventDetails.id}</p>
+                  <h3 className="font-bold text-on-surface text-sm uppercase tracking-widest">Detalhes da Transmissão</h3>
+                  <p className="text-[10px] text-on-surface-variant font-mono mt-0.5">ID: {selectedEventDetails.id}</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsEventModalOpen(false)}
-                className="p-2 hover:bg-white/10 rounded-full text-slate-400 transition-colors"
+                className="p-2 hover:bg-surface-container-high rounded-full text-on-surface-variant transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -4322,8 +4322,8 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* Status Section */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Status Final</span>
+                <div className="bg-surface-container-low p-4 rounded-xl border border-outline">
+                  <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block mb-1">Status Final</span>
                   <span className={cn(
                     "px-2 py-0.5 rounded text-[10px] font-black uppercase",
                     selectedEventDetails.status === 'SUCESSO' ? "bg-emerald-500/20 text-emerald-500" : "bg-red-500/20 text-red-500"
@@ -4331,31 +4331,31 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
                     {selectedEventDetails.status}
                   </span>
                 </div>
-                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Protocolo</span>
-                  <span className="text-xs font-mono text-slate-300 break-all">{selectedEventDetails.protocolo || '---'}</span>
+                <div className="bg-surface-container-low p-4 rounded-xl border border-outline">
+                  <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block mb-1">Protocolo</span>
+                  <span className="text-xs font-mono text-on-surface-variant break-all">{selectedEventDetails.protocolo || '---'}</span>
                 </div>
-                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Recibo</span>
+                <div className="bg-surface-container-low p-4 rounded-xl border border-outline">
+                  <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest block mb-1">Recibo</span>
                   <span className="text-xs font-bold text-emerald-400">{selectedEventDetails.recibo || 'NÃO GERADO'}</span>
                 </div>
               </div>
 
               {/* Message/Errors Section */}
-              <div className="bg-white/5 p-5 rounded-xl border border-white/5">
+              <div className="bg-surface-container-low p-5 rounded-xl border border-outline">
                 <div className="flex items-center gap-2 mb-3">
                   <AlertCircle className="h-4 w-4 text-primary" />
-                  <span className="text-[10px] font-black text-white uppercase tracking-widest">Retorno do Governo (Ocorrências)</span>
+                  <span className="text-[10px] font-black text-on-surface uppercase tracking-widest">Retorno do Governo (Ocorrências)</span>
                 </div>
                 <div className="space-y-2">
                   {selectedEventDetails.resposta_governo?.ocorrencias?.length > 0 ? (
                     selectedEventDetails.resposta_governo.ocorrencias.map((msg: string, i: number) => (
-                      <div key={i} className="text-xs text-slate-400 bg-white/5 p-3 rounded-lg border-l-2 border-primary">
+                      <div key={i} className="text-xs text-on-surface-variant bg-surface-container-low p-3 rounded-lg border-l-2 border-primary">
                         {msg}
                       </div>
                     ))
                   ) : (
-                    <div className="text-xs text-slate-500 italic">
+                    <div className="text-xs text-on-surface-variant italic">
                       {selectedEventDetails.resposta_governo?.message || 'Sem mensagens detalhadas retornadas.'}
                     </div>
                   )}
@@ -4366,46 +4366,46 @@ export function INSSRegularizationTab({ projectId, inssRegularization, onRefresh
               <div className="space-y-4">
                 <div className="group">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">XML Assinado (Enviado)</span>
+                    <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">XML Assinado (Enviado)</span>
                     <button
                       onClick={() => {
                         navigator.clipboard.writeText(selectedEventDetails.xml_assinado || '');
                         alert('XML copiado para a área de transferência!');
                       }}
-                      className="p-1.5 hover:bg-white/10 rounded text-slate-500 hover:text-white transition-all flex items-center gap-1.5 text-[10px]"
+                      className="p-1.5 hover:bg-surface-container-high rounded text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1.5 text-[10px]"
                     >
                       <Copy className="h-3 w-3" /> COPIAR XML
                     </button>
                   </div>
-                  <pre className="bg-black/50 p-4 rounded-xl border border-white/5 text-[10px] font-mono text-blue-300 overflow-x-auto max-h-40 whitespace-pre-wrap">
+                  <pre className="bg-surface-container-highest/50 p-4 rounded-xl border border-outline text-[10px] font-mono text-blue-300 overflow-x-auto max-h-40 whitespace-pre-wrap">
                     {selectedEventDetails.xml_assinado || 'XML não disponível'}
                   </pre>
                 </div>
 
                 <div className="group">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">XML de Resposta (Bruto do Governo)</span>
+                    <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">XML de Resposta (Bruto do Governo)</span>
                     <button
                       onClick={() => {
                         navigator.clipboard.writeText(selectedEventDetails.xml_retorno || '');
                         alert('XML de resposta copiado!');
                       }}
-                      className="p-1.5 hover:bg-white/10 rounded text-slate-500 hover:text-white transition-all flex items-center gap-1.5 text-[10px]"
+                      className="p-1.5 hover:bg-surface-container-high rounded text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1.5 text-[10px]"
                     >
                       <Copy className="h-3 w-3" /> COPIAR RESPOSTA
                     </button>
                   </div>
-                  <pre className="bg-black/50 p-4 rounded-xl border border-white/5 text-[10px] font-mono text-emerald-300 overflow-x-auto max-h-40 whitespace-pre-wrap">
+                  <pre className="bg-surface-container-highest/50 p-4 rounded-xl border border-outline text-[10px] font-mono text-emerald-300 overflow-x-auto max-h-40 whitespace-pre-wrap">
                     {selectedEventDetails.xml_retorno || 'Aguardando processamento ou retorno vazio.'}
                   </pre>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 bg-white/5 border-t border-white/5 flex justify-end">
+            <div className="p-6 bg-surface-container-low border-t border-outline flex justify-end">
               <button
                 onClick={() => setIsEventModalOpen(false)}
-                className="px-8 py-2.5 bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-600 transition-all shadow-lg"
+                className="px-8 py-2.5 bg-slate-700 text-on-surface text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-600 transition-all shadow-lg"
               >
                 Fechar Detalhes
               </button>

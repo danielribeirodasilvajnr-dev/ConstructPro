@@ -107,13 +107,13 @@ export function RegularizationView() {
         <div className="flex items-center gap-4 mb-8">
           <button 
             onClick={() => setSelectedId(null)}
-            className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white"
+            className="p-2 hover:bg-surface-container-high rounded-full transition-colors text-on-surface-variant hover:text-on-surface"
           >
             <ArrowRight className="h-6 w-6 rotate-180" />
           </button>
           <div>
-            <h2 className="text-2xl font-bold text-white">{selectedItem.name}</h2>
-            <p className="text-slate-500 text-sm">Cliente: {selectedItem.client}</p>
+            <h2 className="text-2xl font-bold text-on-surface">{selectedItem.name}</h2>
+            <p className="text-on-surface-variant text-sm">Cliente: {selectedItem.client}</p>
           </div>
         </div>
 
@@ -132,25 +132,25 @@ export function RegularizationView() {
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-white">Regularização INSS</h2>
-          <p className="text-slate-500 text-sm mt-1">Gestão independente de regularizações e clientes (SERO).</p>
+          <h2 className="text-3xl font-extrabold tracking-tight text-on-surface">Regularização INSS</h2>
+          <p className="text-on-surface-variant text-sm mt-1">Gestão independente de regularizações e clientes (SERO).</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-6 py-3 bg-[#BCB5AC] text-[#1C232E] text-sm font-bold rounded-xl flex items-center gap-2 hover:bg-white transition-all shadow-lg"
+          className="px-6 py-3 bg-primary text-on-primary text-sm font-bold rounded-xl flex items-center gap-2 hover:bg-white transition-all shadow-lg"
         >
           <Plus className="h-5 w-5" /> Novo Cliente/Obra
         </button>
       </div>
 
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-on-surface-variant" />
         <input
           type="text"
           placeholder="Buscar por obra ou cliente..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-[#1C232E] border border-slate-800 rounded-2xl pl-12 pr-4 py-4 text-white focus:border-[#BCB5AC] outline-none transition-all shadow-xl"
+          className="w-full bg-surface border border-outline rounded-2xl pl-12 pr-4 py-4 text-on-surface focus:border-primary outline-none transition-all shadow-xl"
         />
       </div>
 
@@ -164,25 +164,25 @@ export function RegularizationView() {
             <div
               key={item.id}
               onClick={() => setSelectedId(item.id)}
-              className="bg-[#1C232E] rounded-3xl border border-slate-800 p-6 hover:border-[#BCB5AC]/50 cursor-pointer transition-all group relative overflow-hidden"
+              className="bg-surface rounded-3xl border border-outline p-6 hover:border-primary/50 cursor-pointer transition-all group relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <CalculatorIcon className="h-12 w-12 text-white" />
+                <CalculatorIcon className="h-12 w-12 text-on-surface" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-1 group-hover:text-[#BCB5AC] transition-colors">{item.name}</h3>
-              <p className="text-slate-500 text-sm mb-4">{item.client}</p>
+              <h3 className="text-lg font-bold text-on-surface mb-1 group-hover:text-primary transition-colors">{item.name}</h3>
+              <p className="text-on-surface-variant text-sm mb-4">{item.client}</p>
               
-              <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Abrir Aferição</span>
-                <ArrowRight className="h-4 w-4 text-slate-600 group-hover:translate-x-1 transition-transform" />
+              <div className="flex items-center justify-between mt-auto pt-4 border-t border-outline">
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Abrir Aferição</span>
+                <ArrowRight className="h-4 w-4 text-on-surface-variant group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
           ))}
 
           {filtered.length === 0 && (
-            <div className="col-span-full py-20 text-center bg-[#1C232E] rounded-3xl border border-dashed border-slate-800">
-              <UserPlus className="h-12 w-12 text-slate-700 mx-auto mb-4" />
-              <p className="text-slate-500">Nenhum registro encontrado. Clique em "Novo Cliente/Obra" para começar.</p>
+            <div className="col-span-full py-20 text-center bg-surface rounded-3xl border border-dashed border-outline">
+              <UserPlus className="h-12 w-12 text-on-surface-variant mx-auto mb-4" />
+              <p className="text-on-surface-variant">Nenhum registro encontrado. Clique em "Novo Cliente/Obra" para começar.</p>
             </div>
           )}
         </div>
@@ -191,40 +191,40 @@ export function RegularizationView() {
       {/* New Regularization Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#1C232E] w-full max-w-md rounded-3xl border border-white/10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-white/5 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">Novo Cliente/Obra</h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-slate-400">
+          <div className="bg-surface w-full max-w-md rounded-3xl border border-outline shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-outline flex items-center justify-between">
+              <h3 className="text-lg font-bold text-on-surface">Novo Cliente/Obra</h3>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-surface-container-low rounded-full transition-colors text-on-surface-variant">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <form onSubmit={handleCreate} className="p-6 space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Nome da Obra</label>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Nome da Obra</label>
                 <input
                   autoFocus
                   required
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#BCB5AC] outline-none transition-all"
+                  className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-on-surface focus:border-primary outline-none transition-all"
                   placeholder="Ex: Residência Vila Nova"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Nome do Cliente</label>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Nome do Cliente</label>
                 <input
                   required
                   type="text"
                   value={newClient}
                   onChange={(e) => setNewClient(e.target.value)}
-                  className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#BCB5AC] outline-none transition-all"
+                  className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-on-surface focus:border-primary outline-none transition-all"
                   placeholder="Ex: João da Silva"
                 />
               </div>
               <button
                 type="submit"
-                className="w-full py-4 bg-[#BCB5AC] text-[#1C232E] font-black rounded-xl hover:bg-white transition-all mt-4 uppercase tracking-[2px]"
+                className="w-full py-4 bg-primary text-on-primary font-black rounded-xl hover:bg-white transition-all mt-4 uppercase tracking-[2px]"
               >
                 Criar Registro
               </button>

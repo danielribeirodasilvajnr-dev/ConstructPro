@@ -39,22 +39,22 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-lg bg-[#1C232E] rounded-3xl border border-white/5 shadow-2xl overflow-hidden"
+            className="relative w-full max-w-lg bg-surface rounded-3xl border border-outline shadow-2xl overflow-hidden"
           >
             {/* Header */}
-            <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-[#BCB5AC]/5 to-transparent">
+            <div className="p-8 border-b border-outline flex items-center justify-between bg-gradient-to-r from-[#BCB5AC]/5 to-transparent">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-slate-800 rounded-2xl">
-                  <Settings className="h-6 w-6 text-slate-400" />
+                <div className="p-3 bg-surface-container-high rounded-2xl">
+                  <Settings className="h-6 w-6 text-on-surface-variant" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-white tracking-tight">Configurações</h2>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Personalize sua experiência</p>
+                  <h2 className="text-xl font-black text-on-surface tracking-tight">Configurações</h2>
+                  <p className="text-xs text-on-surface-variant font-bold uppercase tracking-widest mt-1">Personalize sua experiência</p>
                 </div>
               </div>
               <button 
                 onClick={onClose}
-                className="p-3 text-slate-500 hover:text-white hover:bg-white/5 rounded-2xl transition-all"
+                className="p-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-2xl transition-all"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -65,8 +65,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <section className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Notificações</h3>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Controle como você é avisado</p>
+                    <h3 className="text-sm font-black text-on-surface uppercase tracking-wider">Notificações</h3>
+                    <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">Controle como você é avisado</p>
                   </div>
                 </div>
                 <div className="space-y-3">
@@ -78,20 +78,20 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     <div 
                       key={n.id}
                       onClick={() => setNotifications(prev => ({ ...prev, [n.id]: !prev[n.id as keyof typeof prev] }))}
-                      className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5 hover:border-white/10 transition-colors cursor-pointer group"
+                      className="flex items-center justify-between p-4 bg-surface-container-highest/20 rounded-2xl border border-outline hover:border-outline transition-colors cursor-pointer group"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="p-2.5 bg-slate-800 rounded-xl group-hover:bg-slate-700 transition-colors">
-                          <n.icon className="h-4 w-4 text-slate-400" />
+                        <div className="p-2.5 bg-surface-container-high rounded-xl group-hover:opacity-90 transition-colors">
+                          <n.icon className="h-4 w-4 text-on-surface-variant" />
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-slate-200">{n.label}</p>
-                          <p className="text-[10px] text-slate-500">{n.desc}</p>
+                          <p className="text-xs font-bold text-on-surface">{n.label}</p>
+                          <p className="text-[10px] text-on-surface-variant">{n.desc}</p>
                         </div>
                       </div>
                       <div className={cn(
                         "w-12 h-6 rounded-full relative transition-all duration-300 transition-all",
-                        notifications[n.id as keyof typeof notifications] ? "bg-[#BCB5AC]" : "bg-slate-800"
+                        notifications[n.id as keyof typeof notifications] ? "bg-primary" : "bg-surface-container-high"
                       )}>
                         <div className={cn(
                           "absolute top-1 w-4 h-4 rounded-full bg-white transition-all shadow-lg",
@@ -106,25 +106,25 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               {/* Language Section */}
               <section className="space-y-4">
                 <div className="space-y-1">
-                  <h3 className="text-sm font-black text-white uppercase tracking-wider">Idioma e Região</h3>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Defina suas preferências regionais</p>
+                  <h3 className="text-sm font-black text-on-surface uppercase tracking-wider">Idioma e Região</h3>
+                  <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">Defina suas preferências regionais</p>
                 </div>
-                <div className="p-4 bg-black/20 rounded-2xl border border-white/5 flex items-center justify-between">
+                <div className="p-4 bg-surface-container-highest/20 rounded-2xl border border-outline flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="p-2.5 bg-slate-800 rounded-xl">
-                      <Globe className="h-4 w-4 text-slate-400" />
+                    <div className="p-2.5 bg-surface-container-high rounded-xl">
+                      <Globe className="h-4 w-4 text-on-surface-variant" />
                     </div>
-                    <p className="text-xs font-bold text-slate-200">Português (Brasil)</p>
+                    <p className="text-xs font-bold text-on-surface">Português (Brasil)</p>
                   </div>
-                  <span className="text-[10px] font-black text-[#BCB5AC] uppercase tracking-widest bg-[#BCB5AC]/10 px-2 py-1 rounded">Padrão</span>
+                  <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-1 rounded">Padrão</span>
                 </div>
               </section>
 
               {/* Footer Actions */}
-              <div className="flex gap-4 pt-6 border-t border-white/5">
+              <div className="flex gap-4 pt-6 border-t border-outline">
                 <button 
                   onClick={onClose}
-                  className="w-full py-4 bg-[#BCB5AC] text-[#1C232E] text-xs font-black uppercase tracking-[2px] rounded-2xl hover:bg-slate-700 transition-all flex items-center justify-center gap-3 shadow-xl shadow-black/30"
+                  className="w-full py-4 bg-primary text-on-primary text-xs font-black uppercase tracking-[2px] rounded-2xl hover:opacity-90 transition-all flex items-center justify-center gap-3 shadow-xl shadow-sm"
                 >
                   <Check className="h-4 w-4" /> Finalizar Ajustes
                 </button>

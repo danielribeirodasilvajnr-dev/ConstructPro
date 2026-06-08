@@ -122,29 +122,29 @@ export function BudgetSubItemsPanel({ budgetItemId, totalBudgetItemAmount, readO
   };
 
   return (
-    <div className="bg-[#151a23] p-4 rounded-xl border border-slate-800 mt-2 mb-4 animate-in slide-in-from-top-2 duration-300">
+    <div className="bg-[#151a23] p-4 rounded-xl border border-outline mt-2 mb-4 animate-in slide-in-from-top-2 duration-300">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h4 className="text-sm font-bold text-slate-300">Composição Financeira (Subitens)</h4>
-          <p className="text-xs text-slate-500 mt-1">Detalhe os custos deste item. A soma não pode ultrapassar o valor total.</p>
+          <h4 className="text-sm font-bold text-on-surface-variant">Composição Financeira (Subitens)</h4>
+          <p className="text-xs text-on-surface-variant mt-1">Detalhe os custos deste item. A soma não pode ultrapassar o valor total.</p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Valor do Item</p>
-          <p className="text-sm font-bold text-white">{formatCurrency(totalBudgetItemAmount)}</p>
+          <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Valor do Item</p>
+          <p className="text-sm font-bold text-on-surface">{formatCurrency(totalBudgetItemAmount)}</p>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="py-8 text-center text-slate-500 text-sm">Carregando subitens...</div>
+        <div className="py-8 text-center text-on-surface-variant text-sm">Carregando subitens...</div>
       ) : (
         <div className="space-y-3">
           {subItems.length === 0 ? (
-            <div className="py-6 text-center text-slate-500 text-sm border border-dashed border-slate-700 rounded-lg">
+            <div className="py-6 text-center text-on-surface-variant text-sm border border-dashed border-outline-variant rounded-lg">
               Nenhum subitem cadastrado. Adicione o primeiro para começar a compor o valor.
             </div>
           ) : (
             subItems.map((item, index) => (
-              <div key={item.id || index} className="flex items-center gap-3 bg-[#1C232E] p-2 rounded-lg border border-white/5">
+              <div key={item.id || index} className="flex items-center gap-3 bg-surface p-2 rounded-lg border border-outline">
                 <div className="flex-1">
                   <input
                     type="text"
@@ -152,11 +152,11 @@ export function BudgetSubItemsPanel({ budgetItemId, totalBudgetItemAmount, readO
                     onChange={(e) => handleSubItemChange(item.id, 'description', e.target.value)}
                     placeholder="Descrição do subitem..."
                     disabled={readOnly}
-                    className="w-full bg-transparent border-none text-sm text-slate-200 focus:ring-0 placeholder:text-slate-600 outline-none px-2 py-1"
+                    className="w-full bg-transparent border-none text-sm text-on-surface focus:ring-0 placeholder:text-on-surface-variant outline-none px-2 py-1"
                   />
                 </div>
                 <div className="w-40 relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">R$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-xs">R$</span>
                   <input
                     type="text"
                     value={item.amount ? item.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
@@ -167,18 +167,18 @@ export function BudgetSubItemsPanel({ budgetItemId, totalBudgetItemAmount, readO
                     }}
                     placeholder="0,00"
                     disabled={readOnly}
-                    className="w-full bg-[#0B0F19] border border-slate-700 rounded-md pl-8 pr-3 py-1.5 text-sm text-slate-200 focus:border-[#BCB5AC] outline-none text-right"
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-md pl-8 pr-3 py-1.5 text-sm text-on-surface focus:border-primary outline-none text-right"
                   />
                 </div>
                 <div className="w-20 text-right pr-2">
-                  <span className="text-xs font-bold text-slate-400">
+                  <span className="text-xs font-bold text-on-surface-variant">
                     {totalBudgetItemAmount > 0 ? ((item.amount / totalBudgetItemAmount) * 100).toFixed(2) : '0.00'}%
                   </span>
                 </div>
                 {!readOnly && (
                   <button
                     onClick={() => handleRemoveSubItem(item.id)}
-                    className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
+                    className="p-1.5 text-on-surface-variant hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -187,7 +187,7 @@ export function BudgetSubItemsPanel({ budgetItemId, totalBudgetItemAmount, readO
             ))
           )}
 
-          <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-800">
+          <div className="flex items-center justify-between pt-4 mt-2 border-t border-outline">
             <div className="flex items-center gap-4">
               {!readOnly && (
                 <button
@@ -201,14 +201,14 @@ export function BudgetSubItemsPanel({ budgetItemId, totalBudgetItemAmount, readO
 
             <div className="flex items-center gap-6">
               <div className="text-right">
-                <p className="text-[10px] font-bold text-slate-500 uppercase">Soma dos Subitens</p>
-                <p className={cn("text-sm font-bold", isOverBudget ? "text-red-500" : "text-[#10B981]")}>
+                <p className="text-[10px] font-bold text-on-surface-variant uppercase">Soma dos Subitens</p>
+                <p className={cn("text-sm font-bold", isOverBudget ? "text-red-500" : "text-success")}>
                   {formatCurrency(currentTotal)}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-bold text-slate-500 uppercase">Saldo a Compor</p>
-                <p className={cn("text-sm font-bold", remainingBudget < 0 ? "text-red-500" : "text-slate-300")}>
+                <p className="text-[10px] font-bold text-on-surface-variant uppercase">Saldo a Compor</p>
+                <p className={cn("text-sm font-bold", remainingBudget < 0 ? "text-red-500" : "text-on-surface-variant")}>
                   {formatCurrency(remainingBudget)}
                 </p>
               </div>
@@ -216,7 +216,7 @@ export function BudgetSubItemsPanel({ budgetItemId, totalBudgetItemAmount, readO
                 <button
                   onClick={handleSave}
                   disabled={isSaving || isOverBudget}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors border border-slate-700"
+                  className="flex items-center gap-2 px-4 py-2 bg-surface-container-high hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-on-surface text-xs font-bold rounded-lg transition-colors border border-outline-variant"
                 >
                   <Save className="h-4 w-4" />
                   {isSaving ? 'Salvando...' : 'Salvar Subitens'}

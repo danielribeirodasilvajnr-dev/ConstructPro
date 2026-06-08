@@ -7,10 +7,12 @@ import {
   FileSpreadsheet,
   Calculator,
   CircleHelp,
-  LogOut
+  LogOut,
+  Home
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface SidebarProps {
   activeTab: string;
@@ -32,9 +34,11 @@ export function Sidebar({
   setIsMobileOpen
 }: SidebarProps) {
   const { signOut, isProprietor, isAdmin, isStaff } = useAuth();
+  const { theme } = useTheme();
   const allNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'projects', label: 'Projetos', icon: ClipboardList },
+    { id: 'simulator', label: 'Simulador Habitacional', icon: Home, adminOnly: true },
     { id: 'calculator', label: 'Calculadora INSS', icon: Calculator, adminOnly: true },
     { id: 'regularization', label: 'Regularização INSS', icon: FileSpreadsheet, adminOnly: true },
     { id: 'safety', label: 'Painel do Proprietário', icon: ShieldCheck },
@@ -58,19 +62,19 @@ export function Sidebar({
       )}
 
       <aside className={cn(
-        "fixed left-0 top-0 z-50 h-screen flex-col bg-surface/90 backdrop-blur-xl border-r border-white/5 shadow-2xl transition-all duration-300 overflow-hidden",
+        "fixed left-0 top-0 z-50 h-screen flex-col bg-surface/90 backdrop-blur-xl border-r border-outline shadow-2xl transition-all duration-300 overflow-hidden",
         isCollapsed ? "w-0 -translate-x-full hidden" : "w-72 translate-x-0 flex",
         isMobileOpen ? "flex w-72 translate-x-0 !inline-flex" : "max-md:hidden max-md:w-0 max-md:-translate-x-full"
       )}>
         {/* Brand Section */}
         <div className="flex items-center gap-4 p-8 mb-4 overflow-hidden relative">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-surface relative group">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl overflow-hidden border border-outline shadow-2xl bg-surface relative group">
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-primary/5 opacity-50 group-hover:opacity-100 transition-opacity" />
-            <img src="/logo.png" alt="360Pro" className="w-full h-full object-cover relative z-10 group-hover:scale-110 transition-transform duration-500 [filter:invert(1)_hue-rotate(180deg)]" />
+            <img src={theme === 'dark' ? "/logo-dark.png" : "/logo-light.png"} alt="360Pro" className="w-full h-full object-cover relative z-10 group-hover:scale-110 transition-transform duration-500" />
           </div>
           <div className="animate-in fade-in slide-in-from-left-4 duration-500">
-            <h2 className="text-xl font-display font-bold tracking-[2px] text-white">360<span className="text-primary">PRO</span></h2>
+            <h2 className="text-xl font-display font-bold tracking-[2px] text-on-surface">360<span className="text-primary">PRO</span></h2>
             <div className="flex items-center gap-1.5">
               <div className="h-1 w-1 bg-primary rounded-full animate-pulse" />
               <p className="text-[10px] font-bold uppercase tracking-[3px] text-on-surface-variant whitespace-nowrap">Engineering Elite</p>
@@ -91,7 +95,7 @@ export function Sidebar({
                 "hover:scale-[1.02] active:scale-[0.98]",
                 activeTab === item.id
                   ? "bg-primary text-background shadow-[0_0_25px_-5px_rgba(34,255,136,0.4)] font-bold"
-                  : "text-on-surface-variant hover:text-white hover:bg-white/5"
+                  : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low"
               )}
             >
               {activeTab === item.id && (
@@ -110,7 +114,7 @@ export function Sidebar({
           ))}
         </nav>
 
-        <div className="p-8 mt-auto border-t border-white/5 bg-background/20">
+        <div className="p-8 mt-auto border-t border-outline bg-background/20">
           <div className="flex flex-col gap-3 w-full">
             <button
               className="flex items-center gap-4 text-xs font-display uppercase tracking-[2px] text-on-surface-variant hover:text-primary transition-all duration-300 group"

@@ -59,10 +59,10 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
 
   if (!selectedProjectId || !project) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 bg-[#1C232E] rounded-2xl border border-white/5 mx-auto max-w-4xl">
-        <HardHat className="h-12 w-12 text-slate-700 mb-4" />
-        <h2 className="text-xl font-bold text-white mb-2">Acesso do Proprietário</h2>
-        <p className="text-slate-500 text-center max-w-xs">Selecione uma obra na lista de projetos para visualizar o painel exclusivo do cliente.</p>
+      <div className="flex flex-col items-center justify-center py-20 bg-surface rounded-2xl border border-outline mx-auto max-w-4xl">
+        <HardHat className="h-12 w-12 text-on-surface-variant mb-4" />
+        <h2 className="text-xl font-bold text-on-surface mb-2">Acesso do Proprietário</h2>
+        <p className="text-on-surface-variant text-center max-w-xs">Selecione uma obra na lista de projetos para visualizar o painel exclusivo do cliente.</p>
       </div>
     );
   }
@@ -200,12 +200,12 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-xl p-8 bg-gradient-to-br from-primary to-primary-container text-white min-h-[280px] flex flex-col justify-end"
+        className="relative overflow-hidden rounded-xl p-8 bg-gradient-to-br from-primary to-primary-container text-on-surface min-h-[280px] flex flex-col justify-end"
       >
         {onBack && (
           <button 
             onClick={onBack}
-            className="absolute top-6 left-6 z-20 p-2 bg-black/20 hover:bg-black/40 rounded-full transition-colors border border-white/10"
+            className="absolute top-6 left-6 z-20 p-2 bg-surface-container-highest/20 hover:bg-black/40 rounded-full transition-colors border border-outline"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
@@ -224,21 +224,21 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
           </h1>
           <div className="flex flex-wrap gap-6 mb-6 opacity-80">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-black uppercase tracking-widest text-slate-300">Local:</span>
-              <span className="text-sm font-bold text-white">{project.location || 'N/D'}</span>
+              <span className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Local:</span>
+              <span className="text-sm font-bold text-on-surface">{project.location || 'N/D'}</span>
             </div>
-            <div className="flex items-center gap-2 border-l border-white/20 pl-6">
-              <span className="text-[11px] font-black uppercase tracking-widest text-slate-300">Área:</span>
-              <span className="text-sm font-bold text-white">{project.area || '0'},00 m²</span>
+            <div className="flex items-center gap-2 border-l border-outline-variant pl-6">
+              <span className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Área:</span>
+              <span className="text-sm font-bold text-on-surface">{project.area || '0'},00 m²</span>
             </div>
-            <div className="flex items-center gap-2 border-l border-white/20 pl-6">
-              <span className="text-[11px] font-black uppercase tracking-widest text-slate-300">Prazo:</span>
-              <span className="text-sm font-bold text-white">{project.deadline || 'N/D'}</span>
+            <div className="flex items-center gap-2 border-l border-outline-variant pl-6">
+              <span className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Prazo:</span>
+              <span className="text-sm font-bold text-on-surface">{project.deadline || 'N/D'}</span>
             </div>
           </div>
 
-          <p className="text-slate-200 font-medium text-lg mb-6">Sua obra está <span className="text-white font-bold">{physicalProgress}%</span> concluída</p>
-          <div className="w-full max-w-md bg-white/10 rounded-full h-3 mb-2">
+          <p className="text-on-surface font-medium text-lg mb-6">Sua obra está <span className="text-on-surface font-bold">{physicalProgress}%</span> concluída</p>
+          <div className="w-full max-w-md bg-surface-container-high rounded-full h-3 mb-2">
             <div className="bg-white h-3 rounded-full shadow-[0_0_15px_rgba(255,255,255,0.4)] transition-all duration-1000" style={{ width: `${physicalProgress}%` }}></div>
           </div>
           <div className="flex justify-between text-xs font-bold tracking-widest uppercase opacity-70">
@@ -252,7 +252,7 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
         <div className="col-span-12 lg:col-span-8 space-y-8">
           {/* Gallery Trigger Card */}
           {allPhotos.length > 0 && (
-            <div className="bg-[#1C232E] rounded-2xl p-6 border border-white/5 shadow-sm flex items-center justify-between group cursor-pointer hover:bg-white/5 transition-all" onClick={() => setIsGalleryOpen(true)}>
+            <div className="bg-surface rounded-2xl p-6 border border-outline shadow-sm flex items-center justify-between group cursor-pointer hover:bg-surface-container-low transition-all" onClick={() => setIsGalleryOpen(true)}>
               <div className="flex items-center gap-6">
                 <div className="flex -space-x-4 overflow-hidden p-1">
                   {allPhotos.slice(0, 3).map((photo, i) => (
@@ -261,24 +261,24 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
                     </div>
                   ))}
                   {allPhotos.length > 3 && (
-                    <div className="flex items-center justify-center h-14 w-14 rounded-xl ring-4 ring-[#1C232E] bg-slate-800 text-xs font-bold text-white">
+                    <div className="flex items-center justify-center h-14 w-14 rounded-xl ring-4 ring-[#1C232E] bg-surface-container-high text-xs font-bold text-on-surface">
                       +{allPhotos.length - 3}
                     </div>
                   )}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Galeria de Fotos</h3>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">Veja a evolução completa da obra</p>
+                  <h3 className="text-lg font-bold text-on-surface">Galeria de Fotos</h3>
+                  <p className="text-xs text-on-surface-variant font-bold uppercase tracking-widest mt-0.5">Veja a evolução completa da obra</p>
                 </div>
               </div>
-              <button className="px-5 py-2.5 bg-primary/10 text-primary text-xs font-black uppercase tracking-widest rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
+              <button className="px-5 py-2.5 bg-primary/10 text-primary text-xs font-black uppercase tracking-widest rounded-xl group-hover:bg-primary group-hover:text-on-surface transition-all">
                 Ver Galeria
               </button>
             </div>
           )}
 
           {/* Timeline - Last Daily Logs with Photos */}
-          <div className="bg-[#1C232E] rounded-2xl p-8 border border-white/5 shadow-sm">
+          <div className="bg-surface rounded-2xl p-8 border border-outline shadow-sm">
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <Camera className="h-5 w-5 text-primary" />
@@ -294,32 +294,32 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
             <div className="relative space-y-12">
               {dailyLogs.length > 0 ? (
                 <>
-                  <div className="absolute left-3 top-2 bottom-2 w-px bg-white/5"></div>
+                  <div className="absolute left-3 top-2 bottom-2 w-px bg-surface-container-low"></div>
                   {dailyLogs.slice(0, 5).map((log, i) => (
                     <div key={log.id} className="relative flex gap-8 items-start group">
                       <div className="z-10 bg-primary w-6 h-6 rounded-full flex items-center justify-center shrink-0 ring-4 ring-[#1C232E] shadow-lg shadow-primary/20 transition-transform group-hover:scale-110">
-                        <Check className="text-white h-3 w-3" />
+                        <Check className="text-on-surface h-3 w-3" />
                       </div>
                       <div className="flex-1 space-y-4">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div>
-                            <h4 className="text-lg font-bold text-white capitalize">{formatDate(log.date, { day: '2-digit', month: 'long', weekday: 'long' })}</h4>
+                            <h4 className="text-lg font-bold text-on-surface capitalize">{formatDate(log.date, { day: '2-digit', month: 'long', weekday: 'long' })}</h4>
                             <div className="flex items-center gap-3 mt-1">
-                              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5"><Cloud className="h-3 w-3" /> {log.weather}</span>
+                              <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest flex items-center gap-1.5"><Cloud className="h-3 w-3" /> {log.weather}</span>
                               <span className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-1.5"><HardHat className="h-3 w-3" /> Equipe: {log.workers}</span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                          <p className="text-slate-300 text-sm leading-relaxed italic">"{log.activities || 'Nenhuma atividade registrada.'}"</p>
+                        <div className="bg-surface-container-low p-4 rounded-xl border border-outline">
+                          <p className="text-on-surface-variant text-sm leading-relaxed italic">"{log.activities || 'Nenhuma atividade registrada.'}"</p>
                         </div>
 
                         {/* Photos for this log */}
                         {log.daily_log_photos && log.daily_log_photos.length > 0 && (
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             {log.daily_log_photos.map((photo: any) => (
-                              <div key={photo.id} className="aspect-square rounded-xl overflow-hidden border border-white/10 group/photo cursor-pointer relative bg-black/20">
+                              <div key={photo.id} className="aspect-square rounded-xl overflow-hidden border border-outline group/photo cursor-pointer relative bg-surface-container-highest/20">
                                 <img
                                   src={photo.image_url}
                                   alt="Daily"
@@ -327,7 +327,7 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
                                 />
                                 {photo.description && (
                                   <div className="absolute inset-x-0 bottom-0 p-2 bg-black/60 opacity-0 group-hover/photo:opacity-100 transition-opacity">
-                                    <p className="text-[9px] text-white line-clamp-1">{photo.description}</p>
+                                    <p className="text-[9px] text-on-surface line-clamp-1">{photo.description}</p>
                                   </div>
                                 )}
                               </div>
@@ -339,7 +339,7 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
                   ))}
                 </>
               ) : (
-                <div className="text-center py-8 text-slate-500 italic text-sm">
+                <div className="text-center py-8 text-on-surface-variant italic text-sm">
                   Nenhum diário registrado nos últimos dias.
                 </div>
               )}
@@ -348,7 +348,7 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
 
           {/* Physical Progress by Category */}
           {budgetItems.length > 0 && (
-            <div className="bg-[#1C232E] rounded-2xl p-8 border border-white/5 shadow-sm">
+            <div className="bg-surface rounded-2xl p-8 border border-outline shadow-sm">
               <h3 className="text-xl font-bold flex items-center gap-2 mb-8">
                 <Ruler className="h-5 w-5 text-primary" />
                 Progresso por Etapa
@@ -367,10 +367,10 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
                   return (
                     <div key={category} className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{category}</span>
-                        <span className="text-xs font-black text-white">{Math.round(progress)}%</span>
+                        <span className="text-xs font-black text-on-surface-variant uppercase tracking-widest">{category}</span>
+                        <span className="text-xs font-black text-on-surface">{Math.round(progress)}%</span>
                       </div>
-                      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-primary rounded-full transition-all duration-1000" 
                           style={{ width: `${progress}%` }}
@@ -387,7 +387,7 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
         <div className="col-span-12 lg:col-span-4 space-y-8">
 
           {/* Documents */}
-          <div className="bg-[#1C232E] rounded-xl p-6 border border-white/5 shadow-sm">
+          <div className="bg-surface rounded-xl p-6 border border-outline shadow-sm">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold flex items-center gap-2">
                 <FileText className="text-primary h-5 w-5" />
@@ -405,14 +405,14 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
             <div className="space-y-3">
               {documents.length > 0 ? (
                 documents.map((doc, i) => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg group cursor-pointer hover:bg-slate-800 transition-colors border border-slate-800/50">
+                  <div key={doc.id} className="flex items-center justify-between p-3 bg-surface-container-low rounded-lg group cursor-pointer hover:bg-surface-container-high transition-colors border border-outline/50">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-slate-800 rounded-lg">
-                        <FileText className="h-4 w-4 text-slate-400" />
+                      <div className="p-2 bg-surface-container-high rounded-lg">
+                        <FileText className="h-4 w-4 text-on-surface-variant" />
                       </div>
                       <div>
-                        <span className="text-xs font-bold text-slate-100 block">{doc.name}</span>
-                        <span className="text-[9px] text-slate-500 font-bold uppercase">
+                        <span className="text-xs font-bold text-on-surface block">{doc.name}</span>
+                        <span className="text-[9px] text-on-surface-variant font-bold uppercase">
                           {doc.file_type?.split('/')[1] || 'DOC'} • {(Number(doc.file_size) / 1024 / 1024).toFixed(1)}MB
                         </span>
                       </div>
@@ -420,14 +420,14 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeletingDoc(doc); }}
-                        className="p-1.5 hover:bg-red-500/10 rounded-lg text-slate-500 hover:text-red-500 transition-colors"
+                        className="p-1.5 hover:bg-red-500/10 rounded-lg text-on-surface-variant hover:text-red-500 transition-colors"
                         title="Excluir"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDownloadDocument(doc); }}
-                        className="p-1.5 hover:bg-primary/10 rounded-lg text-slate-500 hover:text-primary transition-colors"
+                        className="p-1.5 hover:bg-primary/10 rounded-lg text-on-surface-variant hover:text-primary transition-colors"
                         title="Baixar Arquivo"
                       >
                         <Download className="h-4 w-4" />
@@ -436,8 +436,8 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
                   </div>
                 ))
               ) : (
-                <div className="text-center py-6 px-4 bg-slate-900/20 rounded-xl border border-dashed border-slate-800/50">
-                  <p className="text-xs text-slate-500 italic">Nenhum documento cadastrado.</p>
+                <div className="text-center py-6 px-4 bg-surface/20 rounded-xl border border-dashed border-outline/50">
+                  <p className="text-xs text-on-surface-variant italic">Nenhum documento cadastrado.</p>
                 </div>
               )}
             </div>
@@ -471,44 +471,44 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-[#1C232E] border border-slate-800 rounded-[28px] w-full max-w-md shadow-2xl p-8"
+            className="bg-surface border border-outline rounded-[28px] w-full max-w-md shadow-2xl p-8"
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <h3 className="text-xl font-bold text-on-surface flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
                 Cadastrar Documento
               </h3>
               <button
                 onClick={() => setIsAddingDoc(false)}
-                className="p-2 hover:bg-white/5 rounded-full transition-colors"
+                className="p-2 hover:bg-surface-container-low rounded-full transition-colors"
               >
-                <X className="h-5 w-5 text-slate-400" />
+                <X className="h-5 w-5 text-on-surface-variant" />
               </button>
             </div>
 
             <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Nome do Documento</label>
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 block">Nome do Documento</label>
                 <input
                   type="text"
                   value={newDoc.name}
                   onChange={(e) => setNewDoc({ ...newDoc, name: e.target.value })}
                   placeholder="Ex: Projeto_Arquitetonico_Rev01.pdf"
-                  className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-primary outline-none"
+                  className="w-full bg-surface border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Anexo (Arquivo)</label>
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 block">Anexo (Arquivo)</label>
                 <div className="relative group">
                   <input
                     type="file"
                     onChange={(e) => setNewDoc({ ...newDoc, file: e.target.files?.[0] || null })}
                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                   />
-                  <div className="bg-[#1C232E] border border-slate-800 border-dashed rounded-xl px-4 py-6 text-center group-hover:border-primary transition-colors">
-                    <Cloud className="h-6 w-6 text-slate-500 mx-auto mb-2 group-hover:text-primary" />
-                    <p className="text-xs text-slate-400 font-medium">
+                  <div className="bg-surface border border-outline border-dashed rounded-xl px-4 py-6 text-center group-hover:border-primary transition-colors">
+                    <Cloud className="h-6 w-6 text-on-surface-variant mx-auto mb-2 group-hover:text-primary" />
+                    <p className="text-xs text-on-surface-variant font-medium">
                       {newDoc.file ? newDoc.file.name : 'Clique para selecionar ou arraste o arquivo'}
                     </p>
                   </div>
@@ -518,17 +518,17 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
               <div className="flex gap-4 pt-2">
                 <button
                   onClick={() => setIsAddingDoc(false)}
-                  className="flex-1 py-3.5 text-xs font-bold text-slate-400 hover:bg-white/5 rounded-xl transition-colors border border-transparent"
+                  className="flex-1 py-3.5 text-xs font-bold text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-colors border border-transparent"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleSaveDocument}
                   disabled={!newDoc.name || isSaving}
-                  className="flex-1 bg-primary py-3.5 text-xs font-bold text-white rounded-xl transition-all hover:bg-slate-700 shadow-lg shadow-black/20 disabled:opacity-50 disabled:scale-100 active:scale-95 flex items-center justify-center gap-2"
+                  className="flex-1 bg-primary py-3.5 text-xs font-bold text-on-surface rounded-xl transition-all hover:opacity-90 shadow-lg shadow-sm disabled:opacity-50 disabled:scale-100 active:scale-95 flex items-center justify-center gap-2"
                 >
                   {isSaving ? (
-                    <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    <div className="h-4 w-4 border-2 border-outline-variant border-t-white rounded-full animate-spin" />
                   ) : (
                     <>Confirmar</>
                   )}
@@ -561,20 +561,20 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#1C232E] w-full h-full md:h-[90vh] md:max-w-4xl md:rounded-[32px] border border-white/5 shadow-2xl flex flex-col overflow-hidden"
+            className="bg-surface w-full h-full md:h-[90vh] md:max-w-4xl md:rounded-[32px] border border-outline shadow-2xl flex flex-col overflow-hidden"
           >
-            <div className="p-6 md:p-8 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-primary/10 to-transparent shrink-0">
+            <div className="p-6 md:p-8 border-b border-outline flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-primary/10 to-transparent shrink-0">
               <div className="flex items-center justify-between w-full md:w-auto">
                 <div>
-                  <h3 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
+                  <h3 className="text-xl md:text-2xl font-black text-on-surface flex items-center gap-3">
                     <Camera className="h-6 w-6 text-primary" />
                     Histórico Completo
                   </h3>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Trajetória da Obra: {project.name}</p>
+                  <p className="text-xs text-on-surface-variant font-bold uppercase tracking-widest mt-1">Trajetória da Obra: {project.name}</p>
                 </div>
                 <button
                   onClick={() => setShowFullHistory(false)}
-                  className="p-3 hover:bg-white/5 rounded-full transition-colors text-slate-400 hover:text-white md:hidden"
+                  className="p-3 hover:bg-surface-container-low rounded-full transition-colors text-on-surface-variant hover:text-on-surface md:hidden"
                 >
                   <X className="h-6 w-6" />
                 </button>
@@ -583,33 +583,33 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
               {/* Date Filters */}
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">De:</span>
+                  <span className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest ml-1">De:</span>
                   <input
                     type="date"
                     value={dateFilter.start}
                     onChange={(e) => setDateFilter({ ...dateFilter, start: e.target.value })}
-                    className="bg-[#2B3647] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:border-primary outline-none"
+                    className="bg-surface-container-high border border-outline rounded-xl px-3 py-2 text-xs text-on-surface focus:border-primary outline-none"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Até:</span>
+                  <span className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Até:</span>
                   <input
                     type="date"
                     value={dateFilter.end}
                     onChange={(e) => setDateFilter({ ...dateFilter, end: e.target.value })}
-                    className="bg-[#2B3647] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:border-primary outline-none"
+                    className="bg-surface-container-high border border-outline rounded-xl px-3 py-2 text-xs text-on-surface focus:border-primary outline-none"
                   />
                 </div>
                 <button
                   onClick={() => setDateFilter({ start: '', end: '' })}
-                  className="mt-5 p-2.5 text-slate-500 hover:text-white transition-colors"
+                  className="mt-5 p-2.5 text-on-surface-variant hover:text-on-surface transition-colors"
                   title="Limpar filtros"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setShowFullHistory(false)}
-                  className="hidden md:flex p-3 hover:bg-white/5 rounded-full transition-colors text-slate-400 hover:text-white ml-4"
+                  className="hidden md:flex p-3 hover:bg-surface-container-low rounded-full transition-colors text-on-surface-variant hover:text-on-surface ml-4"
                 >
                   <X className="h-6 w-6" />
                 </button>
@@ -618,7 +618,7 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
 
             <div className="flex-1 overflow-y-auto p-6 md:p-12 no-scrollbar">
               <div className="relative space-y-16 max-w-2xl mx-auto">
-                <div className="absolute left-3 top-2 bottom-2 w-px bg-white/5"></div>
+                <div className="absolute left-3 top-2 bottom-2 w-px bg-surface-container-low"></div>
                 {dailyLogs
                   .filter(log => {
                     if (!dateFilter.start && !dateFilter.end) return true;
@@ -630,25 +630,25 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
                   .map((log, i) => (
                     <div key={log.id} className="relative flex gap-8 items-start group">
                       <div className="z-10 bg-primary w-6 h-6 rounded-full flex items-center justify-center shrink-0 ring-4 ring-[#1C232E] shadow-lg shadow-primary/20 transition-transform">
-                        <Check className="text-white h-3 w-3" />
+                        <Check className="text-on-surface h-3 w-3" />
                       </div>
                       <div className="flex-1 space-y-6">
                         <div className="flex flex-col gap-2">
-                          <h4 className="text-xl font-black text-white capitalize">{formatDate(log.date, { day: '2-digit', month: 'long', year: 'numeric', weekday: 'long' })}</h4>
+                          <h4 className="text-xl font-black text-on-surface capitalize">{formatDate(log.date, { day: '2-digit', month: 'long', year: 'numeric', weekday: 'long' })}</h4>
                           <div className="flex flex-wrap items-center gap-4">
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full flex items-center gap-1.5"><Cloud className="h-3 w-3" /> {log.weather}</span>
+                            <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest bg-surface-container-low px-3 py-1 rounded-full flex items-center gap-1.5"><Cloud className="h-3 w-3" /> {log.weather}</span>
                             <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full flex items-center gap-1.5"><HardHat className="h-3 w-3" /> Equipe: {log.workers}</span>
                           </div>
                         </div>
 
-                        <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-inner">
-                          <p className="text-slate-200 text-base leading-relaxed">"{log.activities || 'Nenhuma atividade registrada.'}"</p>
+                        <div className="bg-surface-container-low p-6 rounded-2xl border border-outline shadow-inner">
+                          <p className="text-on-surface text-base leading-relaxed">"{log.activities || 'Nenhuma atividade registrada.'}"</p>
                         </div>
 
                         {log.daily_log_photos && log.daily_log_photos.length > 0 && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {log.daily_log_photos.map((photo: any) => (
-                              <div key={photo.id} className="aspect-video rounded-2xl overflow-hidden border border-white/10 relative group/photo cursor-pointer bg-black/40">
+                              <div key={photo.id} className="aspect-video rounded-2xl overflow-hidden border border-outline relative group/photo cursor-pointer bg-black/40">
                                 <img
                                   src={photo.image_url}
                                   alt="Daily"
@@ -656,7 +656,7 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
                                 />
                                 {photo.description && (
                                   <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-                                    <p className="text-xs text-white font-medium">{photo.description}</p>
+                                    <p className="text-xs text-on-surface font-medium">{photo.description}</p>
                                   </div>
                                 )}
                               </div>
@@ -669,8 +669,8 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
               </div>
             </div>
 
-            <div className="p-6 border-t border-white/5 bg-slate-900/20 text-center shrink-0">
-              <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[3px]">360Pro • Relatório de Progresso</p>
+            <div className="p-6 border-t border-outline bg-surface/20 text-center shrink-0">
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[3px]">360Pro • Relatório de Progresso</p>
             </div>
           </motion.div>
         </div>
@@ -681,19 +681,19 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-[#1C232E] w-full h-full md:rounded-[40px] border border-white/5 shadow-2xl flex flex-col overflow-hidden max-w-6xl"
+            className="bg-surface w-full h-full md:rounded-[40px] border border-outline shadow-2xl flex flex-col overflow-hidden max-w-6xl"
           >
-            <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-primary/20 to-transparent shrink-0">
+            <div className="p-8 border-b border-outline flex items-center justify-between bg-gradient-to-r from-primary/20 to-transparent shrink-0">
               <div>
-                <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                <h3 className="text-2xl font-black text-on-surface flex items-center gap-3">
                   <Camera className="h-6 w-6 text-primary" />
                   Galeria de Fotos
                 </h3>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">{allPhotos.length} fotos registradas</p>
+                <p className="text-xs text-on-surface-variant font-bold uppercase tracking-widest mt-1">{allPhotos.length} fotos registradas</p>
               </div>
               <button
                 onClick={() => setIsGalleryOpen(false)}
-                className="p-4 hover:bg-white/5 rounded-2xl transition-colors text-slate-400 hover:text-white"
+                className="p-4 hover:bg-surface-container-low rounded-2xl transition-colors text-on-surface-variant hover:text-on-surface"
               >
                 <X className="h-7 w-7" />
               </button>
@@ -711,7 +711,7 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
                   <div key={i} className="group flex flex-col gap-3">
                     <div
                       onClick={() => setSelectedPhoto(photo)}
-                      className="aspect-square rounded-3xl overflow-hidden border border-white/10 bg-black/40 relative cursor-pointer"
+                      className="aspect-square rounded-3xl overflow-hidden border border-outline bg-black/40 relative cursor-pointer"
                     >
                       <img
                         src={photo.url}
@@ -719,11 +719,11 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
-                        <div className="bg-white/20 backdrop-blur-md rounded-full p-4 border border-white/10 transform scale-90 group-hover:scale-100 transition-transform">
-                          <Search className="h-6 w-6 text-white" />
+                        <div className="bg-white/20 backdrop-blur-md rounded-full p-4 border border-outline transform scale-90 group-hover:scale-100 transition-transform">
+                          <Search className="h-6 w-6 text-on-surface" />
                         </div>
                       </div>
-                      <div className="absolute top-4 left-4 px-3 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-bold text-white uppercase tracking-widest border border-white/10">
+                      <div className="absolute top-4 left-4 px-3 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-bold text-on-surface uppercase tracking-widest border border-outline">
                         {formatDate(photo.date)}
                       </div>
                     </div>
@@ -750,13 +750,13 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
             <div className="absolute -top-16 right-0 flex items-center gap-4">
               <button
                 onClick={() => setSelectedPhoto(null)}
-                className="p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all border border-white/10"
+                className="p-3 bg-surface-container-high hover:bg-white/20 rounded-2xl text-on-surface transition-all border border-outline"
               >
                 <X className="h-6 w-6" />
               </button>
             </div>
 
-            <div className="rounded-[32px] overflow-hidden border border-white/10 shadow-2xl bg-black/40 aspect-[4/3] md:aspect-video flex items-center justify-center">
+            <div className="rounded-[32px] overflow-hidden border border-outline shadow-2xl bg-black/40 aspect-[4/3] md:aspect-video flex items-center justify-center">
               <img
                 src={selectedPhoto.url}
                 alt=""
@@ -764,15 +764,15 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
               />
             </div>
 
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 md:p-8">
+            <div className="bg-surface-container-low backdrop-blur-md border border-outline rounded-3xl p-6 md:p-8">
               <div className="flex items-center justify-between gap-6">
                 <div>
                   <p className="text-xs text-primary font-black uppercase tracking-[3px] mb-2">Registro de Obra</p>
-                  <h4 className="text-xl font-bold text-white leading-tight">{selectedPhoto.desc}</h4>
+                  <h4 className="text-xl font-bold text-on-surface leading-tight">{selectedPhoto.desc}</h4>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Data da Foto</p>
-                  <p className="text-sm font-bold text-white">{formatDate(selectedPhoto.date, { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                  <p className="text-[10px] text-on-surface-variant font-black uppercase tracking-widest mb-1">Data da Foto</p>
+                  <p className="text-sm font-bold text-on-surface">{formatDate(selectedPhoto.date, { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                 </div>
               </div>
             </div>

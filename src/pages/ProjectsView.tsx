@@ -9,7 +9,8 @@ import {
   ChevronLeft,
   AlertCircle,
   X,
-  Users
+  Users,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useProjects } from '../hooks/useProjects';
 import { useProjectData } from '../hooks/useProjectData';
@@ -43,6 +44,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
 
   // Modals for Projects
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPciPromptModalOpen, setIsPciPromptModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
   const [formData, setFormData] = useState<Partial<Project>>({});
@@ -95,7 +97,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
       deadline: '',
       description: ''
     });
-    setIsModalOpen(true);
+    setIsPciPromptModalOpen(true);
   };
 
   const handleSaveProject = async () => {
@@ -219,6 +221,9 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         setPciItems(extractedItems);
         setAlertConfig({ isOpen: true, title: 'Sucesso', message: `${extractedItems.length} itens importados!`, type: 'success' });
         
+        setIsPciPromptModalOpen(false);
+        setIsModalOpen(true);
+
         // Clear input so it can be selected again
         e.target.value = '';
 
@@ -253,16 +258,16 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           <div className="flex items-center gap-6">
             <button 
               onClick={() => onSelectProject(null)} 
-              className="p-4 bg-white/5 hover:bg-primary/10 rounded-2xl transition-all duration-300 text-on-surface-variant hover:text-primary border border-white/5 group active:scale-90"
+              className="p-4 bg-surface-container-low hover:bg-primary/10 rounded-2xl transition-all duration-300 text-on-surface-variant hover:text-primary border border-outline group active:scale-90"
             >
               <ChevronLeft className="h-6 w-6 group-hover:-translate-x-1 transition-transform" />
             </button>
             <div className="min-w-0">
               <div className="flex items-center gap-4 flex-wrap">
-                <h2 className="text-3xl md:text-4xl font-display font-bold tracking-tight text-white uppercase">{selectedProject.name}</h2>
+                <h2 className="text-3xl md:text-4xl font-display font-bold tracking-tight text-on-surface uppercase">{selectedProject.name}</h2>
                 <div className={cn(
                   "px-4 py-1.5 text-[10px] font-display font-bold rounded-lg border backdrop-blur-xl uppercase tracking-[2px]",
-                  selectedProject.status === 'Em andamento' ? 'bg-primary/10 text-primary border-primary/20 shadow-[0_0_10px_rgba(34,255,136,0.2)]' : 'bg-white/5 text-on-surface-variant border-white/10'
+                  selectedProject.status === 'Em andamento' ? 'bg-primary/10 text-primary border-primary/20 shadow-sm border-primary/20' : 'bg-surface-container-low text-on-surface-variant border-outline'
                 )}>
                   {selectedProject.status}
                 </div>
@@ -280,7 +285,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                 "w-full md:w-auto px-6 py-4 text-[10px] font-display font-bold uppercase tracking-[2px] rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 border active:scale-95",
                 activeTab === 'colaboradores'
                   ? "bg-primary text-background border-primary shadow-[0_0_20px_rgba(34,255,136,0.3)]"
-                  : "bg-surface-container-high/40 text-on-surface-variant border-white/5 hover:border-primary/30 hover:text-white"
+                  : "bg-surface-container-high/40 text-on-surface-variant border-outline hover:border-primary/30 hover:text-on-surface"
               )}
             >
               <Users className="h-4 w-4" /> Gestão de Equipe
@@ -288,7 +293,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           )}
         </div>
 
-        <div className="flex border-b border-white/5 mb-10 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 gap-2">
+        <div className="flex border-b border-outline mb-10 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 gap-2">
           {[
             { id: 'orcamento', label: 'Orçamento', visible: canEditBudget },
             { id: 'financeiro', label: 'Financeiro', visible: canAccessFinance },
@@ -304,7 +309,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                 "px-8 py-5 text-[10px] font-display font-bold uppercase tracking-[3px] border-b-2 transition-all duration-300 whitespace-nowrap relative group",
                 activeTab === tab.id
                   ? "border-primary text-primary"
-                  : "border-transparent text-on-surface-variant hover:text-white"
+                  : "border-transparent text-on-surface-variant hover:text-on-surface"
               )}
             >
               {tab.label}
@@ -392,7 +397,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
       <div className="flex flex-col md:flex-row items-end justify-between gap-8 mb-16 relative">
         <div className="absolute -top-10 -left-10 w-64 h-64 bg-primary/5 blur-[120px] rounded-full animate-pulse" />
         <div>
-          <h2 className="text-4xl md:text-5xl font-display font-bold tracking-tight text-white uppercase group">
+          <h2 className="text-4xl md:text-5xl font-display font-bold tracking-tight text-on-surface uppercase group">
             CENTRAL DE <span className="text-primary group-hover:drop-shadow-[0_0_15px_rgba(34,255,136,0.5)] transition-all">PROJETOS</span>
           </h2>
           <div className="flex items-center gap-3 mt-3">
@@ -433,7 +438,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
               <div
                 key={project.id}
                 onClick={() => onSelectProject(project.id)}
-                className="group relative bg-surface-container-low/40 backdrop-blur-xl rounded-[32px] border border-white/5 overflow-hidden flex flex-col hover:border-primary/40 cursor-pointer transition-all duration-500 hover:translate-y-[-8px] shadow-2xl"
+                className="group relative bg-surface-container-low/40 backdrop-blur-xl rounded-[32px] border border-outline overflow-hidden flex flex-col hover:border-primary/40 cursor-pointer transition-all duration-500 hover:translate-y-[-8px] shadow-2xl"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 
@@ -442,13 +447,13 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                     <>
                       <button
                         onClick={(e) => handleEdit(e, project)}
-                        className="p-3 bg-background/80 text-on-surface-variant hover:text-primary border border-white/10 rounded-xl backdrop-blur-xl transition-all hover:border-primary/50"
+                        className="p-3 bg-background/80 text-on-surface-variant hover:text-primary border border-outline rounded-xl backdrop-blur-xl transition-all hover:border-primary/50"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeletingProject(project); }}
-                        className="p-3 bg-background/80 text-on-surface-variant hover:text-error border border-white/10 rounded-xl backdrop-blur-xl transition-all hover:border-error/50"
+                        className="p-3 bg-background/80 text-on-surface-variant hover:text-error border border-outline rounded-xl backdrop-blur-xl transition-all hover:border-error/50"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -460,31 +465,31 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                   <div className="flex items-start justify-between mb-8">
                     <div className={cn(
                       "px-4 py-1.5 rounded-lg text-[9px] font-display font-bold uppercase tracking-[2px] border",
-                      project.status === 'Em andamento' ? 'bg-primary/10 text-primary border-primary/20 shadow-[0_0_10px_rgba(34,255,136,0.2)]' :
+                      project.status === 'Em andamento' ? 'bg-primary/10 text-primary border-primary/20 shadow-sm border-primary/20' :
                         project.status === 'Finalizada' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                          'bg-white/5 text-on-surface-variant border-white/10'
+                          'bg-surface-container-low text-on-surface-variant border-outline'
                     )}>
                       {project.status}
                     </div>
                   </div>
 
-                  <h3 className="text-2xl font-display font-bold text-white tracking-tight group-hover:text-primary transition-colors line-clamp-2 min-h-[64px] uppercase leading-tight">{project.name}</h3>
+                  <h3 className="text-2xl font-display font-bold text-on-surface tracking-tight group-hover:text-primary transition-colors line-clamp-2 min-h-[64px] uppercase leading-tight">{project.name}</h3>
 
                   <div className="mt-8 space-y-5">
                     <div className="flex items-center gap-4 group/item">
-                      <div className="p-2 rounded-lg bg-white/5 group-hover/item:bg-primary/10 transition-colors">
+                      <div className="p-2 rounded-lg bg-surface-container-low group-hover/item:bg-primary/10 transition-colors">
                         <MapIcon className="h-4 w-4 text-on-surface-variant group-hover/item:text-primary" />
                       </div>
                       <span className="text-[11px] font-display font-bold text-on-surface-variant uppercase tracking-widest">{project.location || 'LOCAL NÃO DEFINIDO'}</span>
                     </div>
                     <div className="flex items-center gap-4 group/item">
-                      <div className="p-2 rounded-lg bg-white/5 group-hover/item:bg-primary/10 transition-colors">
+                      <div className="p-2 rounded-lg bg-surface-container-low group-hover/item:bg-primary/10 transition-colors">
                         <div className="w-4 h-4 flex items-center justify-center font-display font-bold text-[9px] text-on-surface-variant group-hover/item:text-primary uppercase">m²</div>
                       </div>
                       <span className="text-[11px] font-display font-bold text-on-surface-variant uppercase tracking-widest">{project.area || '0'},00 M² DE ÁREA</span>
                     </div>
                     <div className="flex items-center gap-4 group/item">
-                      <div className="p-2 rounded-lg bg-white/5 group-hover/item:bg-primary/10 transition-colors">
+                      <div className="p-2 rounded-lg bg-surface-container-low group-hover/item:bg-primary/10 transition-colors">
                         <CalendarIcon className="h-4 w-4 text-on-surface-variant group-hover/item:text-primary" />
                       </div>
                       <span className="text-[11px] font-display font-bold text-on-surface-variant uppercase tracking-widest">ENTREGA: {project.deadline || 'EM ANÁLISE'}</span>
@@ -492,9 +497,9 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                   </div>
                 </div>
 
-                <div className="px-10 py-6 bg-white/2 border-t border-white/5 flex items-center justify-between group-hover:bg-primary/5 transition-all duration-500">
+                <div className="px-10 py-6 bg-white/2 border-t border-outline flex items-center justify-between group-hover:bg-primary/5 transition-all duration-500">
                   <span className="text-[10px] font-display font-bold text-on-surface-variant uppercase tracking-[3px] group-hover:text-primary transition-colors">Acessar Unidade</span>
-                  <div className="p-2 rounded-lg bg-white/5 group-hover:bg-primary text-on-surface-variant group-hover:text-background transition-all duration-500 shadow-[0_0_15px_rgba(34,255,136,0)] group-hover:shadow-[0_0_15px_rgba(34,255,136,0.4)]">
+                  <div className="p-2 rounded-lg bg-surface-container-low group-hover:bg-primary text-on-surface-variant group-hover:text-background transition-all duration-500 shadow-[0_0_15px_rgba(34,255,136,0)] group-hover:shadow-[0_0_15px_rgba(34,255,136,0.4)]">
                     <ChevronLeft className="h-4 w-4 rotate-180" />
                   </div>
                 </div>
@@ -504,32 +509,63 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         </>
       )}
 
+      {isPciPromptModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-surface-container-low/90 backdrop-blur-md" onClick={() => setIsPciPromptModalOpen(false)}></div>
+          <div className="relative bg-surface rounded-[24px] shadow-2xl border border-outline w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 p-8 text-center">
+            <div className="mx-auto w-16 h-16 bg-primary/10 flex items-center justify-center rounded-2xl mb-6 border border-primary/20">
+              <FileSpreadsheet className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-display font-bold text-on-surface tracking-tight mb-3 uppercase">Anexar Planilha PCI?</h3>
+            <p className="text-on-surface-variant text-sm mb-8">
+              Você deseja importar os serviços e itens a partir da planilha padrão da Caixa (PCI)? Opcionalmente, você pode preencher os dados manualmente.
+            </p>
+            <div className="flex flex-col gap-4">
+              <label className="w-full px-6 py-4 bg-primary text-background text-[11px] font-display font-bold rounded-xl uppercase tracking-[2px] hover:scale-105 transition-all shadow-[0_0_20px_-5px_rgba(34,255,136,0.4)] cursor-pointer flex items-center justify-center gap-2 active:scale-95">
+                <FileSpreadsheet className="h-4 w-4" />
+                Sim, anexar planilha
+                <input type="file" accept=".xlsx,.xlsm,.xls,.xlsb" onChange={handleFileUpload} className="hidden" />
+              </label>
+              <button
+                onClick={() => {
+                  setIsPciPromptModalOpen(false);
+                  setIsModalOpen(true);
+                }}
+                className="w-full px-6 py-4 bg-transparent text-on-surface-variant border border-outline text-[11px] font-display font-bold rounded-xl uppercase tracking-[2px] hover:bg-surface-container-low hover:text-on-surface transition-all active:scale-95"
+              >
+                Não, cadastrar manualmente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-[#1C232E] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="absolute inset-0 bg-surface-container-low/90 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
+          <div className="relative bg-surface rounded-[24px] shadow-2xl border border-outline w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-8 pb-4 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-slate-100 tracking-tight">{editingProject ? 'Editar Projeto' : 'Novo Projeto'}</h3>
+              <h3 className="text-xl font-bold text-on-surface tracking-tight">{editingProject ? 'Editar Projeto' : 'Novo Projeto'}</h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-slate-800 rounded-full"
+                className="text-on-surface-variant hover:text-on-surface transition-colors p-2 hover:bg-surface-container-high rounded-full"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="px-8 pb-8 space-y-6">
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Nome da Obra</label>
-                <input type="text" placeholder="Ex: Residência Alto do Lago..." value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
+                <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Nome da Obra</label>
+                <input type="text" placeholder="Ex: Residência Alto do Lago..." value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-surface border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none" />
               </div>
               <div className="grid grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Cliente</label>
-                  <input type="text" placeholder="Nome do proprietário" value={formData.client || ''} onChange={e => setFormData({ ...formData, client: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
+                  <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Cliente</label>
+                  <input type="text" placeholder="Nome do proprietário" value={formData.client || ''} onChange={e => setFormData({ ...formData, client: e.target.value })} className="w-full bg-surface border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Status</label>
-                  <select value={formData.status || 'Planejamento'} onChange={e => setFormData({ ...formData, status: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none appearance-none">
+                  <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Status</label>
+                  <select value={formData.status || 'Planejamento'} onChange={e => setFormData({ ...formData, status: e.target.value })} className="w-full bg-surface border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none appearance-none">
                     <option value="Planejamento">Planejamento</option>
                     <option value="Em andamento">Em andamento</option>
                     <option value="Finalizada">Finalizada</option>
@@ -538,17 +574,17 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Área Total (m²)</label>
-                  <input type="number" placeholder="0,00" value={formData.area || ''} onChange={e => setFormData({ ...formData, area: e.target.value === '' ? 0 : Number(e.target.value) })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
+                  <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Área Total (m²)</label>
+                  <input type="number" placeholder="0,00" value={formData.area || ''} onChange={e => setFormData({ ...formData, area: e.target.value === '' ? 0 : Number(e.target.value) })} className="w-full bg-surface border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Localização</label>
-                  <input type="text" placeholder="Endereço da obra" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
+                  <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Localização</label>
+                  <input type="text" placeholder="Endereço da obra" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} className="w-full bg-surface border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none" />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Valor do Contrato (R$)</label>
+                  <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Valor do Contrato (R$)</label>
                   <input 
                     type="text" 
                     placeholder="0,00" 
@@ -557,38 +593,37 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
                       const value = e.target.value.replace(/\D/g, '');
                       setFormData({ ...formData, contract_value: value ? Number(value) / 100 : 0 });
                     }} 
-                    className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" 
+                    className="w-full bg-surface border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none" 
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Planilha PCI (Opcional)</label>
-                  <label className="flex items-center justify-center w-full bg-[#1C232E] border border-slate-800 border-dashed rounded-xl px-4 py-2 text-sm text-white hover:border-[#BCB5AC] cursor-pointer transition-colors h-[46px] relative group">
-                    <span className="truncate group-hover:text-[#BCB5AC] transition-colors">{pciItems.length > 0 ? `${pciItems.length} itens carregados` : 'Anexar Planilha (.xlsx)'}</span>
-                    <input type="file" accept=".xlsx,.xlsm,.xls" onChange={handleFileUpload} className="hidden" />
-                  </label>
+                  <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Planilha PCI (Opcional)</label>
+                  <div className="flex items-center justify-center w-full bg-surface/50 border border-outline rounded-xl px-4 py-2 text-sm text-on-surface-variant h-[46px]">
+                    <span className="truncate">{pciItems.length > 0 ? 'Planilha Importada' : 'Planilha Manual'}</span>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Data de Início</label>
-                  <input type="date" value={formData.start_date || ''} onChange={e => setFormData({ ...formData, start_date: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
+                  <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Data de Início</label>
+                  <input type="date" value={formData.start_date || ''} onChange={e => setFormData({ ...formData, start_date: e.target.value })} className="w-full bg-surface border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Previsão Entrega</label>
-                  <input type="date" value={formData.deadline || ''} onChange={e => setFormData({ ...formData, deadline: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" />
+                  <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Previsão Entrega</label>
+                  <input type="date" value={formData.deadline || ''} onChange={e => setFormData({ ...formData, deadline: e.target.value })} className="w-full bg-surface border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none" />
                 </div>
               </div>
-              <textarea placeholder="Observações adicionais sobre o projeto..." rows={3} value={formData.description || ''} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none resize-none" />
+              <textarea placeholder="Observações adicionais sobre o projeto..." rows={3} value={formData.description || ''} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full bg-surface border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none resize-none" />
               <div className="pt-4 flex items-center justify-end gap-3">
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="px-6 py-2.5 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-white transition-colors"
+                  className="px-6 py-2.5 text-xs font-bold text-on-surface-variant uppercase tracking-widest hover:text-on-surface transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleSaveProject}
-                  className="px-8 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:bg-slate-700 transition-all shadow-lg shadow-black/20 active:scale-[0.98]"
+                  className="px-8 py-3 bg-primary text-on-primary text-xs font-bold rounded-xl uppercase tracking-[1.5px] hover:opacity-90 transition-all shadow-lg shadow-sm active:scale-[0.98]"
                 >
                   Salvar Projeto
                 </button>

@@ -28,7 +28,7 @@ export function MobileNav({ activeTab, setActiveTab, isClient }: MobileNavProps)
   if (isClient && navItems.length <= 1) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[60] flex h-16 items-center justify-around bg-[#1C232E]/95 backdrop-blur-lg border-t border-white/5 md:hidden px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-[60] flex h-16 items-center justify-around bg-surface/95 backdrop-blur-lg border-t border-outline md:hidden px-2">
       {navItems.map((item) => (
         <button
           key={item.id}
@@ -36,14 +36,14 @@ export function MobileNav({ activeTab, setActiveTab, isClient }: MobileNavProps)
           className={cn(
             "flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all active:scale-90",
             activeTab === item.id 
-              ? "text-[#BCB5AC]" 
-              : "text-slate-500"
+              ? "text-primary" 
+              : "text-on-surface-variant"
           )}
         >
           <item.icon className={cn("h-5 w-5", activeTab === item.id && "scale-110")} />
           <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label}</span>
           {activeTab === item.id && (
-            <div className="absolute bottom-1 w-1 h-1 rounded-full bg-[#BCB5AC]" />
+            <div className="absolute bottom-1 w-1 h-1 rounded-full bg-primary" />
           )}
         </button>
       ))}

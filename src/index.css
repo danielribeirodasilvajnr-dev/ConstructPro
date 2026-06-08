@@ -1,49 +1,98 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
+:root {
+  --app-primary: #0F4C81;
+  --app-secondary: #2563EB;
+  --app-on-primary: #ffffff;
+  --app-primary-container: rgba(15, 76, 129, 0.1);
+  
+  --app-background: #F8FAFC;
+  --app-surface: #FFFFFF;
+  --app-surface-container-low: #F1F5F9;
+  --app-surface-container-high: #E2E8F0;
+  --app-surface-container-highest: #CBD5E1;
+  
+  --app-on-surface: #1E293B;
+  --app-on-surface-variant: #64748B;
+  --app-outline: #E2E8F0;
+  --app-outline-variant: #CBD5E1;
+  
+  --app-success: #16A34A;
+  --app-warning: #F59E0B;
+  --app-error: #DC2626;
+  --app-error-container: rgba(220, 38, 38, 0.1);
+}
+
+.dark {
+  --app-primary: #3B82F6;
+  --app-secondary: #60A5FA;
+  --app-on-primary: #ffffff;
+  --app-primary-container: rgba(59, 130, 246, 0.1);
+  
+  --app-background: #0F172A;
+  --app-surface: #1E293B;
+  --app-surface-container-low: #0B0F19;
+  --app-surface-container-high: #334155;
+  --app-surface-container-highest: #475569;
+  
+  --app-on-surface: #F8FAFC;
+  --app-on-surface-variant: #94A3B8;
+  --app-outline: #334155;
+  --app-outline-variant: #475569;
+  
+  --app-success: #22C55E;
+  --app-warning: #FBBF24;
+  --app-error: #EF4444;
+  --app-error-container: rgba(239, 68, 68, 0.1);
+}
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", sans-serif;
   
-  --color-primary: #22ff88;
-  --color-on-primary: #050505;
-  --color-primary-container: rgba(34, 255, 136, 0.1);
+  --color-primary: var(--app-primary);
+  --color-secondary: var(--app-secondary);
+  --color-on-primary: var(--app-on-primary);
+  --color-primary-container: var(--app-primary-container);
   
-  --color-background: #050505;
-  --color-surface: #0f1115;
-  --color-surface-container-low: #080808;
-  --color-surface-container-high: #1a1d23;
-  --color-surface-container-highest: #242932;
+  --color-background: var(--app-background);
+  --color-surface: var(--app-surface);
+  --color-surface-container-low: var(--app-surface-container-low);
+  --color-surface-container-high: var(--app-surface-container-high);
+  --color-surface-container-highest: var(--app-surface-container-highest);
   
-  --color-on-surface: #ffffff;
-  --color-on-surface-variant: #64748b;
-  --color-outline: rgba(255, 255, 255, 0.05);
-  --color-outline-variant: rgba(255, 255, 255, 0.1);
+  --color-on-surface: var(--app-on-surface);
+  --color-on-surface-variant: var(--app-on-surface-variant);
+  --color-outline: var(--app-outline);
+  --color-outline-variant: var(--app-outline-variant);
   
-  --color-error: #ff4444;
-  --color-error-container: #441111;
+  --color-success: var(--app-success);
+  --color-warning: var(--app-warning);
+  --color-error: var(--app-error);
+  --color-error-container: var(--app-error-container);
 }
 
 @layer base {
   body {
-    @apply bg-background text-on-surface font-sans antialiased selection:bg-primary/30 selection:text-primary;
+    @apply bg-background text-on-surface font-sans antialiased selection:bg-primary/20 selection:text-primary;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display font-bold tracking-tight;
+    @apply font-display font-bold tracking-tight text-on-surface;
   }
 }
 
 .glass-panel {
-  @apply bg-surface/40 backdrop-blur-xl border border-white/5;
+  @apply bg-surface/80 backdrop-blur-xl border border-outline shadow-sm;
 }
 
 .premium-glow {
-  box-shadow: 0 0 20px -5px rgba(34, 255, 136, 0.2);
+  box-shadow: 0 4px 20px -2px rgba(15, 76, 129, 0.1);
 }
 
 .hover-glow:hover {
-  box-shadow: 0 0 30px -5px rgba(34, 255, 136, 0.3);
+  box-shadow: 0 10px 30px -5px rgba(15, 76, 129, 0.15);
 }
 
 

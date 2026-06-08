@@ -175,16 +175,16 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={onClose}></div>
-      <div className="relative bg-[#1C232E] rounded-[24px] shadow-2xl border border-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-8 pb-4 flex items-center justify-between border-b border-slate-800/50">
+      <div className="absolute inset-0 bg-surface-container-low/90 backdrop-blur-md" onClick={onClose}></div>
+      <div className="relative bg-surface rounded-[24px] shadow-2xl border border-outline w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="p-8 pb-4 flex items-center justify-between border-b border-outline/50">
           <div>
-            <h3 className="text-xl font-bold text-slate-100 tracking-tight">Colaboradores</h3>
-            <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">{project.name}</p>
+            <h3 className="text-xl font-bold text-on-surface tracking-tight">Colaboradores</h3>
+            <p className="text-xs text-on-surface-variant mt-1 uppercase tracking-widest font-bold">{project.name}</p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-slate-800 rounded-full"
+            className="text-on-surface-variant hover:text-on-surface transition-colors p-2 hover:bg-surface-container-high rounded-full"
           >
             <X className="h-5 w-5" />
           </button>
@@ -194,22 +194,22 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
           {/* Invite Section */}
           <form onSubmit={handleInvite} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Convidar por E-mail</label>
+              <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Convidar por E-mail</label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant" />
                   <input
                     type="email"
                     placeholder="exemplo@email.com"
                     value={inviteEmail}
                     onChange={e => setInviteEmail(e.target.value)}
-                    className="w-full bg-[#1C232E] border border-slate-800 rounded-xl px-11 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none transition-all"
+                    className="w-full bg-surface border border-outline rounded-xl px-11 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all"
                   />
                 </div>
                 <select
                   value={inviteRole}
                   onChange={e => setInviteRole(e.target.value as any)}
-                  className="bg-[#1C232E] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none appearance-none cursor-pointer"
+                  className="bg-surface border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none appearance-none cursor-pointer"
                 >
                   <option value="editor">Editor</option>
                   <option value="assistant">Assistente de Engenharia</option>
@@ -230,7 +230,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
             <button
               type="submit"
               disabled={inviting || !inviteEmail}
-              className="w-full py-3.5 bg-[#BCB5AC] text-[#1C232E] text-xs font-bold rounded-xl uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3.5 bg-primary text-on-primary text-xs font-bold rounded-xl uppercase tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
               Enviar Convite
@@ -239,13 +239,13 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
 
           {/* List Section */}
           <div className="space-y-4">
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Pessoas com acesso</label>
+            <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Pessoas com acesso</label>
             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
               {/* Owner */}
-              <div className="flex flex-col p-4 bg-slate-900/50 rounded-2xl border border-slate-800/50 gap-4">
+              <div className="flex flex-col p-4 bg-surface-container-low rounded-2xl border border-outline/50 gap-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#BCB5AC]/10 flex items-center justify-center text-[#BCB5AC] font-bold text-sm overflow-hidden">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm overflow-hidden">
                       {ownerProfile?.avatar_url ? (
                         <img src={ownerProfile.avatar_url} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -253,12 +253,12 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                       )}
                     </div>
                     <div>
-                      <span className="text-sm font-bold text-slate-100 block truncate max-w-[150px]">{ownerProfile?.email || 'Administrador'}</span>
+                      <span className="text-sm font-bold text-on-surface block truncate max-w-[150px]">{ownerProfile?.email || 'Administrador'}</span>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px] text-slate-500 font-medium">Controle Total</span>
-                        <div className="px-1.5 py-0.5 bg-[#BCB5AC]/20 rounded text-[8px] font-black text-[#BCB5AC] uppercase tracking-wider">Gestor</div>
+                        <span className="text-[10px] text-on-surface-variant font-medium">Controle Total</span>
+                        <div className="px-1.5 py-0.5 bg-primary/20 rounded text-[8px] font-black text-primary uppercase tracking-wider">Gestor</div>
                         {ownerProfile?.job_title && (
-                          <span className="text-[9px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400 font-bold">{ownerProfile.job_title}</span>
+                          <span className="text-[9px] bg-surface-container-low px-1.5 py-0.5 rounded text-on-surface-variant font-bold">{ownerProfile.job_title}</span>
                         )}
                       </div>
                     </div>
@@ -266,7 +266,7 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => ownerProfile && startEditing(ownerProfile)}
-                      className="p-2 text-slate-600 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                      className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-all"
                       title="Editar Perfil"
                     >
                       <PenLine className="h-4 w-4" />
@@ -277,8 +277,8 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                 {/* Inline Contact Info */}
                 {!editingId && ownerProfile?.phone && (
                   <div className="flex items-center gap-4 pl-12">
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
-                      <Phone className="h-2.5 w-2.5 text-[#10B981]" />
+                    <div className="flex items-center gap-2 text-[10px] text-on-surface-variant font-medium">
+                      <Phone className="h-2.5 w-2.5 text-success" />
                       {ownerProfile.phone}
                     </div>
                   </div>
@@ -289,11 +289,11 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                   <motion.div 
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="space-y-4 pt-2 border-t border-white/5"
+                    className="space-y-4 pt-2 border-t border-outline"
                   >
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                        <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest flex items-center gap-1">
                           <Phone className="h-2.5 w-2.5" /> Telefone
                         </label>
                         <input 
@@ -301,17 +301,17 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                           placeholder="Ex: 55119..."
                           value={editForm.phone}
                           onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                          className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#BCB5AC] outline-none"
+                          className="w-full bg-black/40 border border-outline rounded-lg px-3 py-2 text-xs text-on-surface focus:border-primary outline-none"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                        <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest flex items-center gap-1">
                           <Briefcase className="h-2.5 w-2.5" /> Cargo
                         </label>
                         <select
                           value={editForm.job_title}
                           onChange={e => setEditForm(prev => ({ ...prev, job_title: e.target.value }))}
-                          className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#BCB5AC] outline-none"
+                          className="w-full bg-black/40 border border-outline rounded-lg px-3 py-2 text-xs text-on-surface focus:border-primary outline-none"
                         >
                           <option value="">Nenhum</option>
                           <option value="Gerente de obras">Gerente de obras</option>
@@ -323,14 +323,14 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                     <div className="flex gap-2">
                       <button 
                         onClick={() => setEditingId(null)}
-                        className="flex-1 py-2 text-[10px] font-bold text-slate-500 uppercase bg-white/5 rounded-lg hover:bg-white/10"
+                        className="flex-1 py-2 text-[10px] font-bold text-on-surface-variant uppercase bg-surface-container-low rounded-lg hover:bg-surface-container-high"
                       >
                         Cancelar
                       </button>
                       <button 
                         onClick={() => ownerProfile && handleUpdateProfile(ownerProfile.id)}
                         disabled={isUpdating}
-                        className="flex-1 py-2 text-[10px] font-bold text-white uppercase bg-[#BCB5AC] rounded-lg hover:bg-slate-700 flex items-center justify-center gap-2"
+                        className="flex-1 py-2 text-[10px] font-bold text-on-surface uppercase bg-primary rounded-lg hover:opacity-90 flex items-center justify-center gap-2"
                       >
                         {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                         Salvar
@@ -342,14 +342,14 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
 
               {/* Collaborators */}
               {loading ? (
-                <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-slate-600" /></div>
+                <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-on-surface-variant" /></div>
               ) : collaborators.length === 0 ? (
-                <p className="text-center py-4 text-xs text-slate-600 italic">Nenhum colaborador convidado ainda.</p>
+                <p className="text-center py-4 text-xs text-on-surface-variant italic">Nenhum colaborador convidado ainda.</p>
               ) : collaborators.map((c) => (
-                <div key={c.id} className="group flex flex-col p-4 bg-[#1C232E] rounded-2xl border border-slate-800/50 hover:border-[#BCB5AC]/30 transition-all gap-4">
+                <div key={c.id} className="group flex flex-col p-4 bg-surface rounded-2xl border border-outline/50 hover:border-primary/30 transition-all gap-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-sm overflow-hidden border border-slate-700">
+                      <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant font-bold text-sm overflow-hidden border border-outline-variant">
                         {c.profile?.avatar_url ? (
                           <img src={c.profile.avatar_url} alt="" className="w-full h-full object-cover" />
                         ) : (
@@ -357,21 +357,21 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                         )}
                       </div>
                       <div>
-                        <span className="text-sm font-bold text-slate-100 block truncate max-w-[150px]">{c.profile?.email}</span>
+                        <span className="text-sm font-bold text-on-surface block truncate max-w-[150px]">{c.profile?.email}</span>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           {c.role === 'proprietor' ? (
                             <><Verified className="h-3 w-3 text-[#FF8A00]" /><span className="text-[10px] text-[#FF8A00] font-bold uppercase tracking-wider">Proprietário/Cliente</span></>
                           ) : c.role === 'editor' ? (
-                            <><Shield className="h-3 w-3 text-[#BCB5AC]" /><span className="text-[10px] text-[#BCB5AC] font-bold uppercase tracking-wider">Editor</span></>
+                            <><Shield className="h-3 w-3 text-primary" /><span className="text-[10px] text-primary font-bold uppercase tracking-wider">Editor</span></>
                           ) : c.role === 'assistant' ? (
                             <><Shield className="h-3 w-3 text-emerald-500" /><span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Assistente</span></>
                           ) : c.role === 'intern' ? (
                             <><Shield className="h-3 w-3 text-blue-500" /><span className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Estagiário</span></>
                           ) : (
-                            <><Eye className="h-3 w-3 text-slate-500" /><span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Apenas Leitura</span></>
+                            <><Eye className="h-3 w-3 text-on-surface-variant" /><span className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Apenas Leitura</span></>
                           )}
                           {c.profile?.job_title && (
-                            <span className="text-[9px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400 font-bold ml-1">{c.profile.job_title}</span>
+                            <span className="text-[9px] bg-surface-container-low px-1.5 py-0.5 rounded text-on-surface-variant font-bold ml-1">{c.profile.job_title}</span>
                           )}
                         </div>
                       </div>
@@ -379,14 +379,14 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => c.profile && startEditing(c.profile)}
-                        className="p-2 text-slate-600 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                        className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-all"
                         title="Editar Perfil"
                       >
                         <PenLine className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => removeCollaborator(c.id)}
-                        className="p-2 text-slate-600 hover:text-red-500 hover:bg-red-500/5 rounded-lg transition-all"
+                        className="p-2 text-on-surface-variant hover:text-red-500 hover:bg-red-500/5 rounded-lg transition-all"
                         title="Remover"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -399,11 +399,11 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                     <motion.div 
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="space-y-4 pt-2 border-t border-white/5"
+                      className="space-y-4 pt-2 border-t border-outline"
                     >
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                          <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest flex items-center gap-1">
                             <Phone className="h-2.5 w-2.5" /> Telefone
                           </label>
                           <input 
@@ -411,17 +411,17 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                             placeholder="Ex: 55119..."
                             value={editForm.phone}
                             onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                            className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#BCB5AC] outline-none"
+                            className="w-full bg-black/40 border border-outline rounded-lg px-3 py-2 text-xs text-on-surface focus:border-primary outline-none"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                          <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest flex items-center gap-1">
                             <Briefcase className="h-2.5 w-2.5" /> Cargo
                           </label>
                           <select
                             value={editForm.job_title}
                             onChange={e => setEditForm(prev => ({ ...prev, job_title: e.target.value }))}
-                            className="w-full bg-black/40 border border-white/5 rounded-lg px-3 py-2 text-xs text-white focus:border-[#BCB5AC] outline-none"
+                            className="w-full bg-black/40 border border-outline rounded-lg px-3 py-2 text-xs text-on-surface focus:border-primary outline-none"
                           >
                             <option value="">Nenhum</option>
                             <option value="Gerente de obras">Gerente de obras</option>
@@ -433,14 +433,14 @@ export function CollaboratorsModal({ project, onClose }: CollaboratorsModalProps
                       <div className="flex gap-2">
                         <button 
                           onClick={() => setEditingId(null)}
-                          className="flex-1 py-2 text-[10px] font-bold text-slate-500 uppercase bg-white/5 rounded-lg hover:bg-white/10"
+                          className="flex-1 py-2 text-[10px] font-bold text-on-surface-variant uppercase bg-surface-container-low rounded-lg hover:bg-surface-container-high"
                         >
                           Cancelar
                         </button>
                         <button 
                           onClick={() => c.profile && handleUpdateProfile(c.profile.id)}
                           disabled={isUpdating}
-                          className="flex-1 py-2 text-[10px] font-bold text-white uppercase bg-[#BCB5AC] rounded-lg hover:bg-slate-700 flex items-center justify-center gap-2"
+                          className="flex-1 py-2 text-[10px] font-bold text-on-surface uppercase bg-primary rounded-lg hover:opacity-90 flex items-center justify-center gap-2"
                         >
                           {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                           Salvar

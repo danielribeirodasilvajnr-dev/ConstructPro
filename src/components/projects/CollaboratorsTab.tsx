@@ -228,33 +228,33 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Invite Form */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-[#1C232E] p-6 rounded-2xl border border-white/5 space-y-6">
+          <div className="bg-surface p-6 rounded-2xl border border-outline space-y-6">
             <div>
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Convidar Equipe</h3>
-              <p className="text-xs text-slate-500">Adicione novos colaboradores por e-mail.</p>
+              <h3 className="text-sm font-black text-on-surface-variant uppercase tracking-widest mb-1">Convidar Equipe</h3>
+              <p className="text-xs text-on-surface-variant">Adicione novos colaboradores por e-mail.</p>
             </div>
 
             <form onSubmit={handleInvite} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">E-mail</label>
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">E-mail</label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant" />
                   <input
                     type="email"
                     placeholder="exemplo@email.com"
                     value={inviteEmail}
                     onChange={e => setInviteEmail(e.target.value)}
-                    className="w-full bg-black/20 border border-slate-800 rounded-xl px-11 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none transition-all"
+                    className="w-full bg-surface-container-highest/20 border border-outline rounded-xl px-11 py-3 text-sm text-on-surface focus:border-primary outline-none transition-all"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Permissão</label>
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Permissão</label>
                 <select
                   value={inviteRole}
                   onChange={e => setInviteRole(e.target.value as any)}
-                  className="w-full bg-black/20 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none appearance-none cursor-pointer"
+                  className="w-full bg-surface-container-highest/20 border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none appearance-none cursor-pointer"
                 >
                   <option value="editor">Editor</option>
                   <option value="assistant">Assistente de Engenharia</option>
@@ -274,7 +274,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
               <button
                 type="submit"
                 disabled={inviting || !inviteEmail}
-                className="w-full py-3.5 bg-[#BCB5AC] text-[#1C232E] text-[10px] font-bold rounded-xl uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3.5 bg-primary text-on-primary text-[10px] font-bold rounded-xl uppercase tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
                 Enviar Convite
@@ -285,9 +285,9 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
 
         {/* List Section */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-[#1C232E] rounded-2xl border border-white/5 overflow-hidden">
-            <div className="p-6 border-b border-white/5">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Nossa Equipe</h3>
+          <div className="bg-surface rounded-2xl border border-outline overflow-hidden">
+            <div className="p-6 border-b border-outline">
+              <h3 className="text-sm font-black text-on-surface-variant uppercase tracking-widest">Nossa Equipe</h3>
             </div>
             
             <div className="divide-y divide-white/5">
@@ -304,15 +304,15 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                   <div className="flex items-center gap-4">
                     <div 
                       onClick={() => document.getElementById('admin-avatar-upload')?.click()}
-                      className="w-14 h-14 rounded-2xl bg-[#BCB5AC]/10 flex items-center justify-center text-[#BCB5AC] font-black text-xl border border-[#BCB5AC]/20 overflow-hidden relative cursor-pointer group shadow-lg shadow-blue-500/5 transition-all hover:scale-105 active:scale-95"
+                      className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-xl border border-primary/20 overflow-hidden relative cursor-pointer group shadow-lg shadow-blue-500/5 transition-all hover:scale-105 active:scale-95"
                     >
                       {isUpdating ? (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
-                          <Loader2 className="h-5 w-5 text-white animate-spin" />
+                          <Loader2 className="h-5 w-5 text-on-surface animate-spin" />
                         </div>
                       ) : (
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10">
-                          <Camera className="h-5 w-5 text-white" />
+                          <Camera className="h-5 w-5 text-on-surface" />
                         </div>
                       )}
                       
@@ -323,14 +323,14 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                       )}
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-on-surface flex items-center gap-2">
                         {ownerProfile?.email || 'Administrador'}
-                        <span className="px-2 py-0.5 bg-[#BCB5AC]/10 text-[#BCB5AC] text-[8px] font-black uppercase tracking-wider rounded">Gestor</span>
+                        <span className="px-2 py-0.5 bg-primary/10 text-primary text-[8px] font-black uppercase tracking-wider rounded">Gestor</span>
                       </h4>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Criador do Projeto</p>
+                        <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">Criador do Projeto</p>
                         {ownerProfile?.job_title && (
-                          <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold uppercase tracking-widest border-l border-white/10 pl-2">
+                          <div className="flex items-center gap-1 text-[9px] text-on-surface-variant font-bold uppercase tracking-widest border-l border-outline pl-2">
                             {ownerProfile.job_title}
                           </div>
                         )}
@@ -340,7 +340,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => ownerProfile && startEditing(ownerProfile)}
-                      className="p-2.5 text-slate-500 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                      className="p-2.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-xl transition-all"
                       title="Editar Perfil"
                     >
                       <PenLine className="h-4 w-4" />
@@ -351,8 +351,8 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                 {/* Inline Contact Info */}
                 {!editingId && ownerProfile?.phone && (
                   <div className="flex items-center gap-4 pl-16">
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
-                      <Phone className="h-3 w-3 text-[#10B981]" />
+                    <div className="flex items-center gap-2 text-[10px] text-on-surface-variant font-medium">
+                      <Phone className="h-3 w-3 text-success" />
                       {ownerProfile.phone}
                     </div>
                   </div>
@@ -363,11 +363,11 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                   <motion.div 
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="pl-16 space-y-4 pt-4 border-t border-white/5"
+                    className="pl-16 space-y-4 pt-4 border-t border-outline"
                   >
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
                           <Phone className="h-3 w-3" /> Telefone para Contato
                         </label>
                         <input 
@@ -375,17 +375,17 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                           placeholder="55119..."
                           value={editForm.phone}
                           onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#BCB5AC] outline-none transition-all"
+                          className="w-full bg-black/40 border border-outline rounded-xl px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none transition-all"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
                           <Briefcase className="h-3 w-3" /> Cargo / Função
                         </label>
                         <select
                           value={editForm.job_title}
                           onChange={e => setEditForm(prev => ({ ...prev, job_title: e.target.value }))}
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#BCB5AC] outline-none cursor-pointer"
+                          className="w-full bg-black/40 border border-outline rounded-xl px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none cursor-pointer"
                         >
                           <option value="">Não definido</option>
                           <option value="Gerente de obras">Gerente de obras</option>
@@ -397,14 +397,14 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                     <div className="flex gap-2">
                       <button 
                         onClick={() => setEditingId(null)}
-                        className="flex-1 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
+                        className="flex-1 py-2.5 text-[9px] font-black text-on-surface-variant uppercase tracking-widest bg-surface-container-low rounded-xl hover:bg-surface-container-high transition-colors"
                       >
                         Cancelar
                       </button>
                       <button 
                         onClick={() => ownerProfile && handleUpdateProfile(ownerProfile.id)}
                         disabled={isUpdating}
-                        className="flex-1 py-2.5 text-[9px] font-black text-white uppercase tracking-widest bg-[#BCB5AC] rounded-xl hover:bg-slate-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-black/30"
+                        className="flex-1 py-2.5 text-[9px] font-black text-on-surface uppercase tracking-widest bg-primary rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-sm"
                       >
                         {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                         Salvar Alterações
@@ -416,14 +416,14 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
 
               {/* Collaborators */}
               {loading ? (
-                <div className="p-12 text-center"><Loader2 className="h-8 w-8 animate-spin text-slate-700 mx-auto" /></div>
+                <div className="p-12 text-center"><Loader2 className="h-8 w-8 animate-spin text-on-surface-variant mx-auto" /></div>
               ) : collaborators.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 text-xs italic">Ainda não há outros colaboradores nesta obra.</div>
+                <div className="p-12 text-center text-on-surface-variant text-xs italic">Ainda não há outros colaboradores nesta obra.</div>
               ) : collaborators.map((c) => (
                 <div key={c.id} className="p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-lg overflow-hidden border border-slate-700 shadow-inner">
+                      <div className="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant font-bold text-lg overflow-hidden border border-outline-variant shadow-inner">
                         {c.profile?.avatar_url ? (
                           <img src={c.profile.avatar_url} alt="" className="w-full h-full object-cover" />
                         ) : (
@@ -431,13 +431,13 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold text-white break-words">{c.profile?.email}</h4>
+                        <h4 className="text-sm font-bold text-on-surface break-words">{c.profile?.email}</h4>
                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                           <div className={cn(
                             "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider",
                             c.role === 'proprietor' ? 'bg-[#FF8A00]/10 text-[#FF8A00]' :
-                            c.role === 'editor' ? 'bg-[#BCB5AC]/10 text-[#BCB5AC]' :
-                            'bg-slate-800 text-slate-500'
+                            c.role === 'editor' ? 'bg-primary/10 text-primary' :
+                            'bg-surface-container-high text-on-surface-variant'
                           )}>
                             {c.role === 'proprietor' ? 'Proprietário/Cliente' : 
                              c.role === 'editor' ? 'Editor' : 
@@ -445,7 +445,7 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                              c.role === 'intern' ? 'Estagiário' : 'Apenas Leitura'}
                           </div>
                           {c.profile?.job_title && (
-                            <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold uppercase tracking-widest border-l border-white/10 pl-2">
+                            <div className="flex items-center gap-1 text-[9px] text-on-surface-variant font-bold uppercase tracking-widest border-l border-outline pl-2">
                               {c.profile.job_title}
                             </div>
                           )}
@@ -455,14 +455,14 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => c.profile && startEditing(c.profile)}
-                        className="p-2.5 text-slate-500 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                        className="p-2.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-xl transition-all"
                         title="Editar Perfil"
                       >
                         <PenLine className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => removeCollaborator(c.id)}
-                        className="p-2.5 text-slate-500 hover:text-red-500 hover:bg-red-500/5 rounded-xl transition-all"
+                        className="p-2.5 text-on-surface-variant hover:text-red-500 hover:bg-red-500/5 rounded-xl transition-all"
                         title="Remover"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -473,8 +473,8 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                   {/* Inline Contact Info */}
                   {!editingId && c.profile?.phone && (
                     <div className="flex items-center gap-4 pl-16">
-                      <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
-                        <Phone className="h-3 w-3 text-[#10B981]" />
+                      <div className="flex items-center gap-2 text-[10px] text-on-surface-variant font-medium">
+                        <Phone className="h-3 w-3 text-success" />
                         {c.profile.phone}
                       </div>
                     </div>
@@ -485,11 +485,11 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                     <motion.div 
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="pl-16 space-y-4 pt-4 border-t border-white/5"
+                      className="pl-16 space-y-4 pt-4 border-t border-outline"
                     >
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                          <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
                             <Phone className="h-3 w-3" /> Telefone para Contato
                           </label>
                           <input 
@@ -497,17 +497,17 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                             placeholder="55119..."
                             value={editForm.phone}
                             onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#BCB5AC] outline-none transition-all"
+                            className="w-full bg-black/40 border border-outline rounded-xl px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none transition-all"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                          <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
                             <Briefcase className="h-3 w-3" /> Cargo / Função
                           </label>
                           <select
                             value={editForm.job_title}
                             onChange={e => setEditForm(prev => ({ ...prev, job_title: e.target.value }))}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-[#BCB5AC] outline-none cursor-pointer"
+                            className="w-full bg-black/40 border border-outline rounded-xl px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none cursor-pointer"
                           >
                             <option value="">Não definido</option>
                             <option value="Gerente de obras">Gerente de obras</option>
@@ -519,14 +519,14 @@ export function CollaboratorsTab({ project, onRefresh }: CollaboratorsTabProps) 
                       <div className="flex gap-2">
                         <button 
                           onClick={() => setEditingId(null)}
-                          className="flex-1 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
+                          className="flex-1 py-2.5 text-[9px] font-black text-on-surface-variant uppercase tracking-widest bg-surface-container-low rounded-xl hover:bg-surface-container-high transition-colors"
                         >
                           Cancelar
                         </button>
                         <button 
                           onClick={() => c.profile && handleUpdateProfile(c.profile.id)}
                           disabled={isUpdating}
-                          className="flex-1 py-2.5 text-[9px] font-black text-white uppercase tracking-widest bg-[#BCB5AC] rounded-xl hover:bg-slate-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-black/30"
+                          className="flex-1 py-2.5 text-[9px] font-black text-on-surface uppercase tracking-widest bg-primary rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-sm"
                         >
                           {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                           Salvar Alterações

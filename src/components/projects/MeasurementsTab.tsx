@@ -266,20 +266,20 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
     return (
       <div className="animate-in fade-in slide-in-from-right-4 duration-300 print:bg-white print:p-0">
         <div className="flex items-center justify-between mb-8 print:hidden">
-          <button onClick={() => setIsDetailOpen(false)} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+          <button onClick={() => setIsDetailOpen(false)} className="flex items-center gap-2 text-on-surface-variant hover:text-on-surface transition-colors">
             <Plus className="h-4 w-4 rotate-45" /> Voltar para lista
           </button>
           <div className="flex items-center gap-3">
-            <button onClick={handlePrint} className="px-4 py-2 bg-slate-800 text-white rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-colors">
+            <button onClick={handlePrint} className="px-4 py-2 bg-surface-container-high text-on-surface rounded-lg flex items-center gap-2 hover:opacity-90 transition-colors">
               <Printer className="h-4 w-4" /> Imprimir p/ Pagamento
             </button>
             {!readOnly && selectedMeasurement.status === 'pending' && (
-              <button onClick={() => handleUpdateStatus(selectedMeasurement, 'authorized')} className="px-4 py-2 bg-emerald-600 text-white rounded-lg flex items-center gap-2 hover:bg-emerald-500 transition-colors">
+              <button onClick={() => handleUpdateStatus(selectedMeasurement, 'authorized')} className="px-4 py-2 bg-emerald-600 text-on-surface rounded-lg flex items-center gap-2 hover:bg-emerald-500 transition-colors">
                 <CheckCircle2 className="h-4 w-4" /> Autorizar
               </button>
             )}
             {!readOnly && selectedMeasurement.status === 'authorized' && (
-              <button onClick={() => handleUpdateStatus(selectedMeasurement, 'paid')} className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-500 transition-colors">
+              <button onClick={() => handleUpdateStatus(selectedMeasurement, 'paid')} className="px-4 py-2 bg-blue-600 text-on-surface rounded-lg flex items-center gap-2 hover:bg-blue-500 transition-colors">
                 <FileText className="h-4 w-4" /> Marcar como Pago
               </button>
             )}
@@ -287,7 +287,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
         </div>
 
         {/* Print Header */}
-        <div className="bg-[#1C232E] p-8 rounded-3xl border border-white/5 mb-8 print:border-black print:text-black print:bg-transparent">
+        <div className="bg-surface p-8 rounded-3xl border border-outline mb-8 print:border-black print:text-black print:bg-transparent">
           <div className="flex justify-between items-start">
             <div>
               <span className={cn(
@@ -298,29 +298,29 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
               )}>
                 {selectedMeasurement.status === 'paid' ? 'Pago' : selectedMeasurement.status === 'authorized' ? 'Autorizado' : 'Pendente'}
               </span>
-              <h2 className="text-3xl font-black text-white print:text-black">{selectedMeasurement.description}</h2>
-              <p className="text-slate-500 font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
+              <h2 className="text-3xl font-black text-on-surface print:text-black">{selectedMeasurement.description}</h2>
+              <p className="text-on-surface-variant font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
                 <Calendar className="h-4 w-4" /> Data da Medição: {formatDate(selectedMeasurement.date)}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Valor Total desta Medição</p>
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Valor Total desta Medição</p>
               <h3 className="text-4xl font-black text-emerald-500 print:text-black">{formatCurrency(totalMeasurement)}</h3>
             </div>
           </div>
         </div>
 
         {/* Measurement Table */}
-        <div className="bg-[#0b0f19] rounded-[32px] border border-white/5 shadow-2xl overflow-hidden print:border-black print:bg-transparent">
+        <div className="bg-surface-container-low rounded-[32px] border border-outline shadow-2xl overflow-hidden print:border-black print:bg-transparent">
           <div className="w-full overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-white/5 print:border-black">
-                  <th className="py-5 px-8 text-[10px] font-black text-slate-500 uppercase tracking-widest print:text-black">Item</th>
-                  <th className="py-5 px-8 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right print:text-black">Orçado</th>
-                  <th className="py-5 px-8 text-[10px] font-black text-white uppercase tracking-widest text-right print:text-black">Esta Medição</th>
-                  <th className="py-5 px-8 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right print:text-black">Acumulado</th>
-                  <th className="py-5 px-8 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right print:text-black">Restante</th>
+                <tr className="border-b border-outline print:border-black">
+                  <th className="py-5 px-8 text-[10px] font-black text-on-surface-variant uppercase tracking-widest print:text-black">Item</th>
+                  <th className="py-5 px-8 text-[10px] font-black text-on-surface-variant uppercase tracking-widest text-right print:text-black">Orçado</th>
+                  <th className="py-5 px-8 text-[10px] font-black text-on-surface uppercase tracking-widest text-right print:text-black">Esta Medição</th>
+                  <th className="py-5 px-8 text-[10px] font-black text-on-surface-variant uppercase tracking-widest text-right print:text-black">Acumulado</th>
+                  <th className="py-5 px-8 text-[10px] font-black text-on-surface-variant uppercase tracking-widest text-right print:text-black">Restante</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
@@ -335,7 +335,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
 
                   return (
                     <React.Fragment key={category}>
-                      <tr className="bg-[#1C232E]/30 print:bg-gray-100">
+                      <tr className="bg-surface/30 print:bg-gray-100">
                         <td colSpan={5} className="py-4 px-8 text-[11px] font-black text-[#3B82F6] uppercase tracking-[2px] print:text-black">{category}</td>
                       </tr>
                       {filteredItems.map((item: BudgetItem) => {
@@ -352,37 +352,37 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                         const progress = item.quantity > 0 ? (totalQty / item.quantity) * 100 : 0;
 
                         return (
-                          <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors print:border-black">
+                          <tr key={item.id} className="border-b border-outline hover:bg-white/[0.02] transition-colors print:border-black">
                             <td className="py-6 px-8">
                               <div className="flex flex-col">
-                                <span className="text-slate-200 font-bold text-sm print:text-black">{item.description}</span>
-                                <span className="text-[10px] text-slate-500 font-bold uppercase mt-1 print:text-black">{item.unit} • Unit: {formatCurrency(item.unit_cost)}</span>
+                                <span className="text-on-surface font-bold text-sm print:text-black">{item.description}</span>
+                                <span className="text-[10px] text-on-surface-variant font-bold uppercase mt-1 print:text-black">{item.unit} • Unit: {formatCurrency(item.unit_cost)}</span>
                               </div>
                             </td>
                             <td className="py-6 px-8 text-right">
                               <div className="flex flex-col">
-                                <span className="text-slate-400 font-bold print:text-black">{item.quantity.toLocaleString()} {item.unit}</span>
-                                <span className="text-[11px] text-slate-500 print:text-black">{formatCurrency(budgetedValue)}</span>
+                                <span className="text-on-surface-variant font-bold print:text-black">{item.quantity.toLocaleString()} {item.unit}</span>
+                                <span className="text-[11px] text-on-surface-variant print:text-black">{formatCurrency(budgetedValue)}</span>
                               </div>
                             </td>
                             <td className="py-6 px-8 text-right bg-emerald-500/5 print:bg-transparent">
                               <div className="flex flex-col">
-                                <span className="text-white font-black print:text-black">{currentQty.toLocaleString()} {item.unit}</span>
+                                <span className="text-on-surface font-black print:text-black">{currentQty.toLocaleString()} {item.unit}</span>
                                 <span className="text-emerald-500 font-black print:text-black">{formatCurrency(currentValue)}</span>
                               </div>
                             </td>
                             <td className="py-6 px-8 text-right">
                               <div className="flex flex-col">
                                 <div className="flex items-center justify-end gap-2">
-                                  <span className="text-slate-300 font-bold print:text-black">{totalQty.toLocaleString()} {item.unit}</span>
-                                  <span className="text-[10px] px-1.5 py-0.5 bg-slate-800 text-slate-400 rounded print:text-black">{progress.toFixed(0)}%</span>
+                                  <span className="text-on-surface-variant font-bold print:text-black">{totalQty.toLocaleString()} {item.unit}</span>
+                                  <span className="text-[10px] px-1.5 py-0.5 bg-surface-container-high text-on-surface-variant rounded print:text-black">{progress.toFixed(0)}%</span>
                                 </div>
-                                <span className="text-[11px] text-slate-500 print:text-black">{formatCurrency(totalValue)}</span>
+                                <span className="text-[11px] text-on-surface-variant print:text-black">{formatCurrency(totalValue)}</span>
                               </div>
                             </td>
                             <td className="py-6 px-8 text-right">
                               <div className="flex flex-col">
-                                <span className="text-slate-500 font-bold print:text-black">{remainingQty.toLocaleString()} {item.unit}</span>
+                                <span className="text-on-surface-variant font-bold print:text-black">{remainingQty.toLocaleString()} {item.unit}</span>
                                 <span className="text-amber-500/50 text-[11px] font-bold print:text-black">{formatCurrency(remainingValue)}</span>
                               </div>
                             </td>
@@ -417,12 +417,12 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
     <div className="animate-in fade-in duration-500">
       <div className="flex justify-between items-end mb-10">
         <div>
-          <h2 className="text-3xl font-black text-white">Medições de Obra</h2>
-          <p className="text-slate-500 text-sm mt-1">Gerencie as medições e autorizações de pagamento de mão de obra</p>
+          <h2 className="text-3xl font-black text-on-surface">Medições de Obra</h2>
+          <p className="text-on-surface-variant text-sm mt-1">Gerencie as medições e autorizações de pagamento de mão de obra</p>
         </div>
         <button
           onClick={() => handleOpenNew()}
-          className="px-6 py-3 bg-[#BCB5AC] text-[#1C232E] text-xs font-black rounded-xl flex items-center gap-2 hover:bg-white transition-all shadow-xl uppercase tracking-widest"
+          className="px-6 py-3 bg-primary text-on-primary text-xs font-black rounded-xl flex items-center gap-2 hover:bg-white transition-all shadow-xl uppercase tracking-widest"
         >
           <Plus className="h-4 w-4" /> Nova Medição Geral
         </button>
@@ -430,28 +430,28 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
 
       {/* Contratos Ativos / Quadros Fechados */}
       <div className="mb-12">
-        <h3 className="text-xs font-black text-slate-500 uppercase tracking-[3px] mb-6 flex items-center gap-2">
+        <h3 className="text-xs font-black text-on-surface-variant uppercase tracking-[3px] mb-6 flex items-center gap-2">
           <FileText className="h-4 w-4" /> Contratos Ativos (Quadros Fechados)
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {bidGroups.filter(bg => bg.status === 'closed').length === 0 ? (
-            <div className="col-span-full py-12 flex flex-col items-center justify-center text-center bg-[#1C232E]/30 rounded-[32px] border border-dashed border-white/5">
-              <p className="text-slate-500 text-sm italic">Nenhum contrato fechado para medição ainda.</p>
+            <div className="col-span-full py-12 flex flex-col items-center justify-center text-center bg-surface/30 rounded-[32px] border border-dashed border-outline">
+              <p className="text-on-surface-variant text-sm italic">Nenhum contrato fechado para medição ainda.</p>
             </div>
           ) : (
             bidGroups.filter(bg => bg.status === 'closed').map(group => (
               <div
                 key={group.id}
                 onClick={() => handleOpenNew(group.id)}
-                className="bg-[#1C232E] rounded-[24px] border border-emerald-500/20 p-6 cursor-pointer hover:border-emerald-500/50 transition-all group relative"
+                className="bg-surface rounded-[24px] border border-emerald-500/20 p-6 cursor-pointer hover:border-emerald-500/50 transition-all group relative"
               >
                 <div className="flex items-center justify-between mb-4">
                   <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-md text-[10px] font-black uppercase tracking-widest">Contrato Ativo</span>
                   <Trophy className="h-4 w-4 text-emerald-500" />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2 uppercase group-hover:text-emerald-400 transition-colors">{group.title}</h3>
-                <p className="text-xs text-slate-500 mb-6 line-clamp-1">{group.description || 'Contrato para medição'}</p>
-                <button className="w-full py-3 bg-emerald-600/10 text-emerald-500 text-[10px] font-black rounded-xl uppercase tracking-widest group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                <h3 className="text-lg font-bold text-on-surface mb-2 uppercase group-hover:text-emerald-400 transition-colors">{group.title}</h3>
+                <p className="text-xs text-on-surface-variant mb-6 line-clamp-1">{group.description || 'Contrato para medição'}</p>
+                <button className="w-full py-3 bg-emerald-600/10 text-emerald-500 text-[10px] font-black rounded-xl uppercase tracking-widest group-hover:bg-emerald-600 group-hover:text-on-surface transition-all">
                   Iniciar Nova Medição
                 </button>
               </div>
@@ -460,15 +460,15 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
         </div>
       </div>
 
-      <h3 className="text-xs font-black text-slate-500 uppercase tracking-[3px] mb-6 flex items-center gap-2">
+      <h3 className="text-xs font-black text-on-surface-variant uppercase tracking-[3px] mb-6 flex items-center gap-2">
         <Ruler className="h-4 w-4" /> Histórico de Medições
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {measurements.length === 0 ? (
-          <div className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-[#1C232E] rounded-[32px] border border-dashed border-white/10">
-            <Ruler className="h-12 w-12 text-slate-700 mb-4" />
-            <h3 className="text-lg font-bold text-white mb-1">Nenhuma medição registrada</h3>
-            <p className="text-sm text-slate-500">Selecione um contrato acima para iniciar o controle físico e financeiro.</p>
+          <div className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-surface rounded-[32px] border border-dashed border-outline">
+            <Ruler className="h-12 w-12 text-on-surface-variant mb-4" />
+            <h3 className="text-lg font-bold text-on-surface mb-1">Nenhuma medição registrada</h3>
+            <p className="text-sm text-on-surface-variant">Selecione um contrato acima para iniciar o controle físico e financeiro.</p>
           </div>
         ) : (
           measurements.map((m) => {
@@ -481,12 +481,12 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
               <div
                 key={m.id}
                 onClick={() => handleOpenDetail(m)}
-                className="bg-[#1C232E] rounded-[24px] border border-white/5 p-6 cursor-pointer hover:border-[#BCB5AC]/50 transition-all group relative overflow-hidden"
+                className="bg-surface rounded-[24px] border border-outline p-6 cursor-pointer hover:border-primary/50 transition-all group relative overflow-hidden"
               >
                 <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteMeasurement(m.id); }}
-                    className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"
+                    className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-on-surface transition-all"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -501,21 +501,21 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                   )}>
                     {m.status === 'paid' ? 'Pago' : m.status === 'authorized' ? 'Autorizado' : 'Pendente'}
                   </span>
-                  <span className="text-xs text-slate-500 font-bold">{formatDate(m.date)}</span>
+                  <span className="text-xs text-on-surface-variant font-bold">{formatDate(m.date)}</span>
                 </div>
 
-                <h3 className="text-lg font-bold text-white mb-2 line-clamp-1 group-hover:text-[#BCB5AC] transition-colors">{m.description}</h3>
+                <h3 className="text-lg font-bold text-on-surface mb-2 line-clamp-1 group-hover:text-primary transition-colors">{m.description}</h3>
                 <div className="flex flex-col gap-1">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Valor Medido</p>
-                  <p className="text-2xl font-black text-white">{formatCurrency((m.measurement_items || []).reduce((acc: number, mi: any) => {
+                  <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Valor Medido</p>
+                  <p className="text-2xl font-black text-on-surface">{formatCurrency((m.measurement_items || []).reduce((acc: number, mi: any) => {
                     const budgetItem = budgetItems.find(bi => bi.id === mi.budget_item_id);
                     return acc + (Number(mi.quantity) * Number(budgetItem?.unit_cost || 0));
                   }, 0))}</p>
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{m.measurement_items?.length || 0} itens medidos</span>
-                  <ChevronRight className="h-4 w-4 text-slate-700 group-hover:text-white transform group-hover:translate-x-1 transition-all" />
+                <div className="mt-6 pt-6 border-t border-outline flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{m.measurement_items?.length || 0} itens medidos</span>
+                  <ChevronRight className="h-4 w-4 text-on-surface-variant group-hover:text-on-surface transform group-hover:translate-x-1 transition-all" />
                 </div>
               </div>
             );
@@ -526,13 +526,13 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
       {/* New Measurement Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-7xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+          <div className="absolute inset-0 bg-surface-container-low/90 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
+          <div className="relative bg-surface rounded-[32px] shadow-2xl border border-outline w-full max-w-7xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
             {/* Header Style like Bid Matrix */}
             <div className="bg-white text-black border-b border-black shrink-0 font-sans p-0">
               <div className="grid grid-cols-12 border-b border-black">
                 <div className="col-span-4 bg-[#E5E1DB] p-4 border-r border-black flex items-center justify-center">
-                  <h1 className="text-2xl font-black text-[#1C232E]">360Pro</h1>
+                  <h1 className="text-2xl font-black text-on-primary">360Pro</h1>
                 </div>
                 <div className="col-span-6 p-4 border-r border-black flex items-center justify-center">
                   <h2 className="text-xl font-black uppercase tracking-tight">Medição de Obra</h2>
@@ -592,7 +592,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                         MEDIÇÃO {currentMeasurementNumber} (ATUAL)
                       </th>
                       <th className="border-r border-black font-black uppercase text-[7px] text-center w-24 bg-amber-500/5">RESTANTE</th>
-                      <th className="font-black uppercase text-[7px] text-center w-24 bg-slate-100">VALOR (R$)</th>
+                      <th className="font-black uppercase text-[7px] text-center w-24 bg-surface-container-low">VALOR (R$)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -713,15 +713,15 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                                 />
                               </td>
                               <td className="border-r border-black text-center font-bold text-amber-600 bg-amber-50/5">{remaining.toLocaleString()}</td>
-                              <td className="text-right px-3 font-black text-slate-900 bg-slate-50">{formatCurrency(currentValueMoney)}</td>
+                              <td className="text-right px-3 font-black text-on-surface bg-slate-50">{formatCurrency(currentValueMoney)}</td>
                             </tr>
                           </React.Fragment>
                         );
                       })}
                     {/* Total Row */}
-                    <tr className="bg-[#1C232E] text-white border-t-2 border-black h-12">
+                    <tr className="bg-surface text-on-surface border-t-2 border-black h-12">
                       <td colSpan={8 + previousMeasurements.length} className="text-right px-6 font-black uppercase tracking-widest text-[10px]">Total Geral da Medição:</td>
-                      <td className="bg-white text-[#1C232E] text-right px-3 font-black text-sm">
+                      <td className="bg-white text-on-primary text-right px-3 font-black text-sm">
                         {formatCurrency(Object.entries(editingItems).reduce((acc, [id, qty]) => {
                           const item = budgetItems.find(bi => bi.id === id);
                           return acc + (qty * (item?.unit_cost || 0));
@@ -746,11 +746,11 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <button onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-black transition-colors">Cancelar</button>
+                <button onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 text-xs font-black text-on-surface-variant uppercase tracking-widest hover:text-black transition-colors">Cancelar</button>
                 <button
                   onClick={handleSaveMeasurement}
                   disabled={isSaving}
-                  className="px-10 py-4 bg-[#1C232E] text-white text-[11px] font-black rounded-none uppercase tracking-[2px] hover:bg-black transition-all shadow-xl disabled:opacity-50 border border-black"
+                  className="px-10 py-4 bg-surface text-on-surface text-[11px] font-black rounded-none uppercase tracking-[2px] hover:bg-black transition-all shadow-xl disabled:opacity-50 border border-black"
                 >
                   {isSaving ? 'SALVANDO...' : 'FINALIZAR MEDIÇÃO'}
                 </button>
@@ -763,54 +763,54 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
       {/* New Item Quick Add Modal */}
       {isNewItemModalOpen && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md" onClick={() => setIsNewItemModalOpen(false)}></div>
-          <div className="relative bg-[#1C232E] rounded-[32px] shadow-2xl border border-white/5 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="absolute inset-0 bg-surface-container-low/90 backdrop-blur-md" onClick={() => setIsNewItemModalOpen(false)}></div>
+          <div className="relative bg-surface rounded-[32px] shadow-2xl border border-outline w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-8 pb-4 flex items-center justify-between">
-              <h3 className="text-xl font-black text-white">Novo Item / Serviço</h3>
-              <button onClick={() => setIsNewItemModalOpen(false)} className="text-slate-500 hover:text-white p-2 hover:bg-slate-800 rounded-full">
+              <h3 className="text-xl font-black text-on-surface">Novo Item / Serviço</h3>
+              <button onClick={() => setIsNewItemModalOpen(false)} className="text-on-surface-variant hover:text-on-surface p-2 hover:bg-surface-container-high rounded-full">
                 <Plus className="h-5 w-5 rotate-45" />
               </button>
             </div>
             <div className="p-8 space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Descrição do Serviço</label>
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Descrição do Serviço</label>
                 <input
                   type="text"
                   value={newItemFormData.description || ''}
                   onChange={e => setNewItemFormData({ ...newItemFormData, description: e.target.value })}
-                  className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none"
+                  className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none"
                   placeholder="Ex: Instalação de porcelanato 60x60..."
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Categoria</label>
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Categoria</label>
                   <select
                     value={newItemFormData.category || 'Mão de Obra'}
                     onChange={e => setNewItemFormData({ ...newItemFormData, category: e.target.value })}
-                    className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none appearance-none"
+                    className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none appearance-none"
                   >
                     {['Mão de Obra', 'Serviços Preliminares', 'Infraestrutura', 'Alvenaria', 'Inst. Elétricas', 'Inst. Hidráulicas', 'Acabamentos', 'Outros'].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Unidade</label>
-                  <input type="text" value={newItemFormData.unit || ''} onChange={e => setNewItemFormData({ ...newItemFormData, unit: e.target.value })} className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" placeholder="m2, vb, un..." />
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Unidade</label>
+                  <input type="text" value={newItemFormData.unit || ''} onChange={e => setNewItemFormData({ ...newItemFormData, unit: e.target.value })} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none" placeholder="m2, vb, un..." />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Qtd Contratada</label>
-                  <input type="number" value={newItemFormData.quantity || ''} onChange={e => setNewItemFormData({ ...newItemFormData, quantity: parseFloat(e.target.value) })} className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" placeholder="0.00" />
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Qtd Contratada</label>
+                  <input type="number" value={newItemFormData.quantity || ''} onChange={e => setNewItemFormData({ ...newItemFormData, quantity: parseFloat(e.target.value) })} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none" placeholder="0.00" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Custo Unitário</label>
-                  <input type="number" value={newItemFormData.unit_cost || ''} onChange={e => setNewItemFormData({ ...newItemFormData, unit_cost: parseFloat(e.target.value) })} className="w-full bg-[#0b0f19] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[#BCB5AC] outline-none" placeholder="0.00" />
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Custo Unitário</label>
+                  <input type="number" value={newItemFormData.unit_cost || ''} onChange={e => setNewItemFormData({ ...newItemFormData, unit_cost: parseFloat(e.target.value) })} className="w-full bg-surface-container-low border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none" placeholder="0.00" />
                 </div>
               </div>
               <div className="pt-4 flex gap-4">
-                <button onClick={() => setIsNewItemModalOpen(false)} className="flex-1 py-3 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Cancelar</button>
-                <button onClick={handleAddNewItem} disabled={isSaving} className="flex-1 py-3 bg-blue-600 text-white text-xs font-black rounded-xl uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20">
+                <button onClick={() => setIsNewItemModalOpen(false)} className="flex-1 py-3 text-xs font-black text-on-surface-variant uppercase tracking-widest hover:text-on-surface transition-colors">Cancelar</button>
+                <button onClick={handleAddNewItem} disabled={isSaving} className="flex-1 py-3 bg-blue-600 text-on-surface text-xs font-black rounded-xl uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20">
                   {isSaving ? 'Criando...' : 'Criar Item'}
                 </button>
               </div>
