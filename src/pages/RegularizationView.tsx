@@ -4,9 +4,12 @@ import { INSSRegularization } from '../lib/types';
 import { INSSRegularizationTab } from '../components/projects/INSSRegularizationTab';
 import { Search, ArrowRight, Calculator as CalculatorIcon, Plus, UserPlus, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSubscription } from '../hooks/useSubscription';
+import { LimitModal } from '../components/ui/LimitModal';
 
 export function RegularizationView() {
   const { user } = useAuth();
+  const { currentPlan, checkRegularizationLimit } = useSubscription();
   const [regularizations, setRegularizations] = useState<INSSRegularization[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(() => {
@@ -24,6 +27,7 @@ export function RegularizationView() {
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newClient, setNewClient] = useState('');
 
@@ -136,7 +140,13 @@ export function RegularizationView() {
           <p className="text-on-surface-variant text-sm mt-1">Gestão independente de regularizações e clientes (SERO).</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            if (!checkRegularizationLimit()) {
+              setIsLimitModalOpen(true);
+            } else {
+              setIsModalOpen(true);
+            }
+          }}
           className="px-6 py-3 bg-primary text-on-primary text-sm font-bold rounded-xl flex items-center gap-2 hover:bg-white transition-all shadow-lg"
         >
           <Plus className="h-5 w-5" /> Novo Cliente/Obra
@@ -232,6 +242,14 @@ export function RegularizationView() {
           </div>
         </div>
       )}
+
+      <LimitModal
+        isOpen={isLimitModalOpen}
+        onClose={() => setIsLimitModalOpen(false)}
+        title="Limite do Plano Atingido"
+        message={currentPlan ? `Seu plano atual (${currentPlan.name}) permite apenas ${currentPlan.max_regularizations} ${currentPlan.max_regularizations === 1 ? 'regularização ativa' : 'regularizações ativas'}. Faça upgrade para continuar cadastrando novos clientes.` : 'Limite de regularizações atingido.'}
+        onUpgrade={() => window.dispatchEvent(new CustomEvent('changeTab', { detail: 'plans' }))}
+      />
     </div>
   );
 }

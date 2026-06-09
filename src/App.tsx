@@ -11,12 +11,18 @@ import { ProprietorView } from './pages/ProprietorView';
 import { CalculatorView } from './pages/CalculatorView';
 import { RegularizationView } from './pages/RegularizationView';
 import { HousingSimulatorView } from './pages/HousingSimulatorView';
+import { PlansView } from './pages/PlansView';
 import { AuthView } from './pages/AuthView';
+import { LandingView } from './pages/LandingView';
+import { TermsAcceptanceView } from './pages/TermsAcceptanceView';
+import { MySubscriptionView } from './pages/MySubscriptionView';
+import { SubscribersView } from './pages/SubscribersView';
 import { FileSpreadsheet } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 
 export default function App() {
-  const { user, isProprietor, isAdmin, loading: authLoading } = useAuth();
+  const { user, profile, isProprietor, isAdmin, isSuperAdmin, loading: authLoading } = useAuth();
+  const [showAuth, setShowAuth] = useState(false);
   const [activeTab, setActiveTab] = useState<string | null>(() => {
     return sessionStorage.getItem('activeTab') || null;
   });
@@ -26,7 +32,20 @@ export default function App() {
 
   // Save state to sessionStorage
   React.useEffect(() => {
-    if (activeTab) sessionStorage.setItem('activeTab', activeTab);
+    // Escutar eventos de navegação
+    const handleNavigate = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail) {
+        setActiveTab(customEvent.detail);
+      }
+    };
+    
+    window.addEventListener('changeTab', handleNavigate);
+    return () => window.removeEventListener('changeTab', handleNavigate);
+  }, []);
+
+  React.useEffect(() => {
+    sessionStorage.setItem('activeTab', activeTab || '');
   }, [activeTab]);
 
   React.useEffect(() => {
@@ -106,7 +125,10 @@ export default function App() {
   }, [user, authLoading, activeTab, isProprietor]);
 
   if (!user) {
-    return <AuthView />;
+    if (showAuth) {
+      return <AuthView onBack={() => setShowAuth(false)} />;
+    }
+    return <LandingView onLogin={() => setShowAuth(true)} />;
   }
 
   if (authLoading || activeTab === null) {
@@ -130,6 +152,26 @@ export default function App() {
     );
   }
 
+  // Se o usuário está logado, mas não aceitou os termos:
+  if (user && profile && profile.terms_accepted === false) {
+    return <TermsAcceptanceView onAccept={() => window.location.reload()} />;
+  }
+
+  // Se aceitou os termos, mas a assinatura está pendente, força a visualização de planos.
+  const isPendingSubscription = user && profile && profile.subscription_status === 'pending';
+  if (isPendingSubscription && activeTab !== 'plans') {
+    // Nós podemos forçar renderizando apenas o Layout focado na assinatura
+    return (
+      <Layout
+        activeTab="plans"
+        setActiveTab={setActiveTab}
+        title="Escolha um Plano"
+        isClient={false}
+      >
+        <PlansView />
+      </Layout>
+    );
+  }
 
   const renderView = () => {
     // Hard lock for Proprietor profile: Prevents tab state manipulation via DevTools/sessionStorage
@@ -152,8 +194,14 @@ export default function App() {
         return isAdmin ? <CalculatorView /> : <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'simulator':
         return isAdmin ? <HousingSimulatorView /> : <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
+      case 'plans':
+        return isAdmin ? <PlansView /> : <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
+      case 'subscribers':
+        return isSuperAdmin ? <SubscribersView /> : <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'regularization':
         return isAdmin ? <RegularizationView /> : <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
+      case 'subscription':
+        return <MySubscriptionView />;
       case 'safety':
         return <ProprietorView selectedProjectId={selectedProjectId} onBack={() => setSelectedProjectId(null)} />;
       default:
@@ -170,7 +218,10 @@ export default function App() {
       case 'logs': return 'Diário de Obra';
       case 'calculator': return 'Calculadora INSS';
       case 'simulator': return 'Simulador Habitacional';
+      case 'plans': return 'Planos 360Pro';
+      case 'subscribers': return 'Gestão de Assinantes';
       case 'regularization': return 'Regularização INSS';
+      case 'subscription': return 'Minha Assinatura';
       case 'safety': return 'Painel do Proprietário';
       default: return '360Pro';
     }

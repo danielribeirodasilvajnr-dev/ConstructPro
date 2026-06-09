@@ -10,6 +10,7 @@ interface AuthContextType {
   isProprietor: boolean;
   isStaff: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   profile: any;
   refreshRole: () => Promise<void>;
 }
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
   const [isStaff, setIsStaff] = useState<boolean>(false);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean>(false);
 
   const checkRole = async (userId: string) => {
     try {
@@ -128,6 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       setIsAdmin(shouldBeAdmin);
       setIsStaff(!isActuallyProprietor);
+      setIsSuperAdmin(!!profileData?.is_super_admin);
       
       if (isActuallyProprietor) {
         localStorage.setItem('is-proprietor', 'true');
@@ -226,8 +229,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isProprietor,
     isStaff,
     isAdmin,
+    isSuperAdmin,
     refreshRole: () => user ? checkRole(user.id) : Promise.resolve(),
-  }), [session, user, profile, loading, isProprietor, isStaff, isAdmin]);
+  }), [session, user, profile, loading, isProprietor, isStaff, isAdmin, isSuperAdmin]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

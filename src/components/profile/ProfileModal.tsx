@@ -15,6 +15,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 import { Profile } from '../../lib/types';
 import { cn } from '../../lib/utils';
+import Cropper from 'react-easy-crop';
+import getCroppedImg from '../../lib/cropImage';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -34,6 +36,12 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [imageError, setImageError] = useState(false);
+
+  // Crop states
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -98,19 +106,37 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
     }
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !profile) return;
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const onCropComplete = (croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const handleCropConfirm = async () => {
+    if (!selectedImage || !croppedAreaPixels || !profile) return;
 
     try {
       setIsUploading(true);
-      const fileExt = file.name.split('.').pop();
+      const croppedBlob = await getCroppedImg(selectedImage, croppedAreaPixels);
+      if (!croppedBlob) throw new Error('Falha ao processar imagem');
+
+      const fileExt = 'jpeg';
       const fileName = `${profile.id}/${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(filePath, croppedBlob);
 
       if (uploadError) throw uploadError;
 
@@ -125,10 +151,11 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
 
       if (updateError) throw updateError;
 
+      setSelectedImage(null);
       await fetchProfile();
       if (onUpdate) onUpdate();
     } catch (err) {
-      console.error('Error uploading avatar:', err);
+      console.error('Error uploading cropped avatar:', err);
       alert('Erro ao enviar foto');
     } finally {
       setIsUploading(false);
@@ -178,6 +205,53 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
                   <Loader2 className="h-8 w-8 text-primary animate-spin" />
                   <p className="text-xs text-on-surface-variant font-bold uppercase tracking-widest">Carregando perfil...</p>
                 </div>
+              ) : selectedImage ? (
+                <div className="flex flex-col h-[500px]">
+                  <div className="relative flex-1 bg-black rounded-3xl overflow-hidden">
+                    <Cropper
+                      image={selectedImage}
+                      crop={crop}
+                      zoom={zoom}
+                      aspect={1}
+                      cropShape="round"
+                      showGrid={false}
+                      onCropChange={setCrop}
+                      onCropComplete={onCropComplete}
+                      onZoomChange={setZoom}
+                    />
+                  </div>
+                  <div className="pt-6 pb-2 px-2 flex items-center gap-4">
+                    <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Zoom</span>
+                    <input
+                      type="range"
+                      value={zoom}
+                      min={1}
+                      max={3}
+                      step={0.1}
+                      aria-labelledby="Zoom"
+                      onChange={(e) => setZoom(Number(e.target.value))}
+                      className="flex-1 h-2 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary"
+                    />
+                  </div>
+                  <div className="flex gap-4 pt-4 mt-4 border-t border-outline">
+                    <button 
+                      type="button"
+                      onClick={() => setSelectedImage(null)}
+                      className="flex-1 py-4 text-xs font-black text-on-surface-variant uppercase tracking-[2px] hover:bg-surface-container-low rounded-2xl transition-all"
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={handleCropConfirm}
+                      disabled={isUploading}
+                      className="flex-[2] py-4 bg-primary text-on-primary text-xs font-black uppercase tracking-[2px] rounded-2xl hover:opacity-90 transition-all flex items-center justify-center gap-3 shadow-xl shadow-sm disabled:opacity-50"
+                    >
+                      {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
+                      Aplicar Recorte
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <form onSubmit={handleUpdate} className="space-y-8">
                   {/* Photo Section */}
@@ -215,7 +289,7 @@ export function ProfileModal({ isOpen, onClose, onUpdate }: ProfileModalProps) {
                         id="profile-avatar-input" 
                         className="hidden" 
                         accept="image/*" 
-                        onChange={handleAvatarUpload}
+                        onChange={handleAvatarSelect}
                       />
                     </div>
                     <div className="text-center">

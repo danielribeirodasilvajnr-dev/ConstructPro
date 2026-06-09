@@ -18,11 +18,13 @@ import {
   Line
 } from 'recharts';
 import { useDashboardData } from '../hooks/useDashboardData';
+import { useSubscription } from '../hooks/useSubscription';
 import { cn, formatCurrency } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 
 export function DashboardView() {
   const { isProprietor, isAdmin, user } = useAuth();
+  const { currentPlan, usedProjects, usedRegularizations, loading: subLoading } = useSubscription();
   const { data: dashboardProjects, loading, error: dashError, debugInfo: hookDebug } = useDashboardData();
   const [rawDiagnostic, setRawDiagnostic] = useState<string>('Not run');
 
@@ -78,6 +80,79 @@ export function DashboardView() {
           <p className="text-on-surface-variant text-[11px] font-display uppercase tracking-[4px]">Monitoramento de Performance e Custos</p>
         </div>
       </div>
+
+      {currentPlan && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+          {/* Plan Status Card */}
+          <div className="bg-surface-container-low/40 backdrop-blur-xl border border-outline rounded-[32px] p-8 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                <span className="text-[10px] font-display font-bold text-on-surface-variant uppercase tracking-[3px]">Plano Atual</span>
+              </div>
+              <h3 className="text-3xl font-display font-bold text-on-surface uppercase tracking-tight">{currentPlan.name}</h3>
+            </div>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('changeTab', { detail: 'plans' }))}
+              className="mt-6 w-full py-3 bg-surface border border-primary/30 text-primary hover:bg-primary hover:text-background text-[11px] font-display font-bold uppercase tracking-[2px] rounded-xl transition-all"
+            >
+              Fazer Upgrade
+            </button>
+          </div>
+
+          {/* Obras Usage Card */}
+          <div className="bg-surface-container-low/40 backdrop-blur-xl border border-outline rounded-[32px] p-8">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-display font-bold text-on-surface-variant uppercase tracking-[3px]">Obras Utilizadas</span>
+              <span className="text-[12px] font-bold text-on-surface">
+                {usedProjects} / {currentPlan.max_projects === 0 ? '0' : currentPlan.max_projects}
+              </span>
+            </div>
+            <div className="w-full bg-surface h-3 rounded-full overflow-hidden border border-outline">
+              <div 
+                className={cn(
+                  "h-full rounded-full transition-all duration-1000",
+                  currentPlan.max_projects === 0 ? "bg-surface" :
+                  usedProjects >= currentPlan.max_projects ? "bg-error" : 
+                  usedProjects >= currentPlan.max_projects * 0.8 ? "bg-warning" : "bg-primary"
+                )}
+                style={{ width: currentPlan.max_projects === 0 ? '0%' : `${Math.min(100, (usedProjects / currentPlan.max_projects) * 100)}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-on-surface-variant mt-4 uppercase tracking-widest text-center">
+              {currentPlan.access_projects 
+                ? (usedProjects >= currentPlan.max_projects ? 'LIMITE ATINGIDO' : 'DENTRO DO LIMITE')
+                : 'MÓDULO BLOQUEADO'}
+            </p>
+          </div>
+
+          {/* Regularizations Usage Card */}
+          <div className="bg-surface-container-low/40 backdrop-blur-xl border border-outline rounded-[32px] p-8">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-display font-bold text-on-surface-variant uppercase tracking-[3px]">Regularizações INSS</span>
+              <span className="text-[12px] font-bold text-on-surface">
+                {usedRegularizations} / {currentPlan.max_regularizations > 1000 ? '∞' : currentPlan.max_regularizations}
+              </span>
+            </div>
+            <div className="w-full bg-surface h-3 rounded-full overflow-hidden border border-outline">
+              <div 
+                className={cn(
+                  "h-full rounded-full transition-all duration-1000",
+                  currentPlan.max_regularizations > 1000 ? "bg-primary w-full" :
+                  usedRegularizations >= currentPlan.max_regularizations ? "bg-error" : 
+                  usedRegularizations >= currentPlan.max_regularizations * 0.8 ? "bg-warning" : "bg-primary"
+                )}
+                style={{ width: currentPlan.max_regularizations > 1000 ? '100%' : `${Math.min(100, (usedRegularizations / currentPlan.max_regularizations) * 100)}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-on-surface-variant mt-4 uppercase tracking-widest text-center">
+              {currentPlan.max_regularizations > 1000 
+                ? 'ACESSO ILIMITADO' 
+                : (usedRegularizations >= currentPlan.max_regularizations ? 'LIMITE ATINGIDO' : 'DENTRO DO LIMITE')}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-20">
         {dashboardProjects.length === 0 ? (

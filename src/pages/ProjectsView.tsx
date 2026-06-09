@@ -26,8 +26,10 @@ import { cn } from '../lib/utils';
 import { Project } from '../lib/types';
 import { AlertModal } from '../components/ui/AlertModal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { LimitModal } from '../components/ui/LimitModal';
 import { ProprietorView } from './ProprietorView';
 import { useAuth } from '../contexts/AuthContext';
+import { useSubscription } from '../hooks/useSubscription';
 import { useEffect } from 'react';
 import * as XLSX from 'xlsx';
 
@@ -40,6 +42,7 @@ interface ProjectsViewProps {
 export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsViewProps) {
   const { user } = useAuth();
   const { projects, loading: loadingProjects, error, saveProject, deleteProject, refresh: refreshProjects } = useProjects();
+  const { currentPlan, checkProjectLimit } = useSubscription();
   const [activeTab, setActiveTab] = useState<'orcamento' | 'cronograma' | 'financeiro' | 'concorrencia' | 'diario' | 'colaboradores' | 'medicoes'>('orcamento');
 
   // Modals for Projects
@@ -50,6 +53,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
   const [formData, setFormData] = useState<Partial<Project>>({});
   const [pciItems, setPciItems] = useState<any[]>([]);
   const [isCollaboratorsModalOpen, setIsCollaboratorsModalOpen] = useState(false);
+  const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
   const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean, title: string, message: string, type?: 'error' | 'success' | 'warning' }>({
     isOpen: false,
     title: '',
@@ -84,6 +88,11 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
   };
 
   const handleNew = () => {
+    if (!checkProjectLimit()) {
+      setIsLimitModalOpen(true);
+      return;
+    }
+
     setEditingProject(null);
     setPciItems([]);
     setFormData({
@@ -244,6 +253,27 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
   };
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
+
+  if (currentPlan && !currentPlan.access_projects) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 max-w-lg mx-auto text-center gap-6">
+        <div className="w-20 h-20 rounded-full bg-error/10 flex items-center justify-center border border-error/20">
+          <AlertCircle className="h-10 w-10 text-error" />
+        </div>
+        <h2 className="text-3xl font-display font-bold uppercase tracking-tight text-on-surface">Módulo Indisponível</h2>
+        <p className="text-on-surface-variant leading-relaxed">
+          O seu plano atual <strong>({currentPlan.name})</strong> não possui acesso ao módulo de Gestão de Obras. 
+          Faça o upgrade do seu plano para gerenciar e cadastrar obras.
+        </p>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('changeTab', { detail: 'plans' }))}
+          className="mt-4 px-8 py-4 bg-primary text-background font-display font-bold uppercase tracking-[2px] rounded-2xl hover:scale-105 transition-all shadow-[0_0_20px_-5px_rgba(34,255,136,0.4)]"
+        >
+          Fazer Upgrade
+        </button>
+      </div>
+    );
+  }
 
   if (selectedProjectId && selectedProject) {
     // SECURITY FIX: If the user's role for this specific project is 'proprietor',
@@ -648,6 +678,14 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         title={alertConfig.title}
         message={alertConfig.message}
         type={alertConfig.type as any}
+      />
+
+      <LimitModal
+        isOpen={isLimitModalOpen}
+        onClose={() => setIsLimitModalOpen(false)}
+        title="Limite do Plano Atingido"
+        message={currentPlan ? `Seu plano atual (${currentPlan.name}) permite apenas ${currentPlan.max_projects} ${currentPlan.max_projects === 1 ? 'obra ativa' : 'obras ativas'}. Faça upgrade para continuar cadastrando novos projetos.` : 'Limite de obras atingido.'}
+        onUpgrade={() => window.dispatchEvent(new CustomEvent('changeTab', { detail: 'plans' }))}
       />
     </div>
   );

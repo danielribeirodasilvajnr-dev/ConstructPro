@@ -2,13 +2,15 @@ import React from 'react';
 import {
   LayoutDashboard,
   ClipboardList,
-  Users,
   ShieldCheck,
   FileSpreadsheet,
   Calculator,
   CircleHelp,
   LogOut,
-  Home
+  Home,
+  Sparkles,
+  CreditCard,
+  Users
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -33,7 +35,7 @@ export function Sidebar({
   isMobileOpen,
   setIsMobileOpen
 }: SidebarProps) {
-  const { signOut, isProprietor, isAdmin, isStaff } = useAuth();
+  const { signOut, isProprietor, isAdmin, isStaff, isSuperAdmin } = useAuth();
   const { theme } = useTheme();
   const allNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -41,12 +43,17 @@ export function Sidebar({
     { id: 'simulator', label: 'Simulador Habitacional', icon: Home, adminOnly: true },
     { id: 'calculator', label: 'Calculadora INSS', icon: Calculator, adminOnly: true },
     { id: 'regularization', label: 'Regularização INSS', icon: FileSpreadsheet, adminOnly: true },
+    { id: 'plans', label: 'Planos', icon: Sparkles, adminOnly: true },
+    { id: 'subscription', label: 'Minha Assinatura', icon: CreditCard, adminOnly: true },
     { id: 'safety', label: 'Painel do Proprietário', icon: ShieldCheck },
+    { isDivider: true, label: 'Gestão de Assinantes', superAdminOnly: true },
+    { id: 'subscribers', label: 'Assinantes', icon: Users, superAdminOnly: true },
   ];
 
   const navItems = isProprietor
     ? allNavItems.filter(item => item.id === 'safety')
     : allNavItems.filter(item => {
+        if (item.superAdminOnly && !isSuperAdmin) return false;
         if (item.adminOnly && !isAdmin) return false;
         return true;
       });
@@ -82,36 +89,46 @@ export function Sidebar({
           </div>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-2 p-6">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                setIsMobileOpen(false);
-              }}
-              className={cn(
-                "group flex items-center gap-4 rounded-2xl px-5 py-4 transition-all duration-300 relative w-full overflow-hidden",
-                "hover:scale-[1.02] active:scale-[0.98]",
-                activeTab === item.id
-                  ? "bg-primary text-background shadow-[0_0_25px_-5px_rgba(34,255,136,0.4)] font-bold"
-                  : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low"
-              )}
-            >
-              {activeTab === item.id && (
-                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent" />
-              )}
-              <item.icon className={cn(
-                "h-5 w-5 shrink-0 transition-transform duration-300 group-hover:rotate-6",
-                activeTab === item.id ? "text-background" : "group-hover:text-primary"
-              )} />
-              <span className="text-sm font-display uppercase tracking-wider relative z-10 whitespace-nowrap">{item.label}</span>
-              
-              {activeTab === item.id && (
-                <div className="absolute right-3 h-1.5 w-1.5 rounded-full bg-background/50" />
-              )}
-            </button>
-          ))}
+        <nav className="flex flex-1 flex-col gap-2 p-6 overflow-y-auto">
+          {navItems.map((item: any, idx) => {
+            if (item.isDivider) {
+              return (
+                <div key={`divider-${idx}`} className="mt-4 mb-1 px-4">
+                  <p className="text-[10px] font-display font-bold text-on-surface-variant/50 uppercase tracking-[4px]">{item.label}</p>
+                </div>
+              );
+            }
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setIsMobileOpen(false);
+                }}
+                className={cn(
+                  "group flex items-center gap-4 rounded-2xl px-5 py-4 transition-all duration-300 relative w-full overflow-hidden",
+                  "hover:scale-[1.02] active:scale-[0.98]",
+                  activeTab === item.id
+                    ? "bg-primary text-background shadow-[0_0_25px_-5px_rgba(34,255,136,0.4)] font-bold"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low"
+                )}
+              >
+                {activeTab === item.id && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent" />
+                )}
+                <item.icon className={cn(
+                  "h-5 w-5 shrink-0 transition-transform duration-300 group-hover:rotate-6",
+                  activeTab === item.id ? "text-background" : "group-hover:text-primary"
+                )} />
+                <span className="text-[13px] font-display uppercase tracking-widest relative z-10 text-left leading-tight flex-1 whitespace-normal">{item.label}</span>
+                
+                {activeTab === item.id && (
+                  <div className="absolute right-3 h-1.5 w-1.5 rounded-full bg-background/50" />
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         <div className="p-8 mt-auto border-t border-outline bg-background/20">
