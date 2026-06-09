@@ -106,7 +106,7 @@ export function LandingView({ onLogin }: LandingViewProps) {
               className="group relative flex w-full sm:w-auto items-center justify-center gap-4 rounded-2xl bg-primary px-10 py-5 text-sm font-display font-bold text-background transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_40px_-10px_rgba(34,255,136,0.6)] uppercase tracking-[4px] overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              INICIAR AGORA
+              ACESSAR SISTEMA
               <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </button>
           </div>

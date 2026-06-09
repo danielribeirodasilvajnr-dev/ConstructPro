@@ -294,12 +294,9 @@ export function AuthView({ onBack }: AuthViewProps) {
         </form>
 
         <div className="mt-12 text-center">
-          <button 
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-[10px] font-display font-bold text-on-surface-variant hover:text-primary uppercase tracking-[3px] transition-colors"
-          >
-            {isLogin ? 'Criar uma nova conta 360Pro' : 'Já possui credenciais? Entrar'}
-          </button>
+          <p className="text-[10px] font-display font-bold text-on-surface-variant uppercase tracking-[3px]">
+            Novos cadastros estão temporariamente suspensos
+          </p>
         </div>
       </motion.div>
     </div>
