@@ -173,13 +173,7 @@ export function AuthView({ onBack }: AuthViewProps) {
                     <option value="Empresa de Engenharia">Empresa de Engenharia</option>
                     <option value="Empreiteiro">Empreiteiro</option>
                     <option value="Escritório de Arquitetura e Interiores">Escritório de Arquitetura e Interiores</option>
-                    <option value="Serviços Especializados">Serviços Especializados</option>
                     <option value="Designer de Interiores">Designer de Interiores</option>
-                    <option value="Fabricante">Fabricante</option>
-                    <option value="Loja">Loja</option>
-                    <option value="Móveis Planejados">Móveis Planejados</option>
-                    <option value="Estudante de Engenharia">Estudante de Engenharia</option>
-                    <option value="Estudante de Arquitetura ou Design de Interiores">Estudante de Arquitetura ou Design de Interiores</option>
                     <option value="Outros">Outros</option>
                   </select>
                 </div>
