@@ -58,9 +58,34 @@ export function PlansView() {
     );
   }
 
-  const handleSubscribe = (planId: string) => {
-    // Integração futura com checkout
-    window.open('https://api.whatsapp.com/send?phone=5511999999999&text=Olá! Gostaria de assinar o plano ' + planId.toUpperCase(), '_blank');
+  const [isCheckoutLoading, setIsCheckoutLoading] = React.useState<string | null>(null);
+
+  const handleSubscribe = async (planId: string) => {
+    try {
+      setIsCheckoutLoading(planId);
+      
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan_id: planId }
+      });
+
+      if (error) {
+        console.error('Erro ao chamar edge function:', error);
+        alert('Ocorreu um erro ao gerar o link de pagamento. Tente novamente mais tarde.');
+        return;
+      }
+
+      if (data?.init_point) {
+        // Redireciona o usuário para o Mercado Pago
+        window.location.href = data.init_point;
+      } else {
+        alert('Não foi possível gerar o link de pagamento.');
+      }
+    } catch (err) {
+      console.error('Erro na integração com Mercado Pago:', err);
+      alert('Erro inesperado ao gerar o pagamento.');
+    } finally {
+      setIsCheckoutLoading(null);
+    }
   };
 
   return (
@@ -166,7 +191,7 @@ export function PlansView() {
             <div className="p-8 pt-0 mt-auto">
               <button
                 onClick={() => handleSubscribe(plan.id)}
-                disabled={!isPending && currentPlan?.id === plan.id}
+                disabled={(!isPending && currentPlan?.id === plan.id) || isCheckoutLoading === plan.id}
                 className={cn(
                   "w-full py-4 rounded-xl font-display font-bold uppercase tracking-[2px] text-[11px] flex items-center justify-center gap-2 transition-all duration-300",
                   (!isPending && currentPlan?.id === plan.id)
@@ -176,8 +201,13 @@ export function PlansView() {
                       : "bg-surface-container-high text-on-surface border border-outline hover:border-primary/50 hover:text-primary hover:bg-primary/5"
                 )}
               >
-                {(!isPending && currentPlan?.id === plan.id) ? 'Plano Atual' : (isPending ? 'ASSINAR AGORA' : 'Mudar Plano')}
-                {(!isPending && currentPlan?.id === plan.id) ? null : <ArrowRight className="w-4 h-4" />}
+                {isCheckoutLoading === plan.id ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-background/20 border-t-background rounded-full animate-spin" />
+                    Gerando Pagamento...
+                  </span>
+                ) : (!isPending && currentPlan?.id === plan.id) ? 'Plano Atual' : (isPending ? 'ASSINAR AGORA' : 'Mudar Plano')}
+                {(!isPending && currentPlan?.id === plan.id) || isCheckoutLoading === plan.id ? null : <ArrowRight className="w-4 h-4" />}
               </button>
             </div>
           </motion.div>

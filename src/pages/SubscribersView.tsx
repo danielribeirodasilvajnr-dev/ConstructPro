@@ -37,14 +37,13 @@ export function SubscribersView() {
       setError(null);
       const { data, error: sbError } = await supabase
         .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
 
       if (sbError) throw sbError;
       setSubscribers(data || []);
     } catch (err: any) {
       console.error('Error fetching subscribers:', err);
-      setError('Não foi possível carregar a lista de assinantes. Verifique suas permissões de Super Admin.');
+      setError(`Erro: ${err.message || JSON.stringify(err)}. Verifique suas permissões de Super Admin.`);
     } finally {
       setLoading(false);
     }

@@ -157,9 +157,10 @@ export default function App() {
     return <TermsAcceptanceView onAccept={() => window.location.reload()} />;
   }
 
-  // Se aceitou os termos, mas a assinatura está pendente, força a visualização de planos.
+  // Se aceitou os termos, mas a assinatura está pendente, força a visualização de planos (APENAS PARA DONOS DE CONTA).
+  // Convidados (isStaff, isProprietor) pulam essa tela e vão ver se o projeto está bloqueado lá dentro.
   const isPendingSubscription = user && profile && profile.subscription_status === 'pending';
-  if (isPendingSubscription && activeTab !== 'plans') {
+  if (isPendingSubscription && activeTab !== 'plans' && isAdmin) {
     // Nós podemos forçar renderizando apenas o Layout focado na assinatura
     return (
       <Layout

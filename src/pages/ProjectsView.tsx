@@ -467,10 +467,29 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
             {projects.map((project) => (
               <div
                 key={project.id}
-                onClick={() => onSelectProject(project.id)}
-                className="group relative bg-surface-container-low/40 backdrop-blur-xl rounded-[32px] border border-outline overflow-hidden flex flex-col hover:border-primary/40 cursor-pointer transition-all duration-500 hover:translate-y-[-8px] shadow-2xl"
+                onClick={() => {
+                  const isOwnerBlocked = ((project as any).owner_status === 'pending' || (project as any).owner_status === 'expired') && project.user_id !== user?.id;
+                  if (!isOwnerBlocked) onSelectProject(project.id);
+                }}
+                className={cn(
+                  "group relative bg-surface-container-low/40 backdrop-blur-xl rounded-[32px] border border-outline overflow-hidden flex flex-col transition-all duration-500 shadow-2xl",
+                  (((project as any).owner_status === 'pending' || (project as any).owner_status === 'expired') && project.user_id !== user?.id) 
+                    ? "opacity-80 grayscale-[50%] cursor-not-allowed" 
+                    : "hover:border-primary/40 cursor-pointer hover:translate-y-[-8px]"
+                )}
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                
+                {/* Overlay de Bloqueio se o Dono da Conta estiver inativo */}
+                {((project as any).owner_status === 'pending' || (project as any).owner_status === 'expired') && project.user_id !== user?.id && (
+                  <div className="absolute inset-0 bg-surface/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="p-3 bg-error/10 rounded-full mb-3">
+                      <AlertCircle className="h-6 w-6 text-error" />
+                    </div>
+                    <p className="text-xs font-display font-bold text-on-surface uppercase tracking-widest mb-1">Acesso Bloqueado</p>
+                    <p className="text-[10px] text-on-surface-variant">A assinatura do engenheiro responsável por esta obra está inativa.</p>
+                  </div>
+                )}
                 
                 <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 z-20">
                   {project.user_id === user?.id && (

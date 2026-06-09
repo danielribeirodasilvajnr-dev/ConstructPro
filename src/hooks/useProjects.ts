@@ -69,6 +69,31 @@ export function useProjects() {
           }
         }
 
+        // Busca o status de assinatura dos donos dos projetos
+        if (projectsData && projectsData.length > 0) {
+          try {
+            const uniqueOwnerIds = [...new Set(projectsData.map((p: any) => p.user_id))];
+            const { data: ownersData } = await supabase
+              .from('profiles')
+              .select('id, subscription_status')
+              .in('id', uniqueOwnerIds);
+
+            if (ownersData) {
+              const ownerStatusMap = ownersData.reduce((acc: any, owner: any) => {
+                acc[owner.id] = owner.subscription_status;
+                return acc;
+              }, {});
+
+              projectsData = projectsData.map((p: any) => ({
+                ...p,
+                owner_status: ownerStatusMap[p.user_id] || 'pending'
+              }));
+            }
+          } catch (e) {
+            console.error('Failed to fetch owners status:', e);
+          }
+        }
+
         setProjects(projectsData);
       } catch (err: any) {
         setError(err.message);
