@@ -9,7 +9,7 @@ import { SolutionsSection } from '../components/landing/SolutionsSection';
 import { GallerySection } from '../components/landing/GallerySection';
 import { DifferentialsSection } from '../components/landing/DifferentialsSection';
 import { MetricsSection } from '../components/landing/MetricsSection';
-// import { ExclusiveToolsSection } from '../components/landing/ExclusiveToolsSection';
+import { ExclusiveToolsSection } from '../components/landing/ExclusiveToolsSection';
 import { PlansSection } from '../components/landing/PlansSection';
 import { TestimonialsSection } from '../components/landing/TestimonialsSection';
 import { FaqSection } from '../components/landing/FaqSection';
@@ -19,7 +19,7 @@ interface LandingViewProps {
   onLogin: () => void;
 }
 
-export function LandingView({ onLogin }: LandingViewProps) {
+export function LandingViewV2({ onLogin }: LandingViewProps) {
   const { theme } = useTheme();
 
   return (
@@ -58,7 +58,7 @@ export function LandingView({ onLogin }: LandingViewProps) {
         <GallerySection />
         <DifferentialsSection />
         <MetricsSection />
-        {/* <ExclusiveToolsSection /> */}
+        <ExclusiveToolsSection />
         <PlansSection onCtaClick={onLogin} />
         <TestimonialsSection />
         <FaqSection />
