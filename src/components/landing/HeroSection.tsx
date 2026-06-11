@@ -22,11 +22,8 @@ export function HeroSection({ onCtaClick }: HeroSectionProps) {
           className="flex flex-col gap-8 max-w-2xl"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-display font-bold uppercase tracking-[2px] w-fit">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-            </span>
-            Plataforma Premium para Construção
+            <span className="text-base animate-pulse">🚀</span>
+            Lançamento Completo em Breve
           </div>
 
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-on-surface leading-[1.1]">
