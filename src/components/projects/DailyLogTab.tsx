@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Plus, Edit, Trash2, Camera, Sun, Cloud, HardHat, X, Image as ImageIcon, UploadCloud, PlusCircle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Plus, Edit, Trash2, Camera, Sun, Cloud, HardHat, X, Image as ImageIcon, UploadCloud, PlusCircle, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { DailyLog, DailyLogPhoto } from '../../lib/types';
 import { cn, formatDate, sanitizeFileName, compressImage } from '../../lib/utils';
@@ -36,6 +36,23 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
     message: ''
   });
   const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(10);
+  const [filterType, setFilterType] = useState<'date' | 'month'>('date');
+  const [filterValue, setFilterValue] = useState('');
+
+  useEffect(() => {
+    setVisibleCount(10);
+    setFilterValue('');
+    setFilterType('date');
+  }, [projectId]);
+
+  const filteredLogs = filterValue
+    ? dailyLogs.filter(log => {
+        if (filterType === 'date') return log.date === filterValue;
+        if (filterType === 'month') return log.date.startsWith(filterValue);
+        return true;
+      })
+    : dailyLogs;
 
   // Multi-photo state
   const [photosToUpload, setPhotosToUpload] = useState<PhotoUploadItem[]>([
@@ -315,26 +332,57 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-black text-on-surface">Diário de Obra (RDO)</h2>
           <p className="text-on-surface-variant mt-1">Registros diários do canteiro</p>
         </div>
-        {!readOnly && (
-          <button onClick={() => { resetModal(); setFormData({ date: new Date().toISOString().split('T')[0], weather: 'Ensolarado', workers: 0 }); setIsModalOpen(true); }} className="px-5 py-2.5 bg-primary text-on-primary text-sm font-bold rounded-lg flex items-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-sm active:scale-95">
-            <Plus className="h-4 w-4" /> Novo Registro
-          </button>
-        )}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2 bg-surface border border-outline rounded-xl p-1 shadow-sm">
+            <select
+              value={filterType}
+              onChange={(e) => { setFilterType(e.target.value as any); setFilterValue(''); setVisibleCount(10); }}
+              className="bg-transparent text-sm text-on-surface-variant font-medium outline-none px-2 py-1.5 cursor-pointer hover:text-on-surface transition-colors"
+            >
+              <option value="date">Por Dia</option>
+              <option value="month">Por Mês</option>
+            </select>
+            <div className="w-[1px] h-6 bg-outline mx-1"></div>
+            <div className="relative flex-1">
+              <input
+                type={filterType}
+                value={filterValue}
+                onChange={e => { setFilterValue(e.target.value); setVisibleCount(10); }}
+                className="w-32 sm:w-36 bg-transparent text-sm text-on-surface focus:outline-none px-2 py-1.5"
+              />
+              {filterValue && (
+                <button
+                  onClick={() => { setFilterValue(''); setVisibleCount(10); }}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-red-500 transition-colors p-1"
+                  title="Limpar filtro"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          {!readOnly && (
+            <button onClick={() => { resetModal(); setFormData({ date: new Date().toISOString().split('T')[0], weather: 'Ensolarado', workers: 0 }); setIsModalOpen(true); }} className="px-5 py-2.5 bg-primary text-on-primary text-sm font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-sm active:scale-95 whitespace-nowrap">
+              <Plus className="h-4 w-4" /> Novo Registro
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-6">
-        {dailyLogs.length === 0 ? (
+        {filteredLogs.length === 0 ? (
           <div className="bg-surface p-12 text-center rounded-2xl border border-outline text-on-surface-variant">
-            Nenhum diário de obra registrado.
+            {filterValue ? "Nenhum diário de obra encontrado para este filtro." : "Nenhum diário de obra registrado."}
           </div>
         ) : (
-          dailyLogs.map(log => (
-            <div key={log.id} className="bg-[#1e293b]/50 p-6 rounded-xl border border-outline group relative shadow-xl">
+          <>
+            {filteredLogs.slice(0, visibleCount).map(log => (
+              <div key={log.id} className="bg-[#1e293b]/50 p-6 rounded-xl border border-outline group relative shadow-xl">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h4 className="text-lg font-bold text-on-surface capitalize">{formatDate(log.date, { weekday: 'long', day: '2-digit', month: 'long' })}</h4>
@@ -402,7 +450,19 @@ export function DailyLogTab({ projectId, dailyLogs, onRefresh, readOnly }: Daily
                 </div>
               </div>
             </div>
-          ))
+            ))}
+            {visibleCount < filteredLogs.length && (
+              <div className="flex justify-center mt-8 pt-4">
+                <button
+                  onClick={() => setVisibleCount(prev => prev + 10)}
+                  className="px-6 py-3 bg-surface-container-highest text-on-surface text-sm font-bold rounded-xl hover:bg-surface-container-highest/80 transition-colors flex items-center gap-2 shadow-lg"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                  Carregar Mais Antigos
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

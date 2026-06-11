@@ -351,27 +351,6 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
           // 2. Update linked budget items with the winner's prices
           for (const bi of localBudgetItems) {
             if (bi.budget_item_id) {
-              // Find the winner's price for the items in this group
-              // Usually, bid_budget_items correspond to the localItems
-              // But here, we want to update the budget item with the winner's quote if possible.
-              // If the user linked a budget item to a row in the "ORÇAMENTO" section,
-              // we can update that item with the price of the winner.
-              
-              // Let's find the winner's quote for this service
-              // Wait, the "ORÇAMENTO" row is for REFERENCE. 
-              // The ACTUAL quotes are for the "localItems" (top section).
-              
-              // If there's only one service, we can update the budget item with the winner's total.
-              // If there are many, we might need a more complex mapping.
-              
-              // For now, let's update the budget item with the winner's price for that specific row.
-              // Since the user is "vincular item do orçamento" in the budget row, 
-              // they likely want that row's price (which they might have manually adjusted or fetched) 
-              // to be the new budget price.
-              
-              const winningQuotePrice = winner.total_amount / (bi.quantity || 1); // Approximate if many items
-              // Better: just use the unit_price of the budget row if it's meant to be the new contracted price.
-              
               await supabase.from('budget_items').update({ 
                 unit_cost: bi.unit_price,
                 // Also store the bid_group_id so we can filter in measurements
@@ -380,10 +359,41 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
             }
           }
 
+          // 3. Create budget items for the detailed services (localItems) so they can be measured individually
+          // We check if they already exist to avoid duplicates if closed twice.
+          const { data: existingGroupItems } = await supabase.from('budget_items')
+            .select('description')
+            .eq('bid_group_id', selectedGroup.id);
+          
+          const existingDescriptions = new Set((existingGroupItems || []).map(i => i.description));
+
+          for (const item of localItems) {
+            if (!existingDescriptions.has(item.description)) {
+              // Find the winning price for this specific service
+              // localPrices is keyed by `${quoteId}_${itemId}`
+              let winningPrice = 0;
+              if (winner) {
+                winningPrice = localPrices[`${winner.id}_${item.id}`] || 0;
+              }
+
+              await supabase.from('budget_items').insert([{
+                project_id: projectId,
+                description: item.description || 'Serviço sem descrição',
+                quantity: item.quantity || 1,
+                unit: item.unit || 'un',
+                unit_cost: winningPrice,
+                category: 'Mão de Obra - Contrato', // Better category to distinguish from macro items
+                bid_group_id: selectedGroup.id,
+                executed_quantity: 0
+              }]);
+              existingDescriptions.add(item.description);
+            }
+          }
+
           setAlertConfig({ 
             isOpen: true, 
             title: 'Quadro Fechado', 
-            message: 'O quadro foi fechado com sucesso! Os preços do orçamento foram atualizados.', 
+            message: 'O quadro foi fechado com sucesso! Os preços do orçamento foram atualizados e os serviços foram disponibilizados para medição.', 
             type: 'success' 
           });
           onRefresh();

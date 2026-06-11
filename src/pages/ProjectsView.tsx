@@ -283,8 +283,8 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
     }
 
     return (
-      <div className="space-y-12 max-w-[1400px] mx-auto pb-24 relative animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+      <div className="space-y-12 max-w-[1400px] mx-auto pb-24 relative animate-in fade-in slide-in-from-bottom-4 duration-500 print:pb-0 print:space-y-0 print:max-w-none print:w-full print:animate-none print:transform-none">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 print:hidden">
           <div className="flex items-center gap-6">
             <button 
               onClick={() => onSelectProject(null)} 
@@ -323,7 +323,7 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
           )}
         </div>
 
-        <div className="flex border-b border-outline mb-10 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 gap-2">
+        <div className="flex border-b border-outline mb-10 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 gap-2 print:hidden">
           {[
             { id: 'orcamento', label: 'Orçamento', visible: canEditBudget },
             { id: 'financeiro', label: 'Financeiro', visible: canAccessFinance },

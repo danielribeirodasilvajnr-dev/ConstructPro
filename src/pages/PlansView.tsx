@@ -4,6 +4,7 @@ import { CheckCircle2, Star, Zap, Building, Calculator, Shield, ArrowRight, Minu
 import { useSubscription } from '../hooks/useSubscription';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
+import { supabase } from '../lib/supabase';
 
 export function PlansView() {
   const { currentPlan, loading } = useSubscription();

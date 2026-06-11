@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { BudgetItem, Measurement, MeasurementItem } from '../../lib/types';
 import { cn, formatCurrency, formatDate } from '../../lib/utils';
 import { AlertModal } from '../ui/AlertModal';
+import { ConfirmModal } from '../ui/ConfirmModal';
 
 interface MeasurementsTabProps {
   projectId: string;
@@ -20,6 +21,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isNewItemModalOpen, setIsNewItemModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [measurementToDelete, setMeasurementToDelete] = useState<string | null>(null);
   const [editingItems, setEditingItems] = useState<{ [key: string]: number }>({});
   const [formData, setFormData] = useState<Partial<Measurement>>({
     description: '',
@@ -44,8 +46,17 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
   const previousMeasurements = useMemo(() => {
     return (measurements || [])
       .filter(m => m.id !== selectedMeasurement?.id)
+      .filter(m => {
+        // If we are filtering by a bid group (e.g. creating a new measurement for a specific Quadro)
+        if (filterBidGroupId) {
+          const groupItemIds = budgetItems.filter(item => (item as any).bid_group_id === filterBidGroupId).map(i => i.id);
+          // Only include previous measurements that contain items from this Bid Group
+          return (m.measurement_items || []).some(mi => groupItemIds.includes(mi.budget_item_id));
+        }
+        return true;
+      })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [measurements, selectedMeasurement]);
+  }, [measurements, selectedMeasurement, filterBidGroupId, budgetItems]);
 
   const currentMeasurementNumber = previousMeasurements.length + 1;
   const displayItems = useMemo(() => {
@@ -74,9 +85,92 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
     return totals;
   }, [measurements, selectedMeasurement]);
 
-  const handleOpenNew = (bidGroupId?: string) => {
+  const handleOpenNew = async (bidGroupId?: string) => {
     const group = bidGroups.find(bg => bg.id === bidGroupId);
     
+    let didSyncItems = false;
+    const newlySyncedIds: string[] = [];
+
+    if (group) {
+      setIsSaving(true);
+      try {
+        // --- PREVENT DUPLICATES & CLEANUP ---
+        const { data: existingGroupItems } = await supabase.from('budget_items')
+          .select('*')
+          .eq('bid_group_id', bidGroupId);
+          
+        const existingDescriptions = new Set<string>();
+        const itemsToDelete: string[] = [];
+        
+        if (existingGroupItems) {
+          for (const item of existingGroupItems) {
+            // Delete duplicates AND delete the macro items ("Serviços Contratados")
+            if (existingDescriptions.has(item.description) || item.category === 'Serviços Contratados') {
+              itemsToDelete.push(item.id);
+            } else {
+              existingDescriptions.add(item.description);
+            }
+          }
+          if (itemsToDelete.length > 0) {
+            await supabase.from('budget_items').delete().in('id', itemsToDelete);
+            didSyncItems = true; // Force refresh
+          }
+        }
+
+        // Determine the best quote to pull prices from (winner, or first one if none selected)
+        const bestQuote = group.quotes?.find((q: any) => q.is_selected) || group.quotes?.[0];
+
+        // 2. Sync micro detailed items (SERVIÇOS section)
+        if (group.items) {
+          for (const item of group.items) {
+            if (!existingDescriptions.has(item.description)) {
+              // Find winning price for this item
+              let winningPrice = 0;
+              if (bestQuote && bestQuote.quote_items) {
+                const quoteItem = bestQuote.quote_items.find((qi: any) => qi.bid_group_item_id === item.id);
+                if (quoteItem) winningPrice = quoteItem.unit_price;
+              }
+
+              const { data: newBi, error } = await supabase.from('budget_items').insert([{
+                project_id: projectId,
+                description: item.description || 'Serviço sem descrição',
+                quantity: item.quantity || 1,
+                unit: item.unit || 'un',
+                unit_cost: winningPrice,
+                category: 'Mão de Obra - Contrato',
+                bid_group_id: bidGroupId,
+                executed_quantity: 0
+              }]).select().single();
+
+              if (newBi && !error) {
+                newlySyncedIds.push(newBi.id);
+                existingDescriptions.add(item.description);
+                didSyncItems = true;
+              }
+            } else {
+               // Fix 0 price for existing micro items
+               const existingItem = existingGroupItems?.find(i => i.description === item.description);
+               if (existingItem && existingItem.unit_cost === 0 && bestQuote && bestQuote.quote_items) {
+                 const quoteItem = bestQuote.quote_items.find((qi: any) => qi.bid_group_item_id === item.id);
+                 if (quoteItem && quoteItem.unit_price > 0) {
+                    await supabase.from('budget_items').update({ unit_cost: quoteItem.unit_price }).eq('id', existingItem.id);
+                    didSyncItems = true;
+                 }
+               }
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error syncing unlinked items:', e);
+      } finally {
+        setIsSaving(false);
+      }
+    }
+
+    if (didSyncItems) {
+      await onRefresh();
+    }
+
     // Find items linked to this bid group to pre-populate the measurement
     const initialItems: { [key: string]: number } = {};
     if (bidGroupId) {
@@ -85,6 +179,10 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
           initialItems[item.id] = 0;
         }
       });
+      // Also pre-populate the ones we just synced
+      newlySyncedIds.forEach(id => {
+        initialItems[id] = 0;
+      });
     }
 
     setFormData({
@@ -92,6 +190,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
       date: new Date().toISOString().split('T')[0],
       status: 'pending'
     });
+    setSelectedMeasurement(null); // CRITICAL: Reset state so we don't resurrect the old measurement!
     setEditingItems(initialItems);
     setFilterBidGroupId(bidGroupId || null);
     setIsModalOpen(true);
@@ -206,11 +305,18 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
     }
   };
 
-  const handleDeleteMeasurement = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta medição?')) return;
+  const handleDeleteMeasurement = async () => {
+    if (!measurementToDelete) return;
     try {
-      const { error } = await supabase.from('measurements').delete().eq('id', id);
+      // First, delete any financial items associated with this measurement so the balance is cleared!
+      await supabase.from('financial_items').delete().eq('source_id', measurementToDelete);
+      
+      const { error } = await supabase.from('measurements').delete().eq('id', measurementToDelete);
       if (error) throw error;
+      
+      setSelectedMeasurement(null);
+      setIsDetailOpen(false);
+      setMeasurementToDelete(null);
       onRefresh();
     } catch (err) {
       console.error(err);
@@ -263,8 +369,17 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
       return acc + (Number(mi.quantity) * Number(budgetItem?.unit_cost || 0));
     }, 0);
 
+    const itemsByCategory: Record<string, BudgetItem[]> = {};
+    displayItems.forEach((item: BudgetItem) => {
+      const category = item.category || 'Sem Categoria';
+      if (!itemsByCategory[category]) {
+        itemsByCategory[category] = [];
+      }
+      itemsByCategory[category].push(item);
+    });
+
     return (
-      <div className="animate-in fade-in slide-in-from-right-4 duration-300 print:bg-white print:p-0">
+      <div className="animate-in fade-in slide-in-from-right-4 duration-300 print:bg-white print:p-0 print:animate-none print:transform-none print-area">
         <div className="flex items-center justify-between mb-8 print:hidden">
           <button onClick={() => setIsDetailOpen(false)} className="flex items-center gap-2 text-on-surface-variant hover:text-on-surface transition-colors">
             <Plus className="h-4 w-4 rotate-45" /> Voltar para lista
@@ -311,8 +426,8 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
         </div>
 
         {/* Measurement Table */}
-        <div className="bg-surface-container-low rounded-[32px] border border-outline shadow-2xl overflow-hidden print:border-black print:bg-transparent">
-          <div className="w-full overflow-x-auto">
+        <div className="bg-surface-container-low rounded-[32px] border border-outline shadow-2xl overflow-hidden print:border-black print:bg-transparent print:overflow-visible print:shadow-none">
+          <div className="w-full overflow-x-auto print:overflow-visible">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-outline print:border-black">
@@ -483,15 +598,6 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                 onClick={() => handleOpenDetail(m)}
                 className="bg-surface rounded-[24px] border border-outline p-6 cursor-pointer hover:border-primary/50 transition-all group relative overflow-hidden"
               >
-                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDeleteMeasurement(m.id); }}
-                    className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-on-surface transition-all"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-
                 <div className="flex items-center justify-between mb-4">
                   <span className={cn(
                     "px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest",
@@ -501,7 +607,18 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                   )}>
                     {m.status === 'paid' ? 'Pago' : m.status === 'authorized' ? 'Autorizado' : 'Pendente'}
                   </span>
-                  <span className="text-xs text-on-surface-variant font-bold">{formatDate(m.date)}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-on-surface-variant font-bold">{formatDate(m.date)}</span>
+                    {!readOnly && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setMeasurementToDelete(m.id); }}
+                        className="p-1.5 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-on-surface transition-all opacity-0 group-hover:opacity-100"
+                        title="Excluir medição"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <h3 className="text-lg font-bold text-on-surface mb-2 line-clamp-1 group-hover:text-primary transition-colors">{m.description}</h3>
@@ -597,7 +714,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                   </thead>
                   <tbody>
                     {/* Empty State / Add Item Button */}
-                    {!readOnly && (
+                    {!readOnly && !filterBidGroupId && (
                       <tr className="border-b border-black h-12 print:hidden">
                         <td colSpan={8 + previousMeasurements.length} className="p-0">
                           <div className="relative w-full h-full group">
@@ -720,8 +837,14 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                       })}
                     {/* Total Row */}
                     <tr className="bg-surface text-on-surface border-t-2 border-black h-12">
-                      <td colSpan={8 + previousMeasurements.length} className="text-right px-6 font-black uppercase tracking-widest text-[10px]">Total Geral da Medição:</td>
-                      <td className="bg-white text-on-primary text-right px-3 font-black text-sm">
+                      <td colSpan={4} className="text-right px-6 font-black uppercase tracking-widest text-[10px] text-blue-600">TOTAL:</td>
+                      <td className="text-center font-black text-[11px] bg-slate-50 text-blue-600">
+                        {formatCurrency(displayItems
+                          .filter(item => editingItems[item.id] !== undefined || (filterBidGroupId && accumulatedQuantities[item.id] > 0))
+                          .reduce((acc, item) => acc + (item.unit_cost || 0), 0))}
+                      </td>
+                      <td colSpan={2 + previousMeasurements.length} className="text-right px-6 font-black uppercase tracking-widest text-[10px]">Total Geral da Medição:</td>
+                      <td className="bg-slate-50 text-on-surface text-right px-3 font-black text-[11px]">
                         {formatCurrency(Object.entries(editingItems).reduce((acc, [id, qty]) => {
                           const item = budgetItems.find(bi => bi.id === id);
                           return acc + (qty * (item?.unit_cost || 0));
@@ -824,7 +947,18 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
         onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
         title={alertConfig.title}
         message={alertConfig.message}
-        type={alertConfig.type as any}
+        type={alertConfig.type}
+      />
+
+      <ConfirmModal
+        isOpen={!!measurementToDelete}
+        onClose={() => setMeasurementToDelete(null)}
+        onConfirm={handleDeleteMeasurement}
+        title="Excluir Medição"
+        message="Esta ação é irreversível. O saldo e os itens vinculados a esta medição serão apagados. Para confirmar, digite Excluir abaixo."
+        confirmText="Excluir"
+        confirmColor="bg-error"
+        requireText="Excluir"
       />
     </div>
   );
