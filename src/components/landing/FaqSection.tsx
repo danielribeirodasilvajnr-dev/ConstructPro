@@ -18,15 +18,11 @@ export function FaqSection() {
     },
     {
       question: "Os dados ficam seguros?",
-      answer: "Sim, utilizamos infraestrutura moderna (AWS/Supabase) com bancos de dados isolados e backups diários automáticos. Toda a comunicação é criptografada de ponta a ponta."
+      answer: "Sim, utilizamos infraestrutura moderna com bancos de dados isolados e backups diários automáticos. Toda a comunicação é criptografada de ponta a ponta."
     },
     {
       question: "Existe treinamento para minha equipe?",
       answer: "Com certeza. Nossos planos Business incluem onboarding guiado e treinamento exclusivo para sua equipe. Para os demais planos, oferecemos tutoriais completos em vídeo e suporte via WhatsApp."
-    },
-    {
-      question: "Posso cancelar a qualquer momento?",
-      answer: "Sim, não exigimos fidelidade de longo prazo. Você pode cancelar sua assinatura mensal a qualquer momento sem multas ou taxas adicionais."
     }
   ];
 

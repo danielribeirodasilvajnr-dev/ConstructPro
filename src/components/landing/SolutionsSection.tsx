@@ -4,17 +4,18 @@ import { CheckCircle2 } from 'lucide-react';
 
 export function SolutionsSection() {
   const solutions = [
-    "Gestão Financeira Centralizada",
-    "Diário de Obra Fotográfico",
-    "Portal do Cliente 100% Transparente",
-    // "Simulador Habitacional Inteligente",
-    // "Calculadora de INSS Integrada",
-    // "Módulo de Regularização de Imóveis",
-    "Relatórios Gerenciais Automáticos",
-    "Controle de Cronograma Físico-Financeiro",
+    "Dashboard em Tempo Real",
+    "Cadastro e Gestão de Projetos",
+    "Orçamento Detalhado da Obra",
+    "Gestão Financeira Completa",
+    "Gestão e Compra de Materiais",
+    "Quadro de Concorrência",
+    "Cronograma Físico com Curva ABC",
+    "Acompanhamento de Medições",
+    "Diário de Obra Integrado",
+    "Painel do Proprietário Transparente",
     "Gestão de Tarefas e Equipes",
-    "Controle de Compras e Estoque",
-    "Dashboard de Indicadores em Tempo Real"
+    "Relatórios Gerenciais Dinâmicos"
   ];
 
   return (

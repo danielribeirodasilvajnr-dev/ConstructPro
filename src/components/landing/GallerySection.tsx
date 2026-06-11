@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { LayoutDashboard, Wallet, BookOpen, Home, Calculator, FileText, PieChart, Users, X } from 'lucide-react';
+import { LayoutDashboard, Wallet, BookOpen, Calculator, PieChart, Users, ShoppingCart, CalendarRange, X } from 'lucide-react';
 
 export function GallerySection() {
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
 
   const screens = [
     { id: 1, title: "Dashboard Principal", icon: <LayoutDashboard />, color: "bg-blue-500/10 text-blue-500" },
-    { id: 2, title: "Gestão Financeira", icon: <Wallet />, color: "bg-emerald-500/10 text-emerald-500" },
-    { id: 3, title: "Diário de Obra", icon: <BookOpen />, color: "bg-amber-500/10 text-amber-500" },
-    // { id: 4, title: "Simulador Habitacional", icon: <Home />, color: "bg-indigo-500/10 text-indigo-500" },
-    // { id: 5, title: "Calculadora de INSS", icon: <Calculator />, color: "bg-rose-500/10 text-rose-500" },
-    // { id: 6, title: "Regularizações", icon: <FileText />, color: "bg-cyan-500/10 text-cyan-500" },
-    { id: 7, title: "Relatórios", icon: <PieChart />, color: "bg-purple-500/10 text-purple-500" },
-    { id: 8, title: "Portal do Cliente", icon: <Users />, color: "bg-orange-500/10 text-orange-500" },
+    { id: 2, title: "Gestão Financeira & Compras", icon: <Wallet />, color: "bg-emerald-500/10 text-emerald-500" },
+    { id: 3, title: "Quadro de Concorrência", icon: <ShoppingCart />, color: "bg-amber-500/10 text-amber-500" },
+    { id: 4, title: "Cronograma e Curva ABC", icon: <CalendarRange />, color: "bg-indigo-500/10 text-indigo-500" },
+    { id: 5, title: "Medições da Obra", icon: <Calculator />, color: "bg-rose-500/10 text-rose-500" },
+    { id: 6, title: "Diário de Obra", icon: <BookOpen />, color: "bg-cyan-500/10 text-cyan-500" },
+    { id: 7, title: "Painel do Proprietário", icon: <Users />, color: "bg-purple-500/10 text-purple-500" },
+    { id: 8, title: "Relatórios e Projetos", icon: <PieChart />, color: "bg-orange-500/10 text-orange-500" },
   ];
 
   return (
