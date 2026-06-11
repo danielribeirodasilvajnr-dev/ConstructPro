@@ -46,7 +46,7 @@ export function PlansSection({ onCtaClick }: PlansSectionProps) {
         /* "10 Regularizações INSS", */
         /* "Calculadora INSS Ilimitada", */
         /* "Simulador Hab. Ilimitado", */
-        "Suporte Prioritário"
+        "Suporte & Atualizações"
       ],
       isPopular: true
     },
