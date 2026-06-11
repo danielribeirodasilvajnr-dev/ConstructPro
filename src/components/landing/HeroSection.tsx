@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, Play, BarChart3, Users, Building, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Play, BarChart3, Users, Building, ShieldCheck, CheckCircle2, TrendingUp } from 'lucide-react';
 
 interface HeroSectionProps {
   onCtaClick: () => void;
@@ -183,7 +183,7 @@ export function HeroSection({ onCtaClick }: HeroSectionProps) {
             </div>
           </motion.div>
 
-          {/* Floating Element (Moved outside of the overflow-hidden container) */}
+          {/* Floating Element 1 (Bottom Right) */}
           <motion.div 
              initial={{ opacity: 0, x: 20 }}
              animate={{ opacity: 1, x: 0 }}
@@ -197,6 +197,22 @@ export function HeroSection({ onCtaClick }: HeroSectionProps) {
               <div className="text-sm font-bold text-on-surface whitespace-nowrap">Obra Finalizada</div>
               <div className="text-xs text-on-surface-variant whitespace-nowrap">Cronograma 100%</div>
               {/* FUTURO: <div className="text-xs text-on-surface-variant whitespace-nowrap">Regularização 100%</div> */}
+            </div>
+          </motion.div>
+
+          {/* Floating Element 2 (Bottom Left) */}
+          <motion.div 
+             initial={{ opacity: 0, x: -20 }}
+             animate={{ opacity: 1, x: 0 }}
+             transition={{ delay: 1.8 }}
+             className="absolute -left-8 bottom-24 p-4 rounded-2xl bg-surface border border-outline shadow-xl flex items-center gap-4 z-20"
+          >
+            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-on-surface whitespace-nowrap">Caixa Positivo</div>
+              <div className="text-xs text-on-surface-variant whitespace-nowrap">Economia: R$ 45.000</div>
             </div>
           </motion.div>
         </div>
