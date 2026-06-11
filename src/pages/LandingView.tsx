@@ -60,7 +60,7 @@ export function LandingView({ onLogin }: LandingViewProps) {
         <MetricsSection />
         {/* <ExclusiveToolsSection /> */}
         <PlansSection onCtaClick={onLogin} />
-        <TestimonialsSection />
+        {/* <TestimonialsSection /> */}
         <FaqSection />
         <CtaSection onCtaClick={onLogin} />
       </main>

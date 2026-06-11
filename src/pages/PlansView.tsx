@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { CheckCircle2, Star, Zap, Building, Calculator, Shield, ArrowRight, Minus } from 'lucide-react';
+import { CheckCircle, Star, Zap, Building, Calculator, Shield, ArrowRight, Minus } from 'lucide-react';
 import { useSubscription } from '../hooks/useSubscription';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
@@ -51,6 +51,8 @@ export function PlansView() {
     }
   ];
 
+  const [isCheckoutLoading, setIsCheckoutLoading] = React.useState<string | null>(null);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -58,8 +60,6 @@ export function PlansView() {
       </div>
     );
   }
-
-  const [isCheckoutLoading, setIsCheckoutLoading] = React.useState<string | null>(null);
 
   const handleSubscribe = async (planId: string) => {
     try {
@@ -144,7 +144,7 @@ export function PlansView() {
               <div className="space-y-4 mb-8">
                 <div className="flex items-center gap-3">
                   <div className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
-                    {plan.projects > 0 ? <CheckCircle2 className="w-3 h-3 text-primary" /> : <Minus className="w-3 h-3 text-error" />}
+                    {plan.projects > 0 ? <CheckCircle className="w-3 h-3 text-primary" /> : <Minus className="w-3 h-3 text-error" />}
                   </div>
                   <span className="text-sm text-on-surface">
                     {plan.projects === 0 ? (
@@ -156,7 +156,7 @@ export function PlansView() {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
-                    <CheckCircle2 className="w-3 h-3 text-primary" />
+                    <CheckCircle className="w-3 h-3 text-primary" />
                   </div>
                   <span className="text-sm text-on-surface">
                     <strong>{plan.regularizations}</strong> {plan.regularizations === 1 ? 'Regularização INSS' : 'Regularizações INSS'}
@@ -164,7 +164,7 @@ export function PlansView() {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
-                    <CheckCircle2 className="w-3 h-3 text-primary" />
+                    <CheckCircle className="w-3 h-3 text-primary" />
                   </div>
                   <span className="text-sm text-on-surface">
                     Calculadora INSS <strong>Ilimitada</strong>
@@ -172,7 +172,7 @@ export function PlansView() {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
-                    <CheckCircle2 className="w-3 h-3 text-primary" />
+                    <CheckCircle className="w-3 h-3 text-primary" />
                   </div>
                   <span className="text-sm text-on-surface">
                     Simulador Hab. <strong>Ilimitado</strong>

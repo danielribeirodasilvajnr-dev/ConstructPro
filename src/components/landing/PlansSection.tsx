@@ -9,29 +9,61 @@ interface PlansSectionProps {
 export function PlansSection({ onCtaClick }: PlansSectionProps) {
   const plans = [
     {
-      name: "Starter",
-      description: "Para profissionais autônomos começando a organizar processos.",
-      features: ["1 Obra", /* "1 Regularização", */ "Ferramentas Inclusas (Gestão Básica)"],
+      name: "START",
+      description: "Ideal para profissionais autônomos iniciando na gestão.",
+      features: [
+        "1 Obra Ativa",
+        "Gestão Financeira e Diário",
+        "Portal do Cliente",
+        /* "1 Regularização INSS", */
+        /* "Calculadora INSS Ilimitada", */
+        /* "Simulador Hab. Ilimitado", */
+        "Suporte & Atualizações"
+      ],
       isPopular: false
     },
     {
-      name: "Professional",
-      description: "Ideal para pequenos escritórios com demandas recorrentes.",
-      features: ["3 Obras", /* "3 Regularizações", */ "Ferramentas Inclusas (Acesso Completo)" /*, "Simulador Habitacional", "Calculadora de INSS" */],
+      name: "PRO",
+      description: "Para construtores e engenheiros com fluxo contínuo.",
+      features: [
+        "3 Obras Ativas",
+        "Gestão Financeira e Diário",
+        "Portal do Cliente",
+        /* "3 Regularizações INSS", */
+        /* "Calculadora INSS Ilimitada", */
+        /* "Simulador Hab. Ilimitado", */
+        "Suporte & Atualizações"
+      ],
+      isPopular: false
+    },
+    {
+      name: "ELITE",
+      description: "Para construtoras e escritórios de alto volume.",
+      features: [
+        "10 Obras Ativas",
+        "Gestão Financeira e Diário",
+        "Portal do Cliente",
+        /* "10 Regularizações INSS", */
+        /* "Calculadora INSS Ilimitada", */
+        /* "Simulador Hab. Ilimitado", */
+        "Suporte Prioritário"
+      ],
       isPopular: true
     },
     {
-      name: "Business",
-      description: "Para construtoras que precisam de controle total em escala.",
-      features: ["10 Obras", /* "10 Regularizações", */ "Ferramentas Inclusas", "Relatórios Avançados", "Múltiplos Usuários", "Suporte Prioritário"],
-      isPopular: false
+      name: "PLANO EXCLUSIVO",
+      description: "Um plano revolucionário que está sendo preparado para o nosso lançamento oficial.",
+      features: [
+        "Funcionalidade Exclusiva e Inédita",
+        "Detalhes no Lançamento Oficial",
+        /* "Ilimitadas Regularizações INSS", */
+        /* "Calculadora INSS Ilimitada", */
+        /* "Simulador Hab. Ilimitado", */
+        "Plano Único no Mercado"
+      ],
+      isPopular: false,
+      isExclusive: true
     }
-    // {
-    //   name: "INSS",
-    //   description: "Módulo exclusivo para cálculo e gestão previdenciária de obras.",
-    //   features: ["Acesso apenas às ferramentas de INSS", "Simulações Ilimitadas", "Relatórios CNO/SERO"],
-    //   isPopular: false
-    // }
   ];
 
   return (
@@ -64,6 +96,13 @@ export function PlansSection({ onCtaClick }: PlansSectionProps) {
                 <div className="absolute -top-4 left-0 right-0 flex justify-center">
                   <span className="bg-primary text-background text-xs font-bold uppercase tracking-widest py-1.5 px-4 rounded-full shadow-lg">
                     Mais Vendido
+                  </span>
+                </div>
+              )}
+              {(plan as any).isExclusive && (
+                <div className="absolute -top-4 left-0 right-0 flex justify-center">
+                  <span className="bg-surface border-2 border-primary text-primary text-[10px] font-bold uppercase tracking-widest py-1.5 px-4 rounded-full shadow-lg">
+                    Plano Exclusivo
                   </span>
                 </div>
               )}
