@@ -186,7 +186,7 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
       workers: log.workers,
       weather: log.weather
     }))
-  ).slice(0, 6); // Take latest 6
+  );
 
   // Find dynamic support contact (First Editor/Gestor with a phone number)
   const supportContact = collaborators.find(c => c.role === 'editor' && c.profile?.phone) || collaborators.find(c => c.role === 'editor');
@@ -346,42 +346,7 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
             </div>
           </div>
 
-          {/* Physical Progress by Category */}
-          {budgetItems.length > 0 && (
-            <div className="bg-surface rounded-2xl p-8 border border-outline shadow-sm">
-              <h3 className="text-xl font-bold flex items-center gap-2 mb-8">
-                <Ruler className="h-5 w-5 text-primary" />
-                Progresso por Etapa
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                {Object.entries(
-                  budgetItems.reduce((acc: any, item: any) => {
-                    if (!acc[item.category]) acc[item.category] = { total: 0, executed: 0 };
-                    acc[item.category].total += (item.quantity * item.unit_cost);
-                    const progress = item.quantity > 0 ? (item.executed_quantity / item.quantity) : 0;
-                    acc[item.category].executed += (Math.min(progress, 1) * item.quantity * item.unit_cost);
-                    return acc;
-                  }, {})
-                ).map(([category, data]: [string, any]) => {
-                  const progress = data.total > 0 ? (data.executed / data.total) * 100 : 0;
-                  return (
-                    <div key={category} className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-black text-on-surface-variant uppercase tracking-widest">{category}</span>
-                        <span className="text-xs font-black text-on-surface">{Math.round(progress)}%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary rounded-full transition-all duration-1000" 
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+
         </div>
 
         <div className="col-span-12 lg:col-span-4 space-y-8">
@@ -701,13 +666,7 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
 
             <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-                {dailyLogs.flatMap(log =>
-                  (log.daily_log_photos || []).map((photo: any) => ({
-                    url: photo.image_url,
-                    desc: photo.description || log.activities || 'Foto da obra',
-                    date: log.date
-                  }))
-                ).map((photo, i) => (
+                {allPhotos.map((photo, i) => (
                   <div key={i} className="group flex flex-col gap-3">
                     <div
                       onClick={() => setSelectedPhoto(photo)}
