@@ -21,7 +21,7 @@ import { FileSpreadsheet } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 
 export default function App() {
-  const { user, profile, isProprietor, isAdmin, isSuperAdmin, loading: authLoading } = useAuth();
+  const { user, profile, isProprietor, isAdmin, isSuperAdmin, isAccountOwner, loading: authLoading } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [activeTab, setActiveTab] = useState<string | null>(() => {
     return sessionStorage.getItem('activeTab') || null;
@@ -160,7 +160,7 @@ export default function App() {
   // Se aceitou os termos, mas a assinatura está pendente, força a visualização de planos (APENAS PARA DONOS DE CONTA).
   // Convidados (isStaff, isProprietor) pulam essa tela e vão ver se o projeto está bloqueado lá dentro.
   const isPendingSubscription = user && profile && profile.subscription_status === 'pending';
-  if (isPendingSubscription && activeTab !== 'plans' && isAdmin) {
+  if (isPendingSubscription && activeTab !== 'plans' && isAccountOwner) {
     // Nós podemos forçar renderizando apenas o Layout focado na assinatura
     return (
       <Layout

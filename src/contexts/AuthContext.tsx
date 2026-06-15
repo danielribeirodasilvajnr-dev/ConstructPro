@@ -11,6 +11,7 @@ interface AuthContextType {
   isStaff: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  isAccountOwner: boolean;
   profile: any;
   refreshRole: () => Promise<void>;
 }
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isStaff, setIsStaff] = useState<boolean>(false);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState<boolean>(false);
+  const [isAccountOwner, setIsAccountOwner] = useState<boolean>(true);
 
   const checkRole = async (userId: string) => {
     try {
@@ -127,10 +129,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // - Users who own projects
       // - Users who are editors/owners in collaborators list
       const shouldBeAdmin = !isActuallyProprietor && (!hasAnyRole || hasAdminRoles || ownedProjects.length > 0);
+      const isOwner = ownedProjects.length > 0 || !hasAnyRole;
       
       setIsAdmin(shouldBeAdmin);
       setIsStaff(!isActuallyProprietor);
       setIsSuperAdmin(!!profileData?.is_super_admin);
+      setIsAccountOwner(isOwner);
       
       if (isActuallyProprietor) {
         localStorage.setItem('is-proprietor', 'true');
@@ -207,6 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setIsProprietor(false);
       setProfile(null);
+      setIsAccountOwner(true);
       localStorage.removeItem('is-proprietor');
       
       // Clear navigation state
@@ -230,8 +235,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isStaff,
     isAdmin,
     isSuperAdmin,
+    isAccountOwner,
     refreshRole: () => user ? checkRole(user.id) : Promise.resolve(),
-  }), [session, user, profile, loading, isProprietor, isStaff, isAdmin, isSuperAdmin]);
+  }), [session, user, profile, loading, isProprietor, isStaff, isAdmin, isSuperAdmin, isAccountOwner]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
