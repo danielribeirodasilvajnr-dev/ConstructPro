@@ -593,7 +593,7 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                 <th className="border-r border-black px-3 font-black uppercase text-left">Descrição</th>
                 {[...Array(quoteCount)].map((_, i) => ( <th key={i} colSpan={2} className="border-r border-black font-black text-center text-[7px] uppercase">PREÇOS (Unitário / Total)</th> ))}
                 <th colSpan={2} className="p-0">
-                  <div className="flex items-center h-full px-2 gap-2 justify-center bg-surface-container-low0">
+                  <div className="flex items-center h-full px-2 gap-2 justify-center bg-surface-container-low">
                     <span className="font-black uppercase text-[7px]">INCC Io = </span>
                     <input 
                       type="number" 

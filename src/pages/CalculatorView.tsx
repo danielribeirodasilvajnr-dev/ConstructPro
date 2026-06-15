@@ -573,7 +573,7 @@ export function CalculatorView() {
                     </div>
 
                     {/* Tabela Analítica */}
-                    <div className="w-full bg-white rounded-2xl p-6 md:p-8 text-on-surface">
+                    <div className="w-full bg-surface rounded-2xl p-6 md:p-8 text-on-surface">
                       <div className="flex justify-between items-center mb-6">
                         <h4 className="text-lg font-bold text-on-surface">Cálculo Analítico Mensal</h4>
                         <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-tight bg-surface-container-low px-3 py-1 rounded-full">Correção monetária média: 1,060%</span>
@@ -648,10 +648,10 @@ export function CalculatorView() {
                       </div>
 
                       {/* Resumo do Fator */}
-                      <div ref={summaryRef} className="mt-8 bg-[#FDF1D6] p-6 rounded-xl border border-[#F3C062]/30">
+                      <div ref={summaryRef} className="mt-8 bg-[#FDF1D6] dark:bg-amber-950/20 p-6 rounded-xl border border-[#F3C062]/30 dark:border-amber-500/30">
                         <div className="flex justify-between items-center mb-4">
                           <h4 className="font-bold text-on-surface flex items-center gap-2">
-                            <ShieldCheck className="h-4 w-4 text-orange-600" /> Resumo
+                            <ShieldCheck className="h-4 w-4 text-orange-600 dark:text-orange-400" /> Resumo
                           </h4>
                           <button 
                             onClick={() => handlePrint(summaryRef)}
@@ -663,15 +663,15 @@ export function CalculatorView() {
                           </button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-                          <div className="p-4 bg-surface-container-low0 rounded-lg shadow-sm border border-outline-variant">
+                          <div className="p-4 bg-surface-container-low rounded-lg shadow-sm border border-outline-variant">
                             <p className="text-on-surface-variant text-[10px] uppercase font-bold mb-1 tracking-wider">INSS (inicial)</p>
                             <p className="font-black text-xl text-on-surface">{formatCurrency(inssInicial)}</p>
                           </div>
                           <div className="p-4 bg-green-500/10 rounded-lg shadow-sm border border-green-500/10">
-                            <p className="text-green-600 text-[10px] uppercase font-bold mb-1 tracking-wider">Redução</p>
-                            <p className="font-black text-xl text-green-700">{formatCurrency(results.reducao)} ({results.percReducao}%)</p>
+                            <p className="text-green-600 dark:text-green-400 text-[10px] uppercase font-bold mb-1 tracking-wider">Redução</p>
+                            <p className="font-black text-xl text-green-700 dark:text-green-400">{formatCurrency(results.reducao)} ({results.percReducao}%)</p>
                           </div>
-                          <div className="p-4 bg-surface-container-low0 rounded-lg shadow-sm border border-outline-variant">
+                          <div className="p-4 bg-surface-container-low rounded-lg shadow-sm border border-outline-variant">
                             <p className="text-on-surface-variant text-[10px] uppercase font-bold mb-1 tracking-wider">Total a pagar</p>
                             <p className="font-black text-xl text-on-surface">{formatCurrency(results.inssFinal)}</p>
                           </div>
