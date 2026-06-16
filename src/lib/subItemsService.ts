@@ -40,23 +40,40 @@ export const getSubItems = async (budgetItemId: string): Promise<BudgetSubItem[]
   }
 };
 
-export const saveSubItems = async (budgetItemId: string, subItems: Omit<BudgetSubItem, 'id' | 'budget_item_id' | 'created_at'>[]): Promise<BudgetSubItem[]> => {
+export const saveSubItems = async (budgetItemId: string, subItems: BudgetSubItem[]): Promise<BudgetSubItem[]> => {
   const newItemsToSave = subItems.map(item => ({
-    ...item,
+    id: item.id || undefined,
     budget_item_id: budgetItemId,
+    description: item.description,
+    amount: item.amount,
+    percentage: item.percentage
   }));
 
   try {
-    // Try to delete existing and insert new
-    await supabase
+    // 1. Fetch current items to see what was deleted
+    const { data: existingItems } = await supabase
       .from('budget_sub_items')
-      .delete()
+      .select('id')
       .eq('budget_item_id', budgetItemId);
+    
+    const existingIds = (existingItems || []).map(x => x.id);
+    const incomingIds = subItems.map(x => x.id).filter(Boolean);
+    const idsToDelete = existingIds.filter(id => !incomingIds.includes(id));
 
+    // 2. Delete only the removed items
+    if (idsToDelete.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('budget_sub_items')
+        .delete()
+        .in('id', idsToDelete);
+      if (deleteError) throw deleteError;
+    }
+
+    // 3. Upsert incoming items
     if (newItemsToSave.length > 0) {
       const { data, error } = await supabase
         .from('budget_sub_items')
-        .insert(newItemsToSave)
+        .upsert(newItemsToSave)
         .select();
 
       if (error) {
@@ -71,7 +88,7 @@ export const saveSubItems = async (budgetItemId: string, subItems: Omit<BudgetSu
     // Create local structure
     const localItems: BudgetSubItem[] = newItemsToSave.map(item => ({
       ...item,
-      id: crypto.randomUUID(),
+      id: item.id || crypto.randomUUID(),
       created_at: new Date().toISOString()
     }));
     

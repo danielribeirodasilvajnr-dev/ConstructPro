@@ -115,13 +115,15 @@ export function BudgetSubItemsPanel({
     setIsSaving(true);
     try {
       const itemsToSave = subItems.map(item => ({
+        id: item.id,
+        budget_item_id: budgetItemId,
         description: item.description,
         amount: item.amount,
         percentage: totalBudgetItemAmount > 0 ? (item.amount / totalBudgetItemAmount) * 100 : 0
       }));
       
-      const savedItems = await saveSubItems(budgetItemId, itemsToSave);
-      setSubItems(savedItems);
+      await saveSubItems(budgetItemId, itemsToSave);
+      await loadSubItems();
       
       setAlertConfig({
         isOpen: true,
