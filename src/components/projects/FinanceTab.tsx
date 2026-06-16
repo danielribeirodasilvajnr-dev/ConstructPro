@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Paperclip, X, ChevronUp, ChevronDown, Filter as FilterIcon, FilterX, Calendar, FileDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
-import { FinancialItem, BudgetItem } from '../../lib/types';
+import { FinancialItem, BudgetItem, BudgetSubItem } from '../../lib/types';
+import { getSubItems } from '../../lib/subItemsService';
 import { cn, formatCurrency, formatDate, sanitizeFileName } from '../../lib/utils';
 import { AlertModal } from '../ui/AlertModal';
 import { ConfirmModal } from '../ui/ConfirmModal';
@@ -39,6 +40,23 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
     maxAmount: '',
     budgetItemId: ''
   });
+
+  const [subItems, setSubItems] = useState<BudgetSubItem[]>([]);
+  const [isLoadingSubItems, setIsLoadingSubItems] = useState(false);
+  const [selectedSubItemId, setSelectedSubItemId] = useState('');
+
+  const loadSubItems = async (itemId: string) => {
+    setIsLoadingSubItems(true);
+    try {
+      const items = await getSubItems(itemId);
+      setSubItems(items);
+    } catch (error) {
+      console.error('Error loading subitems', error);
+      setSubItems([]);
+    } finally {
+      setIsLoadingSubItems(false);
+    }
+  };
 
   const categories = VALID_CATEGORIES;
 
@@ -260,6 +278,8 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
               const now = new Date();
               const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
               setFormData({ date: localDate, category: 'Material' });
+              setSelectedSubItemId('');
+              setSubItems([]);
               setIsModalOpen(true);
             }} className="flex-2 sm:flex-none px-4 sm:px-5 py-2.5 bg-primary text-on-primary text-xs sm:text-sm font-bold rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-sm active:scale-95 whitespace-nowrap">
               <Plus className="h-4 w-4" /> <span>Novo Lançamento</span>
@@ -351,11 +371,14 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                     className="w-full bg-surface border border-outline rounded-xl px-3 py-2.5 text-[10px] text-on-surface focus:border-primary/50 outline-none appearance-none cursor-pointer truncate"
                   >
                     <option value="">Todos os itens</option>
-                    {budgetItems.map(item => (
-                      <option key={item.id} value={item.id}>
-                        {item.description}
-                      </option>
-                    ))}
+                    {[...budgetItems]
+                      .filter(item => item.category.localeCompare('Mão de Obra', undefined, { sensitivity: 'base' }) !== 0)
+                      .sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }))
+                      .map(item => (
+                        <option key={item.id} value={item.id}>
+                          {item.code ? `${item.code} - ` : ''}{item.description}
+                        </option>
+                      ))}
                   </select>
                 </div>
 
@@ -474,6 +497,17 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                         Vínculo: {budgetItems.find(bi => bi.id === item.budget_item_linked_id)?.description || 'Item não encontrado'}
                       </span>
                     )}
+                    {item.observations && item.observations.startsWith('budget_sub_item_linked_id:') && (() => {
+                      const parts = item.observations.split('|');
+                      const namePart = parts.find(p => p.startsWith('name:'));
+                      const subitemName = namePart ? namePart.replace('name:', '') : '';
+                      return subitemName ? (
+                        <span className="text-[10px] text-amber-500 font-bold uppercase tracking-wider mt-0.5 flex items-center gap-1">
+                          <div className="w-1 h-1 rounded-full bg-amber-500" />
+                          Sub-item: {subitemName}
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
                 </td>
                 <td className="p-4"><span className="px-2 py-1 bg-surface-container-high rounded text-[10px] uppercase font-bold text-on-surface-variant">{item.category}</span></td>
@@ -485,6 +519,15 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                         setEditingItem(item);
                         const sanitizedCategory = VALID_CATEGORIES.includes(item.category) ? item.category : 'Material';
                         setFormData({ ...item, category: sanitizedCategory });
+                        const subId = item.observations && item.observations.startsWith('budget_sub_item_linked_id:')
+                          ? item.observations.replace('budget_sub_item_linked_id:', '').split('|')[0]
+                          : '';
+                        setSelectedSubItemId(subId);
+                        if (item.budget_item_linked_id) {
+                          loadSubItems(item.budget_item_linked_id);
+                        } else {
+                          setSubItems([]);
+                        }
                         setIsModalOpen(true);
                       }} className="p-2 bg-surface-container-high hover:opacity-90 rounded-lg text-on-surface-variant hover:text-on-surface transition-all"><Edit className="h-4 w-4" /></button>
                       <button onClick={() => handleDelete(item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg text-red-500 transition-all"><Trash2 className="h-4 w-4" /></button>
@@ -532,13 +575,26 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
             </div>
 
             {item.budget_item_linked_id && (
-              <div className="pt-3 border-t border-outline">
+              <div className="pt-3 border-t border-outline space-y-1">
                 <span className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider flex items-start gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1 shrink-0" />
                   <span className="leading-relaxed">
                     Vínculo: <span className="text-on-surface-variant">{budgetItems.find(bi => bi.id === item.budget_item_linked_id)?.description || 'Item não encontrado'}</span>
                   </span>
                 </span>
+                {item.observations && item.observations.startsWith('budget_sub_item_linked_id:') && (() => {
+                  const parts = item.observations.split('|');
+                  const namePart = parts.find(p => p.startsWith('name:'));
+                  const subitemName = namePart ? namePart.replace('name:', '') : '';
+                  return subitemName ? (
+                    <span className="text-[10px] text-amber-500 font-bold uppercase tracking-wider flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1 shrink-0" />
+                      <span className="leading-relaxed">
+                        Sub-item: <span className="text-on-surface-variant">{subitemName}</span>
+                      </span>
+                    </span>
+                  ) : null;
+                })()}
               </div>
             )}
 
@@ -549,6 +605,15 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                     setEditingItem(item);
                     const sanitizedCategory = VALID_CATEGORIES.includes(item.category) ? item.category : 'Material';
                     setFormData({ ...item, category: sanitizedCategory });
+                    const subId = item.observations && item.observations.startsWith('budget_sub_item_linked_id:')
+                      ? item.observations.replace('budget_sub_item_linked_id:', '').split('|')[0]
+                      : '';
+                    setSelectedSubItemId(subId);
+                    if (item.budget_item_linked_id) {
+                      loadSubItems(item.budget_item_linked_id);
+                    } else {
+                      setSubItems([]);
+                    }
                     setIsModalOpen(true);
                   }}
                   className="flex-1 py-3 bg-surface-container-high hover:opacity-90 rounded-xl text-on-surface font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95"
@@ -613,8 +678,15 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                     setFormData({
                       ...formData,
                       budget_item_linked_id: itemId,
-                      description: !formData.description ? (item ? item.description : '') : formData.description
+                      description: !formData.description ? (item ? item.description : '') : formData.description,
+                      observations: ''
                     });
+                    setSelectedSubItemId('');
+                    if (itemId) {
+                      loadSubItems(itemId);
+                    } else {
+                      setSubItems([]);
+                    }
                   }}
                   className="w-full bg-surface border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none appearance-none cursor-pointer"
                 >
@@ -649,6 +721,42 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                   })()}
                 </select>
               </div>
+
+              {formData.budget_item_linked_id && (
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">
+                    Vincular ao Sub-Item (Opcional)
+                  </label>
+                  {isLoadingSubItems ? (
+                    <div className="text-xs text-on-surface-variant animate-pulse py-3">Carregando subitens...</div>
+                  ) : subItems.length === 0 ? (
+                    <div className="text-xs text-on-surface-variant py-3 bg-surface-container-low rounded-xl px-4 border border-outline">
+                      Nenhum subitem cadastrado para este item do orçamento.
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedSubItemId}
+                      onChange={e => {
+                        const subId = e.target.value;
+                        const subName = subItems.find(s => s.id === subId)?.description || '';
+                        setSelectedSubItemId(subId);
+                        setFormData({
+                          ...formData,
+                          observations: subId ? `budget_sub_item_linked_id:${subId}|name:${subName}` : ''
+                        });
+                      }}
+                      className="w-full bg-surface border border-outline rounded-xl px-4 py-3 text-sm text-on-surface focus:border-primary outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="">Selecione um sub-item...</option>
+                      {subItems.map(sub => (
+                        <option key={sub.id} value={sub.id}>
+                          {sub.description} ({formatCurrency(Number(sub.amount))})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Categoria</label>

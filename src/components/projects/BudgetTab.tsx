@@ -290,6 +290,7 @@ export function BudgetTab({ projectId, budgetItems, financialItems, contractValu
                                   budgetItemId={item.id} 
                                   totalBudgetItemAmount={lineTotal} 
                                   readOnly={readOnly}
+                                  financialItems={financialItems}
                                   onClose={() => toggleItemExpand(item.id)}
                                 />
                             </div>
