@@ -239,3 +239,159 @@ export interface INSSRegularization {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface InventoryMaterial {
+  id: string;
+  project_id: string;
+  code?: string;
+  description: string;
+  category: string;
+  unit: string;
+  min_stock: number;
+  ideal_stock: number;
+  current_stock: number;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface InventoryEmployee {
+  id: string;
+  project_id: string;
+  name: string;
+  role: string;
+  notes?: string;
+  created_at?: string;
+}
+
+export interface InventoryMovement {
+  id: string;
+  project_id: string;
+  material_id: string;
+  type: 'in' | 'out' | 'cautela' | 'adjustment';
+  date: string;
+  quantity: number;
+  unit_price?: number;
+  total_price?: number;
+  supplier?: string;
+  invoice_url?: string;
+  storage_location?: string;
+  invoice_number?: string;
+  financial_item_id?: string;
+  budget_item_id?: string;
+  budget_sub_item_id?: string;
+  employee_id?: string;
+  destination?: string;
+  notes?: string;
+  created_by?: string;
+  created_at?: string;
+  material?: InventoryMaterial;
+  employee?: InventoryEmployee;
+  budget_item?: BudgetItem;
+  budget_sub_item?: BudgetSubItem;
+}
+
+export interface EngDiscipline {
+  id: string;
+  project_id: string;
+  name: string;
+  responsible_name?: string;
+  company?: string;
+  contact?: string;
+  start_date?: string;
+  deadline?: string;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface EngDirectory {
+  id: string;
+  project_id: string;
+  discipline_id?: string;
+  parent_id?: string;
+  name: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface EngDocument {
+  id: string;
+  discipline_id?: string;
+  directory_id?: string;
+  project_id: string;
+  name: string;
+  type: string;
+  version: string;
+  responsible?: string;
+  notes?: string;
+  file_path: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface EngRevision {
+  id: string;
+  document_id: string;
+  version: string;
+  user_id: string;
+  file_path: string;
+  changes_description?: string;
+  comments?: string;
+  created_at?: string;
+}
+
+export interface EngClash {
+  id: string;
+  project_id: string;
+  discipline1_id: string;
+  discipline2_id: string;
+  description: string;
+  image_url?: string;
+  responsible?: string;
+  deadline?: string;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
+  discipline1?: EngDiscipline;
+  discipline2?: EngDiscipline;
+}
+
+export interface EngRfi {
+  id: string;
+  project_id: string;
+  number?: number;
+  title: string;
+  description: string;
+  category?: string;
+  priority: string;
+  responsible?: string;
+  deadline?: string;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface EngApproval {
+  id: string;
+  document_id?: string;
+  project_id: string;
+  user_id: string;
+  step?: string;
+  status?: string;
+  comments?: string;
+  time_spent_hours?: number;
+  created_at?: string;
+}
+
+export interface EngDeliverable {
+  id: string;
+  project_id: string;
+  name: string;
+  planned_date?: string;
+  actual_date?: string;
+  responsible?: string;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
+}

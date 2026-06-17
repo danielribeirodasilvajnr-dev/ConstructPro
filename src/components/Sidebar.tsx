@@ -10,7 +10,8 @@ import {
   Home,
   Sparkles,
   CreditCard,
-  Users
+  Users,
+  Package
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -39,7 +40,9 @@ export function Sidebar({
   const { theme } = useTheme();
   const allNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'projects', label: 'Projetos', icon: ClipboardList },
+    { id: 'projects', label: 'Obras', icon: ClipboardList },
+    // { id: 'engineering', label: 'Projetos', icon: FileSpreadsheet }, // Deixado para implementação futura
+    { id: 'inventory', label: 'Estoque', icon: Package },
     { id: 'simulator', label: 'Simulador Habitacional', icon: Home, adminOnly: true },
     { id: 'calculator', label: 'Calculadora INSS', icon: Calculator, adminOnly: true },
     { id: 'regularization', label: 'Regularização INSS', icon: FileSpreadsheet, adminOnly: true },

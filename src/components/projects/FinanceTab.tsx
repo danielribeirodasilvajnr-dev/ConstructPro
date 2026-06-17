@@ -21,6 +21,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
   const [editingItem, setEditingItem] = useState<FinancialItem | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<FinancialItem>>({});
+  const [showInventoryPrompt, setShowInventoryPrompt] = useState<FinancialItem | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [uploading, setUploading] = useState(false);
   const VALID_CATEGORIES = ['Material', 'Equipamento', 'Terceirizado', 'Entrada', 'Outros'];
@@ -137,25 +138,75 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
       return;
     }
     try {
-      const { error } = await supabase
+      const { data: savedItem, error } = await supabase
         .from('financial_items')
         .upsert({
           ...formData,
           project_id: projectId,
           id: editingItem?.id || undefined
-        });
+        }).select().single();
 
       if (error) throw error;
-      setAlertConfig({
-        isOpen: true,
-        title: 'Sucesso',
-        message: 'Lançamento salvo com sucesso!',
-        type: 'success'
-      });
-      setIsModalOpen(false);
+      
       onRefresh();
+      
+      if (!editingItem && formData.category === 'Material' && savedItem) {
+        setShowInventoryPrompt(savedItem as FinancialItem);
+        // Don't close the main modal yet or show alert, wait for prompt
+      } else {
+        setAlertConfig({
+          isOpen: true,
+          title: 'Sucesso',
+          message: 'Lançamento salvo com sucesso!',
+          type: 'success'
+        });
+        setIsModalOpen(false);
+      }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleCreateInventoryEntry = async () => {
+    if (!showInventoryPrompt) return;
+    try {
+      // 1. Check if material exists or create a new one based on description
+      const { data: existingMats } = await supabase.from('inventory_materials').select('*').eq('project_id', projectId).ilike('description', `%${showInventoryPrompt.description}%`);
+      let materialId = existingMats && existingMats.length > 0 ? existingMats[0].id : null;
+      
+      if (!materialId) {
+        const { data: newMat, error: matError } = await supabase.from('inventory_materials').insert({
+          project_id: projectId,
+          description: showInventoryPrompt.description,
+          category: 'Geral',
+          unit: 'Unidade',
+          current_stock: 0
+        }).select().single();
+        if (matError) throw matError;
+        materialId = newMat.id;
+      }
+
+      // 2. Create Movement
+      const { error: movError } = await supabase.from('inventory_movements').insert({
+        project_id: projectId,
+        material_id: materialId,
+        type: 'in',
+        date: showInventoryPrompt.date,
+        quantity: 1, // Defaulting to 1, user can edit later
+        unit_price: showInventoryPrompt.amount,
+        total_price: showInventoryPrompt.amount,
+        supplier: showInventoryPrompt.supplier,
+        financial_item_id: showInventoryPrompt.id
+      });
+      if (movError) throw movError;
+      
+      setAlertConfig({ isOpen: true, title: 'Sucesso', message: 'Lançamento salvo e Entrada no Estoque registrada!', type: 'success' });
+    } catch (err: any) {
+      console.error(err);
+      setAlertConfig({ isOpen: true, title: 'Aviso', message: 'Lançamento salvo, mas erro ao registrar no estoque: ' + err.message, type: 'warning' as any });
+    } finally {
+      setShowInventoryPrompt(null);
+      setIsModalOpen(false);
     }
   };
 
@@ -858,6 +909,38 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                   Confirmar Lançamento
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+    {showInventoryPrompt && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-surface-container-low/95 backdrop-blur-md" onClick={() => {
+            setShowInventoryPrompt(null);
+            setIsModalOpen(false);
+          }}></div>
+          <div className="relative bg-surface rounded-[24px] shadow-2xl border border-outline w-full max-w-md p-8 text-center animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold text-on-surface mb-2">Lançar no Estoque?</h3>
+            <p className="text-sm text-on-surface-variant mb-6">
+              Deseja criar uma entrada automática para <strong>{showInventoryPrompt.description}</strong> no módulo de Controle de Estoque?
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  setShowInventoryPrompt(null);
+                  setIsModalOpen(false);
+                }}
+                className="flex-1 px-4 py-3 bg-surface-container-high hover:opacity-90 rounded-xl text-on-surface font-bold text-xs transition-all"
+              >
+                Não, apenas financeiro
+              </button>
+              <button
+                onClick={handleCreateInventoryEntry}
+                className="flex-1 px-4 py-3 bg-primary text-background rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-lg"
+              >
+                Sim, lançar
+              </button>
             </div>
           </div>
         </div>
