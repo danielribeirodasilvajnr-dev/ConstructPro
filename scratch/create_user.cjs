@@ -9,10 +9,10 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 async function createUser() {
   try {
     const { data, error } = await supabase.auth.admin.createUser({
-      email: 'marcelinobastos@outlook.com',
+      email: 'juninho7_rsj@hotmail.com',
       password: 'senhaTemporaria123!',
       email_confirm: true,
-      user_metadata: { full_name: 'Marcelino Bastos' }
+      user_metadata: { full_name: 'Juninho' }
     });
 
     if (error) {

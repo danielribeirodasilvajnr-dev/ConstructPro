@@ -118,6 +118,9 @@ export function useProjects() {
         ...project,
         user_id: user.id
       };
+      
+      // Remove campos injetados no frontend que não existem no banco de dados
+      delete projectData.owner_status;
 
       // Corrigir erro "invalid input syntax for type date"
       if (projectData.deadline === '') {

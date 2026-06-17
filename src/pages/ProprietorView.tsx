@@ -67,31 +67,12 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
     );
   }
 
-  // Calculate real progress based on budget items medições
-  const calculatePhysicalProgress = () => {
-    if (!budgetItems || budgetItems.length === 0) {
-      return scheduleItems.length > 0
-        ? Math.round(scheduleItems.reduce((acc, item) => acc + Number(item.progress || 0), 0) / scheduleItems.length)
-        : 0;
-    }
-    
-    const totalValue = budgetItems.reduce((acc, item) => acc + (item.quantity * item.unit_cost), 0);
-    if (totalValue === 0) return 0;
-
-    const executedValue = budgetItems.reduce((acc, item) => {
-      const progress = item.quantity > 0 ? (item.executed_quantity / item.quantity) : 0;
-      const cappedProgress = Math.min(progress, 1);
-      return acc + (cappedProgress * item.quantity * item.unit_cost);
-    }, 0);
-
-    return Math.round((executedValue / totalValue) * 100);
-  };
-
-  const physicalProgress = calculatePhysicalProgress();
-
-  const totalInvested = financialItems.reduce((acc, item) => acc + Number(item.amount), 0);
-  const totalBudget = budgetItems.reduce((acc, item) => acc + (Number(item.quantity) * Number(item.unit_cost)), 0);
-  const financialProgress = totalBudget > 0 ? Math.round((totalInvested / totalBudget) * 100) : 0;
+  const totalInvested = financialItems
+    .filter(item => item.category === 'Entrada')
+    .reduce((acc, item) => acc + Number(item.amount), 0);
+  const totalBudget = project.contract_value || budgetItems.reduce((acc, item) => acc + (Number(item.quantity) * Number(item.unit_cost)), 0);
+  const physicalProgress = totalBudget > 0 ? (totalInvested / totalBudget) * 100 : 0;
+  const formattedProgress = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(physicalProgress);
 
   const handleSaveDocument = async () => {
     if (!newDoc.name || !selectedProjectId || !newDoc.file) return;
@@ -237,9 +218,9 @@ export function ProprietorView({ selectedProjectId, onBack }: ProprietorViewProp
             </div>
           </div>
 
-          <p className="text-on-surface font-medium text-lg mb-6">Sua obra está <span className="text-on-surface font-bold">{physicalProgress}%</span> concluída</p>
-          <div className="w-full max-w-md bg-surface-container-high rounded-full h-3 mb-2">
-            <div className="bg-white h-3 rounded-full shadow-[0_0_15px_rgba(255,255,255,0.4)] transition-all duration-1000" style={{ width: `${physicalProgress}%` }}></div>
+          <p className="text-on-surface font-medium text-lg mb-6">Sua obra está <span className="text-on-surface font-bold">{formattedProgress}%</span> concluída</p>
+          <div className="w-full max-w-md bg-black/10 dark:bg-white/10 border border-outline/20 rounded-full h-3 mb-2 overflow-hidden">
+            <div className="bg-primary dark:bg-white h-3 rounded-full shadow-sm transition-all duration-1000" style={{ width: `${Math.min(physicalProgress, 100)}%` }}></div>
           </div>
           <div className="flex justify-between text-xs font-bold tracking-widest uppercase opacity-70">
             <span>Início</span>
