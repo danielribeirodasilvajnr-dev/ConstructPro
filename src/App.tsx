@@ -18,7 +18,8 @@ import { TermsAcceptanceView } from './pages/TermsAcceptanceView';
 import { MySubscriptionView } from './pages/MySubscriptionView';
 import { SubscribersView } from './pages/SubscribersView';
 import { InventoryView } from './pages/InventoryView';
-import { EngineeringView } from './pages/EngineeringView';
+import { CommercialView } from './pages/CommercialView';
+// import { EngineeringView } from './pages/EngineeringView';
 import { FileSpreadsheet } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 
@@ -187,6 +188,8 @@ export default function App() {
         return isAdmin ? <DashboardView /> : <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'projects':
         return <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
+      case 'commercial':
+        return isAdmin ? <CommercialView /> : <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       // case 'engineering':
       //   return isAdmin ? <EngineeringView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} /> : <ProjectsView selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />;
       case 'inventory':
@@ -220,6 +223,7 @@ export default function App() {
     switch (activeTab) {
       case 'dashboard': return 'Dashboard';
       case 'projects': return 'Obras';
+      case 'commercial': return 'Comercial';
       // case 'engineering': return 'Projetos';
       case 'inventory': return 'Controle de Estoque';
       case 'schedule': return 'Cronograma de Obra';

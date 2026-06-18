@@ -11,7 +11,8 @@ import {
   Sparkles,
   CreditCard,
   Users,
-  Package
+  Package,
+  Briefcase
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -41,6 +42,7 @@ export function Sidebar({
   const allNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'projects', label: 'Obras', icon: ClipboardList },
+    { id: 'commercial', label: 'Comercial', icon: Briefcase },
     // { id: 'engineering', label: 'Projetos', icon: FileSpreadsheet }, // Deixado para implementação futura
     { id: 'inventory', label: 'Estoque', icon: Package },
     { id: 'simulator', label: 'Simulador Habitacional', icon: Home, adminOnly: true },
