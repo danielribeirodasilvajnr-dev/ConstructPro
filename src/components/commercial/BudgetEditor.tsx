@@ -126,9 +126,9 @@ export function BudgetEditor({ budget, onBack }: BudgetEditorProps) {
     setUseComposition(!!item.composition_id);
     setSelectedCompId(item.composition_id || '');
     setCompositionSearch(item.description);
-    
+
     if (!item.composition_id) {
-       setItemType(item.material_cost > 0 && item.labor_cost === 0 ? 'material' : item.equipment_cost > 0 ? 'equipment' : 'service');
+      setItemType(item.material_cost > 0 && item.labor_cost === 0 ? 'material' : item.equipment_cost > 0 ? 'equipment' : 'service');
     }
 
     setCode(item.code || '');
@@ -138,7 +138,7 @@ export function BudgetEditor({ budget, onBack }: BudgetEditorProps) {
     setMaterialCost(item.material_cost.toString());
     setLaborCost(item.labor_cost.toString());
     setEquipmentCost(item.equipment_cost.toString());
-    
+
     setIsModalOpen(true);
   };
 
