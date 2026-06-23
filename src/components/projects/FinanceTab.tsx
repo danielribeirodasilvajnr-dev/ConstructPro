@@ -33,13 +33,14 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
   });
 
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [isVinculoOpen, setIsVinculoOpen] = useState(false);
   const [filters, setFilters] = useState({
     dateStart: '',
     dateEnd: '',
     category: 'Todas',
     minAmount: '',
     maxAmount: '',
-    budgetItemId: ''
+    budgetItemsIds: [] as string[]
   });
 
   const [subItems, setSubItems] = useState<BudgetSubItem[]>([]);
@@ -265,7 +266,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
     const matchesAmount = (!filters.minAmount || Number(i.amount) >= Number(filters.minAmount)) &&
       (!filters.maxAmount || Number(i.amount) <= Number(filters.maxAmount));
 
-    const matchesBudgetItem = !filters.budgetItemId || i.budget_item_linked_id === filters.budgetItemId;
+    const matchesBudgetItem = filters.budgetItemsIds.length === 0 || (!!i.budget_item_linked_id && filters.budgetItemsIds.includes(i.budget_item_linked_id));
 
     return matchesSearch && matchesDate && matchesCategory && matchesAmount && matchesBudgetItem;
   });
@@ -276,7 +277,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
     filters.category !== 'Todas',
     filters.minAmount,
     filters.maxAmount,
-    filters.budgetItemId
+    filters.budgetItemsIds.length > 0
   ].filter(Boolean).length;
 
   const sortedItems = [...filteredItems].sort((a, b) => {
@@ -371,10 +372,9 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
         <AnimatePresence>
           {isFilterExpanded && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
+              initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+              animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
+              exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
             >
               <div className="p-6 bg-surface rounded-2xl border border-outline grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                 <div className="space-y-3 min-w-0">
@@ -416,21 +416,62 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                   <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1 flex items-center gap-2">
                     <Paperclip className="h-3 w-3" /> Vínculo
                   </label>
-                  <select
-                    value={filters.budgetItemId}
-                    onChange={e => setFilters({ ...filters, budgetItemId: e.target.value })}
-                    className="w-full bg-surface border border-outline rounded-xl px-3 py-2.5 text-[10px] text-on-surface focus:border-primary/50 outline-none appearance-none cursor-pointer truncate"
-                  >
-                    <option value="">Todos os itens</option>
-                    {[...budgetItems]
-                      .filter(item => item.category.localeCompare('Mão de Obra', undefined, { sensitivity: 'base' }) !== 0)
-                      .sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }))
-                      .map(item => (
-                        <option key={item.id} value={item.id}>
-                          {item.code ? `${item.code} - ` : ''}{item.description}
-                        </option>
-                      ))}
-                  </select>
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsVinculoOpen(!isVinculoOpen)}
+                      className="w-full bg-surface border border-outline rounded-xl px-3 py-2.5 text-[10px] text-on-surface focus:border-primary/50 outline-none flex items-center justify-between text-left truncate"
+                    >
+                      <span className="truncate">
+                        {filters.budgetItemsIds.length === 0 
+                          ? 'Todos os itens' 
+                          : `${filters.budgetItemsIds.length} item(s) selecionado(s)`}
+                      </span>
+                      <ChevronDown className={cn("h-3 w-3 transition-transform", isVinculoOpen && "rotate-180")} />
+                    </button>
+                    
+                    {isVinculoOpen && (
+                      <div className="absolute z-50 top-full mt-1 w-[280px] sm:w-[320px] bg-surface border border-outline rounded-xl shadow-xl max-h-60 overflow-y-auto left-0">
+                        <div 
+                          className="flex items-center gap-2 px-3 py-2.5 hover:bg-surface-container-high cursor-pointer border-b border-outline"
+                          onClick={() => {
+                            setFilters({ ...filters, budgetItemsIds: [] });
+                            setIsVinculoOpen(false);
+                          }}
+                        >
+                          <div className={cn("w-3.5 h-3.5 rounded flex items-center justify-center border", filters.budgetItemsIds.length === 0 ? "bg-primary border-primary" : "border-outline")}>
+                            {filters.budgetItemsIds.length === 0 && <span className="text-on-primary text-[8px] font-black">✓</span>}
+                          </div>
+                          <span className="text-xs font-bold text-on-surface">Todos os itens</span>
+                        </div>
+                        {[...budgetItems]
+                          .filter(item => item.category.localeCompare('Mão de Obra', undefined, { sensitivity: 'base' }) !== 0)
+                          .sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }))
+                          .map(item => {
+                            const isSelected = filters.budgetItemsIds.includes(item.id);
+                            return (
+                              <div 
+                                key={item.id}
+                                className="flex items-center gap-2 px-3 py-2 hover:bg-surface-container-high cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const newIds = isSelected 
+                                    ? filters.budgetItemsIds.filter(id => id !== item.id)
+                                    : [...filters.budgetItemsIds, item.id];
+                                  setFilters({ ...filters, budgetItemsIds: newIds });
+                                }}
+                              >
+                                <div className={cn("w-3.5 h-3.5 rounded flex items-center justify-center border shrink-0", isSelected ? "bg-primary border-primary" : "border-outline")}>
+                                  {isSelected && <span className="text-on-primary text-[8px] font-black">✓</span>}
+                                </div>
+                                <span className="text-[10px] text-on-surface truncate">
+                                  {item.code ? `${item.code} - ` : ''}{item.description}
+                                </span>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-3 min-w-0">
@@ -458,7 +499,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
                 <div className="flex items-end min-w-0">
                   <button
                     onClick={() => {
-                      setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '', budgetItemId: '' });
+                      setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '', budgetItemsIds: [] });
                       setSearchTerm('');
                     }}
                     className="w-full h-[38px] bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-red-500/20 shadow-lg shadow-red-500/5 group"
@@ -492,7 +533,7 @@ export function FinanceTab({ projectId, financialItems, budgetItems, onRefresh, 
           {activeFiltersCount > 0 && (
             <button
               onClick={() => {
-                setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '', budgetItemId: '' });
+                setFilters({ dateStart: '', dateEnd: '', category: 'Todas', minAmount: '', maxAmount: '', budgetItemsIds: [] });
                 setSearchTerm('');
               }}
               className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-1 hover:bg-primary/5 transition-all"
