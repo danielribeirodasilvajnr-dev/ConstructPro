@@ -42,6 +42,18 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
     message: ''
   });
 
+  const currentBidGroup = useMemo(() => {
+    let groupId = filterBidGroupId;
+    if (!groupId && selectedMeasurement && selectedMeasurement.measurement_items && selectedMeasurement.measurement_items.length > 0) {
+      const firstItemId = selectedMeasurement.measurement_items[0].budget_item_id;
+      const firstItem = budgetItems.find(bi => bi.id === firstItemId);
+      if (firstItem) {
+        groupId = (firstItem as any).bid_group_id;
+      }
+    }
+    return groupId ? bidGroups.find(bg => bg.id === groupId) : null;
+  }, [filterBidGroupId, selectedMeasurement, budgetItems, bidGroups]);
+
   // Get relevant previous measurements for columns
   const previousMeasurements = useMemo(() => {
     return (measurements || [])
@@ -350,6 +362,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
           description: `Pagamento: ${m.description}`,
           category: 'Mão de Obra',
           amount: totalValue,
+          source_id: m.id,
           observations: `Gerado automaticamente via Medição #${m.id.slice(0, 5)}`
         });
       }
@@ -507,6 +520,36 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                     </React.Fragment>
                   );
                 })}
+
+                {/* ORÇAMENTO reference block for details view */}
+                {currentBidGroup && currentBidGroup.budget_items && currentBidGroup.budget_items.length > 0 && (
+                  <React.Fragment>
+                    <tr className="bg-surface/30 print:bg-gray-100">
+                      <td colSpan={5} className="py-4 px-8 text-[11px] font-black text-[#3B82F6] uppercase tracking-[2px] print:text-black">ORÇAMENTO (REFERÊNCIA)</td>
+                    </tr>
+                    {currentBidGroup.budget_items.map((bi: any) => {
+                       return (
+                          <tr key={`ref-${bi.id}`} className="border-b border-outline opacity-60 print:border-black">
+                             <td className="py-6 px-8">
+                               <div className="flex flex-col">
+                                 <span className="text-on-surface font-bold text-sm print:text-black">{bi.description}</span>
+                                 <span className="text-[10px] text-on-surface-variant font-bold uppercase mt-1 print:text-black">{bi.unit} • Unit: {formatCurrency(bi.unit_price)}</span>
+                               </div>
+                             </td>
+                             <td className="py-6 px-8 text-right">
+                               <div className="flex flex-col">
+                                 <span className="text-on-surface-variant font-bold print:text-black">{Number(bi.quantity).toLocaleString()} {bi.unit}</span>
+                                 <span className="text-[11px] text-on-surface-variant print:text-black">{formatCurrency(bi.total_price || (bi.unit_price * bi.quantity))}</span>
+                               </div>
+                             </td>
+                             <td colSpan={3} className="py-6 px-8 text-center text-[10px] font-bold text-on-surface-variant uppercase tracking-widest print:text-black">
+                               Item de orçamento original
+                             </td>
+                          </tr>
+                       );
+                    })}
+                  </React.Fragment>
+                )}
               </tbody>
             </table>
           </div>
@@ -835,6 +878,31 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
                           </React.Fragment>
                         );
                       })}
+
+                    {/* Budget Reference Section */}
+                    {currentBidGroup && currentBidGroup.budget_items && currentBidGroup.budget_items.length > 0 && (
+                      <React.Fragment>
+                        <tr className="bg-[#BDBDBD] border-b border-black h-8">
+                          <td colSpan={8 + previousMeasurements.length} className="px-4 font-black uppercase tracking-[3px] text-[9px] text-center">ORÇAMENTO</td>
+                        </tr>
+                        {currentBidGroup.budget_items.map((bi: any, idx: number) => (
+                          <tr key={`ref-${bi.id}`} className="border-b border-black h-9 opacity-70 bg-gray-50/50 hover:bg-gray-100/50">
+                             <td className="border-r border-black text-center font-bold opacity-30">{idx + 1}</td>
+                             <td className="border-r border-black px-3 font-bold uppercase">{bi.description}</td>
+                             <td className="border-r border-black text-center font-bold uppercase">{bi.unit}</td>
+                             <td className="border-r border-black text-center font-bold">{Number(bi.quantity).toLocaleString()}</td>
+                             <td className="border-r border-black text-center font-bold bg-slate-50">{formatCurrency(bi.unit_price)}</td>
+                             {previousMeasurements.map((pm) => (
+                               <td key={`pm-${pm.id}`} className="border-r border-black bg-blue-50/10"></td>
+                             ))}
+                             <td className="border-r border-black bg-emerald-500/5"></td>
+                             <td className="border-r border-black text-center font-bold text-amber-600 bg-amber-50/5"></td>
+                             <td className="text-right px-3 font-black text-on-surface bg-slate-50">{formatCurrency(bi.total_price || (bi.unit_price * bi.quantity))}</td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    )}
+
                     {/* Total Row */}
                     <tr className="bg-surface text-on-surface border-t-2 border-black h-12">
                       <td colSpan={4} className="text-right px-6 font-black uppercase tracking-widest text-[10px] text-blue-600">TOTAL:</td>

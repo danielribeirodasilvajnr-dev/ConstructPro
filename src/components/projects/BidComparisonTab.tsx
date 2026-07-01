@@ -21,6 +21,8 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
   const [isDirty, setIsDirty] = useState(false);
   const [isFetchingIncc, setIsFetchingIncc] = useState(false);
 
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  
   // Editable local states
   const [localItems, setLocalItems] = useState<any[]>([]);
   const [localQuotes, setLocalQuotes] = useState<any[]>([]);
@@ -39,6 +41,8 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
     title: '', 
     message: '', 
     confirmText: 'Excluir',
+    requireText: undefined as string | undefined,
+    confirmColor: 'bg-red-500',
     onConfirm: () => {} 
   });
 
@@ -61,8 +65,11 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
       });
       setLocalPrices(prices);
       setIsDirty(false);
+      setIsUnlocked(false); // Reset unlock state when changing groups
     }
   }, [selectedGroup]);
+
+  const isEffectivelyReadOnly = readOnly || (selectedGroup?.status === 'closed' && !isUnlocked);
 
   const fetchIncc = async () => {
     let formattedDate = inccIfDate.trim();
@@ -337,6 +344,21 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
       return;
     }
 
+    const hasZeroPrice = localItems.some(item => {
+      const price = localPrices[`${winner.id}_${item.id}`];
+      return !price || price <= 0;
+    });
+
+    if (hasZeroPrice || localItems.length === 0) {
+      setAlertConfig({ 
+        isOpen: true, 
+        title: 'Aviso', 
+        message: 'O fornecedor ganhador não pode ter valor igual a 0. Preencha os preços unitários antes de fechar o quadro.', 
+        type: 'warning' 
+      });
+      return;
+    }
+
     setConfirmConfig({
       isOpen: true,
       title: 'Fechar Quadro?',
@@ -513,12 +535,42 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                 <CheckCircle2 className="h-4 w-4" /> Fechar Quadro
               </button>
             )}
-            {selectedGroup.status === 'closed' && (
-              <div className="px-6 py-3 bg-surface-container-high text-on-surface-variant text-xs font-black rounded-xl flex items-center gap-2 uppercase tracking-widest border border-outline">
-                <CheckCircle2 className="h-4 w-4" /> Quadro Fechado
+            {selectedGroup.status === 'closed' && !isUnlocked && (
+              <div className="flex items-center gap-2">
+                <div className="px-6 py-3 bg-surface-container-high text-on-surface-variant text-xs font-black rounded-xl flex items-center gap-2 uppercase tracking-widest border border-outline">
+                  <CheckCircle2 className="h-4 w-4" /> Quadro Fechado
+                </div>
+                {!readOnly && (
+                  <button 
+                    onClick={() => {
+                      setConfirmConfig({
+                        isOpen: true,
+                        title: 'Desbloquear Quadro',
+                        message: 'Este quadro está fechado. Para editá-lo, você precisa confirmar a intenção digitando a palavra abaixo:',
+                        confirmText: 'Desbloquear',
+                        confirmColor: 'bg-red-500',
+                        requireText: 'Editar',
+                        onConfirm: () => {
+                          setIsUnlocked(true);
+                          setAlertConfig({ isOpen: true, title: 'Quadro Desbloqueado', message: 'Você agora pode editar os valores deste quadro fechado.', type: 'warning' });
+                        }
+                      });
+                    }}
+                    className="px-4 py-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 text-[10px] font-black rounded-xl uppercase tracking-widest transition-colors border border-red-500/20"
+                  >
+                    Desbloquear
+                  </button>
+                )}
               </div>
             )}
-            <button onClick={handleSaveAll} disabled={isSaving} className="px-8 py-3 bg-blue-600 text-on-surface text-xs font-black rounded-xl flex items-center gap-2 hover:bg-blue-500 uppercase tracking-widest shadow-xl"><Save className="h-4 w-4" /> {isSaving ? 'Salvando...' : 'Salvar Tudo'}</button>
+            {selectedGroup.status === 'closed' && isUnlocked && (
+              <div className="px-6 py-3 bg-red-500 text-white text-xs font-black rounded-xl flex items-center gap-2 uppercase tracking-widest shadow-xl animate-pulse">
+                <AlertCircle className="h-4 w-4" /> Editando Quadro Fechado
+              </div>
+            )}
+            {!isEffectivelyReadOnly && (
+              <button onClick={handleSaveAll} disabled={isSaving} className="px-8 py-3 bg-blue-600 text-on-surface text-xs font-black rounded-xl flex items-center gap-2 hover:bg-blue-500 uppercase tracking-widest shadow-xl"><Save className="h-4 w-4" /> {isSaving ? 'Salvando...' : 'Salvar Tudo'}</button>
+            )}
             <button onClick={() => window.print()} className="px-4 py-2 bg-surface-container-high text-on-surface rounded-lg flex items-center gap-2 hover:opacity-90 transition-colors"><Printer className="h-4 w-4" /> Imprimir</button>
           </div>
         </div>
@@ -547,7 +599,7 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                   <h1 className="text-2xl font-black text-on-primary">360Pro</h1>
                 </th>
                 <th colSpan={quoteCount * 2} className="border-r border-black p-4 text-center">
-                  <input type="text" value={groupTitle} onChange={e => { setGroupTitle(e.target.value); setIsDirty(true); }} className="text-xl font-black uppercase text-center w-full bg-transparent outline-none border-none" />
+                  <input type="text" value={groupTitle} disabled={isEffectivelyReadOnly} onChange={e => { setGroupTitle(e.target.value); setIsDirty(true); }} className="text-xl font-black uppercase text-center w-full bg-transparent outline-none border-none disabled:opacity-70" />
                 </th>
                 <th colSpan={2} className="bg-[#F3F4F6] p-2 text-center">
                   <div className="text-[8px] font-black opacity-30">QC CODE</div>
@@ -558,7 +610,7 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
               <tr className="border-b border-black bg-[#F9FAFB] h-20">
                 <th colSpan={4} className="border-r border-black p-3 text-left">
                   <span className="font-black text-[9px] uppercase opacity-50 block">Serviço:</span>
-                  <input type="text" value={groupDesc} onChange={e => { setGroupDesc(e.target.value); setIsDirty(true); }} className="font-bold text-[12px] uppercase w-full bg-transparent outline-none border-none" />
+                  <input type="text" value={groupDesc} disabled={isEffectivelyReadOnly} onChange={e => { setGroupDesc(e.target.value); setIsDirty(true); }} className="font-bold text-[12px] uppercase w-full bg-transparent outline-none border-none disabled:opacity-70" />
                 </th>
                 {[...Array(quoteCount)].map((_, i) => {
                   const q = localQuotes[i];
@@ -566,15 +618,17 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                     <th key={i} colSpan={2} className="border-r border-black p-2 align-middle relative group/supplier">
                       {q ? (
                         <div className="flex flex-col gap-0.5 text-left text-[8px]">
-                          <div className="flex gap-1"><span className="font-black opacity-40 w-10 uppercase">Forn. {i+1}:</span> <input type="text" value={q.supplier_name} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, supplier_name: e.target.value} : lq)); setIsDirty(true); }} className="font-bold w-full bg-transparent outline-none" /></div>
-                          <div className="flex gap-1"><span className="font-black opacity-40 w-10 uppercase">Cont.:</span> <input type="text" value={q.contact_name || ''} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, contact_name: e.target.value} : lq)); setIsDirty(true); }} className="w-full bg-transparent outline-none" /></div>
-                          <div className="flex gap-1"><span className="font-black opacity-40 w-10 uppercase">Tel:</span> <input type="text" value={q.phone || ''} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, phone: e.target.value} : lq)); setIsDirty(true); }} className="w-full bg-transparent outline-none" /></div>
-                          <div className="absolute right-1 top-1 flex flex-col gap-1 opacity-0 group-hover/supplier:opacity-100 transition-opacity print:hidden">
-                            <button onClick={() => handleSelectWinner(q.id)} className={cn("p-1 rounded bg-white shadow-sm", q.is_selected ? "text-emerald-600" : "text-on-surface-variant hover:text-emerald-500")} title="Selecionar como vencedor"><Trophy className="h-3 w-3" /></button>
-                            <button onClick={() => handleDeleteQuote(q.id)} className="p-1 rounded bg-white shadow-sm text-red-300 hover:text-red-500" title="Excluir fornecedor"><Trash2 className="h-3 w-3" /></button>
-                          </div>
+                          <div className="flex gap-1"><span className="font-black opacity-40 w-10 uppercase">Forn. {i+1}:</span> <input type="text" value={q.supplier_name} disabled={isEffectivelyReadOnly} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, supplier_name: e.target.value} : lq)); setIsDirty(true); }} className="font-bold w-full bg-transparent outline-none disabled:opacity-70" /></div>
+                          <div className="flex gap-1"><span className="font-black opacity-40 w-10 uppercase">Cont.:</span> <input type="text" value={q.contact_name || ''} disabled={isEffectivelyReadOnly} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, contact_name: e.target.value} : lq)); setIsDirty(true); }} className="w-full bg-transparent outline-none disabled:opacity-70" /></div>
+                          <div className="flex gap-1"><span className="font-black opacity-40 w-10 uppercase">Tel:</span> <input type="text" value={q.phone || ''} disabled={isEffectivelyReadOnly} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, phone: e.target.value} : lq)); setIsDirty(true); }} className="w-full bg-transparent outline-none disabled:opacity-70" /></div>
+                          {!isEffectivelyReadOnly && (
+                            <div className="absolute right-1 top-1 flex flex-col gap-1 opacity-0 group-hover/supplier:opacity-100 transition-opacity print:hidden">
+                              <button onClick={() => handleSelectWinner(q.id)} className={cn("p-1 rounded bg-white shadow-sm", q.is_selected ? "text-emerald-600" : "text-on-surface-variant hover:text-emerald-500")} title="Selecionar como vencedor"><Trophy className="h-3 w-3" /></button>
+                              <button onClick={() => handleDeleteQuote(q.id)} className="p-1 rounded bg-white shadow-sm text-red-300 hover:text-red-500" title="Excluir fornecedor"><Trash2 className="h-3 w-3" /></button>
+                            </div>
+                          )}
                         </div>
-                      ) : ( !readOnly && <button onClick={() => { setLocalQuotes([...localQuotes, { id: `temp_${Date.now()}`, supplier_name: 'Novo Fornecedor' }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center text-on-surface-variant hover:text-blue-500 print:hidden"><Plus className="h-4 w-4" /></button> )}
+                      ) : ( !isEffectivelyReadOnly && <button onClick={() => { setLocalQuotes([...localQuotes, { id: `temp_${Date.now()}`, supplier_name: 'Novo Fornecedor' }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center text-on-surface-variant hover:text-blue-500 print:hidden"><Plus className="h-4 w-4" /></button> )}
                     </th>
                   );
                 })}
@@ -611,27 +665,31 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
               {localItems.map((item, idx) => (
                 <tr key={item.id} className="border-b border-black h-9">
                   <td className="border-r border-black text-center font-bold">{idx + 1}</td>
-                  <td className="border-r border-black p-0">
-                    <input type="number" step="any" value={item.quantity} onChange={e => { setLocalItems(localItems.map(li => li.id === item.id ? {...li, quantity: parseFloat(e.target.value) || 0} : li)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center font-bold outline-none no-spinners" />
+                  <td className="border-r border-black p-0 relative">
+                    <input type="number" step="any" value={item.quantity || ''} disabled={isEffectivelyReadOnly} onChange={e => { setLocalItems(localItems.map(li => li.id === item.id ? {...li, quantity: parseFloat(e.target.value) || 0} : li)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center font-black outline-none no-spinners disabled:opacity-70" placeholder="QTD" />
                   </td>
-                  <td className="border-r border-black p-0"><input type="text" value={item.unit} onChange={e => { setLocalItems(localItems.map(li => li.id === item.id ? {...li, unit: e.target.value} : li)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center uppercase font-bold outline-none" /></td>
-                  <td className="border-r border-black p-0 relative group">
-                    <input type="text" value={item.description} onChange={e => { setLocalItems(localItems.map(li => li.id === item.id ? {...li, description: e.target.value} : li)); setIsDirty(true); }} className="w-full h-full bg-transparent px-3 font-bold uppercase outline-none" />
-                    {!readOnly && (
+                  <td className="border-r border-black p-0">
+                    <input type="text" value={item.unit} disabled={isEffectivelyReadOnly} onChange={e => { setLocalItems(localItems.map(li => li.id === item.id ? {...li, unit: e.target.value} : li)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center font-bold uppercase outline-none disabled:opacity-70" placeholder="UN" />
+                  </td>
+                  <td className="border-r border-black p-0 group/item relative">
+                    <input type="text" value={item.description} disabled={isEffectivelyReadOnly} onChange={e => { setLocalItems(localItems.map(li => li.id === item.id ? {...li, description: e.target.value} : li)); setIsDirty(true); }} className="w-full h-full bg-transparent px-2 font-bold uppercase outline-none disabled:opacity-70" placeholder="Descrição do Serviço" />
+                    {!isEffectivelyReadOnly && (
                       <button 
                         onClick={() => {
                           setConfirmConfig({
                             isOpen: true,
-                            title: 'Excluir Item',
-                            message: `Deseja realmente excluir o item "${item.description || idx + 1}"?`,
+                            title: 'Excluir Serviço',
+                            message: `Deseja realmente excluir o serviço "${item.description || idx + 1}"?`,
                             confirmText: 'Excluir',
+                            confirmColor: 'bg-red-500',
+                            requireText: undefined,
                             onConfirm: () => {
                               setLocalItems(localItems.filter(li => li.id !== item.id));
                               setIsDirty(true);
                             }
                           });
                         }} 
-                        className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-red-500 opacity-0 group-hover:opacity-100 print:hidden"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-red-300 hover:text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity z-10"
                       >
                         <Trash2 className="h-3 w-3" />
                       </button>
@@ -644,10 +702,10 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                     return (
                       <React.Fragment key={i}>
                         <td className="border-r border-black/10 p-0 bg-emerald-500/[0.02]">
-                          <input type="number" step="any" value={up || ''} onChange={e => handlePriceUpdate(q.id, item.id, parseFloat(e.target.value) || 0)} className="w-full h-full bg-transparent text-right pr-2 font-black text-emerald-800 outline-none no-spinners" placeholder="0,00" />
+                          <input type="number" step="any" value={up || ''} disabled={isEffectivelyReadOnly} onChange={e => handlePriceUpdate(q.id, item.id, parseFloat(e.target.value) || 0)} className="w-full h-full bg-transparent text-right pr-2 font-black text-emerald-800 outline-none no-spinners disabled:opacity-70" placeholder="0,00" />
                         </td>
                         <td className="border-r border-black p-0 bg-gray-50/50">
-                          <input type="number" step="any" value={(up * item.quantity).toFixed(2) || ''} onChange={e => handlePriceUpdate(q.id, item.id, parseFloat(e.target.value) || 0, true)} className="w-full h-full bg-transparent text-right pr-2 font-black outline-none no-spinners" placeholder="0,00" />
+                          <input type="number" step="any" value={(up * item.quantity).toFixed(2) || ''} disabled={isEffectivelyReadOnly} onChange={e => handlePriceUpdate(q.id, item.id, parseFloat(e.target.value) || 0, true)} className="w-full h-full bg-transparent text-right pr-2 font-black outline-none no-spinners disabled:opacity-70" placeholder="0,00" />
                         </td>
                       </React.Fragment>
                     );
@@ -656,7 +714,7 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                   <td className="bg-gray-50/20"></td>
                 </tr>
               ))}
-              {!readOnly && ( <tr className="border-b border-black h-8 print:hidden"><td colSpan={quoteCount * 2 + 6}><button onClick={() => { setLocalItems([...localItems, { id: `temp_${Date.now()}`, description: '', quantity: 1, unit: 'un' }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center gap-2 text-on-surface-variant hover:text-blue-600 font-black uppercase text-[7px] tracking-widest">+ ADICIONAR ITEM DE SERVIÇO</button></td></tr> )}
+              {!isEffectivelyReadOnly && ( <tr className="border-b border-black h-8 print:hidden"><td colSpan={quoteCount * 2 + 6}><button onClick={() => { setLocalItems([...localItems, { id: `temp_${Date.now()}`, description: '', quantity: 1, unit: 'un' }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center gap-2 text-on-surface-variant hover:text-blue-600 font-black uppercase text-[7px] tracking-widest">+ ADICIONAR ITEM DE SERVIÇO</button></td></tr> )}
 
               <tr className="bg-[#BDBDBD] border-b border-black h-8">
                 <td colSpan={quoteCount * 2 + 6} className="text-center font-black uppercase tracking-[3px] text-[9px]">ORÇAMENTO</td>
@@ -665,8 +723,8 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
               {localBudgetItems.map((bi, idx) => (
                 <tr key={bi.id} className="border-b border-black h-9">
                   <td className="border-r border-black text-center font-bold opacity-30">{idx + 1}</td>
-                  <td className="border-r border-black p-0"><input type="number" step="any" value={bi.quantity} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, quantity: parseFloat(e.target.value) || 0} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center font-bold outline-none no-spinners" /></td>
-                  <td className="border-r border-black p-0"><input type="text" value={bi.unit} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, unit: e.target.value} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center uppercase font-bold outline-none" /></td>
+                  <td className="border-r border-black p-0"><input type="number" step="any" value={bi.quantity} disabled={isEffectivelyReadOnly} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, quantity: parseFloat(e.target.value) || 0} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center font-bold outline-none no-spinners disabled:opacity-70" /></td>
+                  <td className="border-r border-black p-0"><input type="text" value={bi.unit} disabled={isEffectivelyReadOnly} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, unit: e.target.value} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-center uppercase font-bold outline-none disabled:opacity-70" /></td>
                   <td className="border-r border-black p-0 relative group">
                     <select 
                       value="" 
@@ -719,11 +777,12 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                     <input 
                       type="text" 
                       value={bi.description} 
+                      disabled={isEffectivelyReadOnly}
                       onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, description: e.target.value} : lbi)); setIsDirty(true); }} 
-                      className="w-full h-full bg-transparent px-3 font-bold uppercase outline-none" 
+                      className="w-full h-full bg-transparent px-3 font-bold uppercase outline-none disabled:opacity-70" 
                       placeholder="CLIQUE PARA VINCULAR OU DIGITE..."
                     />
-                    {!readOnly && (
+                    {!isEffectivelyReadOnly && (
                       <button 
                         onClick={() => {
                           setConfirmConfig({
@@ -731,6 +790,8 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                             title: 'Excluir Item do Orçamento',
                             message: `Deseja realmente excluir o item do orçamento "${bi.description || idx + 1}"?`,
                             confirmText: 'Excluir',
+                            confirmColor: 'bg-red-500',
+                            requireText: undefined,
                             onConfirm: () => {
                               setLocalBudgetItems(localBudgetItems.filter(lbi => lbi.id !== bi.id));
                               setIsDirty(true);
@@ -745,14 +806,14 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                   </td>
                   {[...Array(quoteCount)].map((_, i) => ( <React.Fragment key={i}> <td className="border-r border-black/10 bg-gray-50/20"></td> <td className="border-r border-black/10 bg-gray-50/20"></td> </React.Fragment> ))}
                   <td className="border-r border-black/10 p-0 bg-blue-50/50">
-                    <input type="number" step="any" value={bi.unit_price || ''} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, unit_price: parseFloat(e.target.value) || 0} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-right pr-2 font-black outline-none no-spinners" placeholder="0,00" />
+                    <input type="number" step="any" value={bi.unit_price || ''} disabled={isEffectivelyReadOnly} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, unit_price: parseFloat(e.target.value) || 0} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-right pr-2 font-black outline-none no-spinners disabled:opacity-70" placeholder="0,00" />
                   </td>
                   <td className="p-0 bg-[#F3F4F6]">
-                    <input type="number" step="any" value={(bi.unit_price * bi.quantity).toFixed(2) || ''} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, unit_price: (parseFloat(e.target.value) || 0) / (bi.quantity || 1)} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-right pr-2 font-black outline-none no-spinners" placeholder="0,00" />
+                    <input type="number" step="any" value={(bi.unit_price * bi.quantity).toFixed(2) || ''} disabled={isEffectivelyReadOnly} onChange={e => { setLocalBudgetItems(localBudgetItems.map(lbi => lbi.id === bi.id ? {...lbi, unit_price: (parseFloat(e.target.value) || 0) / (bi.quantity || 1)} : lbi)); setIsDirty(true); }} className="w-full h-full bg-transparent text-right pr-2 font-black outline-none no-spinners disabled:opacity-70" placeholder="0,00" />
                   </td>
                 </tr>
               ))}
-              {!readOnly && ( <tr className="border-b border-black h-8 print:hidden"><td colSpan={quoteCount * 2 + 6}><button onClick={() => { setLocalBudgetItems([...localBudgetItems, { id: `temp_b_${Date.now()}`, description: '', quantity: 1, unit: 'VB', unit_price: 0 }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center gap-2 text-on-surface-variant hover:text-emerald-600 font-black uppercase text-[7px] tracking-widest">+ ADICIONAR ITEM AO ORÇAMENTO</button></td></tr> )}
+              {!isEffectivelyReadOnly && ( <tr className="border-b border-black h-8 print:hidden"><td colSpan={quoteCount * 2 + 6}><button onClick={() => { setLocalBudgetItems([...localBudgetItems, { id: `temp_b_${Date.now()}`, description: '', quantity: 1, unit: 'VB', unit_price: 0 }]); setIsDirty(true); }} className="w-full h-full flex items-center justify-center gap-2 text-on-surface-variant hover:text-emerald-600 font-black uppercase text-[7px] tracking-widest">+ ADICIONAR ITEM AO ORÇAMENTO</button></td></tr> )}
 
               <tr className="bg-[#E5E7EB] font-black border-b border-black h-12">
                 <td colSpan={4} className="px-6 text-right uppercase tracking-[4px] border-r border-black pr-10 text-[11px]">TOTAL FINAL</td>
@@ -778,10 +839,10 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                   if (!q) return <td key={i} colSpan={2} className="border-r border-black bg-gray-50/30"></td>;
                   return (
                     <td key={i} colSpan={2} className="p-0 border-r border-black align-top">
-                      <textarea value={q.payment_terms || ''} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, payment_terms: e.target.value} : lq)); setIsDirty(true); }} className="w-full h-10 p-2 bg-transparent border-b border-black/5 outline-none resize-none font-bold text-[8px]" />
-                      <textarea value={q.delivery_time || ''} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, delivery_time: e.target.value} : lq)); setIsDirty(true); }} className="w-full h-10 p-2 bg-transparent border-b border-black/5 outline-none resize-none font-bold text-[8px]" />
-                      <textarea value={q.validity || ''} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, validity: e.target.value} : lq)); setIsDirty(true); }} className="w-full h-10 p-2 bg-transparent border-b border-black/5 outline-none resize-none font-bold text-[8px]" />
-                      <textarea value={q.notes || ''} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, notes: e.target.value} : lq)); setIsDirty(true); }} className="w-full h-14 p-2 bg-transparent outline-none resize-none text-[8px] italic" />
+                      <textarea value={q.payment_terms || ''} disabled={isEffectivelyReadOnly} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, payment_terms: e.target.value} : lq)); setIsDirty(true); }} className="w-full h-10 p-2 bg-transparent border-b border-black/5 outline-none resize-none font-bold text-[8px] disabled:opacity-70" />
+                      <textarea value={q.delivery_time || ''} disabled={isEffectivelyReadOnly} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, delivery_time: e.target.value} : lq)); setIsDirty(true); }} className="w-full h-10 p-2 bg-transparent border-b border-black/5 outline-none resize-none font-bold text-[8px] disabled:opacity-70" />
+                      <textarea value={q.validity || ''} disabled={isEffectivelyReadOnly} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, validity: e.target.value} : lq)); setIsDirty(true); }} className="w-full h-10 p-2 bg-transparent border-b border-black/5 outline-none resize-none font-bold text-[8px] disabled:opacity-70" />
+                      <textarea value={q.notes || ''} disabled={isEffectivelyReadOnly} onChange={e => { setLocalQuotes(localQuotes.map(lq => lq.id === q.id ? {...lq, notes: e.target.value} : lq)); setIsDirty(true); }} className="w-full h-14 p-2 bg-transparent outline-none resize-none text-[8px] italic disabled:opacity-70" />
                     </td>
                   );
                 })}
@@ -790,8 +851,8 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                    <div className="p-2 border-b border-black/5">
                       <div className="flex items-center gap-1 font-black text-[7px] uppercase mb-1">INCC IF = </div>
                       <div className="flex items-center gap-1">
-                        <input type="text" value={inccIfDate} onChange={e => { setInccIfDate(e.target.value); setIsDirty(true); }} placeholder="MM/AAAA" className="w-full bg-transparent border-b border-black/10 outline-none font-bold text-[8px] h-6" />
-                        {!readOnly && (
+                        <input type="text" value={inccIfDate} disabled={isEffectivelyReadOnly} onChange={e => { setInccIfDate(e.target.value); setIsDirty(true); }} placeholder="MM/AAAA" className="w-full bg-transparent border-b border-black/10 outline-none font-bold text-[8px] h-6 disabled:opacity-70" />
+                        {!isEffectivelyReadOnly && (
                           <button onClick={fetchIncc} disabled={isFetchingIncc} className={cn("p-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors shadow-sm", isFetchingIncc && "animate-spin")}>
                             <RefreshCw className="h-3 w-3" />
                           </button>
@@ -801,8 +862,9 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
                         type="number" 
                         step="0.001" 
                         value={inccIfIndex ? parseFloat(inccIfIndex.toFixed(3)) : ''} 
+                        disabled={isEffectivelyReadOnly}
                         onChange={e => { setInccIfIndex(parseFloat(e.target.value) || 0); setIsDirty(true); }} 
-                        className="w-full mt-2 outline-none font-bold text-center h-6 text-[10px] no-spinners bg-transparent border-b border-black/10" 
+                        className="w-full mt-2 outline-none font-bold text-center h-6 text-[10px] no-spinners bg-transparent border-b border-black/10 disabled:opacity-70" 
                       />
                    </div>
                    <div className="p-3 mt-2 flex flex-col items-center gap-2">
@@ -835,6 +897,8 @@ export function BidComparisonTab({ projectId, bidGroups, budgetItems = [], onRef
           title={confirmConfig.title}
           message={confirmConfig.message}
           confirmText={confirmConfig.confirmText}
+          confirmColor={confirmConfig.confirmColor}
+          requireText={confirmConfig.requireText}
           secondaryText={(confirmConfig as any).secondaryText}
           onSecondary={(confirmConfig as any).onSecondary}
         />

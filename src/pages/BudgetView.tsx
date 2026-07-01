@@ -10,7 +10,7 @@ interface BudgetViewProps {
 
 export function BudgetView({ selectedProjectId, onSelectProject }: BudgetViewProps) {
   const { projects } = useProjects();
-  const { budgetItems, financialItems, refresh } = useProjectData(selectedProjectId);
+  const { budgetItems, financialItems, bidGroups, refresh } = useProjectData(selectedProjectId);
 
   if (!selectedProjectId) {
     return (
@@ -32,7 +32,7 @@ export function BudgetView({ selectedProjectId, onSelectProject }: BudgetViewPro
 
   return (
     <div className="max-w-[1400px] mx-auto">
-      <BudgetTab projectId={selectedProjectId} budgetItems={budgetItems} financialItems={financialItems} onRefresh={refresh} />
+      <BudgetTab projectId={selectedProjectId} budgetItems={budgetItems} financialItems={financialItems} bidGroups={bidGroups} onRefresh={refresh} />
     </div>
   );
 }

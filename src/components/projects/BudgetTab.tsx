@@ -11,11 +11,13 @@ interface BudgetTabProps {
   budgetItems: BudgetItem[];
   financialItems: FinancialItem[];
   contractValue?: number;
+  bidGroups?: any[];
+  measurements?: any[];
   onRefresh: () => void;
   readOnly?: boolean;
 }
 
-export function BudgetTab({ projectId, budgetItems, financialItems, contractValue, onRefresh, readOnly }: BudgetTabProps) {
+export function BudgetTab({ projectId, budgetItems, financialItems, contractValue, bidGroups, measurements, onRefresh, readOnly }: BudgetTabProps) {
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<BudgetItem | null>(null);
   const [deletingItem, setDeletingItem] = useState<BudgetItem | null>(null);
@@ -41,16 +43,71 @@ export function BudgetTab({ projectId, budgetItems, financialItems, contractValu
     return (items || []).reduce((acc, item) => acc + (Number(item.unit_cost) * Number(item.quantity)), 0);
   };
 
+  const macroBidGroupIds = new Set(
+    (budgetItems || [])
+      .filter(i => i.category.localeCompare('Mão de Obra - Contrato', undefined, { sensitivity: 'base' }) !== 0 && i.bid_group_id)
+      .map(i => i.bid_group_id)
+  );
+
+  // FALLBACK FOR OLDER BOARDS: If a macro item doesn't have bid_group_id in the DB, 
+  // we try to find it by matching the description stored in bid_budget_items.
+  const macroToBidGroup = new Map<string, string>();
+  (bidGroups || []).forEach(g => {
+    if (g.budget_items && g.budget_items.length > 0) {
+      g.budget_items.forEach((bi: any) => {
+        // bi.description typically contains "CODE - DESCRIPTION" of the macro item
+        const matchingMacro = (budgetItems || []).find(macro => {
+          if (bi.budget_item_id && macro.id === bi.budget_item_id) return true;
+          if (macro.category.localeCompare('Mão de Obra - Contrato', undefined, { sensitivity: 'base' }) === 0) return false;
+          
+          const cleanMacroCode = macro.code ? String(macro.code).replace(/^0+/, '') : '';
+          const codePrefix1 = macro.code ? `${macro.code} - ` : '';
+          const codePrefix2 = cleanMacroCode ? `${cleanMacroCode} - ` : '';
+          
+          return bi.description === `${codePrefix1}${macro.description}` || 
+                 bi.description === `${codePrefix2}${macro.description}` ||
+                 bi.description === macro.description;
+        });
+        if (matchingMacro) {
+          macroToBidGroup.set(matchingMacro.id, g.id);
+          macroBidGroupIds.add(g.id);
+        }
+      });
+    }
+  });
+
   const displayBudgetItems = [...(budgetItems || [])]
-    .filter(item => item.category.localeCompare('Mão de Obra', undefined, { sensitivity: 'base' }) !== 0)
+    .filter(item => {
+      // Filter out pure "Mão de Obra"
+      if (item.category.localeCompare('Mão de Obra', undefined, { sensitivity: 'base' }) === 0) return false;
+      
+      // If it's a micro item from a Bid Group, and that Bid Group is linked to a macro item, hide it!
+      if (item.category.localeCompare('Mão de Obra - Contrato', undefined, { sensitivity: 'base' }) === 0 && item.bid_group_id && macroBidGroupIds.has(item.bid_group_id)) {
+        return false;
+      }
+      
+      return true;
+    })
     .sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
 
   const displayItemIds = new Set(displayBudgetItems.map(i => i.id));
   const filteredFinancialItems = (financialItems || []).filter(f => f.budget_item_linked_id && displayItemIds.has(f.budget_item_linked_id));
 
+  let totalMeasurementSpent = 0;
+  (measurements || []).forEach(m => {
+    (m.measurement_items || []).forEach((mi: any) => {
+      const microItem = budgetItems?.find(b => b.id === mi.budget_item_id);
+      if (microItem && microItem.category.localeCompare('Mão de Obra - Contrato', undefined, { sensitivity: 'base' }) === 0) {
+        if (microItem.bid_group_id && macroBidGroupIds.has(microItem.bid_group_id)) {
+           totalMeasurementSpent += Number(mi.quantity) * Number(microItem.unit_cost || 0);
+        }
+      }
+    });
+  });
+
   const sumOfItems = calculateTotalBudget(displayBudgetItems);
   const totalBudget = contractValue && contractValue > 0 ? contractValue : sumOfItems;
-  const totalSpent = filteredFinancialItems.reduce((acc, item) => acc + Number(item.amount), 0);
+  const totalSpent = filteredFinancialItems.reduce((acc, item) => acc + Number(item.amount), 0) + totalMeasurementSpent;
   const realizedPercent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
   const itemsByCategory = displayBudgetItems.reduce((acc: any, item: BudgetItem) => {
@@ -205,8 +262,25 @@ export function BudgetTab({ projectId, budgetItems, financialItems, contractValu
                   const previousItem = index > 0 ? displayBudgetItems[index - 1] : null;
                   const showCategory = !previousItem || previousItem.category !== item.category;
                   
+                  const mappedBidGroupId = item.bid_group_id || macroToBidGroup.get(item.id);
+                  const linkedMicroItems = mappedBidGroupId 
+                    ? (budgetItems || []).filter(b => b.category.localeCompare('Mão de Obra - Contrato', undefined, { sensitivity: 'base' }) === 0 && b.bid_group_id === mappedBidGroupId)
+                    : [];
+                  const linkedMicroItemIds = new Set(linkedMicroItems.map(m => m.id));
+
+                  const measurementSpent = (measurements || []).reduce((totalAcc, m) => {
+                    const mTotal = (m.measurement_items || []).reduce((acc: number, mi: any) => {
+                      if (linkedMicroItemIds.has(mi.budget_item_id)) {
+                        const budgetItem = budgetItems?.find(b => b.id === mi.budget_item_id);
+                        return acc + (Number(mi.quantity) * Number(budgetItem?.unit_cost || 0));
+                      }
+                      return acc;
+                    }, 0);
+                    return totalAcc + mTotal;
+                  }, 0);
+
                   const lineTotal = Number(item.unit_cost) * Number(item.quantity);
-                  const lineSpent = financialItems?.filter((f: any) => f.budget_item_linked_id === item.id).reduce((acc: number, cur: any) => acc + Number(cur.amount), 0) || 0;
+                  const lineSpent = (financialItems?.filter((f: any) => f.budget_item_linked_id === item.id).reduce((acc: number, cur: any) => acc + Number(cur.amount), 0) || 0) + measurementSpent;
                   const lineBalance = lineTotal - lineSpent;
                   const linePercent = lineTotal > 0 ? (lineSpent / lineTotal) * 100 : 0;
 
@@ -286,11 +360,37 @@ export function BudgetTab({ projectId, budgetItems, financialItems, contractValu
                         <tr className="bg-surface-container-low border-b border-outline">
                           <td colSpan={8} className="p-0">
                             <div className="px-6 pb-4">
-                                <BudgetSubItemsPanel 
+                              <BudgetSubItemsPanel 
                                   budgetItemId={item.id} 
                                   totalBudgetItemAmount={lineTotal} 
                                   readOnly={readOnly}
                                   financialItems={financialItems}
+                                  linkedMicroItems={
+                                    (() => {
+                                      const mappedBidGroupId = item.bid_group_id || macroToBidGroup.get(item.id);
+                                      const microItems = mappedBidGroupId 
+                                        ? (budgetItems || []).filter(b => b.category.localeCompare('Mão de Obra - Contrato', undefined, { sensitivity: 'base' }) === 0 && b.bid_group_id === mappedBidGroupId)
+                                        : [];
+                                      const microIds = new Set(microItems.map(m => m.id));
+                                      
+                                      // Get all measurements that contain at least one of these micro items
+                                      const relevantMeasurements = (measurements || []).filter(m => 
+                                        (m.measurement_items || []).some((mi: any) => microIds.has(mi.budget_item_id))
+                                      ).map(m => {
+                                        // Calculate how much of this measurement applies to THIS macro item
+                                        const mValue = (m.measurement_items || []).reduce((acc: number, mi: any) => {
+                                          if (microIds.has(mi.budget_item_id)) {
+                                            const budgetItem = budgetItems?.find(b => b.id === mi.budget_item_id);
+                                            return acc + (Number(mi.quantity) * Number(budgetItem?.unit_cost || 0));
+                                          }
+                                          return acc;
+                                        }, 0);
+                                        return { ...m, calculatedValue: mValue };
+                                      });
+                                      
+                                      return relevantMeasurements;
+                                    })()
+                                  }
                                   onClose={() => toggleItemExpand(item.id)}
                                 />
                             </div>

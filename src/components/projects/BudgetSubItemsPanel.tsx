@@ -10,6 +10,7 @@ interface BudgetSubItemsPanelProps {
   totalBudgetItemAmount: number;
   readOnly?: boolean;
   financialItems?: FinancialItem[];
+  linkedMicroItems?: any[];
   onClose: () => void;
 }
 
@@ -18,6 +19,7 @@ export function BudgetSubItemsPanel({
   totalBudgetItemAmount, 
   readOnly, 
   financialItems = [], 
+  linkedMicroItems = [],
   onClose 
 }: BudgetSubItemsPanelProps) {
   const [subItems, setSubItems] = useState<BudgetSubItem[]>([]);
@@ -43,6 +45,7 @@ export function BudgetSubItemsPanel({
     }
   };
 
+  const totalMeasurementSpent = linkedMicroItems.reduce((acc, item) => acc + Number(item.calculatedValue || 0), 0);
   const currentTotal = subItems.reduce((acc, item) => acc + Number(item.amount), 0);
   const isOverBudget = currentTotal > totalBudgetItemAmount;
   const remainingBudget = totalBudgetItemAmount - currentTotal;
@@ -50,7 +53,7 @@ export function BudgetSubItemsPanel({
   const linkedFinancialItems = (financialItems || []).filter(
     item => item.budget_item_linked_id === budgetItemId
   );
-  const totalFinancialSpent = linkedFinancialItems.reduce((acc, item) => acc + Number(item.amount), 0);
+  const totalFinancialSpent = linkedFinancialItems.reduce((acc, item) => acc + Number(item.amount), 0) + totalMeasurementSpent;
 
   const directFinancialItems = linkedFinancialItems.filter(f => {
     if (!f.observations) return true;
@@ -193,12 +196,16 @@ export function BudgetSubItemsPanel({
             <h5 className="text-xs font-bold text-on-surface uppercase tracking-wider">Planejamento do Item</h5>
 
             <div className="space-y-3">
-              {subItems.length === 0 ? (
+              {subItems.length === 0 && linkedMicroItems.length === 0 ? (
                 <div className="py-8 text-center text-on-surface-variant text-sm border border-dashed border-outline-variant rounded-lg bg-surface/10">
                   Nenhum subitem cadastrado. Adicione o primeiro para começar a compor o valor.
                 </div>
               ) : (
-                subItems.map((item, index) => {
+                <React.Fragment>
+                  {/* Itens do Quadro de Concorrência movidos para Custos Gerais */}
+                  
+                  {/* Subitens Normais */}
+                  {subItems.map((item, index) => {
                   const subItemFinancials = linkedFinancialItems.filter(f => {
                     if (!f.observations) return false;
                     if (f.observations.startsWith('budget_sub_item_linked_id:')) {
@@ -279,7 +286,8 @@ export function BudgetSubItemsPanel({
                       )}
                     </div>
                   );
-                })
+                })}
+                </React.Fragment>
               )}
 
               <div className="flex items-center justify-between pt-2">
@@ -314,13 +322,45 @@ export function BudgetSubItemsPanel({
           </div>
 
           {/* Seção de Custos Gerais (Sem subitem) */}
-          {directFinancialItems.length > 0 && (
+          {(directFinancialItems.length > 0 || linkedMicroItems.length > 0) && (
             <div className="pt-4 border-t border-outline/50 space-y-3">
               <h5 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
                 <Receipt className="h-3.5 w-3.5 text-[#F97316]" /> Custos Gerais do Item (Sem Vínculo com Subitens)
               </h5>
               
               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                
+                {/* Renderizando Medições Executadas aqui em cima dos financeiros */}
+                {linkedMicroItems.map((item) => {
+                  const itemAmount = Number(item.calculatedValue || 0);
+                  const isPaid = item.status === 'paid';
+                  return (
+                    <div key={`linked-${item.id}`} className="flex items-center justify-between bg-emerald-500/5 p-3 rounded-lg border border-emerald-500/30 hover:bg-emerald-500/10 transition-colors">
+                      <div className="flex-1 min-w-0 pr-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-emerald-500 truncate">{item.description}</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          <span className="text-[9px] text-emerald-500 bg-emerald-500/20 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                            Medição Executada
+                          </span>
+                          {isPaid && (
+                            <span className="text-[9px] text-blue-500 bg-blue-500/20 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                              Pago
+                            </span>
+                          )}
+                          <span className="text-[9px] text-on-surface-variant flex items-center gap-0.5">
+                            <Calendar className="h-3 w-3" /> {formatDate(item.date)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-sm font-bold text-emerald-500">{formatCurrency(itemAmount)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+
                 {directFinancialItems.map((fItem) => (
                   <div key={fItem.id} className="flex items-center justify-between bg-surface/30 p-3 rounded-lg border border-outline/50 hover:bg-surface/50 transition-colors">
                     <div className="flex-1 min-w-0 pr-3">
