@@ -154,23 +154,112 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         let headerRowIdx = -1;
         let colItem = -1, colServico = -1, colIncidencia = -1;
         
+        let clientVal = '';
+        let locationVal = '';
+        let areaVal = 0;
+
+        const findValueInRow = (row: any[], startIdx: number, excludeKeywords: string[]) => {
+          for (let k = startIdx + 1; k < row.length; k++) {
+            if (row[k] !== undefined && row[k] !== null && row[k] !== '') {
+              const val = String(row[k]).trim();
+              const valUpper = val.toUpperCase();
+              if (val && !excludeKeywords.some(kw => valUpper.includes(kw))) {
+                return val;
+              }
+            }
+          }
+          return '';
+        };
+        
         // Scan first 200 rows to find headers globally
         for (let i = 0; i < Math.min(data.length, 200); i++) {
           const row = data[i];
           if (!row) continue;
           
           for (let j = 0; j < row.length; j++) {
-            const cell = String(row[j] || '').toLowerCase().trim();
-            if ((cell === 'item' || cell === 'código') && colItem === -1) colItem = j;
-            if ((cell === 'serviço' || cell === 'serviços' || cell === 'descrição') && colServico === -1) colServico = j;
-            if ((cell === 'incidência' || cell === 'incidencia' || cell === 'peso') && colIncidencia === -1) {
+            const cell = String(row[j] || '').trim();
+            if (!cell) continue;
+            
+            const cellUpper = cell.toUpperCase();
+            const cellLower = cellUpper.toLowerCase();
+            
+            // Extract Client
+            if (!clientVal && (cellUpper === 'PROPONENTE' || cellUpper === 'TOMADOR' || cellUpper === 'CLIENTE')) {
+              // Priority: cell directly below
+              if (i + 1 < data.length && data[i + 1] && data[i + 1][j]) {
+                const val = String(data[i + 1][j]).trim();
+                if (val && !val.toUpperCase().includes('E-MAIL') && !val.toUpperCase().includes('CPF')) {
+                  clientVal = val;
+                }
+              }
+              // Fallback: same row, next columns
+              if (!clientVal) {
+                clientVal = findValueInRow(row, j, ['CPF', 'CNPJ', 'E-MAIL', 'TELEFONE', 'PROP.']);
+              }
+            }
+            
+            // Extract Location
+            if (!locationVal && (cellUpper === 'ENDEREÇO' || cellUpper === 'ENDERECO' || cellUpper === 'LOGRADOURO')) {
+              // Priority: cell directly below
+              if (i + 1 < data.length && data[i + 1] && data[i + 1][j]) {
+                const val = String(data[i + 1][j]).trim();
+                if (val && !val.toUpperCase().includes('COMPLEMENTO')) {
+                  locationVal = val;
+                }
+              }
+              // Fallback: same row
+              if (!locationVal) {
+                locationVal = findValueInRow(row, j, ['COMPLEMENTO', 'BAIRRO', 'MUNICÍPIO', 'CEP']);
+              }
+            }
+            
+            // Extract Area
+            if (!areaVal && (cellUpper === 'ÁREA CONSTRUÍDA TOTAL' || cellUpper === 'AREA CONSTRUIDA TOTAL' || cellUpper === 'ÁREA TOTAL' || cellUpper === 'AREA TOTAL' || cellUpper === 'ÁREA A CONSTRUIR')) {
+              let rawVal: any = null;
+              // Priority: cell directly below
+              if (i + 1 < data.length && data[i + 1] && data[i + 1][j]) {
+                rawVal = data[i + 1][j];
+              }
+              // Fallback: same row
+              if (!rawVal) {
+                rawVal = findValueInRow(row, j, ['ÁREA DO TERRENO', 'AREA DO TERRENO', 'VALOR', 'R$']);
+              }
+              
+              if (rawVal !== null && rawVal !== undefined && rawVal !== '') {
+                if (typeof rawVal === 'number') {
+                  areaVal = rawVal;
+                } else {
+                  const valStr = String(rawVal).trim();
+                  const cleaned = valStr.replace(/[^\d.,]/g, '');
+                  let num = 0;
+                  
+                  if (cleaned.includes(',') && cleaned.includes('.')) {
+                    // Has both, e.g. 1.234,56
+                    num = parseFloat(cleaned.replace(/\./g, '').replace(',', '.'));
+                  } else if (cleaned.includes(',')) {
+                    // Only comma, e.g. 355,57
+                    num = parseFloat(cleaned.replace(',', '.'));
+                  } else if (cleaned.includes('.')) {
+                    // Only dot, e.g. 355.57
+                    num = parseFloat(cleaned);
+                  } else {
+                    // No separators
+                    num = parseFloat(cleaned);
+                  }
+                  
+                  if (!isNaN(num) && num > 0) {
+                    areaVal = num;
+                  }
+                }
+              }
+            }
+            
+            if ((cellLower === 'item' || cellLower === 'código') && colItem === -1) colItem = j;
+            if ((cellLower === 'serviço' || cellLower === 'serviços' || cellLower === 'descrição') && colServico === -1) colServico = j;
+            if ((cellLower === 'incidência' || cellLower === 'incidencia' || cellLower === 'peso') && colIncidencia === -1) {
               colIncidencia = j;
               headerRowIdx = i; // A tabela começa logo após a linha da Incidência
             }
-          }
-          
-          if (colItem !== -1 && colServico !== -1 && colIncidencia !== -1 && headerRowIdx !== -1) {
-            break;
           }
         }
 
@@ -228,6 +317,14 @@ export function ProjectsView({ selectedProjectId, onSelectProject }: ProjectsVie
         }
 
         setPciItems(extractedItems);
+        
+        setFormData(prev => ({
+          ...prev,
+          client: clientVal || prev.client,
+          location: locationVal || prev.location,
+          area: areaVal || prev.area
+        }));
+
         setAlertConfig({ isOpen: true, title: 'Sucesso', message: `${extractedItems.length} itens importados!`, type: 'success' });
         
         setIsPciPromptModalOpen(false);
