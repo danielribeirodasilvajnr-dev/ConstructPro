@@ -125,8 +125,20 @@ export function useDashboardData() {
         const financialProgress = ordained > 0 ? (budgetSpent / ordained) * 100 : 0;
 
         const scheduleItems = p.schedule_items || [];
-        const totalPhysical = scheduleItems.reduce((acc: number, item: any) => acc + Number(item.progress || 0), 0);
-        const physicalProgress = scheduleItems.length > 0 ? totalPhysical / scheduleItems.length : 0;
+        let totalWeight = 0;
+        let weightedProgressSum = 0;
+        
+        scheduleItems.forEach((item: any) => {
+          const start = new Date(item.start_date).getTime();
+          const end = new Date(item.end_date).getTime();
+          const days = Math.max(1, (end - start) / (1000 * 3600 * 24));
+          const progress = Number(item.progress || 0);
+          
+          totalWeight += days;
+          weightedProgressSum += (progress * days);
+        });
+
+        const physicalProgress = totalWeight > 0 ? weightedProgressSum / totalWeight : 0;
 
         const sortedLogs = [...(p.daily_logs || [])].sort((a: any, b: any) => {
           const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
