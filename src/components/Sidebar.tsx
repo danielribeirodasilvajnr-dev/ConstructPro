@@ -42,7 +42,7 @@ export function Sidebar({
   const allNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'projects', label: 'Obras', icon: ClipboardList },
-    { id: 'commercial', label: 'Comercial', icon: Briefcase },
+    // { id: 'commercial', label: 'Comercial', icon: Briefcase },
     // { id: 'engineering', label: 'Projetos', icon: FileSpreadsheet }, // Deixado para implementação futura
     { id: 'inventory', label: 'Estoque', icon: Package },
     { id: 'simulator', label: 'Simulador Habitacional', icon: Home, adminOnly: true },
@@ -58,10 +58,10 @@ export function Sidebar({
   const navItems = isProprietor
     ? allNavItems.filter(item => item.id === 'safety')
     : allNavItems.filter(item => {
-        if (item.superAdminOnly && !isSuperAdmin) return false;
-        if (item.adminOnly && !isAdmin) return false;
-        return true;
-      });
+      if (item.superAdminOnly && !isSuperAdmin) return false;
+      if (item.adminOnly && !isAdmin) return false;
+      return true;
+    });
 
   return (
     <>
@@ -127,7 +127,7 @@ export function Sidebar({
                   activeTab === item.id ? "text-background" : "group-hover:text-primary"
                 )} />
                 <span className="text-[13px] font-display uppercase tracking-widest relative z-10 text-left leading-tight flex-1 whitespace-normal">{item.label}</span>
-                
+
                 {activeTab === item.id && (
                   <div className="absolute right-3 h-1.5 w-1.5 rounded-full bg-background/50" />
                 )}

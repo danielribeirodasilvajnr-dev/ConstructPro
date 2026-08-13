@@ -360,7 +360,7 @@ export function MeasurementsTab({ projectId, budgetItems, measurements, bidGroup
           project_id: projectId,
           date: new Date().toISOString().split('T')[0],
           description: `Pagamento: ${m.description}`,
-          category: 'Mão de Obra',
+          category: 'Terceirizado',
           amount: totalValue,
           source_id: m.id,
           observations: `Gerado automaticamente via Medição #${m.id.slice(0, 5)}`
